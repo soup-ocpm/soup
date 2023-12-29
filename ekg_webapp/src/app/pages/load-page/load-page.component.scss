@@ -1,0 +1,140 @@
+// SCSS FOR TUTORIAL 
+.master-div {
+    width: 700px;
+    height: 500px;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+}
+
+.center-card {
+    width: 700px;
+    height: 500px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.title-step {
+    color: black;
+    font-family: Georgia, 'Times New Roman', Times, serif;
+    font-size: 21px;
+}
+
+.title-warning {
+    color: red;
+    font-family: Georgia, 'Times New Roman', Times, serif;
+    font-size: 21px;
+}
+
+.inside-text {
+    color: black;
+    font-family: Georgia, 'Times New Roman', Times, serif;
+    font-size: 17px;
+}
+
+.step-buttons {
+    display: flex;
+    justify-content: flex-end;
+}
+
+.step-button {
+    margin-left: 10px;
+}
+
+.mat-step-buttons {
+    margin-right: 10px;
+}
+
+
+// SCSS FOR UPLOAD CARD
+.center-container {
+    margin-top: 200px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.upload-card {
+    width: 700px;
+    height: 400px;
+    padding: 20px;
+}
+
+.button-container {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 20px;
+}
+
+
+// SCSS FOR UPLOAD SIDEBAR
+.sidebar {
+    width: 400px;
+    height: 83%;
+    margin-top: 65px;
+    margin-bottom: 60px;
+    background-color: #f7f7f7ee;
+    color: #fff;
+    position: fixed;
+    top: 0;
+    right: -400px;
+    transition: right 0.3s ease-in-out;
+    z-index: 1000;
+    padding: 20px;
+}
+
+.column-selection mat-form-field {
+    max-height: 70px;
+}
+
+.close-button {
+    color: #fff;
+    border: none;
+    padding: 10px 15px;
+    cursor: pointer;
+    margin-top: 10px;
+}
+
+.show-sidebar {
+    right: 0;
+}
+
+.move-right.show-sidebar {
+    right: 0;
+}
+
+.scrollable-sidebar {
+    overflow: auto;
+}
+
+.text-font {
+    color: black;
+    font-family: 'Times New Roman', Times, serif;
+}
+
+.text-font-p {
+    font-size: 17px;
+    color: black;
+    font-family: 'Times New Roman', Times, serif;
+}
+
+mat-divider {
+    height: 3px;
+    margin-top: 5px;
+}
+
+.button-sidebar {
+    margin-top: 10px;
+    justify-content: space-between;
+}
+
+
+// SCSS FOR PROCESSING
+.process-div {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+}

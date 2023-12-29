@@ -1,0 +1,147 @@
+<!---PROGRESS BAR---->
+<mat-progress-bar mode="indeterminate" *ngIf="isLoadingProgressBar"></mat-progress-bar>
+
+
+<!---CARD FOR TUTORIAL--->
+<div class="master-div" *ngIf="isTutorialTerminated == false && isLoadingProgressBar == false">
+
+  <mat-card class="center-card">
+    <mat-card-content>
+      <mat-stepper [linear]="true" #stepper>
+
+        <mat-step>
+          <ng-template matStepLabel class="title-step" style="font-family: 'Times New Roman', Times, serif;">Step
+            1</ng-template>
+          <p class="title-step">Uploading the .csv file</p>
+
+          <p class="inside-text">First, drag the .csv file into drag&drop or choose it directly from your computer.</p>
+          <p class="title-warning" style="margin-top: 40px">Warning:</p>
+          <p class="inside-text">Only one file can be processed at a time.</p>
+          <div class="step-buttons" style="margin-top: 140px;">
+            <button mat-button matStepperNext class="step-button" color="primary">Next</button>
+          </div>
+        </mat-step>
+
+        <mat-step>
+          <ng-template matStepLabel class="title-step">Step 2</ng-template>
+          <p class="title-step">Filter data</p>
+          <p class="inside-text">Once the .csv file is uploaded, our tool will parse it and show all the columns present
+            in the file. Now you can customize the analysis by selecting only the entities (columns) you want to take
+            into account when creating the graph.</p>
+          <p class="title-warning" style="margin-top: 30px">Warning:</p>
+          <p class="inside-text">Make sure you choose only the entities that are relevant to your analysis, so that you
+            get a meaningful graph.</p>
+          <div class="step-buttons" style="margin-top: 67px;">
+            <button mat-button matStepperPrevious class="step-button">Back</button>
+            <button mat-button matStepperNext class="step-button" color="primary">Next</button>
+          </div>
+        </mat-step>
+
+        <mat-step>
+          <ng-template matStepLabel class="title-step">Step 3</ng-template>
+          <p class="title-step">Graph creation</p>
+          <p class="inside-text">After filtering the data, you will get a graph with Nodes, properties, and
+            relationships based on your .csv file data.</p>
+          <div class="step-buttons" style="margin-top: 230px">
+            <button mat-button matStepperPrevious class="step-button">Back</button>
+            <button mat-button color="primary" matStepperNext (click)="isTutorialTerminated = true"
+              class="step-buttons">Start</button>
+          </div>
+        </mat-step>
+
+      </mat-stepper>
+    </mat-card-content>
+  </mat-card>
+
+</div>
+
+
+<!---CARD FOR UPLOAD---->
+<div class="center-container" *ngIf="isTutorialTerminated == true && !isLoadingProgressBar">
+
+  <mat-card class="upload-card" *ngIf="isTutorialTerminated == true">
+    <h2 class="text-font">Upload .csv file</h2>
+    <p class="text-font-p">Drag your .csv file containing the event log or choose it directly from your computer by
+      clicking on upload</p>
+    <ngx-dropzone (change)="onSelect($event)">
+      <ngx-dropzone-label>
+        Upload
+      </ngx-dropzone-label>
+      <ngx-dropzone-preview *ngFor="let f of files" [removable]="false" (removed)="onRemove(f)">
+        <ngx-dropzone-label>{{ f.name }} ({{ f.type }})</ngx-dropzone-label>
+      </ngx-dropzone-preview>
+    </ngx-dropzone>
+    <div class="button-container">
+      <button mat-button color="warn" (click)="resetCSVData()" *ngIf="haveFile" [disabled]="showSidebar"
+        style="margin-top: 30px;">Delete</button>
+      <button mat-button color="primary" (click)="parseCSV()" [disabled]="showSidebar"
+        style="margin-top: 30px;">Done</button>
+    </div>
+  </mat-card>
+
+</div>
+
+
+<!---SIDEBAR-->
+<div class="sidebar scrollable-sidebar" [ngClass]="{'show-sidebar': showSidebar, 'move-right': showSidebar}">
+  <h3 class="text-font">Filter data</h3>
+  <p class="text-font">Choose the fields that need to be taken.</p>
+  <ul class="list-group list-group-light">
+    <mat-divider></mat-divider>
+
+    <li class="list-group-item px-3 border-1 active" aria-current="true" style="margin-top: 5px;">
+      Entities
+    </li>
+
+    <div *ngFor="let check of allColumnFile">
+      <mat-checkbox class="example-margin" color="primary" [ngModel]="check.selected"
+        (ngModelChange)="check.selected = $event">{{ check.name }}</mat-checkbox>
+    </div>
+
+  </ul>
+  <mat-divider></mat-divider>
+  <p style="margin-top: 10px; font-family: Georgia, 'Times New Roman', Times, serif; color: black">Map the following
+    information</p>
+  <div class="column-selection" *ngIf="allColumnFile.length > 0">
+
+    <mat-form-field>
+      <mat-label>Event id</mat-label>
+      <mat-select (selectionChange)="eventIdColumn = $event.value">
+        <mat-option *ngFor="let camp of getFilteredColumn()" [value]="camp">
+          {{ camp }}
+        </mat-option>
+      </mat-select>
+    </mat-form-field>
+
+    <mat-form-field>
+      <mat-label>Timestamp</mat-label>
+      <mat-select (selectionChange)="timestampColumn = $event.value">
+        <mat-option *ngFor="let camp of getFilteredColumn()" [value]="camp">
+          {{ camp }}
+        </mat-option>
+      </mat-select>
+    </mat-form-field>
+
+    <mat-form-field>
+      <mat-label>Activity Name</mat-label>
+      <mat-select (selectionChange)="activityNameColumn = $event.value">
+        <mat-option *ngFor="let camp of getFilteredColumn()" [value]="camp">
+          {{ camp }}
+        </mat-option>
+      </mat-select>
+    </mat-form-field>
+  </div>
+
+  <div class="button-sidebar">
+    <button mat-button color="warn" (click)="closeSidebar()">Close</button>
+    <button mat-button color="primary" (click)="preBuildGraph()">Build</button>
+  </div>
+</div>
+
+
+<!---PROGRESS BAR-->
+<div class="process-div" *ngIf="isLoadingProgressBar">
+  <h2 style="font-family: Georgia, 'Times New Roman', Times, serif; font-size: 32px;">BUILDING THE EKG…</h2>
+  <h3 style="font-family: Georgia, 'Times New Roman', Times, serif; font-size: 26px;">This operation may take a few
+    minutes</h3>
+</div>

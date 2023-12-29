@@ -1,0 +1,17 @@
+.example-spacer {
+    flex: 1 1;
+}
+
+.fixed-footer {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background-color: #f5f5f5;
+    padding: 10px;
+    text-align: center;
+}
+
+.active {
+    color: black
+}

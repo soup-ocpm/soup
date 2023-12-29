@@ -1,0 +1,88 @@
+// SCSS FOR TUTORIAL 
+.master-div {
+    width: 700px;
+    height: 500px;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+}
+
+.center-card {
+    width: 700px;
+    height: 500px;
+    display: flex;
+}
+
+.title-step {
+    color: black;
+    font-family: Georgia, 'Times New Roman', Times, serif;
+    font-size: 21px;
+}
+
+.title-warning {
+    color: red;
+    font-family: Georgia, 'Times New Roman', Times, serif;
+    font-size: 21px;
+}
+
+.inside-text {
+    color: black;
+    font-family: Georgia, 'Times New Roman', Times, serif;
+    font-size: 17px;
+}
+
+.step-buttons {
+    position: absolute;
+    bottom: 20px;
+    right: 20px;
+}
+
+
+// SCSS FOR FORM
+.master-div-form {
+    width: 700px;
+    height: 500px;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+}
+
+.center-card-form {
+    width: 700px;
+    height: 500px;
+    display: flex;
+    padding: 20px;
+}
+
+.title-card {
+    color: black;
+    font-family: Georgia, 'Times New Roman', Times, serif;
+    font-size: 21px;
+}
+
+.inside-text {
+    color: black;
+    font-family: Georgia, 'Times New Roman', Times, serif;
+    font-size: 17px;
+}
+
+.short-input {
+    width: 400px;
+}
+
+.button-container {
+    position: absolute;
+    bottom: 20px;
+    right: 20px;
+}
+
+
+// SCSS FOR PROCESSING
+.process-div {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+}

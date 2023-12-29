@@ -1,0 +1,9 @@
+<h1 mat-dialog-title style="font-family: 'Times New Roman', Times, serif; font-weight: 25px;">Delete Graph ?</h1>
+<div mat-dialog-content>
+    <p>Are you sure you want to delete the graph in your database? <br>This action cannot be undone.</p>
+</div>
+<div mat-dialog-actions>
+    <button mat-button color="warn" [mat-dialog-close]="false">No</button>
+    <button mat-button color="primary" (click)="deleteGraph()" [mat-dialog-close]="true"
+        style="margin-left: 30px;">Delete</button>
+</div>
