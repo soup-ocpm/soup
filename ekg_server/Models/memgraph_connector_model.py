@@ -1,0 +1,40 @@
+"""
+-------------------------------
+File : memgraph_connector_model.py
+Description: Memgraph connector model class
+Date creation: 06-02-2024
+Project : ekg_server
+Author: DiscoHub12 (Alessio Giacché)
+License : MIT
+-------------------------------
+"""
+
+# Import
+from neo4j import GraphDatabase
+
+
+# Memgraph Connector model class
+class MemgraphConnector:
+    def __init__(self, uri, auth):
+        self._uri = uri
+        self._auth = auth
+        self._driver = None
+
+    # Connect function
+    def connect(self):
+        self._driver = GraphDatabase.driver(self._uri, auth=self._auth)
+
+    # Close connect function
+    def close(self):
+        if self._driver is not None:
+            self._driver.close()
+
+    # Run specific query with parameters in Memgraph
+    def run_query_memgraph(self, query: object, parameters: dict = None) -> object:
+        if self._driver is None:
+            raise Exception("Error while connecting to the database.")
+
+        with self._driver.session() as session:
+            # Execute the query
+            result = session.run(query, parameters, database="memgraph")
+            return [record.data() for record in result]
