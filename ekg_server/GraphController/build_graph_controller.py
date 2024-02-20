@@ -1,10 +1,10 @@
 """
 -------------------------------
-File : upload_controller.py
-Description: Main project
-Date creation: 07/10/2023
-Project : pserveraura
-Author: DiscoHub12 - veronikamoriconi
+File : build_graph_controller.py
+Description: Graph controller for generate EKG
+Date creation: 06-02-2024
+Project : ekg_server
+Author: DiscoHub12 (Alessio Giacché)
 License : MIT
 -------------------------------
 """
@@ -16,17 +16,15 @@ import math
 import pandas as pd
 from flask import request, jsonify
 
-from Models.neo4j_connector_model import Neo4jConnector
-from Utils.query_library import create_df_rel_query, create_observe_rel_query, create_nodes_event_query, \
-    create_df_c_query, create_nodes_entity_query, create_corr_rel_query, create_class_nodes_query, \
-    create_observe_rel_two_query
+from Models.memgraph_connector_model import MemgraphConnector
+from Utils.query_library import create_df_rel_query, create_observe_rel_one_two_query, create_nodes_event_query, \
+    create_df_c_query, create_nodes_entity_query, create_corr_rel_two_query, create_class_nodes_query, \
+    create_observe_rel_two_two_query, create_observe_rel_query, create_observe_rel_two_query
 
 # Database information:
-uri = 'bolt://localhost:7687'
-username = 'neo4j'
-password = 'Docker12Maria'
-database_name = 'neo4j-test'
-database_connection = Neo4jConnector(uri, username, password, database_name)
+uri_mem = 'bolt://localhost:7687'
+auth_mem = ("", "")
+database_connection_mem = MemgraphConnector(uri_mem, auth_mem)
 
 
 # Create standard Graph function
@@ -43,7 +41,7 @@ def create_standard_graph_c():
     filtered_column = json.loads(filtered_column_json)
 
     try:
-        database_connection.connect()
+        database_connection_mem.connect()
         file_data = file.read().decode('utf-8')
         df = pd.read_csv(io.StringIO(file_data))
         standard_process_query_c(df, filtered_column)
@@ -57,7 +55,7 @@ def create_standard_graph_c():
             'message': f'Error while importing data to Neo4j: {str(e)}.'
         }), 500
     finally:
-        database_connection.close()
+        database_connection_mem.close()
 
 
 # Create Class Graph function
@@ -66,7 +64,7 @@ def create_class_graph_c():
     filtered_column = json.loads(filtered_column_json)
 
     try:
-        database_connection.connect()
+        database_connection_mem.connect()
         class_process_query_c(filtered_column)
         return jsonify({
             'status': 200,
@@ -78,7 +76,7 @@ def create_class_graph_c():
             'message': f'Error while importing data to Neo4j: {str(e)}.'
         }), 500
     finally:
-        database_connection.close()
+        database_connection_mem.close()
 
 
 # Process the .csv file and execute query for create standard Graph
@@ -118,7 +116,7 @@ def standard_process_query_c(df, filtered_columns):
                         cypher_properties.append(f"{key}: coalesce(${key}, '')")
                         parameters[key] = value
             cypher_query = create_nodes_event_query(cypher_properties)
-            database_connection.run_query(cypher_query, parameters)
+            database_connection_mem.run_query_memgraph(cypher_query, parameters)
 
             for key, value in row.items():
                 if key not in [event_id_col, timestamp_col, activity_name_col] and key in filtered_columns:
@@ -129,44 +127,44 @@ def standard_process_query_c(df, filtered_columns):
                                 "property_value": value,
                                 "type_value": key
                             }
-                            database_connection.run_query(entity_query, entity_parameters)
+                            database_connection_mem.run_query_memgraph(entity_query, entity_parameters)
                     else:
                         entity_parameters = {
                             "property_value": value,
                             "type_value": key
                         }
-                        database_connection.run_query(entity_query, entity_parameters)
+                        database_connection_mem.run_query_memgraph(entity_query, entity_parameters)
 
         for key in filtered_columns:
             if key not in [event_id_col, timestamp_col, activity_name_col]:
-                correlation_query_corr = create_corr_rel_query(key)
-                database_connection.run_query(correlation_query_corr)
+                correlation_query_corr = create_corr_rel_two_query(key)
+                database_connection_mem.run_query_memgraph(correlation_query_corr)
 
         for key in filtered_columns:
             if key not in [event_id_col, timestamp_col, activity_name_col]:
                 correlation_query_df = create_df_rel_query(key)
-                database_connection.run_query(correlation_query_df)
+                database_connection_mem.run_query_memgraph(correlation_query_df)
 
     except Exception as e:
-        print(f"Internal Server error: {str(e)}")
+        return e
 
 
 # Execute query for create Class Graph
 def class_process_query_c(filtered_columns):
     try:
-        query = create_class_nodes_query(filtered_columns)
-        database_connection.run_query(query)
+        cypher_query = create_class_nodes_query(filtered_columns)
+        database_connection_mem.run_query_memgraph(cypher_query)
 
         filtered_columns.remove("ActivityName")
 
-        query = create_observe_rel_query(filtered_columns)
-        database_connection.run_query(query)
-        query = create_observe_rel_two_query(filtered_columns)
-        database_connection.run_query(query)
+        cypher_query = create_observe_rel_query(filtered_columns)
+        database_connection_mem.run_query_memgraph(cypher_query)
+        cypher_query = create_observe_rel_two_query(filtered_columns)
+        database_connection_mem.run_query_memgraph(cypher_query)
 
         for key in filtered_columns:
             query = create_df_c_query(key)
-            database_connection.run_query(query)
+            database_connection_mem.run_query_memgraph(query)
 
     except Exception as e:
         print(f"Internal Server error: {str(e)}")

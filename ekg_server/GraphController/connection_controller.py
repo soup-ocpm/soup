@@ -1,10 +1,10 @@
 """
 -------------------------------
 File : connection_controller.py
-Description: Main project
-Date creation: 07/10/2023
-Project : pserveraura
-Author: DiscoHub12 - veronikamoriconi
+Description: Connection controller
+Date creation: 20-02-2024
+Project : ekg_server
+Author: DiscoHub12 (Alessio Giacché)
 License : MIT
 -------------------------------
 """
@@ -27,7 +27,6 @@ def connect_c():
 
     uri = data['uri']
     instance_name = data['instanceName']
-    # instance_id = data['instanceId']
     username = data['username']
     password = data['password']
 

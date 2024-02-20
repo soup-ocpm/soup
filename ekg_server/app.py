@@ -2,9 +2,9 @@
 -------------------------------
 File : app.py
 Description: Main project
-Date creation: 07/10/2023
-Project : pserveraura
-Author: DiscoHub12 - veronikamoriconi
+Date creation: 20-02-2024
+Project : ekg_server
+Author: DiscoHub12 (Alessio Giacché)
 License : MIT
 -------------------------------
 """

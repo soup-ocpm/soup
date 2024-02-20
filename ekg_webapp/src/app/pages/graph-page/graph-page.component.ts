@@ -310,6 +310,7 @@ export class GraphPageComponent implements OnInit, OnDestroy {
     this.nodes = nodes;
     this.edges = edges;
 
+
     if (this.nodes != null && this.nodes.length > 0 && this.edges != null && this.edges.length > 0) {
       this.assignRelationLabelColors(this.edges, false);
       this.createStandardGraphVisualization(
@@ -345,7 +346,6 @@ export class GraphPageComponent implements OnInit, OnDestroy {
         let nodeId = node.id;
         let nodeProperties: any = {
           label: nodeName,
-          name: nodeName,
         };
 
         for (const prop in node) {
@@ -406,24 +406,32 @@ export class GraphPageComponent implements OnInit, OnDestroy {
 
     data.df_c_data.forEach((item: any) => {
       let node_parent = item.class;
-      this.addNode(uniqueNodes, node_parent);
-      let relationShips = item.related_class;
-      let forRelation = item.type;
+      let relation_name = item.type;
 
-      relationShips.forEach((node_rel: any) => {
-        this.addNode(uniqueNodes, node_rel);
-        const link = {
-          source: node_parent,
-          target: node_rel,
-          label: `:DF_C: {${forRelation}}`,
-        }
-        uniqueDfLinks.add(link);
-      });
+      this.addNode(uniqueNodes, node_parent);
+
+      const link = {
+        source: node_parent,
+        target: node_parent,
+        label: `:DF_C: {${relation_name}}`
+      }
+
+      if (item.related_class != null && item.related_class != undefined) {
+        let related_node = item.related_class;
+        this.addNode(uniqueNodes, related_node);
+        link.target = related_node;
+      }
+
+
+      uniqueDfLinks.add(link);
     });
 
     const links = [...uniqueDfLinks];
     this.classNodes = Array.from(uniqueNodes);
     this.classEdges = links;
+
+    console.log(this.classNodes);
+    console.log(this.classEdges);
 
     if (this.classNodes != null && this.classEdges != null && this.classNodes.length > 0 && this.classEdges.length > 0) {
       this.clearGraphs();

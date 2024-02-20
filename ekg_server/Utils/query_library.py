@@ -1,10 +1,10 @@
 """
 -------------------------------
-File : upload_controller.py
-Description: Main project
-Date creation: 07/11/2023
-Project : pserveraura
-Author: DiscoHub12 - veronikamoriconi
+File : query_library.py
+Description: Cypher query library for EKG
+Date creation: 06-02-2024
+Project : ekg_server
+Author: DiscoHub12 (Alessio Giacché)
 License : MIT
 -------------------------------
 """
@@ -16,6 +16,13 @@ def create_nodes_event_query(cypher_properties):
 
 def create_nodes_entity_query():
     return "MERGE (e:Entity {Value: $property_value, Type: $type_value})"
+
+
+def create_corr_rel_two_query(key):
+    return ("MATCH (e:Event) "
+            "MATCH (en: Entity) "
+            f"WHERE en.Value = e.{key} "
+            "MERGE (e)-[:CORR { Type: en.Value }] ->(en) ")
 
 
 def create_corr_rel_query(key):
@@ -62,6 +69,20 @@ def create_class_nodes_query(attribute_keys):
     return query
 
 
+def create_observe_rel_one_two_query(filtered_column):
+    query = ("MATCH (e:Event), (c:Class) "
+             "WHERE e.ActivityName = c.Name AND (")
+    for key in filtered_column:
+        query += f"e.{key} = c.{key} AND "
+    query = query[:-4]
+    query += (") "
+              "MERGE (e)-[:OBSERVED_C {Type: 'Activity'")
+    for key in filtered_column:
+        query += f", {key}: e.{key}"
+    query += "}]->(c)"
+    return query
+
+
 def create_observe_rel_query(filtered_column):
     query = ("MATCH (e:Event) "
              "MATCH (c:Class) "
@@ -79,9 +100,9 @@ def create_observe_rel_query(filtered_column):
 
 def create_observe_rel_two_query(filtered_column):
     query = ("MATCH (e:Event) "
-             "WHERE NOT (e)-[:OBSERVED_C]->()-->() OR NOT (e)-[:OBSERVED_C]->(:Class) "
-             "MATCH (e) "
-             "WHERE NOT (e)-[:OBSERVED_C]->(:Class) "
+             "MATCH (en: Entity) "
+             "MATCH (c: Class)"
+             "WHERE NOT (e)-[:OBSERVED_C]->(en) AND NOT (e)-[:OBSERVED_C]->(c) "
              "MATCH (c: Class) "
              "WHERE e.ActivityName = c.Name AND (")
 
@@ -93,6 +114,38 @@ def create_observe_rel_two_query(filtered_column):
     for key in filtered_column:
         query += f" + CASE WHEN e.{key} = c.{key} THEN ', {key}' ELSE '' END"
     query += "}]->(c)"
+    return query
+
+
+def create_observe_rel_two_two_query(filtered_column):
+    query = (
+        "MATCH (e:Event), (c:Class) "
+        "WHERE e.ActivityName = c.Name AND ("
+    )
+
+    conditions = []
+    for key in filtered_column:
+        conditions.append(f"e.{key} = c.{key}")
+    conditions_str = " OR ".join(conditions)
+
+    # Aggiunta delle condizioni alla query
+    query += conditions_str + ") "
+
+    # Costruzione della clausola WHERE per le relazioni OBSERVED_C
+    query += (
+        "AND NOT EXISTS ((e)-[:OBSERVED_C]->(c:Class))"
+    )
+
+    # Creazione della relazione OBSERVED_C
+    query += (
+        "MERGE (e)-[:OBSERVED_C {Type: 'Activity'"
+    )
+    for key in filtered_column:
+        query += f", {key}: e.{key}"
+    query += (
+        "}]->(c)"
+    )
+
     return query
 
 
@@ -133,13 +186,7 @@ def get_df_node_rel_query():
 def get_df_2_node_rel_query():
     return """
             MATCH (e:Class)-[r:DF_C]->(dfRelated)
-            WITH e, r, COLLECT(DISTINCT dfRelated) AS relatedNodes
-            RETURN {
-                nodeId: ID(e),
-                mainNode: e,
-                type: r.Type,
-                relatedNodes: [relatedNode IN relatedNodes | { nodeId: ID(relatedNode), relatedNode: relatedNode }]
-                } AS result
+            RETURN ID(e) AS nodeId, e AS mainNode, r.Type AS type, ID(dfRelated) AS relatedNodeId
             """
 
 
