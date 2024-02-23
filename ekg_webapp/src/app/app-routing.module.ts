@@ -8,13 +8,14 @@ import { GraphPageComponent } from './pages/graph-page/graph-page.component';
 
 // AUTHGUARD IMPORT
 import { CanActivateGraphGuard } from './services/graph.guard';
-
+import { DetailCardsComponent } from './pages/detail-cards/detail-cards.component';
 
 const routes: Routes = [
   { path: '', redirectTo: 'home', pathMatch: 'full' },
   { path: 'home', component: HomePageComponent },
-  { path: 'upload-csv', component: LoadPageComponent },
-  { path: 'graph', component: GraphPageComponent, canActivate: [CanActivateGraphGuard] }, 
+  { path: 'upload-data', component: LoadPageComponent },
+  { path: 'details', component: DetailCardsComponent },
+  { path: 'graph', component: GraphPageComponent, canActivate: [CanActivateGraphGuard] },
   { path: '**', redirectTo: 'home' },
 ];
 

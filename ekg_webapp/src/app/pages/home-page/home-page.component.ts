@@ -29,6 +29,6 @@ export class HomePageComponent implements OnInit {
 
   // Start the operation.
   startClicked() {
-    this.router.navigateByUrl('/upload-csv')
+    this.router.navigateByUrl('/upload-data')
   }
 }

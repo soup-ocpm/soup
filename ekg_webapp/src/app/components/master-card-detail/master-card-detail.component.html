@@ -1,0 +1,30 @@
+<div class="master-card-detail">
+    <mat-card class="master-card">
+        <mat-card-header class="card-title-background">
+
+            <!--Close Card button-->
+            <button mat-icon-button (click)="closeMasterCard()" class="close-button">
+                <mat-icon aria-label="Close">close</mat-icon>
+            </button>
+
+            <mat-card-title>
+                <p> {{cardTitle}} </p>
+            </mat-card-title>
+
+        </mat-card-header>
+
+        <mat-card-content class="card-content">
+            <p style="margin-top: 10px;">{{ cardDescription }}</p>
+            <hr style="margin-top: 10px;">
+
+            <div class="input-group input-group-mb-3">
+                <input type="text" class="form-control" placeholder="Search..." aria-label="Small"
+                    aria-describedby="inputGroup-sizing-sm" [(ngModel)]="searchText" (input)="updateSearch()">
+            </div>
+
+            <textarea class="text-area-json" rows="15" readonly>
+                {{ filteredData | json }}
+            </textarea>
+        </mat-card-content>
+    </mat-card>
+</div>

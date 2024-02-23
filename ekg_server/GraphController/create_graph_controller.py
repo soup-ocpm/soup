@@ -17,9 +17,10 @@ import pandas as pd
 from flask import request, jsonify
 
 from Models.memgraph_connector_model import MemgraphConnector
-from Utils.query_library import create_df_rel_query, create_observe_rel_one_two_query, create_nodes_event_query, \
-    create_df_c_query, create_nodes_entity_query, create_corr_rel_two_query, create_class_nodes_query, \
-    create_observe_rel_two_two_query, create_observe_rel_query, create_observe_rel_two_query
+from Models.api_response_model import ApiResponse
+from Utils.query_library import create_df_relation_query, create_node_event_query, \
+    create_class_df_relation_query, create_node_entity_query, create_corr_relation_query, create_node_class_query, \
+    create_obs_relation_query, create_full_obs_relation_query
 
 # Database information:
 uri_mem = 'bolt://localhost:7687'
@@ -29,13 +30,21 @@ database_connection_mem = MemgraphConnector(uri_mem, auth_mem)
 
 # Create standard Graph function
 def create_standard_graph_c():
+    apiResponse = ApiResponse(None, None, None)
+
+    if request.files['file'] is None:
+        apiResponse.http_status_code = 400
+        apiResponse.message = "Bad request"
+        apiResponse.response_data = None
+        return jsonify(apiResponse.to_dict()), 400
+
     file = request.files['file']
 
     if not file or not file.filename.endswith(".csv"):
-        return jsonify({
-            'status': 400,
-            'message': 'File error'
-        }), 400
+        apiResponse.http_status_code = 400
+        apiResponse.message = "Bad request"
+        apiResponse.response_data = None
+        return jsonify(apiResponse.to_dict()), 400
 
     filtered_column_json = request.form.get('filteredColumn')
     filtered_column = json.loads(filtered_column_json)
@@ -45,36 +54,46 @@ def create_standard_graph_c():
         file_data = file.read().decode('utf-8')
         df = pd.read_csv(io.StringIO(file_data))
         standard_process_query_c(df, filtered_column)
-        return jsonify({
-            'status': 200,
-            'message': 'Data imported to Neo4j successfully'
-        }), 200
+
+        apiResponse.http_status_code = 201
+        apiResponse.message = 'Standard Graph created successfully.'
+        apiResponse.response_data = None
+
+        return jsonify(apiResponse.to_dict()), 200
+
     except Exception as e:
-        return jsonify({
-            'status': 500,
-            'message': f'Error while importing data to Neo4j: {str(e)}.'
-        }), 500
+        apiResponse.http_status_code = 500
+        apiResponse.message = f'Error while importing data to Neo4j: {str(e)}.'
+        apiResponse.response_data = None
+        return jsonify(apiResponse.to_dict()), 500
+
     finally:
         database_connection_mem.close()
 
 
 # Create Class Graph function
 def create_class_graph_c():
+    apiResponse = ApiResponse(None, None, None)
+
     filtered_column_json = request.form.get('filteredColumn')
     filtered_column = json.loads(filtered_column_json)
 
     try:
         database_connection_mem.connect()
         class_process_query_c(filtered_column)
-        return jsonify({
-            'status': 200,
-            'message': 'Data imported to Neo4j successfully'
-        }), 200
+
+        apiResponse.http_status_code = 201
+        apiResponse.message = 'Class Graph created successfully.'
+        apiResponse.response_data = None
+
+        return jsonify(apiResponse.to_dict()), 200
+
     except Exception as e:
-        return jsonify({
-            'status': 500,
-            'message': f'Error while importing data to Neo4j: {str(e)}.'
-        }), 500
+        apiResponse.http_status_code = 500
+        apiResponse.message = f'Error while importing data to Neo4j: {str(e)}.'
+        apiResponse.response_data = None
+        return jsonify(apiResponse.to_dict()), 500
+
     finally:
         database_connection_mem.close()
 
@@ -115,12 +134,12 @@ def standard_process_query_c(df, filtered_columns):
                     if key in filtered_columns:
                         cypher_properties.append(f"{key}: coalesce(${key}, '')")
                         parameters[key] = value
-            cypher_query = create_nodes_event_query(cypher_properties)
+            cypher_query = create_node_event_query(cypher_properties)
             database_connection_mem.run_query_memgraph(cypher_query, parameters)
 
             for key, value in row.items():
                 if key not in [event_id_col, timestamp_col, activity_name_col] and key in filtered_columns:
-                    entity_query = create_nodes_entity_query()
+                    entity_query = create_node_entity_query()
                     if type(value) is float:
                         if not math.isnan(value):
                             entity_parameters = {
@@ -137,12 +156,12 @@ def standard_process_query_c(df, filtered_columns):
 
         for key in filtered_columns:
             if key not in [event_id_col, timestamp_col, activity_name_col]:
-                correlation_query_corr = create_corr_rel_two_query(key)
+                correlation_query_corr = create_corr_relation_query(key)
                 database_connection_mem.run_query_memgraph(correlation_query_corr)
 
         for key in filtered_columns:
             if key not in [event_id_col, timestamp_col, activity_name_col]:
-                correlation_query_df = create_df_rel_query(key)
+                correlation_query_df = create_df_relation_query(key)
                 database_connection_mem.run_query_memgraph(correlation_query_df)
 
     except Exception as e:
@@ -152,18 +171,18 @@ def standard_process_query_c(df, filtered_columns):
 # Execute query for create Class Graph
 def class_process_query_c(filtered_columns):
     try:
-        cypher_query = create_class_nodes_query(filtered_columns)
+        cypher_query = create_node_class_query(filtered_columns)
         database_connection_mem.run_query_memgraph(cypher_query)
 
         filtered_columns.remove("ActivityName")
 
-        cypher_query = create_observe_rel_query(filtered_columns)
+        cypher_query = create_obs_relation_query(filtered_columns)
         database_connection_mem.run_query_memgraph(cypher_query)
-        cypher_query = create_observe_rel_two_query(filtered_columns)
+        cypher_query = create_full_obs_relation_query(filtered_columns)
         database_connection_mem.run_query_memgraph(cypher_query)
 
         for key in filtered_columns:
-            query = create_df_c_query(key)
+            query = create_class_df_relation_query(key)
             database_connection_mem.run_query_memgraph(query)
 
     except Exception as e:

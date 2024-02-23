@@ -1,0 +1,31 @@
+.master-card {
+    width: 300px;
+    height: 250px;
+
+    p {
+        font-family: 'Times New Roman', Times, serif;
+        font-weight: 25px;
+    }
+}
+
+.card-title-background {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #e2e2e2;
+    height: 45px;
+}
+
+
+.card-content {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 65%;
+}
+
+.button-cards {
+    position: absolute;
+    bottom: 2px;
+    right: 2px;
+}

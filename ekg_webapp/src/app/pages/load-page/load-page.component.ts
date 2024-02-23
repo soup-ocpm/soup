@@ -40,9 +40,6 @@ export class LoadPageComponent implements OnInit, OnDestroy {
    */
   showSidebar: boolean | undefined;
 
-  // Associate Http response.
-  responseCall: any;
-
   /**
    * Boolean variable that indicate if is 
    * showing progress bar.
@@ -91,7 +88,6 @@ export class LoadPageComponent implements OnInit, OnDestroy {
   // NgOnDestroy implementation method.
   public ngOnDestroy(): void {
     this.resetCSVData();
-    this.responseCall = undefined;
   }
 
 
@@ -204,68 +200,77 @@ export class LoadPageComponent implements OnInit, OnDestroy {
     }
   }
 
-
-  // Method that call Backend for create new Graph by .csv file.
-  public async buildGraph(file: File) {
+  /**
+   * Build the standard Graph
+   * @param file the csv file 
+   */
+  public buildGraph(file: File) {
     if (!file) {
       return;
     }
 
     this.showSidebar = false;
     this.isLoadingProgressBar = true;
+
     const allFilteredColumn = this.getFilteredColumn();
     const formData = new FormData();
     formData.append('file', file, 'filtered.csv');
 
     try {
-      const response = await this.serviceCall.createStandardGraph(formData, allFilteredColumn).toPromise();
-      if (!response) {
-        this.openSnackBar('Error while upload file.', 'Retry');
-        this.resetCSVData();
-        return;
-      }
-      this.responseCall = response;
-      switch (this.responseCall.status) {
-        case 200: {
-          this.removeStandardProperties();
-          this.serviceData.setFilteredColumn(this.filteredColumn);
-          await this.getGraph();
-          return;
-        }
-        case 400: {
-          this.openSnackBar('Error file extension.', 'Retry');
+      let apiResponse: any = null;
+
+      this.serviceCall.createStandardGraph(formData, allFilteredColumn).subscribe(
+        response => {
+          apiResponse = response;
+          if (apiResponse != null && apiResponse.http_status_code == 200) {
+            this.removeStandardProperties();
+            this.serviceData.setFilteredColumn(this.filteredColumn);
+            this.getGraph();
+            return;
+          }
+        },
+        error => {
+          apiResponse = error;
+          this.openSnackBar('Error while creating the Graph.', 'Retry');
           this.resetCSVData();
           return;
-        }
-      }
+
+        });
     } catch (error) {
       this.openSnackBar(`Internal Server Error.`, 'Retry');
       this.resetCSVData();
-    } finally {
-      this.isLoadingProgressBar = false;
     }
   }
 
-
-  // Method that get all data (Nodes, Edges...) of new Graph.
+  /**
+   * Retrieve the details information 
+   * for the new created Graphs
+   */
   public async getGraph() {
-    await new Promise(resolve => setTimeout(resolve, 3000));
+    await new Promise(resolve => setTimeout(resolve, 2000));
+
     try {
-      const response = await this.serviceCall.getStandardGraph().toPromise();
-      // Rieffettuare chiamata.
-      this.responseCall = response;
-      if (this.responseCall.status === 200) {
-        this.serviceCall.saveResponse(this.responseCall);
-        this.isLoadingProgressBar = false;
-        this.router.navigateByUrl('/graph');
-      }
+      let apiResponse: any = null;
+
+      this.serviceCall.getStandardGraphDetails().subscribe(
+        response => {
+          apiResponse = response;
+          if (apiResponse.http_status_code === 200 && apiResponse.data != null) {
+            this.serviceCall.saveResponse(apiResponse);
+            this.isLoadingProgressBar = false;
+            this.router.navigateByUrl('/details');
+          }
+        },
+        error => {
+          apiResponse = error;
+          this.openSnackBar('Error while retrieve graph.', 'Retry');
+          this.resetCSVData();
+        });
     } catch (error) {
-      this.openSnackBar(`Error : ${this.responseCall}`, 'Retry');
-    } finally {
-      this.isLoadingProgressBar = false;
+      this.openSnackBar(`Internal Server Error.`, 'Retry');
+      this.resetCSVData();
     }
   }
-
 
   // Method that return the filtered .csv column choiced by User.
   public getFilteredColumn() {
@@ -273,9 +278,6 @@ export class LoadPageComponent implements OnInit, OnDestroy {
       .filter(column => column.selected)
       .map(column => column.name);
   }
-
-
-  // ----------SUPPORT METHOD-------------------
 
 
   // Open side bar
@@ -293,11 +295,11 @@ export class LoadPageComponent implements OnInit, OnDestroy {
 
   // Delete the selected .csv file and reset files array
   public resetCSVData() {
+    this.isLoadingProgressBar = false;
     this.files = [];
     this.selectedFile = undefined;
     this.allColumnFile = [];
     this.haveFile = false;
-    this.isLoadingProgressBar = false;
   }
 
 
@@ -320,3 +322,67 @@ export class LoadPageComponent implements OnInit, OnDestroy {
     this.filteredColumn = this.getFilteredColumn().filter(item => !elementsToRemove.includes(item));
   }
 }
+
+/**
+  // Method that get all data (Nodes, Edges...) of new Graph.
+  public async getGraph() {
+    try {
+      const response = await this.serviceCall.getStandardGraph().toPromise();
+      // Rieffettuare chiamata.
+      this.responseCall = response;
+      if (this.responseCall.status === 200) {
+        this.serviceCall.saveResponse(this.responseCall);
+        this.isLoadingProgressBar = false;
+        this.router.navigateByUrl('/graph');
+      }
+    } catch (error) {
+      this.openSnackBar(`Error : ${this.responseCall}`, 'Retry');
+    } finally {
+      this.isLoadingProgressBar = false;
+    }
+  }
+
+ */
+
+/**
+ *   // Method that call Backend for create new Graph by .csv file.
+public async buildGraph(file: File) {
+  if (!file) {
+    return;
+  }
+
+  this.showSidebar = false;
+  this.isLoadingProgressBar = true;
+  const allFilteredColumn = this.getFilteredColumn();
+  const formData = new FormData();
+  formData.append('file', file, 'filtered.csv');
+
+  try {
+    const response = await this.serviceCall.createStandardGraph(formData, allFilteredColumn).toPromise();
+    if (!response) {
+      this.openSnackBar('Error while upload file.', 'Retry');
+      this.resetCSVData();
+      return;
+    }
+    this.responseCall = response;
+    switch (this.responseCall.status) {
+      case 200: {
+        this.removeStandardProperties();
+        this.serviceData.setFilteredColumn(this.filteredColumn);
+        await this.getGraph();
+        return;
+      }
+      case 400: {
+        this.openSnackBar('Error file extension.', 'Retry');
+        this.resetCSVData();
+        return;
+      }
+    }
+  } catch (error) {
+    this.openSnackBar(`Internal Server Error.`, 'Retry');
+    this.resetCSVData();
+  } finally {
+    this.isLoadingProgressBar = false;
+  }
+}
+ */

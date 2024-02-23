@@ -6,20 +6,15 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { HttpClientModule } from '@angular/common/http';
 
-
 // COMPONENT IMPORT (PAGE AND OTHER COMPONENT)
 import { AppComponent } from './app.component';
 import { HomePageComponent } from './pages/home-page/home-page.component';
 import { LoadPageComponent } from './pages/load-page/load-page.component';
-import { ConnectorPageComponent } from './pages/connector-page/connector-page.component';
 import { GraphPageComponent } from './pages/graph-page/graph-page.component';
-
 
 // COMPONENT SERVICE
 import { GraphService } from './services/graph.service';
 import { GraphDataService } from './services/graph.data.service';
-import { ConnectorPageService } from './pages/connector-page/connector-page.service';
-
 
 // MATERIAL IMPORT
 import { MatButtonModule } from '@angular/material/button';
@@ -37,10 +32,15 @@ import { MatDialogModule } from '@angular/material/dialog';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { MatSelectModule } from '@angular/material/select';
 
-
 // OTHER IMPORT
 import { NgxDropzoneModule } from 'ngx-dropzone';
 import { NgxGraphModule } from '@swimlane/ngx-graph';
+import { NavbarComponent } from './shared/navbar/navbar.component';
+import { FooterComponent } from './shared/footer/footer.component';
+import { DetailCardsComponent } from './pages/detail-cards/detail-cards.component';
+import { CardDetailComponent } from './components/card-detail/card-detail.component';
+import { MasterCardDetailComponent } from './components/master-card-detail/master-card-detail.component';
+import { HighlightSearchPipe } from './components/master-card-detail/search.pipe';
 
 
 @NgModule({
@@ -48,8 +48,13 @@ import { NgxGraphModule } from '@swimlane/ngx-graph';
     AppComponent,
     HomePageComponent,
     LoadPageComponent,
-    ConnectorPageComponent,
     GraphPageComponent,
+    NavbarComponent,
+    FooterComponent,
+    DetailCardsComponent,
+    CardDetailComponent,
+    MasterCardDetailComponent,
+    HighlightSearchPipe,
   ],
   imports: [
     //Standard
@@ -81,7 +86,6 @@ import { NgxGraphModule } from '@swimlane/ngx-graph';
   providers: [
     GraphService,
     GraphDataService,
-    ConnectorPageService,
     { provide: MAT_SNACK_BAR_DEFAULT_OPTIONS, useValue: { duration: 1500 } }
   ],
   bootstrap: [AppComponent]

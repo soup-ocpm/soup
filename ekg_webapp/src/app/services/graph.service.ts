@@ -1,14 +1,15 @@
 import { HttpClient } from "@angular/common/http";
 import { Injectable } from '@angular/core';
+import { Observable } from "rxjs";
+
 
 @Injectable({
     providedIn: 'root',
 })
 export class GraphService {
 
-    // Post response call for navigate User into new page.
+    // Save the first API Response of standard graph details
     public apiResponse: any | undefined;
-
 
     /**
      * Constructor of LoadPageService service class.
@@ -18,74 +19,89 @@ export class GraphService {
         private httpClient: HttpClient
     ) { }
 
-
     /**
-     * Method that send the filtered .csv file
-     * to Backend.
-     * @param file the filtered file.
+     * Create the standard graph
+     * @param formData the FormData data
+     * @param filteredColumn the filtered column
+     * @returns Observable of Http request
      */
-    public createStandardGraph(formData: FormData, filteredColumn: string[]) {
+    public createStandardGraph(formData: FormData, filteredColumn: string[]): Observable<any> {
         formData.append('filteredColumn', JSON.stringify(filteredColumn));
-        return this.httpClient.post('http://127.0.0.1:8080/api/v1/upload-csv', formData);
+        return this.httpClient.post('http://127.0.0.1:8080/api/v1/graph', formData);
     }
 
-
     /**
-     * 
-     * @param formData 
-     * @param filteredColumn 
-     * @returns 
+     * Get extended standard graph
+     * @returns Observable of Http request
      */
-    public createClassGraph(formData: FormData, filteredColumn: string[]) {
-        filteredColumn.push('ActivityName');
-        formData.append('filteredColumn', JSON.stringify(filteredColumn));
-        return this.httpClient.post('http://127.0.0.1:8080/api/v1/upload-csv/class', formData);
-    }
-
-
-    /**
-     * Method that send GET request to Backend for get the new
-     * generated Graph.
-     * @returns the http response.
-     */
-    public getStandardGraph() {
+    public getStandardGraph(): Observable<any> {
         return this.httpClient.get('http://127.0.0.1:8080/api/v1/graph');
     }
 
+    /**
+     * Get standard graph details
+     * @returns Observable of Http request
+     */
+    public getStandardGraphDetails(): Observable<any> {
+        return this.httpClient.get('http://127.0.0.1:8080/api/v1/graph-details');
+    }
 
     /**
-     * Method that send DELETE request to Backend for delete the
-     * generated Graph.
-     * @returns the http response.
+     * Create class graph
+     * @param formData the FormData data
+     * @param filteredColumn the filtered column
+     * @returns Observable of Http request
      */
-    public deleteGraph() {
+    public createClassGraph(formData: FormData, filteredColumn: string[]): Observable<any> {
+        filteredColumn.push('ActivityName');
+        formData.append('filteredColumn', JSON.stringify(filteredColumn));
+        return this.httpClient.post('http://127.0.0.1:8080/api/v1/graph-class', formData);
+    }
+
+    /**
+     * Get extended class graph
+     * @returns Observable of Http request
+     */
+    public getClassGraph(): Observable<any> {
+        return this.httpClient.get('http://127.0.0.1:8080/api/v1/graph-class');
+    }
+
+    /**
+     * Delete the standard graph by the Database
+     * @returns Observable of Http request
+     */
+    public deleteStandardGraph(): Observable<any> {
         return this.httpClient.delete('http://127.0.0.1:8080/api/v1/graph');
     }
 
+    /**
+     * Delete the class graph by the Database
+     * @returns Observable of Http request
+     */
+    public deleteClassGraph(): Observable<any> {
+        return this.httpClient.delete('http://127.0.0.1:8080/api/v1/graph-class');
+    }
 
     /**
-     * Set the response of getGraph call for AuthGuard.
+     * Set the response response of the first operation
      * @param response the response of http.
      */
-    public saveResponse(response: any) {
+    public saveResponse(response: any): void {
         this.apiResponse = response;
     }
 
-
     // Delete the response http.
-    public deleteResponse() {
+    public deleteResponse(): void {
         this.apiResponse = undefined;
     }
 
-
     // Get the response http.
-    public getResponse() {
+    public getResponse(): any {
         return this.apiResponse;
     }
 
-
     // Return if there is response.
-    public hasResponse() {
+    public hasResponse(): boolean {
         if (this.apiResponse == undefined) {
             return false;
         }

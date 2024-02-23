@@ -10,8 +10,9 @@ export class CanActivateGraphGuard implements CanActivate {
 
 
     /**
-     * Constructor of GraphGuard
-     * @param loadPageService the service for LoadPageComponent
+     * Constructor for CanActivateGraphGuard guard
+     * @param router the Router
+     * @param loadPageService the LoadPageService service
      */
     public constructor(
         private router: Router,
@@ -19,7 +20,7 @@ export class CanActivateGraphGuard implements CanActivate {
     ) { }
 
 
-    //canActivate method implementation
+    //CanActivate method implementation
     public canActivate(
         next: ActivatedRouteSnapshot,
         state: RouterStateSnapshot): boolean {

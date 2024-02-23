@@ -1,18 +1,18 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
-import { ConnectorPageComponent } from './connector-page.component';
+import { DetailCardsComponent } from './detail-cards.component';
 
-describe('ConnectorPageComponent', () => {
-  let component: ConnectorPageComponent;
-  let fixture: ComponentFixture<ConnectorPageComponent>;
+describe('DetailCardsComponent', () => {
+  let component: DetailCardsComponent;
+  let fixture: ComponentFixture<DetailCardsComponent>;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      declarations: [ ConnectorPageComponent ]
+      declarations: [ DetailCardsComponent ]
     })
     .compileComponents();
 
-    fixture = TestBed.createComponent(ConnectorPageComponent);
+    fixture = TestBed.createComponent(DetailCardsComponent);
     component = fixture.componentInstance;
     fixture.detectChanges();
   });
