@@ -14,6 +14,7 @@ import { GraphPageComponent } from './pages/graph-page/graph-page.component';
 
 // COMPONENT SERVICE
 import { GraphService } from './services/graph.service';
+import { ClassGraphService } from './services/class_graph.service';
 import { GraphDataService } from './services/graph.data.service';
 
 // MATERIAL IMPORT
@@ -40,7 +41,7 @@ import { FooterComponent } from './shared/footer/footer.component';
 import { DetailCardsComponent } from './pages/detail-cards/detail-cards.component';
 import { CardDetailComponent } from './components/card-detail/card-detail.component';
 import { MasterCardDetailComponent } from './components/master-card-detail/master-card-detail.component';
-import { HighlightSearchPipe } from './components/master-card-detail/search.pipe';
+import { HighlightSearchPipe } from './pipes/search.pipe';
 
 
 @NgModule({
@@ -85,6 +86,7 @@ import { HighlightSearchPipe } from './components/master-card-detail/search.pipe
   ],
   providers: [
     GraphService,
+    ClassGraphService,
     GraphDataService,
     { provide: MAT_SNACK_BAR_DEFAULT_OPTIONS, useValue: { duration: 1500 } }
   ],

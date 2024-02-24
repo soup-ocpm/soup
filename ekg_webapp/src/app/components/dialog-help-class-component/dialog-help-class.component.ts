@@ -22,6 +22,7 @@ import { MatStepperModule } from "@angular/material/stepper";
 })
 export class DialogHelpClassComponent implements OnInit {
 
+    // Tutorial is terminated or not
     public isTutorialTerminated: boolean | undefined;
 
 

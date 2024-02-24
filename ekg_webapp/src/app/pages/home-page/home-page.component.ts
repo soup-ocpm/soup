@@ -26,7 +26,6 @@ export class HomePageComponent implements OnInit {
     this.serviceLoad.deleteResponse();
   }
 
-
   // Start the operation.
   startClicked() {
     this.router.navigateByUrl('/upload-data')

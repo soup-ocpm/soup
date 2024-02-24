@@ -4,11 +4,11 @@ import { RouterModule, Routes } from '@angular/router';
 // COMPONENT PAGE IMPORT
 import { HomePageComponent } from './pages/home-page/home-page.component';
 import { LoadPageComponent } from './pages/load-page/load-page.component';
+import { DetailCardsComponent } from './pages/detail-cards/detail-cards.component';
 import { GraphPageComponent } from './pages/graph-page/graph-page.component';
 
 // AUTHGUARD IMPORT
-import { CanActivateGraphGuard } from './services/graph.guard';
-import { DetailCardsComponent } from './pages/detail-cards/detail-cards.component';
+import { CanActivateGraphGuard } from './guard/ekg.guard';
 
 const routes: Routes = [
   { path: '', redirectTo: 'home', pathMatch: 'full' },

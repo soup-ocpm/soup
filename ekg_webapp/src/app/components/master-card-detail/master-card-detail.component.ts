@@ -16,10 +16,13 @@ export class MasterCardDetailComponent implements OnInit {
   // Close Card event emitted
   @Output('closeCardEmit') closeCardEmit = new EventEmitter<boolean>;
 
+  // Search string text
   searchText: string = '';
 
+  // The filtered data
   filteredData: any;
 
+  // Constructor implementation
   constructor() { }
 
   // NgOnInit implementation
@@ -27,7 +30,8 @@ export class MasterCardDetailComponent implements OnInit {
 
   }
 
-  updateSearch() {
+  // Method that call when User input string
+  updateSearch(): void {
     if (!this.searchText.trim()) {
       this.filteredData = this.cardData;
     } else {
@@ -35,6 +39,11 @@ export class MasterCardDetailComponent implements OnInit {
     }
   }
 
+  /**
+   * Filter the json data
+   * @param data the data
+   * @param searchText the search text
+   */
   filterData(data: any, searchText: string): any {
     if (!searchText.trim()) {
       return data;

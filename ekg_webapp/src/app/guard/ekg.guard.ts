@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { CanActivate, ActivatedRouteSnapshot, RouterStateSnapshot, Router } from '@angular/router';
-import { GraphService } from './graph.service';
+import { GraphService } from '../services/graph.service';
 
 
 @Injectable({
@@ -8,12 +8,11 @@ import { GraphService } from './graph.service';
 })
 export class CanActivateGraphGuard implements CanActivate {
 
-
     /**
      * Constructor for CanActivateGraphGuard guard
      * @param router the Router
      * @param loadPageService the LoadPageService service
-     */
+    */
     public constructor(
         private router: Router,
         private loadPageService: GraphService,

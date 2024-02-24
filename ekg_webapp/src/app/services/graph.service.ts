@@ -13,7 +13,7 @@ export class GraphService {
 
     /**
      * Constructor of LoadPageService service class.
-     * @param httpClient the HttpClient for Request-Response.
+     * @param httpClient the HttpClient
      */
     public constructor(
         private httpClient: HttpClient
@@ -25,16 +25,48 @@ export class GraphService {
      * @param filteredColumn the filtered column
      * @returns Observable of Http request
      */
-    public createStandardGraph(formData: FormData, filteredColumn: string[]): Observable<any> {
+    public createGraph(formData: FormData, filteredColumn: string[]): Observable<any> {
         formData.append('filteredColumn', JSON.stringify(filteredColumn));
         return this.httpClient.post('http://127.0.0.1:8080/api/v1/graph', formData);
+    }
+
+    /**
+     * Get event nodes
+     * @returns Observable of Http request
+     */
+    public getEventNodes(): Observable<any> {
+        return this.httpClient.get('http://127.0.0.1:8080/api/v1/graph/nodes/event');
+    }
+
+    /**
+     * Get event nodes
+     * @returns Observable of Http request
+     */
+    public getEntityNodes(): Observable<any> {
+        return this.httpClient.get('http://127.0.0.1:8080/api/v1/graph/nodes/entity');
+    }
+
+    /**
+     * Get event nodes
+     * @returns Observable of Http request
+     */
+    public getCorrRelationships(): Observable<any> {
+        return this.httpClient.get('http://127.0.0.1:8080/api/v1/graph/relationships/corr');
+    }
+
+    /**
+     * Get event nodes
+     * @returns Observable of Http request
+     */
+    public getDfRelationships(): Observable<any> {
+        return this.httpClient.get('http://127.0.0.1:8080/api/v1/graph/relationships/df');
     }
 
     /**
      * Get extended standard graph
      * @returns Observable of Http request
      */
-    public getStandardGraph(): Observable<any> {
+    public getGraph(): Observable<any> {
         return this.httpClient.get('http://127.0.0.1:8080/api/v1/graph');
     }
 
@@ -42,45 +74,19 @@ export class GraphService {
      * Get standard graph details
      * @returns Observable of Http request
      */
-    public getStandardGraphDetails(): Observable<any> {
-        return this.httpClient.get('http://127.0.0.1:8080/api/v1/graph-details');
-    }
-
-    /**
-     * Create class graph
-     * @param formData the FormData data
-     * @param filteredColumn the filtered column
-     * @returns Observable of Http request
-     */
-    public createClassGraph(formData: FormData, filteredColumn: string[]): Observable<any> {
-        filteredColumn.push('ActivityName');
-        formData.append('filteredColumn', JSON.stringify(filteredColumn));
-        return this.httpClient.post('http://127.0.0.1:8080/api/v1/graph-class', formData);
-    }
-
-    /**
-     * Get extended class graph
-     * @returns Observable of Http request
-     */
-    public getClassGraph(): Observable<any> {
-        return this.httpClient.get('http://127.0.0.1:8080/api/v1/graph-class');
+    public getGraphDetails(): Observable<any> {
+        return this.httpClient.get('http://127.0.0.1:8080/api/v1/graph/details');
     }
 
     /**
      * Delete the standard graph by the Database
      * @returns Observable of Http request
      */
-    public deleteStandardGraph(): Observable<any> {
+    public deleteGraph(): Observable<any> {
         return this.httpClient.delete('http://127.0.0.1:8080/api/v1/graph');
     }
 
-    /**
-     * Delete the class graph by the Database
-     * @returns Observable of Http request
-     */
-    public deleteClassGraph(): Observable<any> {
-        return this.httpClient.delete('http://127.0.0.1:8080/api/v1/graph-class');
-    }
+    // --------SUPPORT METHODS---------
 
     /**
      * Set the response response of the first operation
@@ -102,7 +108,7 @@ export class GraphService {
 
     // Return if there is response.
     public hasResponse(): boolean {
-        if (this.apiResponse == undefined) {
+        if (this.apiResponse == undefined || this.apiResponse == null) {
             return false;
         }
         return true;

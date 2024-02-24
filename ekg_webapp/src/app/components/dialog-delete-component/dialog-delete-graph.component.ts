@@ -32,7 +32,7 @@ export class DialogDeleteGraphComponent {
      */
     public deleteGraph() {
         let responseData: any;
-        this.graphService.deleteStandardGraph().subscribe(
+        this.graphService.deleteGraph().subscribe(
             (response) => {
                 responseData = response;
                 if (responseData.status == 200) {

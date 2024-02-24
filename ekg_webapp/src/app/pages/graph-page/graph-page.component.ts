@@ -190,12 +190,12 @@ export class GraphPageComponent implements OnInit, OnDestroy {
 
 
   /**
-  * Method that create and show Standard graph.
-  * @param graphContainer the container HTML for show the Graph.
-  * @param htmlId the html id.
-  * @param nodes the nodes of Standard graph.
-  * @param edges the edges of Standard graph.
-  */
+   * Method that create and show Standard graph.
+   * @param graphContainer the container HTML for show the Graph.
+   * @param htmlId the html id.
+   * @param nodes the nodes of Standard graph.
+   * @param edges the edges of Standard graph.
+   */
   public createStandardGraphVisualization(graphContainer: ElementRef, htmlId: string, nodes: any[], edges: any[]) {
     const container = document.getElementById(htmlId);
     if (container) {
@@ -324,12 +324,12 @@ export class GraphPageComponent implements OnInit, OnDestroy {
 
 
   /**
-  * Method that create and show Class graph.
-  * @param graphContainer the container HTML for show the Graph.
-  * @param htmlId the html id.
-  * @param nodes the nodes of Class graph.
-  * @param edges the edges of Class graph.
-  */
+   * Method that create and show Class graph.
+   * @param graphContainer the container HTML for show the Graph.
+   * @param htmlId the html id.
+   * @param nodes the nodes of Class graph.
+   * @param edges the edges of Class graph.
+   */
   public createClassGraphVisualization(graphContainer: ElementRef, htmlId: string, nodes: any[], edges: any[]) {
     const container = document.getElementById(htmlId);
     if (container) {
@@ -445,10 +445,10 @@ export class GraphPageComponent implements OnInit, OnDestroy {
 
 
   /**
-  * This method allow to add new Node for g3
-  * @param uniqueNodes the array of nodes
-  * @param node the unique node to add .
-  */
+   * This method allow to add new Node for g3
+   * @param uniqueNodes the array of nodes
+   * @param node the unique node to add .
+   */
   public addNode(uniqueNodes: Set<any>, node: any) {
     let nodeExists = false;
 
@@ -466,9 +466,9 @@ export class GraphPageComponent implements OnInit, OnDestroy {
 
 
   /**
-  * This methods assign colors for Edges
-  * @param edges the array of Edges
-  */
+   * This methods assign colors for Edges
+   * @param edges the array of Edges
+   */
   private assignRelationLabelColors(edges: any[], isClass: boolean) {
     edges.forEach((edge: any) => {
       let label;
@@ -488,10 +488,10 @@ export class GraphPageComponent implements OnInit, OnDestroy {
 
 
   /**
-  * This method initializes the zoom for graph display.
-  * @param svg the svg.
-  * @param svgGroup the svgGroup.
-  */
+   * This method initializes the zoom for graph display.
+   * @param svg the svg.
+   * @param svgGroup the svgGroup.
+   */
   public initializePanZoom(svg: any, svgGroup: any, width: any, height: any) {
     this.showProgressBar = false;
     this.svg = svg;
@@ -505,9 +505,9 @@ export class GraphPageComponent implements OnInit, OnDestroy {
   }
 
   /**
-  * This method allow to search specific Node 
-  * or Link. 
-  */
+   * This method allow to search specific Node 
+   * or Link. 
+   */
   public standardGraphSearch() {
     this.searchResults = this.nodes.filter((node: any) => {
       for (const key in node) {
@@ -530,9 +530,9 @@ export class GraphPageComponent implements OnInit, OnDestroy {
 
 
   /**
-  * This method allow to search specific Node 
-  * or Link. 
-  */
+   * This method allow to search specific Node 
+   * or Link. 
+   */
   public classGraphSearch() {
     this.searchResults = this.classNodes.filter((node: any) => {
       for (const key in node) {
@@ -555,10 +555,10 @@ export class GraphPageComponent implements OnInit, OnDestroy {
 
 
   /**
-  * This method allow to redirect the User
-  * to the node searched.
-  * @param searched the searched node.
-  */
+   * This method allow to redirect the User
+   * to the node searched.
+   * @param searched the searched node.
+   */
   public selectStandardNodeSearched(searched: any) {
     if (this.selectedNode) {
       return;
@@ -589,10 +589,10 @@ export class GraphPageComponent implements OnInit, OnDestroy {
   }
 
   /**
-  * This method allow to redirect the User
-  * to the node searched.
-  * @param searched the searched node.
-  */
+   * This method allow to redirect the User
+   * to the node searched.
+   * @param searched the searched node.
+   */
   public selectClassNodeSearched(searched: any) {
     if (this.selectedNode) {
       return;
@@ -626,9 +626,9 @@ export class GraphPageComponent implements OnInit, OnDestroy {
 
 
   /**
-  * Method that allow User to download
-  * the SVG of the Graph.
-  */
+   * Method that allow User to download
+   * the SVG of the Graph.
+   */
   public exportSvg() {
     const svgContent = document.querySelector('#myGraphContainer svg');
     if (svgContent != null) {
@@ -642,13 +642,13 @@ export class GraphPageComponent implements OnInit, OnDestroy {
 
 
   /**
-  * This method allow to create the new Graph (Class Nodes)
-  */
+   * This method allow to create the new Graph (Class Nodes)
+   */
   public buildClassGraph() {
     this.showProgressBar = true;
     const formData = new FormData();
     let responseData: any;
-    this.serviceCall.createClassGraph(formData, this.selectedEntities)
+    this.serviceCall.createGraph(formData, this.selectedEntities)
       .subscribe(
         (response) => {
           responseData = response;
@@ -666,8 +666,8 @@ export class GraphPageComponent implements OnInit, OnDestroy {
 
 
   /**
-  * Method that get all data (Nodes, Edges...) of new Class Graph.
-  */
+   * Method that get all data (Nodes, Edges...) of new Class Graph.
+   */
   public getClassGraph() {
     let responseData: any;
     return this.httpClient.get('http://127.0.0.1:8080/api/v1/graph-class')
@@ -699,9 +699,9 @@ export class GraphPageComponent implements OnInit, OnDestroy {
 
 
   /**
-  * Method that clear Graph by remove nodes and 
-  * relationships
-  */
+   * Method that clear Graph by remove nodes and 
+   * relationships
+   */
   public clearGraphs() {
     this.g.nodes().forEach((v: any) => this.g.removeNode(v));
     this.g.edges().forEach((e: any) => this.g.removeEdge(e));
@@ -711,10 +711,10 @@ export class GraphPageComponent implements OnInit, OnDestroy {
 
 
   /**
-  * Method that allow to show the Standard
-  * graph when Class graph is show
-  * (if Class graph is already created)
-  */
+   * Method that allow to show the Standard
+   * graph when Class graph is show
+   * (if Class graph is already created)
+   */
   public turnOnStandardGraph() {
     this.isShowingClassGraph = false;
     this.haveClassData = true;
@@ -727,10 +727,10 @@ export class GraphPageComponent implements OnInit, OnDestroy {
 
 
   /**
-  * Method that allow to show the Class
-  * graph when Standard graph is show
-  * (if Class graph is already created)
-  */
+   * Method that allow to show the Class
+   * graph when Standard graph is show
+   * (if Class graph is already created)
+   */
   public turnOnClassGraph() {
     this.clearGraphs();
     this.isShowingClassGraph = true;
@@ -742,38 +742,38 @@ export class GraphPageComponent implements OnInit, OnDestroy {
 
 
   /**
-  * This method open the Dialog for the 
-  * confermation about Graph delete.
-  */
+   * This method open the Dialog for the 
+   * confermation about Graph delete.
+   */
   public openDialogDelete() {
     this.dialog.open(DialogDeleteGraphComponent);
   }
 
 
   /**
-  * This method open the Dialog for the 
-  * info about class graph.
-  */
+   * This method open the Dialog for the 
+   * info about class graph.
+   */
   public openDialogHelpClass() {
     this.dialog.open(DialogHelpClassComponent);
   }
 
 
   /**
-  * Open Snackbar with specific message and action (button)
-  * @param message the message
-  * @param action the action
-  */
+   * Open Snackbar with specific message and action (button)
+   * @param message the message
+   * @param action the action
+   */
   public openSnackBar(message: string, action: string) {
     this.snackBar.open(message, action);
   }
 
 
   /**
-  * Method that allow to get the toggle entities for 
-  * build the Class Graph.
-  * @param entity the selected entity
-  */
+   * Method that allow to get the toggle entities for 
+   * build the Class Graph.
+   * @param entity the selected entity
+   */
   public toggleSelection(entity: string) {
     if (this.selectedEntities.includes(entity)) {
       this.selectedEntities = this.selectedEntities.filter(item => item !== entity);
@@ -784,9 +784,9 @@ export class GraphPageComponent implements OnInit, OnDestroy {
 
 
   /**
-  * This method close the search
-  * and reset all searched nodes and edges.
-  */
+   * This method close the search
+   * and reset all searched nodes and edges.
+   */
   public closeSearched() {
     this.searchResults = [];
     this.searchQuery = '';
@@ -796,8 +796,8 @@ export class GraphPageComponent implements OnInit, OnDestroy {
 
 
   /**
-  * This method close the Node searched
-  */
+   * This method close the Node searched
+   */
   public closeNodeSearched() {
     if (this.selectedNode) {
       this.selectedNode.style = 'fill: #fff; stroke: #000; stroke-width: 2px';
@@ -814,9 +814,9 @@ export class GraphPageComponent implements OnInit, OnDestroy {
 
 
   /**
-  * This method close the Card about
-  * Node selected properties and information.
-  */
+   * This method close the Card about
+   * Node selected properties and information.
+   */
   public closeCardProperties() {
     this.showCardPropertis = false;
     this.closeNodeSearched();
@@ -824,9 +824,9 @@ export class GraphPageComponent implements OnInit, OnDestroy {
 
 
   /**
-  * This method open the Sidebar for the Class
-  * group option. 
-  */
+   * This method open the Sidebar for the Class
+   * group option. 
+   */
   public openGroupSidebar() {
     this.showGroupSidebar = true;
     const rightSidebar = document.querySelector('.right');
@@ -837,9 +837,9 @@ export class GraphPageComponent implements OnInit, OnDestroy {
 
 
   /**
-  * This method close the Sidebar for the Class
-  * group option. 
-  */
+   * This method close the Sidebar for the Class
+   * group option. 
+   */
   public closeGroupSidebar() {
     this.showGroupSidebar = false;
     const rightSidebar = document.querySelector('.right');
