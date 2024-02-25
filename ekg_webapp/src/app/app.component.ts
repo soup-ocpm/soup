@@ -12,12 +12,8 @@ export class AppComponent implements OnInit {
   // App title
   title = 'Easy Knowledge Graph';
 
-  /**
-   * Constructor class for AppComponent.
-   * @param router the Router.
-   */
+  // Constructor for AppComponent component
   constructor(
-    private router: Router
   ) { }
 
   //NgOnInit implementation method.

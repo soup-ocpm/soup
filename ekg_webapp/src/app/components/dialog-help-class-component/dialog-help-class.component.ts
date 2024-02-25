@@ -1,9 +1,13 @@
 import { Component, OnInit } from "@angular/core";
+import { Router } from "@angular/router";
+
+// Service Import
+import { GraphService } from "src/app/services/graph.service";
+
+// Material Import
 import { MatButtonModule } from "@angular/material/button";
 import { MatDialogModule } from "@angular/material/dialog";
 import { MatSnackBar } from "@angular/material/snack-bar";
-import { Router } from "@angular/router";
-import { GraphService } from "src/app/services/graph.service";
 import { MatCardModule } from '@angular/material/card';
 import { MatStepperModule } from "@angular/material/stepper";
 
@@ -36,7 +40,6 @@ export class DialogHelpClassComponent implements OnInit {
         private graphService: GraphService,
         private router: Router,
     ) { }
-
 
     //NgOnInit implementation
     ngOnInit(): void {

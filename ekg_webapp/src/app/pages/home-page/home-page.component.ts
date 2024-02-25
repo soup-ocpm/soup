@@ -1,5 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
+
+// Service Import
 import { GraphService } from '../../services/graph.service';
 
 
@@ -27,7 +29,7 @@ export class HomePageComponent implements OnInit {
   }
 
   // Start the operation.
-  startClicked() {
+  public startClicked(): void {
     this.router.navigateByUrl('/upload-data')
   }
 }

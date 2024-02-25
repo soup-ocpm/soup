@@ -1,5 +1,12 @@
 import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
 
+// Model Import
+import { Card } from 'src/app/models/card.model';
+
+// Other Import
+import * as saveAs from 'file-saver';
+
+
 @Component({
   selector: 'app-card-detail',
   templateUrl: './card-detail.component.html',
@@ -7,19 +14,83 @@ import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
 })
 export class CardDetailComponent implements OnInit {
 
-  // Title of the Card
-  @Input('titleCard') title: string = '';
+  // The Input Card model
+  @Input() card: Card | undefined;
 
-  // Type of the card (for Nodes or Relationships)
-  @Input('cardType') cardType: string = '';
+  // The EventEmitter for Card size
+  @Output('haveChanged') haveChangeSize = new EventEmitter<boolean>();
 
-  // Number of the data (number of nodes or edges)
-  @Input('numberOfData') numer: number = 0;
+  // The search value
+  public searchValue: string | undefined;
 
-  // Constructor for CardDetailComponent component
+  // The variable that show if the Card is expanded or not
+  public expandedCard: boolean | undefined;
+
+  // Search string text
+  searchText: string = '';
+
+  // The filtered data
+  filteredData: any;
+
+  // Constructor of CardComponent component
   constructor() { }
 
-  // NgOnInit implementation
-  ngOnInit(): void { }
 
+  // NgOnInit implementation
+  ngOnInit(): void {
+    this.searchValue = '';
+    this.expandedCard = false;
+  }
+
+  // Change the Card size
+  public dimensionCard(): void {
+    this.expandedCard = !this.expandedCard;
+    this.haveChangeSize.emit(this.expandedCard);
+  }
+
+  // Method that call when User input string
+  updateSearch(): void {
+    if (!this.searchText.trim()) {
+      this.filteredData = this.card?.jsonData;
+    } else {
+      this.filteredData = this.filterData(this.card?.jsonData, this.searchText);
+    }
+  }
+
+  /**
+   * Filter the json data
+   * @param data the data
+   * @param searchText the search text
+   */
+  filterData(data: any, searchText: string): any {
+    if (!searchText.trim()) {
+      return data;
+    }
+
+    const filtered: any = Array.isArray(data) ? [] : {};
+    Object.keys(data).forEach(key => {
+      const value = data[key];
+      if (typeof value === 'object') {
+        const filteredValue = this.filterData(value, searchText);
+        if (filteredValue !== null && Object.keys(filteredValue).length > 0) {
+          filtered[key] = filteredValue;
+        }
+      } else if (typeof value === 'string' && value.toLowerCase().includes(searchText.toLowerCase())) {
+        filtered[key] = value;
+      }
+    });
+    return Object.keys(filtered).length > 0 ? filtered : null;
+  }
+
+  /**
+   * Allow the User to download JSON data
+   */
+  public downloadJson(): void {
+    const jsonContent = this.card?.jsonData;
+    if (jsonContent != null) {
+      const jsonString = JSON.stringify(jsonContent, null, 2);
+      const svgBlob = new Blob([jsonString], { type: 'json' });
+      saveAs(svgBlob, `${this.card?.title}.json`);
+    }
+  }
 }

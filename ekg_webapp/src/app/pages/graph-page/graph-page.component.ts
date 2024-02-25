@@ -163,7 +163,8 @@ export class GraphPageComponent implements OnInit, OnDestroy {
 
   // NgOnInit implementation
   public ngOnInit() {
-    if (!this.serviceCall.hasResponse()) {
+    /**
+        if (!this.serviceCall.hasResponse()) {
       this.openSnackBar('Error', 'Retry');
       this.router.navigateByUrl('/welcome');
       return;
@@ -174,6 +175,7 @@ export class GraphPageComponent implements OnInit, OnDestroy {
     this.retrievedData = this.serviceCall.getResponse();
     this.entitiesList = this.serviceData.getFilteredColumn();
     this.injectStandardData(this.retrievedData);
+     */
   }
 
 

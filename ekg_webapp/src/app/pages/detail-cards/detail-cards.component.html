@@ -1,32 +1,97 @@
-<!---PROGRESS BAR AND PROCESS---->
-<mat-progress-bar mode="indeterminate" *ngIf="showProgressBar"></mat-progress-bar>
+<!--Open Sidebar-->
+<button class="btn-sidebar" mat-icon-button color="primary" (click)="toggleSidebar()">
+    <mat-icon>menu</mat-icon>
+</button>
 
-<!--GRID CARDS-->
-<div class="container-cards" *ngIf="!showProgressBar && !showSpecificCard && showCards">
+<!--First SideBar-->
+<div class="sidebar" [ngClass]="{ 'open': isSidebarOpen }">
 
-    <div class="master-cards">
+    <div class="master-content-sidebar">
+        <div class="header-sidebar">
+            <h2>OPERATIONS</h2>
+            <mat-icon color="primary" (click)="toggleSidebar()">clear</mat-icon>
+        </div>
 
-        <!--Card for Event nodes-->
-        <app-card-detail *ngIf="eventCard" [titleCard]="eventCard.title" [cardType]="eventCard.type"
-            [numberOfData]="eventCard.dataNumber"></app-card-detail>
+        <p>A list of operations avaible for this section</p>
 
-        <!--Card for Entity nodes-->
-        <app-card-detail *ngIf="entityCard" [titleCard]="entityCard.title" [cardType]="entityCard.type"
-            [numberOfData]="entityCard.dataNumber"></app-card-detail>
+        <div class="group">
+            <h2>Group by Classes</h2>
+            <p>This operation allow you to group nodes into chosen classes</p>
 
-        <!--Card for :CORR rel-->
-        <app-card-detail *ngIf="corrRelationShipsCard" [titleCard]="corrRelationShipsCard.title"
-            [cardType]="corrRelationShipsCard.type" [numberOfData]="corrRelationShipsCard.dataNumber"></app-card-detail>
+            <button mat-stroked-button color="primary" (click)="toggleGroupSidebar()">Group</button>
+        </div>
 
-        <!--Card for :DF rel-->
-        <app-card-detail *ngIf="dfRelationshipCard" [titleCard]="dfRelationshipCard.title"
-            [cardType]="dfRelationshipCard.type" [numberOfData]="dfRelationshipCard.dataNumber"></app-card-detail>
+        <div class="group">
+            <h2>Export Graph</h2>
+            <p>This operation allow you to group nodes into chosen classes</p>
+
+            <button mat-stroked-button color="primary" (click)="exportGraphJSON()">Export</button>
+        </div>
+
+        <div class="group">
+            <h2>Delete Graph</h2>
+            <p>This operation will permanently delete the graph and data within the database.</p>
+
+            <button mat-stroked-button color="warn" (click)="openDialogDelete()">Delete</button>
+        </div>
 
     </div>
+
 </div>
 
-<!--MASTER CARDS-->
-<div class="container-master-card" *ngIf="!showCards && showSpecificCard && masterCard">
-    <app-master-card-detail [title]="masterCard.title" [description]="masterCard.description"
-        [jsonData]="masterCard.jsonData" (closeCardEmit)="closeMasterCard($event)"></app-master-card-detail>
+<!--Second SideBar (Group)-->
+<div class="sidebar" [ngClass]="{ 'open': isGroupSidebarOpen }">
+
+    <div class="master-content-sidebar">
+        <div class="header-sidebar">
+            <h2>GROUP BY CLASS</h2>
+            <mat-icon color="primary" (click)="toggleGroupSidebar()">clear</mat-icon>
+            <mat-icon color="primary" style="margin-right: 28px;"
+                (click)="openDialogHelpClass()">help_outline</mat-icon>
+        </div>
+
+        <p style="margin-top: 15px;">This operation allows you to group nodes into classes. Choose the
+            previously filtered properties that
+            will be taken into account when creating Class nodes.</p>
+
+        <mat-divider></mat-divider>
+
+        <li *ngFor="let entity of entitiesList" class="list-group-item">
+            <span>{{ entity }}</span>
+            <mat-slide-toggle (change)="toggleSelection(entity)" color="primary"></mat-slide-toggle>
+        </li>
+        <div style="margin-top: 5px;"></div>
+        <mat-divider></mat-divider>
+
+    </div>
+
+    <div style="position: absolute; bottom: 10px; right: 10px;">
+        <button mat-stroked-button color="primary" (click)="buildClassGraph()">Build</button>
+    </div>
+
+</div>
+
+<!--Master container content-->
+<div class="master" [ngStyle]="{ 'filter': isSidebarOpen ? 'blur(2px)' : 'none' }"
+    [ngClass]="{ 'no-pointer-events': isSidebarOpen }">
+
+    <div class="master-grid" [ngClass]="{'leave-grid': extendedCard}">
+
+        <!--Card 1-->
+        <app-card-detail *ngIf="!extendedCard || extendedCard && cardExtended == eventsCard" [card]="eventsCard"
+            (haveChanged)="resizeCard($event, eventsCard!)"></app-card-detail>
+
+        <!--Card 2-->
+        <app-card-detail *ngIf="!extendedCard || extendedCard && cardExtended == entitiesCard" [card]="entitiesCard"
+            (haveChanged)="resizeCard($event, entitiesCard!)"></app-card-detail>
+
+        <!--Card 3-->
+        <app-card-detail *ngIf="!extendedCard || extendedCard && cardExtended == corrEdgesCard" [card]="corrEdgesCard"
+            (haveChanged)="resizeCard($event, corrEdgesCard!)"></app-card-detail>
+
+        <!--Card 4-->
+        <app-card-detail *ngIf="!extendedCard || extendedCard && cardExtended == dfEdgesCard" [card]="dfEdgesCard"
+            (haveChanged)="resizeCard($event, dfEdgesCard!)"></app-card-detail>
+
+    </div>
 </div>

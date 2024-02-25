@@ -1,9 +1,15 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
-import { MatSnackBar } from '@angular/material/snack-bar';
-import { Papa } from 'ngx-papaparse';
 import { Router } from '@angular/router';
+
+// Service Import
 import { GraphService } from '../../services/graph.service';
 import { GraphDataService } from 'src/app/services/graph.data.service';
+
+// Material Import
+import { MatSnackBar } from '@angular/material/snack-bar';
+
+// Other Import
+import { Papa } from 'ngx-papaparse';
 
 
 @Component({
@@ -94,7 +100,7 @@ export class LoadPageComponent implements OnInit, OnDestroy {
    * from User computer.
    * @param event the event (get file)
    */
-  public onSelect(event: any) {
+  public onSelect(event: any): void {
     if (event.addedFiles.length != 1) {
       this.openSnackBar('Only 1 file.', 'Done');
       return;
@@ -118,7 +124,7 @@ export class LoadPageComponent implements OnInit, OnDestroy {
    * Method that remove selected file from dropzone.
    * @param event the event (remove file)
    */
-  public onRemove(event: any) {
+  public onRemove(event: any): void {
     this.files.splice(this.files.indexOf(event), 1);
     if (this.files.length == 0) {
       this.haveFile = false;
@@ -130,7 +136,7 @@ export class LoadPageComponent implements OnInit, OnDestroy {
    * Method that parse the .csv selected file for get
    * all Columns
    */
-  public parseCSV() {
+  public parseCSV(): void {
     if (this.selectedFile) {
       const reader = new FileReader();
       reader.onload = (e) => {
@@ -160,7 +166,7 @@ export class LoadPageComponent implements OnInit, OnDestroy {
    * Method that change name of the csv by the 
    * user choice.
    */
-  public preBuildGraph() {
+  public preBuildGraph(): void {
     if (!this.eventIdColumn || !this.timestampColumn || !this.activityNameColumn) {
       this.openSnackBar('Please select all columns (Event ID, Timestamp, Activity Name).', 'Done');
       return;
@@ -199,7 +205,7 @@ export class LoadPageComponent implements OnInit, OnDestroy {
    * Build the standard Graph
    * @param file the csv file 
    */
-  public buildGraph(file: File) {
+  public buildGraph(file: File): void {
     if (!file) {
       return;
     }
@@ -275,18 +281,18 @@ export class LoadPageComponent implements OnInit, OnDestroy {
   }
 
   // Open side bar
-  public openSidebar() {
+  public openSidebar(): void {
     this.showSidebar = true;
   }
 
   // Close side bar and clear data
-  public closeSidebar() {
+  public closeSidebar(): void {
     this.showSidebar = false;
     this.allColumnFile = [];
   }
 
   // Delete the selected .csv file and reset files array
-  public resetCSVData() {
+  public resetCSVData(): void {
     this.isLoadingProgressBar = false;
     this.files = [];
     this.selectedFile = undefined;
@@ -299,7 +305,7 @@ export class LoadPageComponent implements OnInit, OnDestroy {
    * @param message the message
    * @param action the action
    */
-  public openSnackBar(message: string, action: string) {
+  public openSnackBar(message: string, action: string): void {
     this.snackBar.open(message, action);
   }
 
@@ -307,7 +313,7 @@ export class LoadPageComponent implements OnInit, OnDestroy {
    * Remove the standar properties (EventId, Timestamp, ActivityName)
    * from the filtered columns
    */
-  public removeStandardProperties() {
+  public removeStandardProperties(): void {
     const elementsToRemove = [this.eventIdColumn, this.activityNameColumn, this.timestampColumn];
     this.filteredColumn = this.getFilteredColumn().filter(item => !elementsToRemove.includes(item));
   }

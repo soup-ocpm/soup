@@ -1,9 +1,13 @@
 import { Component } from "@angular/core";
+import { Router } from "@angular/router";
+
+// Service Import
+import { GraphService } from "src/app/services/graph.service";
+
+// Material Import
 import { MatButtonModule } from "@angular/material/button";
 import { MatDialogModule } from "@angular/material/dialog";
 import { MatSnackBar } from "@angular/material/snack-bar";
-import { Router } from "@angular/router";
-import { GraphService } from "src/app/services/graph.service";
 
 
 @Component({
@@ -26,25 +30,25 @@ export class DialogDeleteGraphComponent {
         private router: Router,
     ) { }
 
+
     /**
      * This method use the graph Service for 
      * delete graph. 
      */
-    public deleteGraph() {
+    public deleteGraph(): void {
         let responseData: any;
         this.graphService.deleteGraph().subscribe(
             (response) => {
                 responseData = response;
                 if (responseData.status == 200) {
                     this.openSnackBar('Graph deleted.', 'Done');
-                    this.router.navigateByUrl('/welcome');
+                    this.router.navigateByUrl('/home');
                 }
             },
             (error) => {
                 responseData = error;
                 this.openSnackBar('Internal Server Error.', 'Retry');
-            }
-        )
+            });
     }
 
     /**
@@ -55,5 +59,4 @@ export class DialogDeleteGraphComponent {
     openSnackBar(message: string, action: string) {
         this.snackBar.open(message, action);
     }
-
 }

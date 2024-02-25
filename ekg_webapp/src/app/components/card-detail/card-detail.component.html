@@ -1,15 +1,37 @@
-<mat-card class="master-card">
-    <mat-card-header class="card-title-background">
-        <mat-card-title>
-            <p>{{title}}</p>
-        </mat-card-title>
-    </mat-card-header>
-    <mat-card-content class="card-content">
-        <p>Created {{numer}} {{cardType}}</p>
-    </mat-card-content>
-    <mat-card-actions class="button-cards">
-        <button mat-icon-button color="primary" aria-label="Example icon button with a home icon">
-            <mat-icon>zoom_in</mat-icon>
-        </button>
-    </mat-card-actions>
-</mat-card>
+<div class="master-card">
+    <mat-card class="example-card" [ngClass]="{'expanded': expandedCard}">
+        <mat-card-header class="card-title-background">
+            <mat-card-title>
+                <p>{{card?.title}}</p>
+            </mat-card-title>
+            <button *ngIf="expandedCard" mat-icon-button class="btn-close-card" (click)="dimensionCard()">
+                <mat-icon color="white">clear</mat-icon>
+            </button>
+        </mat-card-header>
+        <mat-card-content class="card-content">
+            <p class="card-content-description" [ngClass]="{'descr-expanded': expandedCard}">
+                {{card?.description}}
+            </p>
+            <div class="card-expanded" *ngIf="expandedCard">
+                <hr>
+                <div class="form-group" style="padding-left: 20px; padding-right: 18px;">
+                    <input type="email" class="form-control" placeholder="Search..." [(ngModel)]="searchText"
+                        (input)="updateSearch()">
+                </div>
+
+                <textarea class="card-expanded-textarea" readonly>
+                    {{card?.jsonData | json}}
+                </textarea>
+            </div>
+
+        </mat-card-content>
+        <mat-card-actions class="button-cards">
+            <button *ngIf="!expandedCard" mat-icon-button color="primary" (click)="dimensionCard()">
+                <mat-icon *ngIf="!expandedCard">fullscreen</mat-icon>
+            </button>
+
+            <button *ngIf="expandedCard" mat-button color="primary" (click)="downloadJson()" style="margin-right: 30px;">Download</button>
+
+        </mat-card-actions>
+    </mat-card>
+</div>

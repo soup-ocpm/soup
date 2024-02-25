@@ -1,7 +1,6 @@
 <!---PROGRESS BAR---->
 <mat-progress-bar mode="indeterminate" *ngIf="isLoadingProgressBar"></mat-progress-bar>
 
-
 <!---CARD FOR TUTORIAL--->
 <div class="master-div" *ngIf="isTutorialTerminated == false && isLoadingProgressBar == false">
 
@@ -55,7 +54,6 @@
 
 </div>
 
-
 <!---CARD FOR UPLOAD---->
 <div class="center-container" *ngIf="isTutorialTerminated == true && !isLoadingProgressBar">
 
@@ -80,7 +78,6 @@
   </mat-card>
 
 </div>
-
 
 <!---SIDEBAR-->
 <div class="sidebar scrollable-sidebar" [ngClass]="{'show-sidebar': showSidebar, 'move-right': showSidebar}">
@@ -137,7 +134,6 @@
     <button mat-button color="primary" (click)="preBuildGraph()">Build</button>
   </div>
 </div>
-
 
 <!---PROGRESS BAR-->
 <div class="process-div" *ngIf="isLoadingProgressBar">
