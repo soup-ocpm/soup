@@ -71,15 +71,15 @@
 
 // SCSS FOR UPLOAD SIDEBAR
 .sidebar {
-    width: 400px;
+    width: 350px;
     height: 83%;
     margin-top: 65px;
     margin-bottom: 60px;
-    background-color: #f7f7f7ee;
+    background-color: rgb(224, 224, 224);
     color: #fff;
     position: fixed;
     top: 0;
-    right: -400px;
+    right: -350px;
     transition: right 0.3s ease-in-out;
     z-index: 1000;
     padding: 20px;

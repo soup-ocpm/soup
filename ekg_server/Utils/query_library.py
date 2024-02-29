@@ -10,27 +10,23 @@ License : MIT
 """
 
 
-def create_nodes_event_query(cypher_properties):
+# Query for Graph (Standard)
+def create_node_event_query(cypher_properties):
     return f"CREATE (e:Event {{EventID: $event_id, Timestamp: $timestamp, ActivityName: $activity_name, {', '.join(cypher_properties)}}})"
 
 
-def create_nodes_entity_query():
+def create_node_entity_query():
     return "MERGE (e:Entity {Value: $property_value, Type: $type_value})"
 
 
-def create_corr_rel_two_query(key):
+def create_corr_relation_query(key):
     return ("MATCH (e:Event) "
             "MATCH (en: Entity) "
             f"WHERE en.Value = e.{key} "
             "MERGE (e)-[:CORR { Type: en.Value }] ->(en) ")
 
 
-def create_corr_rel_query(key):
-    return (f"MATCH(e:Event) UNWIND e.{key} AS val WITH e, val "
-            "MATCH (n:Entity) WHERE n.Value = val MERGE (e)-[:CORR {Type: n.Value}]->(n)")
-
-
-def create_df_rel_query(key):
+def create_df_relation_query(key):
     return ("MATCH (e1:Event), (e2:Event) "
             "WHERE e1 <> e2 "
             f"AND e1.{key} = e2.{key} "
@@ -42,7 +38,8 @@ def create_df_rel_query(key):
             "MERGE (e1)-[:DF {Type: '" + key + "'}]->(nextNode) ")
 
 
-def create_class_nodes_query(attribute_keys):
+# Query for Graph (Class)
+def create_node_class_query(attribute_keys):
     query = "MATCH (e:Event) WITH "
     query += ", ".join(f"e.{key} AS {key}" for key in attribute_keys)
     query += ", COLLECT(e) AS events "
@@ -69,21 +66,7 @@ def create_class_nodes_query(attribute_keys):
     return query
 
 
-def create_observe_rel_one_two_query(filtered_column):
-    query = ("MATCH (e:Event), (c:Class) "
-             "WHERE e.ActivityName = c.Name AND (")
-    for key in filtered_column:
-        query += f"e.{key} = c.{key} AND "
-    query = query[:-4]
-    query += (") "
-              "MERGE (e)-[:OBSERVED_C {Type: 'Activity'")
-    for key in filtered_column:
-        query += f", {key}: e.{key}"
-    query += "}]->(c)"
-    return query
-
-
-def create_observe_rel_query(filtered_column):
+def create_obs_relation_query(filtered_column):
     query = ("MATCH (e:Event) "
              "MATCH (c:Class) "
              "WHERE e.ActivityName = c.Name AND (")
@@ -98,7 +81,7 @@ def create_observe_rel_query(filtered_column):
     return query
 
 
-def create_observe_rel_two_query(filtered_column):
+def create_full_obs_relation_query(filtered_column):
     query = ("MATCH (e:Event) "
              "MATCH (en: Entity) "
              "MATCH (c: Class)"
@@ -117,26 +100,22 @@ def create_observe_rel_two_query(filtered_column):
     return query
 
 
-def create_observe_rel_two_two_query(filtered_column):
+def create_full_obs_relation_query_two(filtered_column):
     query = (
         "MATCH (e:Event), (c:Class) "
         "WHERE e.ActivityName = c.Name AND ("
     )
-
     conditions = []
     for key in filtered_column:
         conditions.append(f"e.{key} = c.{key}")
     conditions_str = " OR ".join(conditions)
 
-    # Aggiunta delle condizioni alla query
     query += conditions_str + ") "
 
-    # Costruzione della clausola WHERE per le relazioni OBSERVED_C
     query += (
         "AND NOT EXISTS ((e)-[:OBSERVED_C]->(c:Class))"
     )
 
-    # Creazione della relazione OBSERVED_C
     query += (
         "MERGE (e)-[:OBSERVED_C {Type: 'Activity'"
     )
@@ -149,7 +128,7 @@ def create_observe_rel_two_two_query(filtered_column):
     return query
 
 
-def create_df_c_query(key):
+def create_class_df_relation_query(key):
     return ("MATCH (c:Class)<-[:OBSERVED_C]-(e:Event) "
             "OPTIONAL MATCH (c1:Class)<-[:OBSERVED_C]-(e1:Event)<-[:DF]-(e:Event) "
             "WHERE e <> e1 "
@@ -162,6 +141,7 @@ def create_df_c_query(key):
             "  MERGE (c)-[:DF_C {Type:'" + key + "'}]->(c1))")
 
 
+# Other utils query for Graph (Standard)
 def get_nodes_event_query():
     return """
             MATCH (e:Event) 
@@ -169,6 +149,40 @@ def get_nodes_event_query():
             """
 
 
+def get_nodes_entity_query():
+    return """
+            MATCH (e:Entity)
+            RETURN e AS node
+            """
+
+
+def get_nodes_details_query():
+    return """
+            MATCH (event:Event)
+            WITH collect(event) AS data, 'events' AS type, size(collect(event)) AS count
+            RETURN data, type, count
+            UNION
+            MATCH (entity:Entity)
+            WITH collect(entity) AS data, 'entities' AS type, size(collect(entity)) AS count
+            RETURN data, type, count
+            """
+
+
+def get_corr_relation_query():
+    return """
+            MATCH (e: Event)-[corr:CORR]->(en:Entity)
+            RETURN e, corr, en
+            """
+
+
+def get_df_relation_query():
+    return """
+            MATCH (e:Event)-[df:DF]->(e1:Event)
+            RETURN e, df, e1
+            """
+
+
+# Other utils query for Graph (Class)
 def get_nodes_class_query():
     return """
             MATCH (e:Class) 
@@ -176,23 +190,25 @@ def get_nodes_class_query():
             """
 
 
-def get_df_node_rel_query():
-    return """
-    MATCH (e:Event)-[r:DF]->(e1:Event)
-    RETURN e, r.Type AS type, e1
-    """
-
-
-def get_df_2_node_rel_query():
+def get_df_class_relation_query():
     return """
             MATCH (e:Class)-[r:DF_C]->(dfRelated)
             RETURN ID(e) AS nodeId, e AS mainNode, r.Type AS type, ID(dfRelated) AS relatedNodeId
             """
 
 
+# Other utils query (supports)
 def delete_graph_query():
-    return "MATCH(n) DETACH DELETE n"
+    return "MATCH(e: Event) DETACH DELETE e"
 
 
-def get_count_data_query():
-    return "MATCH (n) RETURN COUNT(n) AS count"
+def get_count_graph_query():
+    return "MATCH (n : Event) RETURN COUNT(n) AS count"
+
+
+def delete_class_graph_query():
+    return "MATCH(n: Class) DETACH DELETE n"
+
+
+def get_count_class_graph_query():
+    return "MATCH (c: Class) RETURN COUNT(c) AS count"

@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
+import { AfterViewInit, Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
 
 // Model Import
 import { Card } from 'src/app/models/card.model';
@@ -12,16 +12,13 @@ import * as saveAs from 'file-saver';
   templateUrl: './card-detail.component.html',
   styleUrls: ['./card-detail.component.scss']
 })
-export class CardDetailComponent implements OnInit {
+export class CardDetailComponent implements OnInit, AfterViewInit {
 
   // The Input Card model
   @Input() card: Card | undefined;
 
   // The EventEmitter for Card size
   @Output('haveChanged') haveChangeSize = new EventEmitter<boolean>();
-
-  // The search value
-  public searchValue: string | undefined;
 
   // The variable that show if the Card is expanded or not
   public expandedCard: boolean | undefined;
@@ -38,8 +35,11 @@ export class CardDetailComponent implements OnInit {
 
   // NgOnInit implementation
   ngOnInit(): void {
-    this.searchValue = '';
     this.expandedCard = false;
+    this.filteredData = this.card?.jsonData;
+  }
+
+  ngAfterViewInit(): void {
   }
 
   // Change the Card size
@@ -81,6 +81,7 @@ export class CardDetailComponent implements OnInit {
     });
     return Object.keys(filtered).length > 0 ? filtered : null;
   }
+
 
   /**
    * Allow the User to download JSON data

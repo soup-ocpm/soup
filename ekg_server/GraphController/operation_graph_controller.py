@@ -1,8 +1,8 @@
 """
 -------------------------------
 File : operation_graph_controller.py
-Description: Operation graph controller
-Date creation: 06-02-2024
+Description: Controller for standard operation in Graph (Standard)
+Date creation: 23-02-2024
 Project : ekg_server
 Author: DiscoHub12 (Alessio Giacché)
 License : MIT
@@ -10,13 +10,14 @@ License : MIT
 """
 
 # Import
-import logging
 import math
 from flask import jsonify
 from collections.abc import Iterable
 from Models.memgraph_connector_model import MemgraphConnector
-from Utils.query_library import get_df_node_rel_query, get_count_data_query, delete_graph_query, \
-    get_df_2_node_rel_query
+from Models.api_response_model import ApiResponse
+from Utils.query_library import get_nodes_event_query, get_nodes_details_query, get_corr_relation_query, \
+    get_df_relation_query, delete_graph_query, get_nodes_entity_query, \
+    get_count_graph_query
 
 # Database information:
 uri_mem = 'bolt://localhost:7687'
@@ -24,145 +25,480 @@ auth_mem = ("", "")
 database_connection_mem = MemgraphConnector(uri_mem, auth_mem)
 
 
-# Get standard graph (Event node and :DF Relationships)
-def get_standard_graph_c():
+# Get Event nodes
+def get_event_nodes_c():
+    apiResponse = ApiResponse(None, None, None)
+
     try:
         database_connection_mem.connect()
 
-        query = get_df_node_rel_query()
+        query = get_nodes_event_query()
         result = database_connection_mem.run_query_memgraph(query)
 
         if not isinstance(result, Iterable):
-            return jsonify({
-                'status': 404,
-                'message': 'Data not found',
-                'error': 'No data found for the specified criteria.'
-            })
+            apiResponse.http_status_code = 404
+            apiResponse.response_data = None
+            apiResponse.message = "Not found"
+            return jsonify(apiResponse.to_dict()), 404
 
         graph_data = []
 
         for record in result:
-            event_data = record['e']
-            relation_type = record['type']
-            related_event_data = record['e1']
+            event_node = record['node']
 
-            for key, value in event_data.items():
+            for key, value in event_node.items():
                 if isinstance(value, (int, float)) and math.isnan(value):
-                    event_data[key] = None
+                    event_node[key] = None
 
-            for key, value in related_event_data.items():
-                if isinstance(value, (int, float)) and math.isnan(value):
-                    related_event_data[key] = None
-            relation_id = f"{event_data['EventID']}_{related_event_data['EventID']}"
+            graph_data.append(event_node)
 
-            graph_data.append({
-                'node': event_data,
-                'relation_node': related_event_data,
-                'type': relation_type,
-                'relationId': relation_id
-            })
+        if len(graph_data) == 0:
+            apiResponse.http_status_code = 202
+            apiResponse.message = 'No content'
+            apiResponse.response_data = graph_data
 
-        if not graph_data:
-            return jsonify({
-                'status': 404,
-                'message': 'Data not found',
-                'error': 'No data found for the specified criteria.'
-            })
+            return jsonify(apiResponse.to_dict()), 202
 
-        return jsonify({
-            'status': 200,
-            'message': 'Retrieve graph.',
-            'graph_data': graph_data
-        })
+        apiResponse.http_status_code = 200
+        apiResponse.message = 'Event nodes retrieve successfully'
+        apiResponse.response_data = graph_data
+
+        return jsonify(apiResponse.to_dict()), 200
+
     except Exception as e:
-        logging.error(f'Internal Server Error: {str(e)}')
-        return jsonify({
-            'status': 500,
-            'message': 'Internal Server Error',
-            'error': str(e)
-        })
+        apiResponse.http_status_code = 500
+        apiResponse.response_data = None
+        apiResponse.message = f'Internal Server Error : {str(e)}'
+        return jsonify(apiResponse.to_dict()), 500
+
     finally:
         database_connection_mem.close()
 
 
-# Get Class Graph (Class nodes, DF_C Relationships)
-def get_class_graph_c():
+# Get Entity nodes
+def get_entity_nodes_c():
+    apiResponse = ApiResponse(None, None, None)
+
     try:
         database_connection_mem.connect()
 
-        query_result = get_df_2_node_rel_query()
-        result = database_connection_mem.run_query_memgraph(query_result)
+        query = get_nodes_entity_query()
+        result = database_connection_mem.run_query_memgraph(query)
 
-        df_data = []
+        if not isinstance(result, Iterable):
+            apiResponse.http_status_code = 404
+            apiResponse.response_data = None
+            apiResponse.message = "Not found"
+            return jsonify(apiResponse.to_dict()), 404
+
+        graph_data = []
 
         for record in result:
-            node_id = record['nodeId']
-            main_node = record['mainNode']
-            type_rel = record['type']
-            related_node_id = record['relatedNodeId']
+            event_node = record['node']
 
-            related_node_data = next((item for item in result if item["nodeId"] == related_node_id), None)
-            if related_node_data:
-                related_node = related_node_data['mainNode']
-                related_node['id'] = related_node_id
-            else:
-                related_node = None
-
-            for key, value in main_node.items():
+            for key, value in event_node.items():
                 if isinstance(value, (int, float)) and math.isnan(value):
-                    main_node[key] = None
+                    event_node[key] = None
 
-            df_data.append({
-                'class': {
-                    'id': node_id,
-                    **main_node
-                },
-                'related_class': related_node,
-                'type': type_rel
-            })
+            graph_data.append(event_node)
 
-        return jsonify({
-            'status': 200,
-            'message': 'Retrieve graph.',
-            'df_c_data': df_data
-        })
+        if len(graph_data) == 0:
+            apiResponse.http_status_code = 202
+            apiResponse.message = 'No content'
+            apiResponse.response_data = graph_data
+
+            return jsonify(apiResponse.to_dict()), 202
+
+        apiResponse.http_status_code = 200
+        apiResponse.message = 'Entity nodes retrieve successfully'
+        apiResponse.response_data = graph_data
+
+        return jsonify(apiResponse.to_dict()), 200
 
     except Exception as e:
-        logging.error(f'Internal Server Error: {str(e)}')
-        return jsonify({
-            'status': 500,
-            'message': 'Internal Server Error',
-            'error': str(e)
-        })
+        apiResponse.http_status_code = 500
+        apiResponse.response_data = None
+        apiResponse.message = f'Internal Server Error : {str(e)}'
+        return jsonify(apiResponse.to_dict()), 500
+
     finally:
         database_connection_mem.close()
 
 
-# Delete Graph
+# Get :CORR relationships
+def get_corr_relationships_c():
+    apiResponse = ApiResponse(None, None, None)
+
+    try:
+        database_connection_mem.connect()
+
+        query = get_corr_relation_query()
+        result = database_connection_mem.run_query_memgraph(query)
+
+        if not isinstance(result, Iterable):
+            apiResponse.http_status_code = 404
+            apiResponse.response_data = None
+            apiResponse.message = "Not found"
+            return jsonify(apiResponse.to_dict()), 404
+
+        correlation_data = []
+        correlation_count = 0
+
+        for record in result:
+            relation = record['corr']
+            event = relation[0]
+            relation_type = relation[1]
+            related_event = relation[2]
+
+            for key, value in event.items():
+                if isinstance(value, (int, float)) and math.isnan(value):
+                    event[key] = None
+
+            for key, value in related_event.items():
+                if isinstance(value, (int, float)) and math.isnan(value):
+                    related_event[key] = None
+
+            correlation_count = correlation_count + 1
+            relation_id = correlation_count
+
+            correlation_data.append({
+                'event': event,
+                'relation_type': relation_type,
+                'related_event': related_event,
+                'relation_id': relation_id
+            })
+
+        graph_data = {
+            'corr_data': correlation_data,
+            'corr_count': correlation_count,
+        }
+
+        if len(graph_data) == 0:
+            apiResponse.http_status_code = 202
+            apiResponse.message = 'No content'
+            apiResponse.response_data = graph_data
+
+            return jsonify(apiResponse.to_dict()), 202
+
+        apiResponse.http_status_code = 200
+        apiResponse.response_data = graph_data
+        apiResponse.message = 'Retrieve :corr relationships'
+
+        return jsonify(apiResponse.to_dict()), 200
+
+    except Exception as e:
+        apiResponse.http_status_code = 500
+        apiResponse.response_data = None
+        apiResponse.message = f'Internal Server Error : {str(e)}'
+        return jsonify(apiResponse.to_dict()), 500
+
+    finally:
+        database_connection_mem.close()
+
+
+# Get :DF relationships
+def get_df_relationships_c():
+    apiResponse = ApiResponse(None, None, None)
+
+    try:
+        database_connection_mem.connect()
+
+        query = get_df_relation_query()
+        result = database_connection_mem.run_query_memgraph(query)
+
+        if not isinstance(result, Iterable):
+            apiResponse.http_status_code = 404
+            apiResponse.response_data = None
+            apiResponse.message = "Not found"
+            return jsonify(apiResponse.to_dict()), 404
+
+        df_data = []
+        df_count = 0
+
+        for record in result:
+            relation = record['df']
+            event = relation[0]
+            relation_type = relation[1]
+            related_event = relation[2]
+
+            for key, value in event.items():
+                if isinstance(value, (int, float)) and math.isnan(value):
+                    event[key] = None
+
+            for key, value in related_event.items():
+                if isinstance(value, (int, float)) and math.isnan(value):
+                    related_event[key] = None
+
+            df_count = df_count + 1
+            relation_id = df_count
+
+            df_data.append({
+                'event': event,
+                'relation_type': relation_type,
+                'related_event': related_event,
+                'relation_id': relation_id
+            })
+
+        graph_data = {
+            'df_data': df_data,
+            'df_count': df_count,
+        }
+
+        if len(graph_data) == 0:
+            apiResponse.http_status_code = 202
+            apiResponse.message = 'No content'
+            apiResponse.response_data = graph_data
+
+            return jsonify(apiResponse.to_dict()), 202
+
+        apiResponse.http_status_code = 200
+        apiResponse.response_data = graph_data
+        apiResponse.message = 'Retrieve :df relationships'
+
+        return jsonify(apiResponse.to_dict()), 200
+
+    except Exception as e:
+        apiResponse.http_status_code = 500
+        apiResponse.response_data = None
+        apiResponse.message = f'Internal Server Error : {str(e)}'
+        return jsonify(apiResponse.to_dict()), 500
+
+    finally:
+        database_connection_mem.close()
+
+
+# Get standard graph (Event node and :DF Relationships)
+def get_graph_c():
+    apiResponse = ApiResponse(None, None, None)
+
+    try:
+        database_connection_mem.connect()
+
+        query = get_df_relation_query()
+        result = database_connection_mem.run_query_memgraph(query)
+
+        if not isinstance(result, Iterable):
+            apiResponse.http_status_code = 404
+            apiResponse.response_data = None
+            apiResponse.message = "Not found"
+            return jsonify(apiResponse.to_dict()), 404
+
+        graph_data = []
+
+        for record in result:
+            relation = record['df']
+            event = relation[0]
+            relation_type = relation[1]
+            related_event = relation[2]
+
+            for key, value in event.items():
+                if isinstance(value, (int, float)) and math.isnan(value):
+                    event[key] = None
+
+            for key, value in related_event.items():
+                if isinstance(value, (int, float)) and math.isnan(value):
+                    related_event[key] = None
+            relation_id = f"{related_event['EventID']}_{related_event['EventID']}"
+
+            graph_data.append({
+                'relaton:type': relation_type,
+                'relationId': relation_id,
+                'node': event,
+                'related_node': related_event,
+            })
+
+        if len(graph_data) == 0:
+            apiResponse.http_status_code = 202
+            apiResponse.message = 'No content'
+            apiResponse.response_data = graph_data
+
+            return jsonify(apiResponse.to_dict()), 202
+
+        apiResponse.http_status_code = 200
+        apiResponse.response_data = graph_data
+        apiResponse.message = "Retrieve Graph."
+        return jsonify(apiResponse.to_dict()), 200
+
+    except Exception as e:
+        apiResponse.http_status_code = 500
+        apiResponse.response_data = None
+        apiResponse.message = f'Internal Server Error : {str(e)}'
+        return jsonify(apiResponse.to_dict()), 500
+
+    finally:
+        database_connection_mem.close()
+
+
+# Get standard graph details(event, count, entity, df, corr)
+def get_graph_details_c():
+    apiResponse = ApiResponse(None, None, None)
+
+    try:
+        database_connection_mem.connect()
+
+        query = get_nodes_details_query()
+        result = database_connection_mem.run_query_memgraph(query)
+
+        if not isinstance(result, Iterable):
+            apiResponse.http_status_code = 404
+            apiResponse.response_data = None
+            apiResponse.message = "Not found"
+            return jsonify(apiResponse.to_dict()), 404
+
+        event_nodes = []
+        entity_nodes = []
+        event_count = 0
+        entity_count = 0
+
+        for record in result:
+            if record['type'] == 'events':
+                event_nodes = record['data']
+                event_count = record['count']
+                event_nodes = [
+                    {k: None if isinstance(v, (int, float)) and math.isnan(v) else v for k, v in node.items()} for node
+                    in event_nodes]
+            elif record['type'] == 'entities':
+                entity_nodes = record['data']
+                entity_count = record['count']
+                entity_nodes = [
+                    {k: None if isinstance(v, (int, float)) and math.isnan(v) else v for k, v in node.items()} for node
+                    in entity_nodes]
+
+        query = get_corr_relation_query()
+        result = database_connection_mem.run_query_memgraph(query)
+
+        if not isinstance(result, Iterable):
+            apiResponse.http_status_code = 404
+            apiResponse.response_data = None
+            apiResponse.message = "Not found"
+            return jsonify(apiResponse.to_dict()), 404
+
+        correlation_data = []
+        correlation_count = 0
+
+        for record in result:
+            relation = record['corr']
+            event = relation[0]
+            relation_type = relation[1]
+            related_event = relation[2]
+
+            for key, value in event.items():
+                if isinstance(value, (int, float)) and math.isnan(value):
+                    event[key] = None
+
+            for key, value in related_event.items():
+                if isinstance(value, (int, float)) and math.isnan(value):
+                    related_event[key] = None
+
+            correlation_count = correlation_count + 1
+            relation_id = correlation_count
+
+            correlation_data.append({
+                'event': event,
+                'relation_type': relation_type,
+                'related_event': related_event,
+                'relation_id': relation_id
+            })
+
+        query = get_df_relation_query()
+        result = database_connection_mem.run_query_memgraph(query)
+
+        if not isinstance(result, Iterable):
+            apiResponse.http_status_code = 404
+            apiResponse.response_data = None
+            apiResponse.message = "Not found"
+            return jsonify(apiResponse.to_dict()), 404
+
+        df_data = []
+        df_count = 0
+
+        for record in result:
+            relation = record['df']
+            event = relation[0]
+            relation_type = relation[1]
+            related_event = relation[2]
+
+            for key, value in event.items():
+                if isinstance(value, (int, float)) and math.isnan(value):
+                    event[key] = None
+
+            for key, value in related_event.items():
+                if isinstance(value, (int, float)) and math.isnan(value):
+                    related_event[key] = None
+
+            df_count = df_count + 1
+            relation_id = df_count
+
+            df_data.append({
+                'event': event,
+                'relation_type': relation_type,
+                'related_event': related_event,
+                'relation_id': relation_id
+            })
+
+        graph_data = {
+            'event_nodes': event_nodes,
+            'entity_nodes': entity_nodes,
+            'event_count': event_count,
+            'entity_count': entity_count,
+            'correlation_data': correlation_data,
+            'correlation_count': correlation_count,
+            'df_data': df_data,
+            'df_count': df_count,
+        }
+
+        if graph_data['entity_count'] == 0 and graph_data['event_count'] == 0 and graph_data['correlation_count'] == 0 \
+                and graph_data['df_count'] == 0:
+            apiResponse.http_status_code = 202
+            apiResponse.message = 'No content'
+            apiResponse.response_data = None
+
+            return jsonify(apiResponse.to_dict()), 202
+
+        apiResponse.http_status_code = 200
+        apiResponse.response_data = graph_data
+        apiResponse.message = "Retrieve Graph."
+        return jsonify(apiResponse.to_dict()), 200
+
+    except Exception as e:
+        apiResponse.http_status_code = 500
+        apiResponse.response_data = None
+        apiResponse.message = f'Internal Server Error : {str(e)}'
+        return jsonify(apiResponse.to_dict()), 500
+
+    finally:
+        database_connection_mem.close()
+
+
+# Delete Standard Graph (Event node and :DF Relationships)
 def delete_graph_c():
+    apiResponse = ApiResponse(None, None, None)
+
     try:
         database_connection_mem.connect()
 
         query = delete_graph_query()
         database_connection_mem.run_query_memgraph(query)
 
-        verification_query = get_count_data_query()
+        verification_query = get_count_graph_query()
         result = database_connection_mem.run_query_memgraph(verification_query)
 
         if result and result[0]['count'] == 0:
-            return jsonify({
-                'status': 200,
-                'message': 'Database deleted successfully'
-            }), 200
+            apiResponse.http_status_code = 200
+            apiResponse.message = 'Standard Graph deleted successfully !'
+            apiResponse.response_data = None
+            return jsonify(apiResponse.to_dict()), 200
         else:
-            return jsonify({
-                'status': 500,
-                'message': 'Data was not deleted as expected'
-            }), 500
+            apiResponse.http_status_code = 404
+            apiResponse.message = 'Data was not deleted!'
+            apiResponse.response_data = None
+            return jsonify(apiResponse.to_dict()), 500
+
     except Exception as e:
-        return jsonify({
-            'status': 500,
-            'message': f"Internal Server Error : {str(e)}"
-        }), 500
+        apiResponse.http_status_code = 500
+        apiResponse.message = f"Internal Server Error : {str(e)}"
+        apiResponse.response_data = None
+        return jsonify(apiResponse.to_dict()), 500
+
     finally:
         database_connection_mem.close()

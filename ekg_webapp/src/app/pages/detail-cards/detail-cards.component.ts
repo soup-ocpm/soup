@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { AfterViewInit, Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 
 // Component Import
@@ -18,6 +18,8 @@ import { Card } from 'src/app/models/card.model';
 
 // Other Import
 import * as saveAs from 'file-saver';
+import { ClassGraphService } from 'src/app/services/class_graph.service';
+import { HttpClient } from '@angular/common/http';
 
 
 @Component({
@@ -25,7 +27,7 @@ import * as saveAs from 'file-saver';
   templateUrl: './detail-cards.component.html',
   styleUrls: ['./detail-cards.component.scss']
 })
-export class DetailCardsComponent implements OnInit {
+export class DetailCardsComponent implements OnInit, AfterViewInit {
 
   // The full JSON data for Graph
   public jsonData: any = [];
@@ -60,12 +62,14 @@ export class DetailCardsComponent implements OnInit {
    */
   public selectedEntities: string[] = [];
 
-
   // If the Sidebar is open or not
   public isSidebarOpen: boolean = false;
 
   // If the Group Sidebar is open or not
   public isGroupSidebarOpen: boolean = false;
+
+  // Show the Progress Bar for create/show Graph
+  public showProgressBar: boolean = false;
 
 
   /**
@@ -77,9 +81,11 @@ export class DetailCardsComponent implements OnInit {
   constructor(
     private router: Router,
     private graphService: GraphService,
+    private classService: ClassGraphService,
     private graphDataService: GraphDataService,
     private snackBar: MatSnackBar,
     private dialog: MatDialog,
+    private httpClient: HttpClient,
   ) { }
 
   // NgOnInit implementation
@@ -94,13 +100,21 @@ export class DetailCardsComponent implements OnInit {
     this.injectDataToCard();
   }
 
+  // NgAfterViewInit implementation
+  ngAfterViewInit(): void { }
+
+
   public addTemporalCard() {
-    const jsonData = '{}'
-    this.entitiesList = ['Actor', 'Order', 'SupplierOrder'];
-    this.eventsCard = new Card('Event nodes', 'nodes', 'Created 50 event nodes', jsonData, 50);
-    this.entitiesCard = new Card('Entity nodes', 'nodes', 'Generated 50 entity nodes', jsonData, 50);
-    this.corrEdgesCard = new Card(':CORR Relatinships', 'relationships', 'Generated 250 :CORR edges', jsonData, 250);
-    this.dfEdgesCard = new Card(':DF Relatinships', 'relationships', 'Generated 150 :DF edges', jsonData, 150);
+    let jsonData: any;
+    this.httpClient.get('http://localhost:4200/assets/graph.json').subscribe(
+      (response) => {
+        jsonData = response;
+        this.entitiesList = ['Actor', 'Order', 'SupplierOrder'];
+        this.eventsCard = new Card('Event nodes', 'nodes', 'Created 50 event nodes', jsonData, 50);
+        this.entitiesCard = new Card('Entity nodes', 'nodes', 'Generated 50 entity nodes', jsonData, 50);
+        this.corrEdgesCard = new Card(':CORR Relatinships', 'relationships', 'Generated 250 :CORR edges', jsonData, 250);
+        this.dfEdgesCard = new Card(':DF Relatinships', 'relationships', 'Generated 150 :DF edges', jsonData, 150);
+      });
   }
 
   /**
@@ -122,9 +136,6 @@ export class DetailCardsComponent implements OnInit {
       const jsonData = this.jsonData.event_nodes;
 
       this.eventsCard = new Card(cardTitle, cardType, cardDescription, jsonData, numberOfData);
-
-      console.log('Event Card : ');
-      console.log(this.eventsCard);
     }
 
     // Create Entity nodes Card
@@ -136,9 +147,6 @@ export class DetailCardsComponent implements OnInit {
       const jsonData = this.jsonData.entity_nodes;
 
       this.entitiesCard = new Card(cardTitle, cardType, cardDescription, jsonData, numberOfData);
-
-      console.log('Entity Card : ');
-      console.log(this.entitiesCard);
     }
 
     // Create :CORR relationsips card
@@ -150,9 +158,6 @@ export class DetailCardsComponent implements OnInit {
       const jsonData = this.jsonData.correlation_data;
 
       this.corrEdgesCard = new Card(cardTitle, cardType, cardDescription, jsonData, numberOfData);
-
-      console.log(':CORR Card : ');
-      console.log(this.corrEdgesCard);
     }
 
     if (this.jsonData.df_count != null && this.jsonData.df_count != undefined) {
@@ -163,9 +168,6 @@ export class DetailCardsComponent implements OnInit {
       const jsonData = this.jsonData.df_data;
 
       this.dfEdgesCard = new Card(cardTitle, cardType, cardDescription, jsonData, numberOfData);
-
-      console.log(':DF Card : ');
-      console.log(this.dfEdgesCard);
     }
   }
 
@@ -206,9 +208,48 @@ export class DetailCardsComponent implements OnInit {
     }
   }
 
-
+  /**
+   * Build the Class Graph
+   */
   public buildClassGraph(): void {
+    this.showProgressBar = true;
 
+    const formData = new FormData();
+    let responseData: any;
+    this.classService.createClassGraph(formData, this.selectedEntities).subscribe(
+      (response) => {
+        responseData = response;
+        if (responseData.http_status_code == 201) {
+          this.getClassGraph();
+        }
+      },
+      (error) => {
+        responseData = error;
+        this.showProgressBar = false;
+        this.openSnackBar('Error while creating Class Graph', 'Retry');
+      });
+  }
+
+  /**
+   * Retrieve the created Class Graph and navigate the 
+   * User to the Graph page
+   */
+  public getClassGraph() {
+    let apiResponse: any;
+    this.classService.getClassGraph().subscribe(
+      (response) => {
+        apiResponse = response;
+        if (apiResponse != null) {
+          this.classService.saveResponse(apiResponse.response_data);
+          this.showProgressBar = false;
+          this.router.navigateByUrl('/graph');
+        }
+      },
+      (error) => {
+        apiResponse = error;
+        this.showProgressBar = false;
+        this.openSnackBar('Error while retrieve class Graph', 'Retry');
+      });
   }
 
   /**

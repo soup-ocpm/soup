@@ -10,6 +10,7 @@ License : MIT
 """
 
 # Import
+import time
 from neo4j import GraphDatabase
 
 
@@ -36,5 +37,5 @@ class MemgraphConnector:
 
         with self._driver.session() as session:
             # Execute the query
-            result = session.run(query, parameters, database="memgraph")
+            result = session.run(query, parameters, database="memgraph", metrics=True)
             return [record.data() for record in result]

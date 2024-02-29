@@ -8,6 +8,9 @@ import { Observable } from "rxjs";
 })
 export class ClassGraphService {
 
+    // Save the first API Response of standard graph details
+    public apiResponse: any | undefined;
+
     /**
      * Constructor of ClassGraphService service
      * @param httpClient the Http client
@@ -51,5 +54,33 @@ export class ClassGraphService {
      */
     public deleteClassGraph(): Observable<any> {
         return this.httpClient.delete('http://127.0.0.1:8080/api/v1/graph-class');
+    }
+
+    // --------SUPPORT METHODS---------
+
+    /**
+     * Set the response response of the first operation
+     * @param response the response of http.
+     */
+    public saveResponse(response: any): void {
+        this.apiResponse = response;
+    }
+
+    // Delete the response http.
+    public deleteResponse(): void {
+        this.apiResponse = undefined;
+    }
+
+    // Get the response http.
+    public getResponse(): any {
+        return this.apiResponse;
+    }
+
+    // Return if there is response.
+    public hasResponse(): boolean {
+        if (this.apiResponse == undefined || this.apiResponse == null) {
+            return false;
+        }
+        return true;
     }
 }

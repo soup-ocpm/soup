@@ -40,7 +40,7 @@ export class DialogDeleteGraphComponent {
         this.graphService.deleteGraph().subscribe(
             (response) => {
                 responseData = response;
-                if (responseData.status == 200) {
+                if (responseData.http_status_code == 200) {
                     this.openSnackBar('Graph deleted.', 'Done');
                     this.router.navigateByUrl('/home');
                 }

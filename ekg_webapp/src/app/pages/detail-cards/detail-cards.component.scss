@@ -112,3 +112,11 @@
         margin-top: -5px;
     }
 }
+
+// Progress Bar and Creation Graph
+.process-div {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+}

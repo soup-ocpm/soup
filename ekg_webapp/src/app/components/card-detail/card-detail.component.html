@@ -15,12 +15,12 @@
             <div class="card-expanded" *ngIf="expandedCard">
                 <hr>
                 <div class="form-group" style="padding-left: 20px; padding-right: 18px;">
-                    <input type="email" class="form-control" placeholder="Search..." [(ngModel)]="searchText"
-                        (input)="updateSearch()">
+                    <input type="text" class="form-control" placeholder="Search..." aria-label="Small"
+                        aria-describedby="inputGroup-sizing-sm" [(ngModel)]="searchText" (input)="updateSearch()">
                 </div>
 
                 <textarea class="card-expanded-textarea" readonly>
-                    {{card?.jsonData | json}}
+                    {{ filteredData ? (filteredData | json) : (card?.jsonData | json) }}
                 </textarea>
             </div>
 
@@ -30,7 +30,8 @@
                 <mat-icon *ngIf="!expandedCard">fullscreen</mat-icon>
             </button>
 
-            <button *ngIf="expandedCard" mat-button color="primary" (click)="downloadJson()" style="margin-right: 30px;">Download</button>
+            <button *ngIf="expandedCard" mat-button color="primary" (click)="downloadJson()"
+                style="margin-right: 30px;">Download</button>
 
         </mat-card-actions>
     </mat-card>

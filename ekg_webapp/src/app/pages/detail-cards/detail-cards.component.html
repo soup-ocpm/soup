@@ -1,5 +1,8 @@
+<!---PROGRESS BAR AND PROCESS---->
+<mat-progress-bar mode="indeterminate" *ngIf="showProgressBar"></mat-progress-bar>
+
 <!--Open Sidebar-->
-<button class="btn-sidebar" mat-icon-button color="primary" (click)="toggleSidebar()">
+<button *ngIf="!showProgressBar" class="btn-sidebar" mat-icon-button color="primary" (click)="toggleSidebar()">
     <mat-icon>menu</mat-icon>
 </button>
 
@@ -72,7 +75,7 @@
 </div>
 
 <!--Master container content-->
-<div class="master" [ngStyle]="{ 'filter': isSidebarOpen ? 'blur(2px)' : 'none' }"
+<div *ngIf="!showProgressBar" class="master" [ngStyle]="{ 'filter': isSidebarOpen ? 'blur(2px)' : 'none' }"
     [ngClass]="{ 'no-pointer-events': isSidebarOpen }">
 
     <div class="master-grid" [ngClass]="{'leave-grid': extendedCard}">
@@ -94,4 +97,11 @@
             (haveChanged)="resizeCard($event, dfEdgesCard!)"></app-card-detail>
 
     </div>
+</div>
+
+<!---Process creation Graph-->
+<div class="process-div" *ngIf="showProgressBar">
+    <h2 style="font-family: Georgia, 'Times New Roman', Times, serif; font-size: 32px;">BUILDING THE EKG…</h2>
+    <h3 style="font-family: Georgia, 'Times New Roman', Times, serif; font-size: 26px;">This operation may take a few
+        minutes</h3>
 </div>

@@ -15,7 +15,7 @@ const routes: Routes = [
   { path: 'home', component: HomePageComponent },
   { path: 'upload-data', component: LoadPageComponent },
   { path: 'details', component: DetailCardsComponent },
-  { path: 'graph', component: GraphPageComponent,  }, //canActivate: [CanActivateGraphGuard]
+  { path: 'graph', component: GraphPageComponent, canActivate: [CanActivateGraphGuard] },
   { path: '**', redirectTo: 'home' },
 ];
 

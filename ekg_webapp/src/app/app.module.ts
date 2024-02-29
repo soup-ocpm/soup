@@ -7,12 +7,16 @@ import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { HttpClientModule } from '@angular/common/http';
 
 // COMPONENT IMPORT (PAGE AND OTHER COMPONENT)
+import { NavbarComponent } from './shared/navbar/navbar.component';
+import { FooterComponent } from './shared/footer/footer.component';
 import { AppComponent } from './app.component';
 import { HomePageComponent } from './pages/home-page/home-page.component';
 import { LoadPageComponent } from './pages/load-page/load-page.component';
 import { GraphPageComponent } from './pages/graph-page/graph-page.component';
+import { DetailCardsComponent } from './pages/detail-cards/detail-cards.component';
+import { CardDetailComponent } from './components/card-detail/card-detail.component';
 
-// COMPONENT SERVICE
+// SERVICE IMPORT
 import { GraphService } from './services/graph.service';
 import { ClassGraphService } from './services/class_graph.service';
 import { GraphDataService } from './services/graph.data.service';
@@ -36,13 +40,6 @@ import { MatSelectModule } from '@angular/material/select';
 // OTHER IMPORT
 import { NgxDropzoneModule } from 'ngx-dropzone';
 import { NgxGraphModule } from '@swimlane/ngx-graph';
-import { NavbarComponent } from './shared/navbar/navbar.component';
-import { FooterComponent } from './shared/footer/footer.component';
-import { DetailCardsComponent } from './pages/detail-cards/detail-cards.component';
-import { CardDetailComponent } from './components/card-detail/card-detail.component';
-import { MasterCardDetailComponent } from './components/master-card-detail/master-card-detail.component';
-import { HighlightSearchPipe } from './pipes/search.pipe';
-
 
 @NgModule({
   declarations: [
@@ -54,8 +51,7 @@ import { HighlightSearchPipe } from './pipes/search.pipe';
     FooterComponent,
     DetailCardsComponent,
     CardDetailComponent,
-    MasterCardDetailComponent,
-    HighlightSearchPipe,
+
   ],
   imports: [
     //Standard

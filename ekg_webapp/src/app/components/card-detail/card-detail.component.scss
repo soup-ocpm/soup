@@ -20,6 +20,10 @@ p {
     transition: width 0.3s, height 0.3s;
 }
 
+.example-card:hover {
+    box-shadow: 10px 10px 5px rgb(226, 226, 226);
+}
+
 .card-content {
     text-align: center;
     width: 100%;
@@ -41,7 +45,7 @@ p {
     margin-top: 10px;
     height: 30px;
 
-    p{
+    p {
         font-size: 20px;
     }
 }
@@ -79,13 +83,13 @@ p {
     background-color: rgb(63, 81, 181);
     height: 50px;
 
-    p{
+    p {
         color: white;
         font-family: 'Times New Roman', Times, serif;
     }
 }
 
-.btn-close-card{
+.btn-close-card {
     position: absolute;
     top: 2px;
     right: 2px;
