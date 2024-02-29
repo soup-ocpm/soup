@@ -49,6 +49,55 @@ Useful links:
 - [Dagre-d3](https://www.npmjs.com/package/dagre-d3)
 and other library visible in package.json.
 
+## Project Setup Guide
+Complete explanation for project setup and correct start-up.
+
+### Guide to different Branches
+Within this repository, you can find two different Branches. 
+<br>
+The master represents the first version of the tool developed, using Neo4j as the database.<br>
+The second branch, called "dev-megraph", would be version 2.0 of the project, which uses Memgraph as the Database. Furthermore, the interface is also different.<br> 
+Previously (in the master branch), the generation of the EKG the user to directly view the complete graph, with the possibility of placing his studies and creating the Class graph. <br> 
+Currently, this page in the "dev-memgraph" has been replaced with a "recap" page where a series of information is shown thanks to Cards. Here too in any case,<br> 
+it is possible to create and view the Class graph.
+
+### 1 - Database setup
+As previously described, if you want to work with a Neo4j instance, simply clone the project and stay in the "master" branch. List of requirements necessary for the correct execution of the tool:
+
+- Neo4j instance
+First of all, it is necessary to have the Neo4j database (even locally), in case we are in the master branch. <br>
+Here is the official guide for downloading Neo4j: [Download Neo4j](https://neo4j.com/download/)
+- Memgraph instance
+In case we want to work with Memgraph, clone the project and move to the "dev-memgraph" branch. <br> 
+Here too, first of all it is necessary to have the Memgraph database (even locally).<br> 
+Here is the official guide for downloading Memgraph: [Download Memgraph](https://memgraph.com/download) <br>
+I recommend downloading Memgraph through Docker. Here is the official Docker guide: [Docker](https://www.docker.com/)
+Here is the official guide to download Memgraph in Docker: [Download Memgraph in Docker](https://memgraph.com/docs/getting-started/install-memgraph/docker)
+
+### 2 - Angular setup
+In order to successfully start the Frontend project in Angular, you need to have the Angular CLI, to be able to start and create Angular projects.<br>
+At this moment, both in both branches, the project has been developed with the following versions:
+
+- Angular CLI: 15.2.9
+- Node: 16.13.2
+- NPM: 8.1.2
+
+
+Once you have correctly configured the Angular CLI with the following versions, you can open the webapp project through your IDE, and run the following command in the terminal <br>
+(inside the project root folder): **npm install** <br>
+This will allow Angular to download all the necessary dependencies to be able to start the project correctly. <br>
+Once the following operation is finished, we can run the following command to host the webapp locally: **ng serve**.<br>
+This will allow Angular to build the tool and run it by default on port 4200. Example: **https://localhost:4200**
+
+### 3 - Python setup
+A key aspect for the smooth execution of your project is the correct configuration of data and database authentication in your Python code.<br>
+Inside the "GraphController" folder, there are controllers responsible for interacting with the specified database.<br>
+Database configurations are available at the top of these controller files.<br>
+It is important to replace the default variables with your own database configurations.
+
+Once you have correctly configured the entire environment, you can start everything necessary and use the tool.
+
+
 ## Final Product
 The user has the possibility to upload his own .csv file containing the data of interest via Drag&Drop. 
 Once the .csv file is loaded, the user has the possibility to filter the data and therefore the columns of his .csv file.
