@@ -163,7 +163,7 @@ export class DetailCardsComponent implements OnInit, AfterViewInit {
     if (this.jsonData.df_count != null && this.jsonData.df_count != undefined) {
       const cardTitle = ':DF Relationships';
       const cardType = 'relationships';
-      let numberOfData = this.jsonData.correlation_count;
+      let numberOfData = this.jsonData.df_count;
       const cardDescription = `Generated ${numberOfData} :df edges`;
       const jsonData = this.jsonData.df_data;
 

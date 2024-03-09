@@ -15,8 +15,7 @@ from flask import request, jsonify
 
 from Models.memgraph_connector_model import MemgraphConnector
 from Models.api_response_model import ApiResponse
-from Utils.query_library import create_class_df_relation_query, create_node_class_query, create_obs_relation_query, \
-    create_full_obs_relation_query, create_full_obs_relation_query_two
+from Utils.query_library import create_class_multi_query, class_df_aggregation
 
 # Database information:
 uri_mem = 'bolt://localhost:7687'
@@ -54,19 +53,12 @@ def create_class_graph_c():
 # Execute query for create Class Graph
 def class_process_query_c(filtered_columns):
     try:
-        cypher_query = create_node_class_query(filtered_columns)
+        cypher_query = create_class_multi_query(filtered_columns)
         database_connection_mem.run_query_memgraph(cypher_query)
+        
+        df_query = class_df_aggregation(rel_type='DF', class_rel_type='DF_C')
+        database_connection_mem.run_query_memgraph(df_query)
 
-        filtered_columns.remove("ActivityName")
-
-        cypher_query = create_obs_relation_query(filtered_columns)
-        database_connection_mem.run_query_memgraph(cypher_query)
-        cypher_query = create_full_obs_relation_query_two(filtered_columns)
-        database_connection_mem.run_query_memgraph(cypher_query)
-
-        for key in filtered_columns:
-            query = create_class_df_relation_query(key)
-            database_connection_mem.run_query_memgraph(query)
 
     except Exception as e:
         print(f"Internal Server error: {str(e)}")

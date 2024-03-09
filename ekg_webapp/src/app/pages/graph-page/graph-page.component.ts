@@ -191,7 +191,7 @@ export class GraphPageComponent implements OnInit, OnDestroy {
         .setGraph({ rankdir: 'LR' });
 
       nodes.forEach((node: any) => {
-        let nodeName = node.Name;
+        let nodeName = node.ActivityName;
         let nodeId = node.id;
         let nodeProperties: any = {
           label: nodeName,

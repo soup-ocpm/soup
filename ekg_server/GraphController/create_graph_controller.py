@@ -15,12 +15,13 @@ import json
 import math
 import time
 import pandas as pd
+import os
 from flask import request, jsonify
 
 from Models.memgraph_connector_model import MemgraphConnector
 from Models.api_response_model import ApiResponse
 from Utils.query_library import create_df_relation_query, create_node_event_query, create_node_entity_query, \
-    create_corr_relation_query
+    create_corr_relation_query, create_entity_from_events
 
 # Database information:
 uri_mem = 'bolt://localhost:7687'
@@ -78,13 +79,20 @@ def create_graph_c():
         database_connection_mem.close()
 
 
+from datetime import datetime
+
 # Process the .csv file and execute query for create standard Graph
 def standard_process_query_c(df, filtered_columns):
     try:
+        now = datetime.now()
 
+        current_time = now.strftime("%H:%M:%S")
+        print("Current Init Time =", current_time)
+        
         event_id_col = None
         timestamp_col = None
         activity_name_col = None
+        
 
         for index, column_name in enumerate(df.columns):
             if column_name.lower() == 'event_id':
@@ -117,6 +125,7 @@ def standard_process_query_c(df, filtered_columns):
                         parameters[key] = value
             cypher_query = create_node_event_query(cypher_properties)
             database_connection_mem.run_query_memgraph(cypher_query, parameters)
+            
 
             for key, value in row.items():
                 if key not in [event_id_col, timestamp_col, activity_name_col] and key in filtered_columns:
@@ -144,5 +153,10 @@ def standard_process_query_c(df, filtered_columns):
             if key not in [event_id_col, timestamp_col, activity_name_col]:
                 correlation_query_df = create_df_relation_query(key)
                 database_connection_mem.run_query_memgraph(correlation_query_df)
+        now = datetime.now()
+
+        current_time = now.strftime("%H:%M:%S")
+        print("Current End Time =", current_time)
     except Exception as e:
         return e
+

@@ -19,126 +19,74 @@ def create_node_entity_query():
     return "MERGE (e:Entity {Value: $property_value, Type: $type_value})"
 
 
+def create_entity_from_events(entity_type):
+    return f""" MATCH (e:Event) 
+                UNWIND e[{entity_type}] AS entity_name
+                WITH DISTINCT entity_name
+                MERGE (n:Entity {{entity_id: entity_name, type: '{entity_type}'}})
+                RETURN keys(n) LIMIT 1
+            """
+
+
 def create_corr_relation_query(key):
     return ("MATCH (e:Event) "
             "MATCH (en: Entity) "
             f"WHERE en.Value = e.{key} "
-            "MERGE (e)-[:CORR { Type: en.Value }] ->(en) ")
+            "MERGE (e)-[:CORR { Type: en.Value }] -> (en) ")
 
 
 def create_df_relation_query(key):
-    return ("MATCH (e1:Event), (e2:Event) "
-            "WHERE e1 <> e2 "
-            f"AND e1.{key} = e2.{key} "
-            "AND e1.Timestamp < e2.Timestamp "
-            "WITH e1, e2 "
-            "ORDER BY e1.Timestamp ASC, e2.Timestamp ASC "
-            "WITH e1, collect(e2) AS relatedNodes "
-            "WITH e1, head(relatedNodes) AS nextNode "
-            "MERGE (e1)-[:DF {Type: '" + key + "'}]->(nextNode) ")
+    return  f"""
+            MATCH (e:Event)-[:CORR]->(n:Entity)
+            WHERE n.Type = '{key}'
+            WITH n, e AS nodes ORDER BY e.Timestamp, ID(e)
+            WITH n, collect(nodes) AS event_node_list
+            UNWIND range(0, size(event_node_list)-2) AS i
+            WITH n, event_node_list[i] AS e1, event_node_list[i+1] AS e2
+            MERGE (e1)-[df:DF {{ Type:n.Type, ID:n.entity_id, edge_weight: 1}}]->(e2)
+            """
 
 
-# Query for Graph (Class)
-def create_node_class_query(attribute_keys):
-    query = "MATCH (e:Event) WITH "
-    query += ", ".join(f"e.{key} AS {key}" for key in attribute_keys)
-    query += ", COLLECT(e) AS events "
+def create_class_multi_query(matching_perspectives):
+    class_type = 'Class'
+    main_query = 'MATCH (e:Event)\n'
+    with_query = 'WITH distinct '
+    match_event_class = 'MATCH (e : Event) WHERE '
 
-    query += "UNWIND events AS event WITH event, events, "
-    query += "ALL(other IN events WHERE "
-    query += f"ALL(prop IN {attribute_keys} WHERE event[prop] = other[prop])"
-    query += ") AS allMatch "
+    perspectives_dict = {}
+    event_id = '"c_" + '
+    for p in matching_perspectives:
+        p_val = f'e_{p}'
+        event_id += f' {p_val}'
+        with_query += f'e.{p} AS {p_val}'
+        perspectives_dict[p] = p_val
+        perspectives_dict['Event_Id'] = event_id
+        match_event_class += f'c.{p} = e.{p} '
+        if p != matching_perspectives[-1]:
+            with_query += ', '
+            match_event_class += 'AND '
+            event_id += ' + "_" +'
 
-    query += "FOREACH (prop IN CASE WHEN allMatch THEN [" + ", ".join(
-        f"'{key}'" for key in attribute_keys) + "] ELSE [] END | "
-    query += "MERGE (c:Class { "
-    query += "Name: event.ActivityName, Type: 'Class', ID: event.ActivityName, "
-    query += ", ".join(f"{key}: toString(event.{key})" for key in attribute_keys)
-    query += " })) "
+    perspectives_dict['Type'] = f'"{class_type}"'
+    res_dict = str(perspectives_dict).replace("'", "")
 
-    query += "FOREACH (prop IN CASE WHEN NOT allMatch THEN [" + ", ".join(
-        f"'{key}'" for key in attribute_keys) + "] ELSE [] END | "
-    query += "MERGE (c:Class { "
-    query += "Name: event.ActivityName, Type: 'Class', ID: event.ActivityName, "
-    query += ", ".join(f"{key}: toString(event.{key})" for key in attribute_keys)
-    query += " })) "
+    class_creation = f'MERGE (c:Class {res_dict})'
+    match_class_type = f'MATCH (c : Class) WHERE c.Type = "{class_type}"'
 
-    return query
+    main_query += with_query + '\n' + class_creation + '\n' + 'WITH c' + '\n' + \
+        match_class_type + '\n' + match_event_class + \
+        '\n' + 'MERGE (e) -[:OBSERVED]-> (c)' 
 
+    return main_query
 
-def create_obs_relation_query(filtered_column):
-    query = ("MATCH (e:Event) "
-             "MATCH (c:Class) "
-             "WHERE e.ActivityName = c.Name AND (")
-    for key in filtered_column:
-        query += f"e.{key} = c.{key} AND "
-    query = query[:-4]
-    query += (") "
-              "MERGE (e)-[:OBSERVED_C{ Type: 'Activity'")
-    for key in filtered_column:
-        query += f" + CASE WHEN e.{key} = c.{key} THEN ', {key}' ELSE '' END"
-    query += "}]->(c)"
-    return query
+def class_df_aggregation(rel_type, class_rel_type):
+    return f"""
+                MATCH (c1 : Class) <-[:OBSERVED]- (e1 : Event) -[r]-> (e2 : Event) -[:OBSERVED]-> (c2 : Class)
+                WHERE c1.Type = c2.Type and type(r) = '{rel_type}'
+                WITH r.Type as CType, c1, count(r) AS df_freq, c2
+                MERGE (c1) -[:{class_rel_type} {{Type:CType, edge_weight: df_freq}}]-> (c2)
+            """
 
-
-def create_full_obs_relation_query(filtered_column):
-    query = ("MATCH (e:Event) "
-             "MATCH (en: Entity) "
-             "MATCH (c: Class)"
-             "WHERE NOT (e)-[:OBSERVED_C]->(en) AND NOT (e)-[:OBSERVED_C]->(c) "
-             "MATCH (c: Class) "
-             "WHERE e.ActivityName = c.Name AND (")
-
-    for key in filtered_column:
-        query += f"e.{key} = c.{key} OR "
-    query = query[:-4]
-    query += (") "
-              "MERGE (e)-[:OBSERVED_C{ Type: 'Activity'")
-    for key in filtered_column:
-        query += f" + CASE WHEN e.{key} = c.{key} THEN ', {key}' ELSE '' END"
-    query += "}]->(c)"
-    return query
-
-
-def create_full_obs_relation_query_two(filtered_column):
-    query = (
-        "MATCH (e:Event), (c:Class) "
-        "WHERE e.ActivityName = c.Name AND ("
-    )
-    conditions = []
-    for key in filtered_column:
-        conditions.append(f"e.{key} = c.{key}")
-    conditions_str = " OR ".join(conditions)
-
-    query += conditions_str + ") "
-
-    query += (
-        "AND NOT EXISTS ((e)-[:OBSERVED_C]->(c:Class))"
-    )
-
-    query += (
-        "MERGE (e)-[:OBSERVED_C {Type: 'Activity'"
-    )
-    for key in filtered_column:
-        query += f", {key}: e.{key}"
-    query += (
-        "}]->(c)"
-    )
-
-    return query
-
-
-def create_class_df_relation_query(key):
-    return ("MATCH (c:Class)<-[:OBSERVED_C]-(e:Event) "
-            "OPTIONAL MATCH (c1:Class)<-[:OBSERVED_C]-(e1:Event)<-[:DF]-(e:Event) "
-            "WHERE e <> e1 "
-            "AND e.Timestamp < e1.Timestamp "
-            f"AND c.{key} = c1.{key}  "
-            f"AND NOT (toString(c.{key}) = 'NaN' AND toString(c1.{key}) = 'NaN') "
-            "WITH c, c1, e.Timestamp AS timestamp "
-            "ORDER BY timestamp ASC "
-            "FOREACH (ignored IN CASE WHEN c1 IS NOT NULL THEN [1] ELSE [] END | "
-            "  MERGE (c)-[:DF_C {Type:'" + key + "'}]->(c1))")
 
 
 # Other utils query for Graph (Standard)
@@ -198,7 +146,7 @@ def get_df_class_relation_query():
 
 
 # Other utils query (supports)
-def delete_graph_query():
+def delete_event_graph_query():
     return "MATCH(e: Event) DETACH DELETE e"
 
 
@@ -212,3 +160,7 @@ def delete_class_graph_query():
 
 def get_count_class_graph_query():
     return "MATCH (c: Class) RETURN COUNT(c) AS count"
+
+
+def delete_graph_query():
+    return "MATCH (e) DETACH DELETE e"
