@@ -50,34 +50,26 @@ def create_df_relation_query(key):
 def create_class_multi_query(matching_perspectives):
     class_type = 'Class'
     main_query = 'MATCH (e:Event)\n'
-    with_query = 'WITH distinct '
-    match_event_class = 'MATCH (e : Event) WHERE '
 
     perspectives_dict = {}
     event_id = '"c_" + '
     for p in matching_perspectives:
-        p_val = f'e_{p}'
+        p_val = f'e.{p}'
         event_id += f' {p_val}'
-        with_query += f'e.{p} AS {p_val}'
         perspectives_dict[p] = p_val
-        perspectives_dict['Event_Id'] = event_id
-        match_event_class += f'c.{p} = e.{p} '
         if p != matching_perspectives[-1]:
-            with_query += ', '
-            match_event_class += 'AND '
             event_id += ' + "_" +'
 
+    perspectives_dict['Event_Id'] = event_id
     perspectives_dict['Type'] = f'"{class_type}"'
     res_dict = str(perspectives_dict).replace("'", "")
 
     class_creation = f'MERGE (c:Class {res_dict})'
-    match_class_type = f'MATCH (c : Class) WHERE c.Type = "{class_type}"'
-
-    main_query += with_query + '\n' + class_creation + '\n' + 'WITH c' + '\n' + \
-        match_class_type + '\n' + match_event_class + \
-        '\n' + 'MERGE (e) -[:OBSERVED]-> (c)' 
+    
+    main_query += class_creation + '\n WITH c, e' + '\n MERGE (e) -[:OBSERVED]-> (c)' 
 
     return main_query
+
 
 def class_df_aggregation(rel_type, class_rel_type):
     return f"""
