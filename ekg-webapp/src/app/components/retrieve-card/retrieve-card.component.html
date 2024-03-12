@@ -1,0 +1,29 @@
+<mat-card class="master-card" [ngClass]="{'expanded': isShowingForm}">
+  <mat-card-title class="title-card">
+    <h3 *ngIf="!isShowingForm">Retrieve graph information</h3>
+    <h3 *ngIf="isShowingForm">Retrieve Cloud graph information</h3>
+    <mat-icon *ngIf="!isShowingForm" color="primary" class="icon-operation" [mat-dialog-close]="true">clear</mat-icon>
+    <mat-icon *ngIf="isShowingForm" color="primary" class="icon-operation" (click)="isShowingForm = false">clear
+    </mat-icon>
+  </mat-card-title>
+
+  <mat-card-content class="mat-card-content-standard" *ngIf="!isShowingForm">
+    <!--Show the progress bar-->
+    <mat-progress-bar class="progress-bar-my" mode="indeterminate" *ngIf="isLoadingProgressBar"></mat-progress-bar>
+    <p>This operation allows you to skip the graph creation phase, <br>
+      if nodes and relationships are present within the Database.</p>
+
+    <p>Specify which operation to choose</p>
+
+    <div class="button-operation">
+      <button mat-raised-button color="primary" (click)="retrieveLocalInformation()"
+              [mat-dialog-close]="allowToCloseDialog">Local
+      </button>
+      <button mat-raised-button color="primary" (click)="retrieveCloudInformationHandle()">Cloud</button>
+    </div>
+  </mat-card-content>
+
+  <mat-card-content class="mat-card-content-expanded" *ngIf="isShowingForm">
+    <p>Insert your credential of Memgraph Database</p>
+  </mat-card-content>
+</mat-card>

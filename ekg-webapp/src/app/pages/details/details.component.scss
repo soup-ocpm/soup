@@ -1,0 +1,163 @@
+.master {
+  width: 100%;
+  height: 88%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.master.overlay::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.3);
+  z-index: 1;
+}
+
+.master.blur {
+  filter: blur(5px);
+}
+
+.no-pointer-events {
+  pointer-events: none;
+}
+
+.master-grid {
+  display: grid;
+  align-items: center;
+  justify-content: center;
+  grid-template-columns: auto auto;
+  grid-template-rows: repeat(2, auto);
+  gap: 30px;
+}
+
+.master-grid.leave-grid {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.back-button-pos {
+  position: absolute;
+  left: 24px;
+  top: 94px;
+  transform: rotate(3.142rad);
+  cursor: pointer;
+}
+
+// Sidebar
+.btn-sidebar {
+  position: absolute;
+  right: 15px;
+  top: 60px;
+}
+
+.sidebar {
+  position: fixed;
+  top: 59px;
+  right: -350px;
+  width: 350px;
+  height: 87vh;
+  transition: right 0.5s;
+  background-color: #f6f6f6;
+  z-index: 2;
+}
+
+.sidebar.open {
+  right: 0;
+}
+
+.master-content-sidebar {
+  margin-left: 10px;
+}
+
+.header-sidebar {
+  display: flex;
+
+  h2 {
+    font-size: 25px;
+    margin-top: 15px;
+    font-family: 'Times New Roman', Times, serif;
+  }
+
+  mat-icon {
+    position: absolute;
+    right: 15px;
+    top: 15px;
+  }
+}
+
+.group {
+  margin-top: 50px;
+
+  h2 {
+    font-size: 23px;
+    margin-top: 10px;
+    font-family: 'Times New Roman', Times, serif;
+  }
+
+  button {
+    padding-left: 5px;
+    margin-right: 5px;
+    width: 95%;
+  }
+}
+
+.another-class {
+  display: flex;
+
+  mat-icon {
+    margin-top: 11px;
+    margin-left: 13px;
+    color: #c4a805;
+  }
+}
+
+.list-group-item {
+  margin-top: 10px;
+
+  span {
+    color: black;
+    font-size: 18px;
+    font-family: 'Times New Roman', Times, serif;
+  }
+
+  mat-slide-toggle {
+    float: right;
+    margin-top: -5px;
+  }
+}
+
+.warning-remove {
+  margin-top: 10px;
+  padding: 5px;
+  background-color: #eeeeee;
+  border-radius: 5px;
+
+  label {
+    color: red;
+    font-size: 17px;
+    font-family: 'Times New Roman', Times, serif;
+  }
+
+  p {
+    color: black;
+    font-family: 'Times New Roman', Times, serif;
+  }
+}
+
+// Progress Bar and Creation Graph
+.process-div {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+// Other Scss support
+.icon-operation {
+  cursor: pointer;
+}

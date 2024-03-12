@@ -110,7 +110,7 @@ def delete_class_graph_c():
             apiResponse.http_status_code = 404
             apiResponse.message = 'Data was not deleted!'
             apiResponse.response_data = None
-            return jsonify(apiResponse.to_dict()), 500
+            return jsonify(apiResponse.to_dict()), 404
 
     except Exception as e:
         apiResponse.http_status_code = 500

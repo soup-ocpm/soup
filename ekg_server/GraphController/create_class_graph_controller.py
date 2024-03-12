@@ -55,11 +55,9 @@ def class_process_query_c(filtered_columns):
     try:
         cypher_query = create_class_multi_query(filtered_columns)
         database_connection_mem.run_query_memgraph(cypher_query)
-        
+
         df_query = class_df_aggregation(rel_type='DF', class_rel_type='DF_C')
         database_connection_mem.run_query_memgraph(df_query)
-
-
     except Exception as e:
         print(f"Internal Server error: {str(e)}")
         raise

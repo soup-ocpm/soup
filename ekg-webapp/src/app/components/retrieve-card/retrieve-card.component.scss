@@ -1,0 +1,69 @@
+.master-card {
+  width: 600px;
+  height: 350px;
+  transition: width 0.3s, height 0.3s;
+}
+
+.title-card {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 50px;
+  background-color: #f3f3f3;
+
+  h3 {
+    font-family: 'Times New Roman', Times, serif;
+  }
+
+  .icon-operation {
+    position: absolute;
+    right: 10px;
+    top: 20px;
+    cursor: pointer;
+  }
+}
+
+.mat-card-content-standard {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+
+  p {
+    margin-top: 10px;
+    font-family: 'Times New Roman', Times, serif;
+    font-size: 18px;
+  }
+}
+
+.button-operation {
+  width: 70%;
+  height: 150px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  button {
+    width: 130px;
+    height: 50px;
+  }
+}
+
+// SCSS for Card expansion
+.master-card.expanded {
+  width: 800px;
+  height: 600px;
+}
+
+.mat-card-content-expanded {
+  display: flex;
+  align-items: start;
+  justify-content: center;
+  flex-direction: column;
+
+  p {
+    margin-top: 10px;
+    font-family: 'Times New Roman', Times, serif;
+    font-size: 18px;
+  }
+}

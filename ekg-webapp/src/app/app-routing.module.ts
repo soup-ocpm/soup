@@ -1,0 +1,24 @@
+import {NgModule} from '@angular/core';
+import {RouterModule, Routes} from '@angular/router';
+import {HomeComponent} from "./pages/home/home.component";
+import {LoadCsvComponent} from "./pages/load-csv/load-csv.component";
+import {DetailsComponent} from "./pages/details/details.component";
+import {GraphComponent} from "./pages/graph/graph.component";
+import {HelpStandardDialogComponent} from "./components/help-standard-dialog/help-standard-dialog.component";
+
+// All application routes
+const routes: Routes = [
+  {path: '', redirectTo: 'welcome', pathMatch: 'full'},
+  {path: 'welcome', component: HomeComponent},
+  {path: 'start', component: LoadCsvComponent},
+  {path: 'details', component: DetailsComponent},
+  {path: 'graph', component: GraphComponent},
+  {path: '**', redirectTo: 'welcome'}
+];
+
+@NgModule({
+  imports: [RouterModule.forRoot(routes)],
+  exports: [RouterModule]
+})
+export class AppRoutingModule {
+}

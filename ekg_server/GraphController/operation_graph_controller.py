@@ -16,8 +16,9 @@ from collections.abc import Iterable
 from Models.memgraph_connector_model import MemgraphConnector
 from Models.api_response_model import ApiResponse
 from Utils.query_library import get_nodes_event_query, get_nodes_details_query, get_corr_relation_query, \
-    get_df_relation_query, delete_graph_query, get_nodes_entity_query, \
-    get_count_graph_query
+    get_df_relation_query, get_nodes_entity_query, get_distinct_entities_keys, get_nan_entities, \
+    delete_entity_graph_query, get_count_entity_query, \
+    delete_event_graph_query, get_count_event_query
 
 # Database information:
 uri_mem = 'bolt://localhost:7687'
@@ -470,6 +471,84 @@ def get_graph_details_c():
         database_connection_mem.close()
 
 
+# Return the entities key
+def get_entities_key_c():
+    apiResponse = ApiResponse(None, None, None)
+
+    try:
+        database_connection_mem.connect()
+
+        query = get_distinct_entities_keys()
+        result = database_connection_mem.run_query_memgraph(query)
+
+        if not isinstance(result, Iterable):
+            apiResponse.http_status_code = 404
+            apiResponse.response_data = None
+            apiResponse.message = "Not found"
+            return jsonify(apiResponse.to_dict()), 404
+
+        entities_type = []
+
+        for record in result:
+            e_type = record['entityType']
+            entities_type.append(e_type)
+
+        apiResponse.http_status_code = 200
+        apiResponse.response_data = entities_type
+        apiResponse.message = "Retrieve distinct entities."
+        return jsonify(apiResponse.to_dict()), 200
+
+    except Exception as e:
+        apiResponse.http_status_code = 500
+        apiResponse.message = f"Internal Server Error : {str(e)}"
+        apiResponse.response_data = None
+        return jsonify(apiResponse.to_dict()), 500
+
+    finally:
+        database_connection_mem.close()
+
+
+def get_null_entities_c():
+    apiResponse = ApiResponse(None, None, None)
+
+    try:
+        database_connection_mem.connect()
+
+        query = get_nan_entities()
+        result = database_connection_mem.run_query_memgraph(query)
+
+        if not isinstance(result, Iterable):
+            apiResponse.http_status_code = 404
+            apiResponse.response_data = None
+            apiResponse.message = "Not found"
+            return jsonify(apiResponse.to_dict()), 404
+
+        null_node_entities = []
+
+        for record in result:
+            null_property_name = record['prop']
+            node_count = record['nodeCount']
+
+            null_node_entities.append({
+                'property_name': null_property_name,
+                'count_nodes': node_count
+            })
+
+        apiResponse.http_status_code = 200
+        apiResponse.response_data = null_node_entities
+        apiResponse.message = "Retrieve null values for node."
+        return jsonify(apiResponse.to_dict()), 200
+
+    except Exception as e:
+        apiResponse.http_status_code = 500
+        apiResponse.message = f"Internal Server Error : {str(e)}"
+        apiResponse.response_data = None
+        return jsonify(apiResponse.to_dict()), 500
+
+    finally:
+        database_connection_mem.close()
+
+
 # Delete Standard Graph (Event node and :DF Relationships)
 def delete_graph_c():
     apiResponse = ApiResponse(None, None, None)
@@ -477,13 +556,21 @@ def delete_graph_c():
     try:
         database_connection_mem.connect()
 
-        query = delete_graph_query()
+        # Delete entity nodes
+        query = delete_entity_graph_query()
         database_connection_mem.run_query_memgraph(query)
 
-        verification_query = get_count_graph_query()
-        result = database_connection_mem.run_query_memgraph(verification_query)
+        verification_query = get_count_entity_query()
+        result_entity = database_connection_mem.run_query_memgraph(verification_query)
 
-        if result and result[0]['count'] == 0:
+        # Delete event nodes
+        query = delete_event_graph_query()
+        database_connection_mem.run_query_memgraph(query)
+
+        verification_query = get_count_event_query()
+        result_event = database_connection_mem.run_query_memgraph(verification_query)
+
+        if result_entity and result_event and result_entity[0]['count'] == 0 and result_event[0]['count'] == 0:
             apiResponse.http_status_code = 200
             apiResponse.message = 'Standard Graph deleted successfully !'
             apiResponse.response_data = None
@@ -492,7 +579,7 @@ def delete_graph_c():
             apiResponse.http_status_code = 404
             apiResponse.message = 'Data was not deleted!'
             apiResponse.response_data = None
-            return jsonify(apiResponse.to_dict()), 500
+            return jsonify(apiResponse.to_dict()), 404
 
     except Exception as e:
         apiResponse.http_status_code = 500

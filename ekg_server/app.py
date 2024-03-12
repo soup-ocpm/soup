@@ -16,7 +16,7 @@ from GraphController.create_graph_controller import create_graph_c
 from GraphController.create_class_graph_controller import create_class_graph_c
 from GraphController.operation_graph_controller import get_event_nodes_c, get_entity_nodes_c, get_corr_relationships_c, \
     get_df_relationships_c, get_graph_c, get_graph_details_c, \
-    delete_graph_c
+    delete_graph_c, get_entities_key_c, get_null_entities_c
 from GraphController.operation_class_graph_controller import get_class_graph_c, delete_class_graph_c
 
 # App
@@ -95,7 +95,18 @@ def get_class_graph():
 
 @app.route('/api/v1/graph-class', methods=['DELETE'])
 def delete_class_graph():
-    return delete_class_graph_c
+    return delete_class_graph_c()
+
+
+# Other utils API
+@app.route('/api/v1/support/entities_key', methods=['GET'])
+def get_entities_key():
+    return get_entities_key_c()
+
+
+@app.route('/api/v1/support/null-entities', methods=['GET'])
+def get_null_entities():
+    return get_null_entities_c()
 
 
 if __name__ == '__main__':

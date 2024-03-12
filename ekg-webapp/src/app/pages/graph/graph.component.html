@@ -1,0 +1,142 @@
+<!-- MASTER DIV -->
+<div class="master-div">
+
+  <!-- GRAPH VISUALIZATION DIV-->
+  <div class="graph-container" id="myGraphContainer">
+    <mat-icon class="back-button-pos" color="primary" (click)="handleClickBack()">keyboard_backspace</mat-icon>
+    <svg #graphSvg></svg>
+    <div class="icon-buttons-container">
+      <button mat-icon-button color="primary" aria-label="Example icon button with a menu icon"
+              (click)="toggleSidebarSearch()" class="icon-button search-button" style="margin-right: 30px;">
+        <mat-icon>search</mat-icon>
+      </button>
+      <button mat-icon-button color="primary" aria-label="Example icon button with a menu icon"
+              (click)="isShowMenuSidebar = true" class="icon-button menu-button">
+        <mat-icon>menu</mat-icon>
+      </button>
+    </div>
+  </div>
+
+  <!---SIDEBAR FOR SEARCH DIV--->
+  <div class="sidebar" [ngClass]="{ 'open': isShowSearchSidebar }">
+
+    <mat-icon color="primary" class="close-button" (click)="isShowSearchSidebar = false">clear</mat-icon>
+
+    <div class="right-inside">
+
+      <div class="operation">
+        <h2 class="black-color">SEARCH NODES OR LINKS</h2>
+        <p style="margin-top: 15px">Searches for nodes or relations based on its properties or id.</p>
+
+        <!--Standard Graph Search-->
+        <form (ngSubmit)="classGraphSearch()">
+          <input type="text" class="form-control" name="searchInput" [(ngModel)]="searchQuery" placeholder="Activity name...
+                                    " aria-label="Uri" aria-describedby="basic-addon1" style="margin-top: 20px">
+        </form>
+      </div>
+
+      <div class="search-results" *ngIf="searchQuery.length > 0" style="margin-top: 20px">
+        <mat-card *ngFor="let result of searchResults" class="custom-card">
+          <mat-card-content (click)="selectClassNodeSearched(result)">Id : {{ result.id }} Name:
+            {{ result.ActivityName }}
+          </mat-card-content>
+        </mat-card>
+        <button mat-button color="danger" *ngIf="researched" (click)="closeSearched()">Clear</button>
+      </div>
+
+    </div>
+  </div>
+
+  <!---SIDEBAR FOR MENU OPERATION DIV --->
+  <div class="sidebar" [ngClass]="{ 'open': isShowMenuSidebar }">
+    <mat-icon color="primary" class="close-button" (click)="isShowMenuSidebar = false">clear</mat-icon>
+    <div class="right-inside">
+
+      <div class="operation">
+        <h2>OPERATIONS</h2>
+
+        <p style="margin-top: 10px;">
+          A list of operations available for this section</p>
+      </div>
+
+      <div class="operation">
+        <h3 style="margin-top: 30px;" class="black-color">Manage Graph</h3>
+        <p>Change the view of your graph</p>
+        <button mat-stroked-button color="primary" class="delete-button" (click)="toggleSidebarManager()">Manage
+        </button>
+      </div>
+
+      <!-- EXPORT GRAPH OPERATION -->
+      <div class="operation">
+        <h3 style="margin-top: 30px;" class="black-color">Export Graph</h3>
+        <p>This operation allows you to export and save the graph data, and then import it later</p>
+        <button mat-stroked-button color="primary" class="delete-button" (click)="exportSvg()">Export</button>
+      </div>
+
+      <!-- DELETE GRAPH OPERATION -->
+      <div class="operation">
+        <h3 style="margin-top: 30px;" class="black-color">Delete Graph</h3>
+        <p>This operation will permanently delete the graph and data within the database</p>
+        <button mat-stroked-button color="warn" class="delete-button" (click)="openDialogDelete()">Delete
+          Graph
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!--SIDEBAR FOR MANAGE THE GRAPH-->
+  <div class="sidebar" [ngClass]="{ 'open': isShowManageGraphSidebar }">
+    <mat-icon color="primary" class="close-button" (click)="isShowManageGraphSidebar = false">clear</mat-icon>
+
+    <div class="operation">
+      <h2>GRAPH OPERATION</h2>
+
+      <p style="margin-top: 10px;">
+        A list of operations available for manage your graph</p>
+    </div>
+
+    <!--Nodes view-->
+    <div class="operation">
+      <div class="nodes-operation">
+        <h3 class="black-color">Nodes</h3>
+        <mat-icon color="" matTooltip="The size of the circle does not correspond to the weight">warning</mat-icon>
+      </div>
+      <p style="margin-top: 8px">Change the view of your nodes</p>
+      <mat-radio-group
+        aria-labelledby="example-radio-group-label"
+        class="example-radio-group"
+        [(ngModel)]="nodeViewType"
+        (ngModelChange)="onChangeNodeView($event)">
+        @for (type of allNodesViewType; track type) {
+          <mat-radio-button class="example-radio-button" color="primary" [value]="type">{{ type }}</mat-radio-button>
+        }
+      </mat-radio-group>
+    </div>
+
+    <!--Edges view-->
+    <div class="operation">
+      <h3 style="margin-top: 30px;" class="black-color">Edges</h3>
+      <p>Select the relationships you want to see</p>
+    </div>
+
+    <div *ngFor="let rel of allRelationships">
+      <mat-checkbox color="primary" [ngModel]="rel.selected"
+                    (ngModelChange)="onChangeRelationshipsView(rel, $event)">{{ rel.name }}
+      </mat-checkbox>
+    </div>
+  </div>
+
+  <!---CARD FOR NODE OR LINK INFORMATION-->
+  <mat-card class="toast-card" *ngIf="selectedNode && propertiesSelectedNode && isShowCardProperties">
+    <button mat-button class="close-button" (click)="closeCardProperties()">
+      <mat-icon>close</mat-icon>
+    </button>
+    <h3 style="font-family: Georgia, 'Times New Roman', Times, serif;">Description</h3>
+    <div *ngFor="let property of propertiesSelectedNode">
+      <p style="font-family: Georgia, 'Times New Roman', Times, serif;">{{ property[0] }}: {{ property[1] }}
+      </p>
+    </div>
+  </mat-card>
+
+</div>

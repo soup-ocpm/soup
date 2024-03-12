@@ -1,0 +1,20 @@
+.master-footer {
+  height: 60px;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background-color: #f5f5f5;
+  padding: 10px;
+  text-align: center;
+  justify-content: center;
+}
+
+.inside {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 40px;
+  font-family: 'Times New Roman', Times, serif;
+  font-size: 17px;
+}

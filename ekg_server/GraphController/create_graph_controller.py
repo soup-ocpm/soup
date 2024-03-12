@@ -15,13 +15,13 @@ import json
 import math
 import time
 import pandas as pd
-import os
+from datetime import datetime
 from flask import request, jsonify
 
 from Models.memgraph_connector_model import MemgraphConnector
 from Models.api_response_model import ApiResponse
 from Utils.query_library import create_df_relation_query, create_node_event_query, create_node_entity_query, \
-    create_corr_relation_query, create_entity_from_events
+    create_corr_relation_query
 
 # Database information:
 uri_mem = 'bolt://localhost:7687'
@@ -50,6 +50,9 @@ def create_graph_c():
     filtered_column_json = request.form.get('filteredColumn')
     filtered_column = json.loads(filtered_column_json)
 
+    values_column_json = request.form.get('valuesColumn')
+    values_column = json.loads(values_column_json)
+
     try:
         database_connection_mem.connect()
 
@@ -57,7 +60,7 @@ def create_graph_c():
 
         file_data = file.read().decode('utf-8')
         df = pd.read_csv(io.StringIO(file_data))
-        standard_process_query_c(df, filtered_column)
+        standard_process_query_c(df, filtered_column, values_column)
 
         stop_time = time.time()
 
@@ -79,20 +82,17 @@ def create_graph_c():
         database_connection_mem.close()
 
 
-from datetime import datetime
-
 # Process the .csv file and execute query for create standard Graph
-def standard_process_query_c(df, filtered_columns):
+def standard_process_query_c(df, filtered_columns, values_column):
     try:
         now = datetime.now()
 
         current_time = now.strftime("%H:%M:%S")
         print("Current Init Time =", current_time)
-        
+
         event_id_col = None
         timestamp_col = None
         activity_name_col = None
-        
 
         for index, column_name in enumerate(df.columns):
             if column_name.lower() == 'event_id':
@@ -120,12 +120,11 @@ def standard_process_query_c(df, filtered_columns):
 
             for key, value in row.items():
                 if key not in [event_id_col, timestamp_col, activity_name_col]:
-                    if key in filtered_columns:
+                    if key in values_column:
                         cypher_properties.append(f"{key}: coalesce(${key}, '')")
                         parameters[key] = value
             cypher_query = create_node_event_query(cypher_properties)
             database_connection_mem.run_query_memgraph(cypher_query, parameters)
-            
 
             for key, value in row.items():
                 if key not in [event_id_col, timestamp_col, activity_name_col] and key in filtered_columns:
@@ -159,4 +158,3 @@ def standard_process_query_c(df, filtered_columns):
         print("Current End Time =", current_time)
     except Exception as e:
         return e
-

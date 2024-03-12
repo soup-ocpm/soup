@@ -1,0 +1,136 @@
+<!--Show the progress bar-->
+<mat-progress-bar mode="indeterminate" *ngIf="isLoadingProgressBar"></mat-progress-bar>
+
+<!--Open sidebar button-->
+<button *ngIf="!isLoadingProgressBar" class="btn-sidebar" mat-icon-button color="primary"
+        (click)="toggleFirstSidebar()">
+  <mat-icon>menu</mat-icon>
+</button>
+
+<!--First SideBar-->
+<div class="sidebar" [ngClass]="{ 'open': isShowSidebar }">
+
+  <div class="master-content-sidebar">
+    <div class="header-sidebar">
+      <h2>OPERATIONS</h2>
+      <mat-icon color="primary" class="icon-operation" (click)="toggleFirstSidebar()">clear</mat-icon>
+    </div>
+
+    <p>A list of operations available for this section</p>
+
+    <div class="group" *ngIf="haveCreatedClassGraph">
+      <h2>Show Class Graph</h2>
+      <p>In your database is already created Class Graph.</p>
+
+      <button mat-stroked-button color="primary" (click)="handleClickNextView()">Show Graph</button>
+    </div>
+
+    <div class="group">
+      <h2 *ngIf="!haveCreatedClassGraph">Group by Classes</h2>
+
+      <div class="another-class" *ngIf="haveCreatedClassGraph">
+        <h2 *ngIf="haveCreatedClassGraph">Group by another Classes</h2>
+        <mat-icon *ngIf="haveCreatedClassGraph" color=""
+                  matTooltip="This operation will remove the present class graph.">warning
+        </mat-icon>
+      </div>
+      <p>This operation allow you to group nodes into chosen classes</p>
+
+      <button mat-stroked-button color="primary" (click)="toggleSecondSidebar()">Group</button>
+    </div>
+
+    <div class="group">
+      <h2>Export Json Graph</h2>
+      <p>This operation allow you to group nodes into chosen classes</p>
+
+      <button mat-stroked-button color="primary" (click)="exportGraphJSON()">Export</button>
+    </div>
+
+    <div class="group">
+      <h2>Delete Graph</h2>
+      <p>This operation will permanently delete the graph and data within the database.</p>
+
+      <button mat-stroked-button color="warn" (click)="openDialogDelete()">Delete</button>
+    </div>
+
+  </div>
+
+</div>
+
+<!--Second SideBar (Group)-->
+<div class="sidebar" [ngClass]="{ 'open': isShowSecondSidebar }">
+
+  <div class="master-content-sidebar">
+    <div class="header-sidebar">
+      <h2>GROUP BY CLASS</h2>
+      <mat-icon color="primary" class="icon-operation" (click)="toggleSecondSidebar()">clear</mat-icon>
+      <mat-icon color="primary" class="icon-operation" style="margin-right: 28px;"
+                (click)="openDialogHelpClass()">help_outline
+      </mat-icon>
+    </div>
+
+    <p style="margin-top: 15px;">This operation allows you to group nodes into classes. Choose the
+      previously filtered properties that
+      will be taken into account when creating Class nodes.</p>
+
+    <mat-divider></mat-divider>
+
+    <li *ngFor="let entity of entitiesList" class="list-group-item">
+      <span>{{ entity }}</span>
+      <mat-slide-toggle style="margin-top: 3px" (change)="toggleSelection(entity)" color="primary"></mat-slide-toggle>
+    </li>
+    <div style="margin-top: 5px;"></div>
+
+    <mat-divider style="margin-top: 17px"></mat-divider>
+
+    <div class="warning-remove" *ngIf="haveCreatedClassGraph">
+      <label for="warning"> * Warning</label>
+      <p id="warning" style="margin-top: 15px;">Class nodes and relationships between them are already present within
+        the Database. <br>
+        This operation will remove the graph to make a new aggregation.</p>
+    </div>
+
+  </div>
+
+  <div style="position: absolute; bottom: 10px; right: 10px;">
+    <button mat-stroked-button color="primary" (click)="buildClassGraph()">Build</button>
+  </div>
+
+</div>
+
+<!--Master container content-->
+<div *ngIf="!isLoadingProgressBar" class="master" [ngStyle]="{ 'filter': isShowSecondSidebar ? 'blur(2px)' : 'none' }"
+     [ngClass]="{ 'no-pointer-events': isShowSidebar }">
+
+  <mat-icon class="back-button-pos" color="primary" (click)="handleClickNextView()"
+            *ngIf="isShowNextPageBtn && !isShowSidebar">
+    keyboard_backspace
+  </mat-icon>
+
+  <div class="master-grid" [ngClass]="{'leave-grid': isCardExtended}">
+
+    <!--Card 1-->
+    <app-card *ngIf="!isCardExtended || isCardExtended && cardExtended == eventCard" [card]="eventCard"
+              (haveChanged)="resizeCard($event, eventCard!)"></app-card>
+
+    <!--Card 2-->
+    <app-card *ngIf="!isCardExtended || isCardExtended && cardExtended == entityCard" [card]="entityCard"
+              (haveChanged)="resizeCard($event, entityCard!)"></app-card>
+
+    <!--Card 3-->
+    <app-card *ngIf="!isCardExtended || isCardExtended && cardExtended == corrEdgeCard" [card]="corrEdgeCard"
+              (haveChanged)="resizeCard($event, corrEdgeCard!)"></app-card>
+
+    <!--Card 4-->
+    <app-card *ngIf="!isCardExtended || isCardExtended && cardExtended == dfEdgeCard" [card]="dfEdgeCard"
+              (haveChanged)="resizeCard($event, dfEdgeCard!)"></app-card>
+
+  </div>
+</div>
+
+<!---Process creation Graph-->
+<div class="process-div" *ngIf="isLoadingProgressBar">
+  <h2 style="font-family: Georgia, 'Times New Roman', Times, serif; font-size: 32px;">BUILDING THE EKG…</h2>
+  <h3 style="font-family: Georgia, 'Times New Roman', Times, serif; font-size: 26px;">This operation may take a few
+    minutes</h3>
+</div>

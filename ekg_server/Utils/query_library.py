@@ -36,7 +36,7 @@ def create_corr_relation_query(key):
 
 
 def create_df_relation_query(key):
-    return  f"""
+    return f"""
             MATCH (e:Event)-[:CORR]->(n:Entity)
             WHERE n.Type = '{key}'
             WITH n, e AS nodes ORDER BY e.Timestamp, ID(e)
@@ -65,8 +65,8 @@ def create_class_multi_query(matching_perspectives):
     res_dict = str(perspectives_dict).replace("'", "")
 
     class_creation = f'MERGE (c:Class {res_dict})'
-    
-    main_query += class_creation + '\n WITH c, e' + '\n MERGE (e) -[:OBSERVED]-> (c)' 
+
+    main_query += class_creation + '\n WITH c, e' + '\n MERGE (e) -[:OBSERVED]-> (c)'
 
     return main_query
 
@@ -78,7 +78,6 @@ def class_df_aggregation(rel_type, class_rel_type):
                 WITH r.Type as CType, c1, count(r) AS df_freq, c2
                 MERGE (c1) -[:{class_rel_type} {{Type:CType, edge_weight: df_freq}}]-> (c2)
             """
-
 
 
 # Other utils query for Graph (Standard)
@@ -142,8 +141,16 @@ def delete_event_graph_query():
     return "MATCH(e: Event) DETACH DELETE e"
 
 
-def get_count_graph_query():
+def delete_entity_graph_query():
+    return "MATCH(e: Entity) DETACH DELETE e"
+
+
+def get_count_event_query():
     return "MATCH (n : Event) RETURN COUNT(n) AS count"
+
+
+def get_count_entity_query():
+    return "MATCH (n : Entity) RETURN COUNT(n) AS count"
 
 
 def delete_class_graph_query():
@@ -156,3 +163,23 @@ def get_count_class_graph_query():
 
 def delete_graph_query():
     return "MATCH (e) DETACH DELETE e"
+
+
+def get_nan_entities():
+    return """
+            MATCH (e:Event)
+            WITH e, properties(e) AS props
+            UNWIND keys(props) AS prop
+            WITH e, prop, props[prop] AS value
+            WHERE toString(value) = 'nan'
+            WITH DISTINCT prop, count(DISTINCT e) AS nodeCount
+            RETURN prop, nodeCount
+    """
+
+
+def get_distinct_entities_keys():
+    return """
+            MATCH (n:Entity) 
+            WITH DISTINCT n.Type as entityType
+            RETURN entityType
+    """
