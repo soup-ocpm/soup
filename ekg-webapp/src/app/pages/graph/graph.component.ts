@@ -134,24 +134,24 @@ export class GraphComponent implements OnInit {
     const uniqueDfLinks: Set<any> = new Set<any>();
 
     data.forEach((item: any): void => {
-      let node_parent = item.class;
-      let relation_name = item.type;
+      let node_parent = item.node_source;
+      let relation = item.edge;
 
       this.addNode(uniqueNodes, node_parent);
 
-      const link = {
+      let link = {
+        id: relation.id,
+        weight: relation.edge_weight,
         source: node_parent,
-        target: node_parent,
-        label: `${relation_name}`
+        target: null,
+        label: `${relation.Type}`,
       }
 
-      if (item.related_class != null) {
-        let related_node = item.related_class;
-        this.addNode(uniqueNodes, related_node);
-        link.target = related_node;
+      if (item.node_target != null) {
+        let node_target = item.node_target;
+        this.addNode(uniqueNodes, node_target);
+        link.target = node_target;
       }
-
-
       uniqueDfLinks.add(link);
     });
 
@@ -184,8 +184,8 @@ export class GraphComponent implements OnInit {
         .setGraph({rankdir: 'LR'});
 
       this.nodes.forEach((node: any): void => {
-        let nodeName = node.ActivityName;
         let nodeId = node.id;
+        let nodeName = node.ActivityName;
         let nodeProperties: any = {
           label: nodeName,
         };
@@ -195,23 +195,38 @@ export class GraphComponent implements OnInit {
             nodeProperties[prop] = node[prop];
           }
         }
-        console.log(nodeName);
-        console.log(nodeId);
-        this.g.setNode(nodeId, nodeProperties, nodeId);
+        this.g.setNode(nodeId, nodeProperties, node.Event_Id);
       });
 
       this.g.nodes().forEach((v: any): void => {
         const node = this.g.node(v);
+        console.log(node);
         node.rx = node.ry = 5;
         node.style = 'fill: #fff; stroke: #000; stroke-width: 2px';
       });
 
+      const uniqueEdgeWeight: Set<any> = new Set<any>();
+
+      this.edges.forEach((edge: any): void => {
+        if (edge != null && edge.weight != null) {
+          uniqueEdgeWeight.add(edge.weight);
+        }
+      });
+
+      const sortedWeightArray = Array.from(uniqueEdgeWeight).sort((a, b) => a - b);
+      const sortedWeightSet = new Set(sortedWeightArray);
+
+      console.log(sortedWeightSet);
+
       this.edges.forEach((edge: any): void => {
         if (edge.label && edge.source.id && edge.target.id) {
-          const color = this.relationLabelColors.get(edge.label) || '#3f51b5';
+
+          const color: string = this.relationLabelColors.get(edge.label) || '#3f51b5';
+
           this.g.setEdge(`${edge.source.id}`, `${edge.target.id}`, {
+            weight: edge.weight,
             label: `${edge.label}`,
-            style: `stroke: ${color}; stroke-width: 3px; fill: rgba(219, 219, 219, 0);`,
+            style: `stroke: ${color}; stroke-width: 10.5px; fill: rgba(219, 219, 219, 0);`,
             arrowheadStyle: `fill: ${color} ;`,
             curve: d3.curveBasis,
             labeloffset: 5,

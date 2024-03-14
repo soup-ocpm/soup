@@ -64,6 +64,16 @@ export class StandardGraphService {
     return this.httpClient.get('http://127.0.0.1:8080/api/v1/graph/relationships/df');
   }
 
+  // Get the Graph Entities (filtered column)
+  public getGraphEntities(): Observable<any> {
+    return this.httpClient.get('http://127.0.0.1:8080/api/v1/support/entities_key');
+  }
+
+  // Get the NaN entities
+  public getNaNEntities(): Observable<any> {
+    return this.httpClient.get('http://127.0.0.1:8080/api/v1/support/null-entities');
+  }
+
   /**
    * Get extended standard graph
    * @returns Observable of Http request

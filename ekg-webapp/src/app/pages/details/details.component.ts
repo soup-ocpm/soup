@@ -106,6 +106,7 @@ export class DetailsComponent implements OnInit {
 
     if (this.supportService.hasShowClassGraph) {
       this.isShowNextPageBtn = true;
+      this.haveCreatedClassGraph = true;
     }
   }
 
@@ -163,14 +164,52 @@ export class DetailsComponent implements OnInit {
 
   // Inject filtered column by the User
   public injectFilteredColumnToService(): void {
-    const filteredColumn: Set<string> = new Set<string>();
-    this.entityCard?.jsonData.forEach((item: any) => {
-      if (!filteredColumn.has(item.Type)) {
-        filteredColumn.add(item.Type);
-      }
-    });
-    this.supportService.setFilteredColumn(Array.from(filteredColumn.values()))
-    this.entitiesList = this.supportService.getFilteredColumn();
+    let apiResponse: any;
+
+    const entities: string[] = [];
+    this.standardGraphService.getGraphEntities().subscribe(
+      responseData => {
+        apiResponse = responseData;
+        if (apiResponse != null && apiResponse.http_status_code == 200) {
+          if (apiResponse.response_data != null) {
+            apiResponse.response_data.forEach((item: string) => {
+              entities.push(item);
+            })
+          }
+        }
+      }, errorData => {
+        apiResponse = errorData;
+        console.log(apiResponse);
+      });
+
+    const nullEntities: string[] = [];
+    this.standardGraphService.getNaNEntities().subscribe(
+      responseData => {
+        apiResponse = responseData;
+        if (apiResponse != null && apiResponse.http_status_code == 200) {
+          if (apiResponse.response_data != null) {
+            apiResponse.response_data.forEach((item: string) => {
+              nullEntities.push(item);
+            });
+          }
+        }
+      }, errorData => {
+        apiResponse = errorData;
+      });
+
+    console.log(entities);
+    console.log(nullEntities);
+
+    /**
+     const filteredColumn: Set<string> = new Set<string>();
+     this.entityCard?.jsonData.forEach((item: any) => {
+     if (!filteredColumn.has(item.Type)) {
+     filteredColumn.add(item.Type);
+     }
+     });
+     this.supportService.setFilteredColumn(Array.from(filteredColumn.values()))
+     this.entitiesList = this.supportService.getFilteredColumn();
+     */
   }
 
   /**
@@ -215,12 +254,14 @@ export class DetailsComponent implements OnInit {
     this.classGraphService.createClassGraph(formData, this.selectedEntities).subscribe(
       response => {
         responseData = response;
+        console.log(responseData);
         if (responseData.http_status_code == 201) {
           this.getClassGraph(true);
         }
       },
       (error) => {
         responseData = error;
+        console.log(responseData);
         this.isLoadingProgressBar = false;
         this.openSnackBar('Error while creating Class Graph', 'Retry');
       });
@@ -233,6 +274,7 @@ export class DetailsComponent implements OnInit {
       this.classGraphService.deleteClassGraph().subscribe(
         response => {
           apiResponse = response;
+          console.log(apiResponse);
           if (apiResponse != null && apiResponse.http_status_code == 200) {
             this.openSnackBar('Class graph deleted.', 'Ok');
             this.buildNewClassGraph();
@@ -261,7 +303,7 @@ export class DetailsComponent implements OnInit {
     this.classGraphService.getClassGraph().subscribe(
       response => {
         apiResponse = response;
-        if (apiResponse != null) {
+        if (apiResponse != null && apiResponse.response_data != null) {
           this.classGraphService.saveResponse(apiResponse.response_data);
           this.isLoadingProgressBar = false;
           if (creation) {
@@ -277,7 +319,10 @@ export class DetailsComponent implements OnInit {
           this.haveCreatedClassGraph = false;
         }
         this.isLoadingProgressBar = false;
-        this.openSnackBar('Error while retrieve class Graph', 'Retry');
+
+        if (creation) {
+          this.openSnackBar('Error while retrieve class Graph', 'Retry');
+        }
       });
   }
 
