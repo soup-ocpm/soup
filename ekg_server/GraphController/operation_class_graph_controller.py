@@ -15,7 +15,7 @@ from flask import jsonify
 from collections.abc import Iterable
 from Models.memgraph_connector_model import MemgraphConnector
 from Models.api_response_model import ApiResponse
-from Utils.query_library import get_df_class_relation_query, delete_class_graph_query, get_count_class_graph_query
+from Utils.query_library import get_class_graph_query, delete_class_graph_query, get_count_class_graph_query
 
 # Database information:
 uri_mem = 'bolt://localhost:7687'
@@ -30,7 +30,7 @@ def get_class_graph_c():
     try:
         database_connection_mem.connect()
 
-        query_result = get_df_class_relation_query()
+        query_result = get_class_graph_query()
         result = database_connection_mem.run_query_memgraph(query_result)
 
         if not isinstance(result, Iterable):
@@ -42,29 +42,25 @@ def get_class_graph_c():
         graph_data = []
 
         for record in result:
-            node_id = record['nodeId']
-            main_node = record['mainNode']
-            type_rel = record['type']
-            related_node_id = record['relatedNodeId']
+            source = record['source']
+            source['id'] = record['source_id']
+            edge = record['edge']
+            edge['id'] = record['edge_id']
+            target = record['target']
+            target['id'] = record['target_id']
 
-            related_node_data = next((item for item in result if item["nodeId"] == related_node_id), None)
-            if related_node_data:
-                related_node = related_node_data['mainNode']
-                related_node['id'] = related_node_id
-            else:
-                related_node = None
-
-            for key, value in main_node.items():
+            for key, value in source.items():
                 if isinstance(value, (int, float)) and math.isnan(value):
-                    main_node[key] = None
+                    source[key] = None
+
+            for key, value in target.items():
+                if isinstance(value, (int, float)) and math.isnan(value):
+                    target[key] = None
 
             graph_data.append({
-                'class': {
-                    'id': node_id,
-                    **main_node
-                },
-                'related_class': related_node,
-                'type': type_rel
+                'node_source': source,
+                'edge': edge,
+                'node_target': target
             })
 
         if not graph_data:

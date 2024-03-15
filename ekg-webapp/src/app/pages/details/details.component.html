@@ -65,7 +65,7 @@
       <h2>GROUP BY CLASS</h2>
       <mat-icon color="primary" class="icon-operation" (click)="toggleSecondSidebar()">clear</mat-icon>
       <mat-icon color="primary" class="icon-operation" style="margin-right: 28px;"
-                (click)="openDialogHelpClass()">help_outline
+                (click)="openDialogHelpClass()" matTooltip="Help">help_outline
       </mat-icon>
     </div>
 
@@ -76,8 +76,10 @@
     <mat-divider></mat-divider>
 
     <li *ngFor="let entity of entitiesList" class="list-group-item">
-      <span>{{ entity }}</span>
+      <span>{{ entity.name }}</span>
       <mat-slide-toggle style="margin-top: 3px" (change)="toggleSelection(entity)" color="primary"></mat-slide-toggle>
+      <mat-icon *ngIf="entity.presentNanNodes" [matTooltip]="getEntityWarningPhrase(entity)">warning
+      </mat-icon>
     </li>
     <div style="margin-top: 5px;"></div>
 

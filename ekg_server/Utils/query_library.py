@@ -129,6 +129,14 @@ def get_nodes_class_query():
             """
 
 
+def get_class_graph_query():
+    return """
+            MATCH (c1:Class)-[r:DF_C]->(c2:Class)
+            RETURN c1 as source, id(c1) as source_id, properties(r) as edge, 
+            id(r) as edge_id, c2 as target, id(c2) as target_id
+            """
+
+
 def get_df_class_relation_query():
     return """
             MATCH (e:Class)-[r:DF_C]->(dfRelated)

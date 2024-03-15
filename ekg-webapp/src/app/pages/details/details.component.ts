@@ -46,7 +46,11 @@ export class DetailsComponent implements OnInit {
   public cardExtended: any;
 
   // List of entities
-  public entitiesList: string [] = [];
+  public entitiesList: {
+    name: string,
+    numberOfNanNodes: number,
+    presentNanNodes: boolean
+  } [] = [];
 
   // List of selected entities
   public selectedEntities: string [] = [];
@@ -55,7 +59,7 @@ export class DetailsComponent implements OnInit {
   public isCardExtended: boolean = false;
 
   // If Sidebar is show or not
-  public isShowSidebar: boolean = false;
+  public isShowSidebar: boolean = true;
 
   // If the second Sidebar is show or not
   public isShowSecondSidebar: boolean = false;
@@ -98,10 +102,7 @@ export class DetailsComponent implements OnInit {
     this.injectDataToCard();
 
     if (this.supportService.getHaveRetrievedInformation()) {
-      this.injectFilteredColumnToService();
       this.getClassGraph(false);
-    } else {
-      this.entitiesList = this.supportService.getFilteredColumn();
     }
 
     if (this.supportService.hasShowClassGraph) {
@@ -160,45 +161,34 @@ export class DetailsComponent implements OnInit {
 
       this.dfEdgeCard = new Card(cardTitle, cardType, cardDescription, jsonData, numberOfData);
     }
+
+    this.getGraphEntities();
   }
 
   // Inject filtered column by the User
-  public injectFilteredColumnToService(): void {
+  public getGraphEntities(): void {
     let apiResponse: any;
 
-    const entities: string[] = [];
     this.standardGraphService.getGraphEntities().subscribe(
       responseData => {
         apiResponse = responseData;
         if (apiResponse != null && apiResponse.http_status_code == 200) {
           if (apiResponse.response_data != null) {
             apiResponse.response_data.forEach((item: string) => {
-              entities.push(item);
-            })
+              let entity = {
+                name: item,
+                numberOfNanNodes: 0,
+                presentNanNodes: false
+              }
+              this.entitiesList.push(entity)
+            });
+            this.getNanEntities();
           }
         }
       }, errorData => {
         apiResponse = errorData;
         console.log(apiResponse);
       });
-
-    const nullEntities: string[] = [];
-    this.standardGraphService.getNaNEntities().subscribe(
-      responseData => {
-        apiResponse = responseData;
-        if (apiResponse != null && apiResponse.http_status_code == 200) {
-          if (apiResponse.response_data != null) {
-            apiResponse.response_data.forEach((item: string) => {
-              nullEntities.push(item);
-            });
-          }
-        }
-      }, errorData => {
-        apiResponse = errorData;
-      });
-
-    console.log(entities);
-    console.log(nullEntities);
 
     /**
      const filteredColumn: Set<string> = new Set<string>();
@@ -212,17 +202,53 @@ export class DetailsComponent implements OnInit {
      */
   }
 
+  public getNanEntities(): void {
+    let apiResponse: any;
+    const nullEntities: string[] = [];
+
+    this.standardGraphService.getNaNEntities().subscribe(
+      responseData => {
+        apiResponse = responseData;
+        if (apiResponse != null && apiResponse.http_status_code == 200) {
+          if (apiResponse.response_data != null) {
+
+            apiResponse.response_data.forEach((item: string) => {
+              nullEntities.push(item);
+            });
+
+            this.entitiesList.forEach(entity => {
+              nullEntities.forEach((item: any) => {
+                if (item.property_name == entity.name) {
+                  entity.presentNanNodes = true;
+                  entity.numberOfNanNodes = item.count_nodes;
+                }
+              });
+            });
+
+            console.log(this.entitiesList);
+          }
+        }
+      }, errorData => {
+        apiResponse = errorData;
+      });
+
+    console.log(this.entitiesList);
+  }
+
   /**
    * Method that allow to get the toggle entities for
    * build the Class Graph.
    * @param entity the selected entity
    */
-  public toggleSelection(entity: string): void {
-    if (this.selectedEntities.includes(entity)) {
-      this.selectedEntities = this.selectedEntities.filter(item => item !== entity);
+  public toggleSelection(entity: any): void {
+    console.log(entity);
+    if (this.selectedEntities.includes(entity.name)) {
+      this.selectedEntities = this.selectedEntities.filter(item => item !== entity.name);
     } else {
-      this.selectedEntities.push(entity);
+      this.selectedEntities.push(entity.name);
     }
+
+    console.log(this.selectedEntities);
   }
 
   /**
@@ -352,6 +378,10 @@ export class DetailsComponent implements OnInit {
   // Toggle the second Sidebar (for group)
   public toggleSecondSidebar(): void {
     this.isShowSecondSidebar = !this.isShowSecondSidebar;
+  }
+
+  public getEntityWarningPhrase(entity: any){
+    return `${entity.numberOfNanNodes} nodes have Nan value. The generated graph may not be accurate.`;
   }
 
   // Open dialog for delete graph

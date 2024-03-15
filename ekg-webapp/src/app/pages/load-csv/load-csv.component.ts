@@ -274,6 +274,8 @@ export class LoadCsvComponent implements OnInit, OnDestroy {
         response => {
           apiResponse = response;
           if (apiResponse != null && apiResponse.http_status_code == 201) {
+            console.log('Graph Creation : ');
+            console.log(apiResponse);
             this.removeStandardProperties();
             this.supportService.setFilteredColumn(this.filteredColumn);
             this.getGraph();
@@ -308,6 +310,8 @@ export class LoadCsvComponent implements OnInit, OnDestroy {
         (response): void => {
           apiResponse = response;
           if (apiResponse.http_status_code === 200 && apiResponse.response_data != null) {
+            console.log('Get graph response : ');
+            console.log(apiResponse);
             this.standardGraphService.saveResponse(apiResponse.response_data);
             this.isLoadingProgressBar = false;
             this.router.navigateByUrl('/details');

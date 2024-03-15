@@ -125,9 +125,16 @@
     font-family: 'Times New Roman', Times, serif;
   }
 
+
   mat-slide-toggle {
     float: right;
     margin-top: -5px;
+  }
+
+  mat-icon{
+    color: #c4a805;
+    float: right;
+    margin-right: 20px;
   }
 }
 

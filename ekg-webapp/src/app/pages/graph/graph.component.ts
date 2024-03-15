@@ -226,7 +226,7 @@ export class GraphComponent implements OnInit {
           this.g.setEdge(`${edge.source.id}`, `${edge.target.id}`, {
             weight: edge.weight,
             label: `${edge.label}`,
-            style: `stroke: ${color}; stroke-width: 10.5px; fill: rgba(219, 219, 219, 0);`,
+            style: `stroke: ${color}; stroke-width: 3px; fill: rgba(219, 219, 219, 0);`,
             arrowheadStyle: `fill: ${color} ;`,
             curve: d3.curveBasis,
             labeloffset: 5,
