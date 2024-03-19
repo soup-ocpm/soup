@@ -95,6 +95,10 @@ export class GraphComponent implements OnInit {
     '#ff9800', '#607d8b', '#009688', '#f44336', '#673ab7'
   ];
 
+  // The weight scale for relationships weight
+  private weightScale: any;
+
+
   /**
    * Constructor for GraphComponent component
    * @param router the Router
@@ -214,19 +218,20 @@ export class GraphComponent implements OnInit {
       });
 
       const sortedWeightArray = Array.from(uniqueEdgeWeight).sort((a, b) => a - b);
-      const sortedWeightSet = new Set(sortedWeightArray);
 
-      console.log(sortedWeightSet);
+      this.weightScale = d3.scaleLinear()
+        .domain([sortedWeightArray[0], sortedWeightArray[sortedWeightArray.length - 1]])
+        .range([2, 5]);
 
       this.edges.forEach((edge: any): void => {
         if (edge.label && edge.source.id && edge.target.id) {
-
           const color: string = this.relationLabelColors.get(edge.label) || '#3f51b5';
+          const strokeWidth: number = this.weightScale(edge.weight);
 
           this.g.setEdge(`${edge.source.id}`, `${edge.target.id}`, {
             weight: edge.weight,
             label: `${edge.label}`,
-            style: `stroke: ${color}; stroke-width: 3px; fill: rgba(219, 219, 219, 0);`,
+            style: `stroke: ${color}; stroke-width: ${strokeWidth}px; fill: rgba(219, 219, 219, 0);`,
             arrowheadStyle: `fill: ${color} ;`,
             curve: d3.curveBasis,
             labeloffset: 5,
@@ -394,10 +399,13 @@ export class GraphComponent implements OnInit {
     } else {
       this.edges.forEach((edge: any): void => {
         if (edge.label && edge.source.id && edge.target.id && edge.label == relationship.name) {
+
           const color: string = this.relationLabelColors.get(edge.label) || '#3f51b5';
+          const strokeWidth: number = this.weightScale(edge.weight);
+
           this.g.setEdge(`${edge.source.id}`, `${edge.target.id}`, {
             label: `${edge.label}`,
-            style: `stroke: ${color}; stroke-width: 3px; fill: rgba(219, 219, 219, 0);`,
+            style: `stroke: ${color}; stroke-width: ${strokeWidth}px; fill: rgba(219, 219, 219, 0);`,
             arrowheadStyle: `fill: ${color} ;`,
             curve: d3.curveBasis,
             labeloffset: 5,
