@@ -37,7 +37,7 @@
 
       <div class="search-results" *ngIf="searchQuery.length > 0" style="margin-top: 20px">
         <mat-card *ngFor="let result of searchResults" class="custom-card">
-          <mat-card-content (click)="selectClassNodeSearched(result)">Id : {{ result.id }} Name:
+          <mat-card-content (click)="selectClassNodeSearched(result)">Node id : {{ result.id }} Name:
             {{ result.ActivityName }}
           </mat-card-content>
         </mat-card>
@@ -129,10 +129,8 @@
 
   <!---CARD FOR NODE OR LINK INFORMATION-->
   <mat-card class="toast-card" *ngIf="selectedNode && propertiesSelectedNode && isShowCardProperties">
-    <button mat-button class="close-button" (click)="closeCardProperties()">
-      <mat-icon>close</mat-icon>
-    </button>
-    <h3 style="font-family: Georgia, 'Times New Roman', Times, serif;">Description</h3>
+    <mat-icon color="primary" class="close-button" (click)="closeCardProperties()">clear</mat-icon>
+    <p style="font-family: Georgia, 'Times New Roman', Times, serif; font-weight: bold">Description</p>
     <div *ngFor="let property of propertiesSelectedNode">
       <p style="font-family: Georgia, 'Times New Roman', Times, serif;">{{ property[0] }}: {{ property[1] }}
       </p>

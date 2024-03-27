@@ -71,7 +71,7 @@ svg {
   display: flex;
   align-items: center;
 
-  mat-icon{
+  mat-icon {
     margin-top: 6px;
     margin-left: 11px;
     width: 23px;
@@ -79,7 +79,7 @@ svg {
     color: #c4a805;
   }
 
-  p{
+  p {
     font-size: 30px;
   }
 }
@@ -203,6 +203,10 @@ svg {
   overflow: hidden;
   border: 1px solid #b6b4b4;
   background-color: #fff;
+}
+
+.search-results {
+  cursor: pointer;
 }
 
 .custom-card mat-card-content {
