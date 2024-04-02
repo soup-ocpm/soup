@@ -14,9 +14,7 @@ from flask import Flask, jsonify
 from flask_cors import CORS
 from GraphController.create_graph_controller import create_graph_c
 from GraphController.create_class_graph_controller import create_class_graph_c
-from GraphController.operation_graph_controller import get_event_nodes_c, get_entity_nodes_c, get_corr_relationships_c, \
-    get_df_relationships_c, get_graph_c, get_graph_details_c, \
-    delete_graph_c, get_entities_key_c, get_null_entities_c
+from GraphController.operation_graph_controller import *
 from GraphController.operation_class_graph_controller import get_class_graph_c, delete_class_graph_c
 
 # App
@@ -71,7 +69,7 @@ def get_graph_details():
 
 @app.route('/api/v1/graph', methods=['DELETE'])
 def delete_graph():
-    return delete_graph_c()
+    return delete_all_graph_c()
 
 
 # All API for Graph (Class)
@@ -110,4 +108,4 @@ def get_null_entities():
 
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=8080)
+    app.run(host='0.0.0.0', port=8080, debug=True)

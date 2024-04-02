@@ -1,4 +1,4 @@
-,timestamp,activity_name,msg_id,field,resource,event_id
+event,timestamp,activity_name,msg_id,field,resource,event_id
 0,2023-05-16T10:27:08.918+0100,takeoff,,f4,drone,e0
 1,2023-05-16T10:27:09.972+0100,explore,,f4,drone,e2
 2,2023-05-16T10:27:26.055+0100,weed_found,,f4,drone,e4

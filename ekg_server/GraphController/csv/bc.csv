@@ -1,0 +1,10 @@
+TxHash,Activity,Timestamp,Sender,GasFee,StorageState
+T1,mint,2021-05-01T09:05:00.000+0100,0x1,10,"address,ownership,currentId"
+T2,mint,2021-05-01T10:05:00.000+0100,0x2,20,"address,ownership,currentId"
+T3,early,2021-05-01T10:35:00.000+0100,0x2,12,"address,ownership,currentId,purchase"
+T4,early,2021-05-01T11:10:00.000+0100,0x1,5,"purchase"
+T5,bid,2021-05-01T11:45:00.000+0100,0x3,12,"address,ownership,currentId"
+T6,mint,2021-05-01T11:45:00.000+0101,0x4,23,"address,ownership,currentId"
+T7,early,2021-05-01T11:45:00.000+0102,0x5,23,"address,ownership,currentId,purchase"
+T8,early,2021-05-01T11:45:00.000+0103,0x6,1,"purchase"
+T9,bid,2021-05-01T11:45:00.000+0104,0x7,12,"order"

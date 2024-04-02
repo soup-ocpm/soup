@@ -99,7 +99,7 @@ def delete_class_graph_c():
 
         if result and result[0]['count'] == 0:
             apiResponse.http_status_code = 200
-            apiResponse.message = 'Standard Graph deleted successfully !'
+            apiResponse.message = 'Class Graph deleted successfully !'
             apiResponse.response_data = None
             return jsonify(apiResponse.to_dict()), 200
         else:

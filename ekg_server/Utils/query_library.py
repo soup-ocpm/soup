@@ -28,11 +28,19 @@ def create_entity_from_events(entity_type):
             """
 
 
-def create_corr_relation_query(key):
-    return ("MATCH (e:Event) "
-            "MATCH (en: Entity) "
-            f"WHERE en.Value = e.{key} "
-            "MERGE (e)-[:CORR { Type: en.Value }] -> (en) ")
+def create_corr_relation_query(key): # checks if an entity has multiple values
+    return (f"""
+            MATCH (e:Event) 
+            WITH e, 
+                CASE WHEN toString(e.{key}) <> "nan"
+                    THEN split(e.{key}, ',')
+                    ELSE [e.{key}]
+                END AS entities
+            UNWIND entities AS entity_id
+            WITH DISTINCT entity_id, e
+            MATCH (ent:Entity {{Value: entity_id}})
+            MERGE (e)-[c:CORR {{Type: '{key}'}}]->(ent)
+            """)
 
 
 def create_df_relation_query(key):
@@ -45,6 +53,7 @@ def create_df_relation_query(key):
             WITH n, event_node_list[i] AS e1, event_node_list[i+1] AS e2
             MERGE (e1)-[df:DF {{ Type:n.Type, ID:n.entity_id, edge_weight: 1}}]->(e2)
             """
+
 
 
 def create_class_multi_query(matching_perspectives):
@@ -168,6 +177,8 @@ def delete_class_graph_query():
 def get_count_class_graph_query():
     return "MATCH (c: Class) RETURN COUNT(c) AS count"
 
+def get_count_node_query():
+    return "MATCH (e) RETURN COUNT(e) AS count"
 
 def delete_graph_query():
     return "MATCH (e) DETACH DELETE e"

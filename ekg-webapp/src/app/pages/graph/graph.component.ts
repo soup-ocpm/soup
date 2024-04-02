@@ -185,7 +185,7 @@ export class GraphComponent implements OnInit {
       const height: number = container.clientHeight;
 
       this.g = new dagreD3.graphlib.Graph({multigraph: true, compound: true})
-        .setGraph({rankdir: 'LR'});
+        .setGraph({rankdir: 'LR', nodesep: 25, multiedgesep: 10});
 
       this.nodes.forEach((node: any): void => {
         let nodeId = node.id;
@@ -230,10 +230,11 @@ export class GraphComponent implements OnInit {
 
           this.g.setEdge(`${edge.source.id}`, `${edge.target.id}`, {
             weight: edge.weight,
-            label: `${edge.label}`,
+            label: `${edge.label}` + `: ${edge.weight}`,
             style: `stroke: ${color}; stroke-width: ${strokeWidth}px; fill: rgba(219, 219, 219, 0);`,
             arrowheadStyle: `fill: ${color} ;`,
             curve: d3.curveBasis,
+            labelpos: 'c', // label position to center
             labeloffset: 5,
             extensible: true
           }, edge.label);
@@ -404,10 +405,11 @@ export class GraphComponent implements OnInit {
           const strokeWidth: number = this.weightScale(edge.weight);
 
           this.g.setEdge(`${edge.source.id}`, `${edge.target.id}`, {
-            label: `${edge.label}`,
+            label: `${edge.label}` + `: ${edge.weight}`,
             style: `stroke: ${color}; stroke-width: ${strokeWidth}px; fill: rgba(219, 219, 219, 0);`,
             arrowheadStyle: `fill: ${color} ;`,
             curve: d3.curveBasis,
+            labelpos: 'c', // label position to center
             labeloffset: 5,
             extensible: true
           }, edge.label);

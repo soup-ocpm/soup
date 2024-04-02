@@ -34,6 +34,7 @@
             "inlineStyleLanguage": "scss",
             "assets": [
               "src/favicon.ico",
+              "src/soup-favicon.ico",
               "src/assets",
               "src/manifest.webmanifest"
             ],
@@ -98,6 +99,7 @@
             "inlineStyleLanguage": "scss",
             "assets": [
               "src/favicon.ico",
+              "src/soup-favicon.ico",
               "src/assets",
               "src/manifest.webmanifest"
             ],

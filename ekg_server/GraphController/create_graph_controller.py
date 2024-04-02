@@ -125,7 +125,7 @@ def standard_process_query_c(df, filtered_columns, values_column):
                         parameters[key] = value
             cypher_query = create_node_event_query(cypher_properties)
             database_connection_mem.run_query_memgraph(cypher_query, parameters)
-
+            
             for key, value in row.items():
                 if key not in [event_id_col, timestamp_col, activity_name_col] and key in filtered_columns:
                     entity_query = create_node_entity_query()
@@ -133,6 +133,14 @@ def standard_process_query_c(df, filtered_columns, values_column):
                         if not math.isnan(value):
                             entity_parameters = {
                                 "property_value": value,
+                                "type_value": key
+                            }
+                            database_connection_mem.run_query_memgraph(entity_query, entity_parameters)
+                    elif ',' in value: # check if entities are a set of elements
+                        value = value.split(',')
+                        for val in value:
+                            entity_parameters = {
+                                "property_value": val,
                                 "type_value": key
                             }
                             database_connection_mem.run_query_memgraph(entity_query, entity_parameters)

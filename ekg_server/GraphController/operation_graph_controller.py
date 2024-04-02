@@ -15,10 +15,8 @@ from flask import jsonify
 from collections.abc import Iterable
 from Models.memgraph_connector_model import MemgraphConnector
 from Models.api_response_model import ApiResponse
-from Utils.query_library import get_nodes_event_query, get_nodes_details_query, get_corr_relation_query, \
-    get_df_relation_query, get_nodes_entity_query, get_distinct_entities_keys, get_nan_entities, \
-    delete_entity_graph_query, get_count_entity_query, \
-    delete_event_graph_query, get_count_event_query
+from Utils.query_library import *
+
 
 # Database information:
 uri_mem = 'bolt://localhost:7687'
@@ -573,6 +571,40 @@ def delete_graph_c():
         if result_entity and result_event and result_entity[0]['count'] == 0 and result_event[0]['count'] == 0:
             apiResponse.http_status_code = 200
             apiResponse.message = 'Standard Graph deleted successfully !'
+            apiResponse.response_data = None
+            return jsonify(apiResponse.to_dict()), 200
+        else:
+            apiResponse.http_status_code = 404
+            apiResponse.message = 'Data was not deleted!'
+            apiResponse.response_data = None
+            return jsonify(apiResponse.to_dict()), 404
+
+    except Exception as e:
+        apiResponse.http_status_code = 500
+        apiResponse.message = f"Internal Server Error : {str(e)}"
+        apiResponse.response_data = None
+        return jsonify(apiResponse.to_dict()), 500
+
+    finally:
+        database_connection_mem.close()
+
+
+def delete_all_graph_c():
+    apiResponse = ApiResponse(None, None, None)
+
+    try:
+        database_connection_mem.connect()
+
+        query = delete_graph_query()
+        database_connection_mem.run_query_memgraph(query)
+
+        verification_query = get_count_node_query()
+        result_node = database_connection_mem.run_query_memgraph(verification_query)
+        
+
+        if result_node and result_node[0]['count'] == 0:
+            apiResponse.http_status_code = 200
+            apiResponse.message = 'Graph deleted successfully !'
             apiResponse.response_data = None
             return jsonify(apiResponse.to_dict()), 200
         else:

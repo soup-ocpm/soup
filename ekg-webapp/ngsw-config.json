@@ -8,6 +8,7 @@
       "resources": {
         "files": [
           "/favicon.ico",
+          "/soup-favicon.ico",
           "/index.html",
           "/manifest.webmanifest",
           "/*.css",
