@@ -15,7 +15,7 @@ from flask import request, jsonify
 
 from Models.memgraph_connector_model import MemgraphConnector
 from Models.api_response_model import ApiResponse
-from Utils.query_library import create_class_multi_query, class_df_aggregation
+from Utils.query_library import *
 
 # Database information:
 uri_mem = 'bolt://localhost:7687'
@@ -53,6 +53,17 @@ def create_class_graph_c():
 # Execute query for create Class Graph
 def class_process_query_c(filtered_columns):
     try:
+        # check nan entities with nan values
+        cypher_query = get_nan_entities()
+        res = database_connection_mem.run_query_memgraph(cypher_query)
+        
+        # cast from float to string
+        for element in res:
+            entity = element['prop']
+            cypher_query = change_nan(entity)
+            database_connection_mem.run_query_memgraph(cypher_query)
+            
+        
         cypher_query = create_class_multi_query(filtered_columns)
         database_connection_mem.run_query_memgraph(cypher_query)
 

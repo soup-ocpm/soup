@@ -54,8 +54,6 @@ def create_df_relation_query(key):
             MERGE (e1)-[df:DF {{ Type:n.Type, ID:n.entity_id, edge_weight: 1}}]->(e2)
             """
 
-
-
 def create_class_multi_query(matching_perspectives):
     class_type = 'Class'
     main_query = 'MATCH (e:Event)\n'
@@ -194,6 +192,13 @@ def get_nan_entities():
             WITH DISTINCT prop, count(DISTINCT e) AS nodeCount
             RETURN prop, nodeCount
     """
+    
+def change_nan(entity):
+    entity = entity.replace("'", "")
+    return f"""
+        MATCH (n:Event)
+        SET n.{entity} = toString(n.{entity})
+        """
 
 
 def get_distinct_entities_keys():
