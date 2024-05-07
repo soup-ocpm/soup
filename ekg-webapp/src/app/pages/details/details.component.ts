@@ -11,14 +11,14 @@ import {HelpClassDialogComponent} from "../../components/help-class-dialog/help-
 import {DeleteDialogComponent} from "../../components/delete-dialog/delete-dialog.component";
 
 // Material import
-import {MatSnackBar} from "@angular/material/snack-bar";
 import {MatDialog} from "@angular/material/dialog";
 
 // Models import
-import {Card} from "../../models/card.model";
+import {Card} from "../../core/models/card.model";
 
 // Other import
 import {saveAs} from "file-saver";
+import {NotificationService} from "../../services/notification.service";
 
 @Component({
   selector: 'app-details',
@@ -76,16 +76,16 @@ export class DetailsComponent implements OnInit {
   /**
    * Constructor for DetailsComponent component
    * @param router the Router
-   * @param snackBar the Material Snackbar
    * @param dialog the Material dialog
+   * @param messageService the NotificationService service
    * @param standardGraphService the StandardGraphService service
    * @param classGraphService the ClassGraphService service
    * @param supportService the SupportDataService service
    */
   constructor(
     private router: Router,
-    private snackBar: MatSnackBar,
     private dialog: MatDialog,
+    private messageService: NotificationService,
     private standardGraphService: StandardGraphService,
     private classGraphService: ClassGraphService,
     private supportService: SupportDataService,
@@ -114,7 +114,7 @@ export class DetailsComponent implements OnInit {
   // Inject the JSON data to the specific Cards
   public injectDataToCard(): void {
     if (this.fullJsonData == null) {
-      this.openSnackBar('Error', 'Retry');
+      this.messageService.show('Error. Retry', false, 2000);
       this.router.navigate(['/home']);
       return;
     }
@@ -161,7 +161,6 @@ export class DetailsComponent implements OnInit {
 
       this.dfEdgeCard = new Card(cardTitle, cardType, cardDescription, jsonData, numberOfData);
     }
-
     this.getGraphEntities();
   }
 
@@ -187,21 +186,10 @@ export class DetailsComponent implements OnInit {
         }
       }, errorData => {
         apiResponse = errorData;
-        console.log(apiResponse);
       });
-
-    /**
-     const filteredColumn: Set<string> = new Set<string>();
-     this.entityCard?.jsonData.forEach((item: any) => {
-     if (!filteredColumn.has(item.Type)) {
-     filteredColumn.add(item.Type);
-     }
-     });
-     this.supportService.setFilteredColumn(Array.from(filteredColumn.values()))
-     this.entitiesList = this.supportService.getFilteredColumn();
-     */
   }
 
+  // Retrieve NaN entities
   public getNanEntities(): void {
     let apiResponse: any;
     const nullEntities: string[] = [];
@@ -224,15 +212,11 @@ export class DetailsComponent implements OnInit {
                 }
               });
             });
-
-            console.log(this.entitiesList);
           }
         }
       }, errorData => {
         apiResponse = errorData;
       });
-
-    console.log(this.entitiesList);
   }
 
   /**
@@ -241,14 +225,11 @@ export class DetailsComponent implements OnInit {
    * @param entity the selected entity
    */
   public toggleSelection(entity: any): void {
-    console.log(entity);
     if (this.selectedEntities.includes(entity.name)) {
       this.selectedEntities = this.selectedEntities.filter(item => item !== entity.name);
     } else {
       this.selectedEntities.push(entity.name);
     }
-
-    console.log(this.selectedEntities);
   }
 
   /**
@@ -280,16 +261,19 @@ export class DetailsComponent implements OnInit {
     this.classGraphService.createClassGraph(formData, this.selectedEntities).subscribe(
       response => {
         responseData = response;
-        console.log(responseData);
         if (responseData.http_status_code == 201) {
+          if (this.haveCreatedClassGraph) {
+            this.messageService.show('The old Graph has been successfully deleted. Creating the new graph...', true, 3000);
+          } else {
+            this.messageService.show('Class Graph created successfully', true, 2000);
+          }
           this.getClassGraph(true);
         }
       },
       (error) => {
         responseData = error;
-        console.log(responseData);
         this.isLoadingProgressBar = false;
-        this.openSnackBar('Error while creating Class Graph', 'Retry');
+        this.messageService.show('Error while creating Class Graph. Retry', false, 3000);
       });
   }
 
@@ -300,19 +284,17 @@ export class DetailsComponent implements OnInit {
       this.classGraphService.deleteClassGraph().subscribe(
         response => {
           apiResponse = response;
-          console.log(apiResponse);
           if (apiResponse != null && apiResponse.http_status_code == 200) {
-            this.openSnackBar('Class graph deleted.', 'Ok');
             this.buildNewClassGraph();
           }
         }, error => {
           apiResponse = error;
           if (apiResponse != null) {
             if (apiResponse.http_status_code == 404) {
-              this.openSnackBar('Error while delete graph.', 'Retry');
+              this.messageService.show('Error removing the Graph. Retry', false, 2000);
               return;
             } else if (apiResponse.http_status_code == 500) {
-              this.openSnackBar('Interal Server Error.', 'Retry');
+              this.messageService.show('Internal Server Error. Retry', false, 2000);
               return;
             }
           }
@@ -347,7 +329,7 @@ export class DetailsComponent implements OnInit {
         this.isLoadingProgressBar = false;
 
         if (creation) {
-          this.openSnackBar('Error while retrieve class Graph', 'Retry');
+          this.messageService.show('Error while retrieve Class Graph. Retry', false, 2000);
         }
       });
   }
@@ -361,9 +343,14 @@ export class DetailsComponent implements OnInit {
     if (event) {
       this.isCardExtended = true;
       this.cardExtended = card;
+
+      if (this.isShowSidebar) {
+        this.isShowSidebar = !this.isShowSidebar;
+      }
     } else {
       this.isCardExtended = false;
       this.cardExtended = null;
+      this.isShowSidebar = !this.isShowSidebar;
     }
   }
 
@@ -380,7 +367,7 @@ export class DetailsComponent implements OnInit {
     this.isShowSecondSidebar = !this.isShowSecondSidebar;
   }
 
-  public getEntityWarningPhrase(entity: any){
+  public getEntityWarningPhrase(entity: any) {
     return `${entity.numberOfNanNodes} nodes have Nan value. The generated graph may not be accurate.`;
   }
 
@@ -399,14 +386,5 @@ export class DetailsComponent implements OnInit {
   // Handle the click for show Graph
   public handleClickNextView(): void {
     this.router.navigate(['/graph']);
-  }
-
-  /**
-   * Open the SnackBar with message and action
-   * @param message the message
-   * @param action the action
-   */
-  public openSnackBar(message: string, action: string): void {
-    this.snackBar.open(message, action);
   }
 }

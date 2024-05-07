@@ -1,7 +1,7 @@
 import {Component, EventEmitter, Input, OnInit, Output} from '@angular/core';
 
 // Models import
-import {Card} from "../../models/card.model";
+import {Card} from "../../core/models/card.model";
 
 // Other import
 import {saveAs} from "file-saver";

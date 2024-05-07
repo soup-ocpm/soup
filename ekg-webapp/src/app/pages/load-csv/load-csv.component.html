@@ -108,8 +108,10 @@
 
             <ng-container *ngFor="let entity of displayedColumns" matColumnDef="{{entity}}">
 
-              <th [ngClass]="{'color-entity' : checkSelectedEntity(entity)}" mat-header-cell
-                  *matHeaderCellDef>
+              <th
+                [ngClass]="{'color-entity' : checkSelectedEntity(entity), 'color-element' : checkSelectedElement(entity)}"
+                mat-header-cell
+                *matHeaderCellDef>
                 <div class="entity">{{ entity }}</div>
               </th>
 

@@ -2,7 +2,6 @@ import {Component, ElementRef, OnInit, ViewChild} from '@angular/core';
 import {Router} from '@angular/router';
 
 // Material Import
-import {MatSnackBar} from '@angular/material/snack-bar';
 import {MatDialog} from '@angular/material/dialog';
 
 // Service Import
@@ -17,6 +16,7 @@ import * as d3 from 'd3';
 import * as dagreD3 from 'dagre-d3';
 import saveAs from 'file-saver';
 import {zoom} from 'd3-zoom';
+import {NotificationService} from "../../services/notification.service";
 
 @Component({
   selector: 'app-graph',
@@ -58,6 +58,9 @@ export class GraphComponent implements OnInit {
   // Selected researched Node
   public selectedNode: any;
 
+  // Selected result for searched Node
+  public selectedResult: any;
+
   // Properties of the researched Node
   public propertiesSelectedNode: any = [];
 
@@ -98,19 +101,18 @@ export class GraphComponent implements OnInit {
   // The weight scale for relationships weight
   private weightScale: any;
 
-
   /**
    * Constructor for GraphComponent component
    * @param router the Router
-   * @param snackBar the Material Snackbar
    * @param dialog the Material dialog
+   * @param messageService the NotificationService service
    * @param classGraphService the ClassGraphService service
    * @param supportDataService the SupportDataService service
    */
   constructor(
     private router: Router,
-    private snackBar: MatSnackBar,
     private dialog: MatDialog,
+    private messageService: NotificationService,
     private classGraphService: ClassGraphService,
     private supportDataService: SupportDataService,
   ) {
@@ -167,7 +169,7 @@ export class GraphComponent implements OnInit {
       this.assignRelationLabelColors(this.edges);
       this.createClassGraphVisualization(this.graphContainer, 'myGraphContainer');
     } else {
-      this.openSnackBar('Error while creating Class graph.', 'Retry');
+      this.messageService.show('Error while creating the Class Graph. Retry', false, 2000);
     }
   }
 
@@ -204,7 +206,6 @@ export class GraphComponent implements OnInit {
 
       this.g.nodes().forEach((v: any): void => {
         const node = this.g.node(v);
-        console.log(node);
         node.rx = node.ry = 5;
         node.style = 'fill: #fff; stroke: #000; stroke-width: 2px';
       });
@@ -265,7 +266,7 @@ export class GraphComponent implements OnInit {
    * @param node the unique node to add .
    */
   public addNode(uniqueNodes: Set<any>, node: any) {
-    let nodeExists = false;
+    let nodeExists: boolean = false;
 
     for (let existingNode of uniqueNodes) {
       if (JSON.stringify(existingNode) === JSON.stringify(node)) {
@@ -349,6 +350,8 @@ export class GraphComponent implements OnInit {
     let node = this.g.node(searched.id);
 
     if (node) {
+      this.selectedResult = searched;
+
       this.selectedNode = node;
       const centerX = node.x;
       const centerY = node.y;
@@ -474,6 +477,7 @@ export class GraphComponent implements OnInit {
       render(this.svg, this.g);
 
       this.selectedNode = null;
+      this.selectedResult = null;
     }
   }
 
@@ -496,14 +500,5 @@ export class GraphComponent implements OnInit {
   // Handle the click for go back to details page
   public handleClickBack(): void {
     this.router.navigate(['/details']);
-  }
-
-  /**
-   * Open Snackbar with specific message and action (button)
-   * @param message the message
-   * @param action the action
-   */
-  public openSnackBar(message: string, action: string): void {
-    this.snackBar.open(message, action);
   }
 }

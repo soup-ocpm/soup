@@ -205,6 +205,12 @@ svg {
   background-color: #fff;
 }
 
+.custom-card.card-selected {
+  background-color: #8AC5FF;
+  border: 1px solid #488FEF;
+  color: white;
+}
+
 .search-results {
   cursor: pointer;
 }

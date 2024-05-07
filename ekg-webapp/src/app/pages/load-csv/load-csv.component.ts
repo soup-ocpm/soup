@@ -1,20 +1,22 @@
 import {Component, OnDestroy, OnInit} from '@angular/core';
 import {Router} from "@angular/router";
 
+// Components import
+import {HelpStandardDialogComponent} from "../../components/help-standard-dialog/help-standard-dialog.component";
+
 // Services import
+import {NotificationService} from "../../services/notification.service";
 import {StandardGraphService} from "../../services/standard_graph.service";
 import {SupportDataService} from "../../services/support_data.service";
 
 // Material import
-import {MatSnackBar} from "@angular/material/snack-bar";
+import {MatDialog} from "@angular/material/dialog";
 
 // Models import
-import {Entity} from "../../models/entity.model";
+import {Entity} from "../../core/models/entity.model";
 
 // Other import
 import {Papa} from "ngx-papaparse";
-import {MatDialog} from "@angular/material/dialog";
-import {HelpStandardDialogComponent} from "../../components/help-standard-dialog/help-standard-dialog.component";
 
 @Component({
   selector: 'app-load-csv',
@@ -75,16 +77,16 @@ export class LoadCsvComponent implements OnInit, OnDestroy {
    * Constructor for LoadCsvComponent component
    * @param router the Router
    * @param parser the Papa for parse .csv file
-   * @param snackBar the Material Snackbar
    * @param dialog the Material dialog
+   * @param messageService the NotificationService service
    * @param standardGraphService the StandardGraphService service
    * @param supportService the SupportDataService service
    */
   constructor(
     private router: Router,
     private parser: Papa,
-    private snackBar: MatSnackBar,
     private dialog: MatDialog,
+    private messageService: NotificationService,
     private standardGraphService: StandardGraphService,
     private supportService: SupportDataService
   ) {
@@ -109,7 +111,7 @@ export class LoadCsvComponent implements OnInit, OnDestroy {
    */
   public onSelectFile(event: any): void {
     if (event.addedFiles.length != 1) {
-      this.openSnackBar('Only 1 file.', 'Done');
+      this.messageService.show('Only one file can be uploaded', false, 2000);
       return;
     }
     if (this.files.length == 0) {
@@ -117,13 +119,13 @@ export class LoadCsvComponent implements OnInit, OnDestroy {
       if (!this.files[0].name.endsWith('.csv')) {
         this.files.splice(this.files.indexOf(event), 1);
         this.selectedFile = undefined;
-        this.openSnackBar('Only file with .csv extension', 'Retry');
+        this.messageService.show('Only file with CSV extension', false, 2000);
         return;
       }
       this.selectedFile = this.files[0];
       this.hasSelectedFile = true;
     } else {
-      this.openSnackBar('Only 1 file.', 'Done');
+      this.messageService.show('Only one file can be uploaded', false, 2000);
     }
   }
 
@@ -162,8 +164,10 @@ export class LoadCsvComponent implements OnInit, OnDestroy {
                 this.allFileEntities.forEach((item: Entity) => {
                   this.displayedColumns.push(item.name);
                 });
-                for (let i: number = 0; i < 9; i++) {
-                  this.dataSource.push(result.data[i])
+                for (let i: number = 0; i < 8; i++) {
+                  if (result.data[i] != null) {
+                    this.dataSource.push(result.data[i])
+                  }
                 }
                 this.isShowUpload = false;
                 this.isShowTable = true;
@@ -175,10 +179,14 @@ export class LoadCsvComponent implements OnInit, OnDestroy {
       };
       reader.readAsText(this.selectedFile);
     } else {
-      this.openSnackBar('Upload .csv file.', 'Done');
+      this.messageService.show('Upload the csv file', false, 2000);
     }
   }
 
+  /**
+   * Check the selected entity
+   * @param entity the entity
+   */
   public checkSelectedEntity(entity: string) {
     let checked = 0;
     this.allFileEntities.forEach((e: Entity) => {
@@ -186,10 +194,29 @@ export class LoadCsvComponent implements OnInit, OnDestroy {
         checked = 1;
       }
     });
-    console.log(checked);
     return checked == 1;
   }
 
+  /**
+   * Check the selected element
+   * @param entity the entity
+   */
+  public checkSelectedElement(entity: string): boolean {
+    let checked = 0;
+    this.allFileValuesSelected.forEach((e: Entity) => {
+      if (e.name == entity && e.selected && !this.checkSelectedEntity(entity)) {
+        checked = 1;
+      }
+    });
+
+    return checked == 1;
+  }
+
+  /**
+   * Submit the selected entity
+   * @param entity the selected entity
+   * @param event the event (boolean value)
+   */
   public submitEntity(entity: Entity, event: any): void {
     entity.selected = event;
     if (entity.selected) {
@@ -201,6 +228,11 @@ export class LoadCsvComponent implements OnInit, OnDestroy {
     }
   }
 
+  /**
+   * Submit the selected entity value
+   * @param entity the entity value
+   * @param event the event (boolean value)
+   */
   public submitValue(entity: Entity, event: any): void {
     entity.selected = event;
     if (event == false) {
@@ -220,14 +252,14 @@ export class LoadCsvComponent implements OnInit, OnDestroy {
   // Prepare to build graph
   public preBuildGraph(): void {
     if (!this.eventIdColumn || !this.timestampColumn || !this.activityNameColumn) {
-      this.openSnackBar('Please select all columns (Event ID, Timestamp, Activity Name).', 'Done');
+      this.messageService.show('Please map the information.', false, 2000);
       return;
     }
     if (this.selectedFile) {
-      const reader = new FileReader();
+      const reader: FileReader = new FileReader();
       reader.onload = (e) => {
         if (e.target?.result) {
-          const csvData = e.target.result.toString();
+          const csvData: string = e.target.result.toString();
           const lines = csvData.split('\n');
           if (lines.length > 0) {
             const header = lines[0].split(',');
@@ -249,7 +281,7 @@ export class LoadCsvComponent implements OnInit, OnDestroy {
       };
       reader.readAsText(this.selectedFile);
     } else {
-      this.openSnackBar('Upload .csv file.', 'Done');
+      this.messageService.show('Please upload .csv file', false, 2000);
     }
   }
 
@@ -274,8 +306,6 @@ export class LoadCsvComponent implements OnInit, OnDestroy {
         response => {
           apiResponse = response;
           if (apiResponse != null && apiResponse.http_status_code == 201) {
-            console.log('Graph Creation : ');
-            console.log(apiResponse);
             this.removeStandardProperties();
             this.supportService.setFilteredColumn(this.filteredColumn);
             this.getGraph();
@@ -284,7 +314,7 @@ export class LoadCsvComponent implements OnInit, OnDestroy {
         },
         error => {
           apiResponse = error;
-          this.openSnackBar('Error while creating the Graph.', 'Retry');
+          this.messageService.show('Error while creatin the Graph. Retry', false, 3000);
           this.isLoadingProgressBar = false;
           this.isShowTable = false;
           this.isShowUpload = true;
@@ -293,7 +323,7 @@ export class LoadCsvComponent implements OnInit, OnDestroy {
 
         });
     } catch (error) {
-      this.openSnackBar(`Internal Server Error.`, 'Retry');
+      this.messageService.show('Internal Server Error. Retry', false, 2000);
       this.resetCSVData();
     }
   }
@@ -310,20 +340,19 @@ export class LoadCsvComponent implements OnInit, OnDestroy {
         (response): void => {
           apiResponse = response;
           if (apiResponse.http_status_code === 200 && apiResponse.response_data != null) {
-            console.log('Get graph response : ');
-            console.log(apiResponse);
             this.standardGraphService.saveResponse(apiResponse.response_data);
             this.isLoadingProgressBar = false;
+            this.messageService.show('The Graph was successfully created within the Memgraph Database', true, 3000);
             this.router.navigateByUrl('/details');
           }
         },
         error => {
           apiResponse = error;
-          this.openSnackBar('Error while retrieve graph.', 'Retry');
+          this.messageService.show('Error receiving the created graph. Retry', false, 2000);
           this.resetCSVData();
         });
     } catch (error) {
-      this.openSnackBar(`Internal Server Error.`, 'Retry');
+      this.messageService.show('Internal Server Error. Retry', false, 2000);
       this.resetCSVData();
     }
   }
@@ -341,7 +370,6 @@ export class LoadCsvComponent implements OnInit, OnDestroy {
       .filter(column => column.selected)
       .map(column => column.name);
   }
-
 
   // ------ SUPPORT METHODS ------
 
@@ -370,15 +398,6 @@ export class LoadCsvComponent implements OnInit, OnDestroy {
     this.displayedColumns = [];
   }
 
-  /**
-   * Open Snackbar with specific message and action (button)
-   * @param message the message
-   * @param action the action
-   */
-  public openSnackBar(message: string, action: string): void {
-    this.snackBar.open(message, action);
-  }
-
   // Handle the click for close tutorial
   public toggleTutorial(): void {
     this.isTutorialTerminated = true;
@@ -389,9 +408,6 @@ export class LoadCsvComponent implements OnInit, OnDestroy {
   public toggleTable(): void {
     this.isShowTable = false;
     this.isShowUpload = true;
-    console.log(this.displayedColumns);
-    console.log(this.allFileEntities);
-    console.log(this.dataSource);
   }
 
   // Handle the click for close Sidebar

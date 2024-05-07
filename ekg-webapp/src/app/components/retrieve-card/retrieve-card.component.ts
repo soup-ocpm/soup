@@ -1,12 +1,10 @@
 import {Component, OnInit} from '@angular/core';
 import {Router} from "@angular/router";
 
-// Material Import
-import {MatSnackBar} from "@angular/material/snack-bar";
-
 // Service import
 import {StandardGraphService} from "../../services/standard_graph.service";
 import {SupportDataService} from "../../services/support_data.service";
+import {NotificationService} from "../../services/notification.service";
 
 @Component({
   selector: 'app-retrieve-card',
@@ -27,13 +25,13 @@ export class RetrieveCardComponent implements OnInit {
   /**
    * Constructor for RetrieveCardComponent component
    * @param router the Router
-   * @param snackBar the Material Snackbar
+   * @param messageService the NotificationService service
    * @param standardGraphService the StandardGraphService service
    * @param supportGraphService the SupportDataService service
    */
   constructor(
     private router: Router,
-    private snackBar: MatSnackBar,
+    private messageService: NotificationService,
     private standardGraphService: StandardGraphService,
     private supportGraphService: SupportDataService,
   ) {
@@ -59,33 +57,24 @@ export class RetrieveCardComponent implements OnInit {
             this.allowToCloseDialog = true;
             this.router.navigate(['/details']);
           } else if (apiResponse.http_status_code === 202) {
-            this.openSnackBar('No content.', 'OK');
+            this.messageService.show('No content inside the Memgraph Database', false, 2000);
             this.isLoadingProgressBar = false;
             this.allowToCloseDialog = true;
           }
         },
         error => {
           apiResponse = error;
-          this.openSnackBar('Error while retrieve graph.', 'Retry');
+          this.messageService.show('Error while retrieve Graph. Retry', false, 2000);
           this.isLoadingProgressBar = false;
         });
     } catch (error) {
       this.isLoadingProgressBar = false;
-      this.openSnackBar(`Internal Server Error.`, 'Retry');
+      this.messageService.show('Internal Server Error. Retry', false, 2000);
     }
   }
 
   // Retrieve cloud graph information
   public retrieveCloudInformationHandle(): void {
-    this.openSnackBar(`Not implemented yet...`, 'Done');
-  }
-
-  /**
-   * Open Snackbar with specific message and action (button)
-   * @param message the message
-   * @param action the action
-   */
-  public openSnackBar(message: string, action: string): void {
-    this.snackBar.open(message, action);
+    this.messageService.show('Not implemented yet...', false, 2000);
   }
 }

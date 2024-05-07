@@ -130,6 +130,17 @@ mat-stepper {
   }
 }
 
+.color-element{
+  font-size: 17px;
+  color: rgb(225, 91, 61);
+
+  .entity {
+    padding: 2px;
+    border: 1px solid rgb(225, 91, 61);
+    border-radius: 5px;
+  }
+}
+
 .button-table {
   position: absolute;
   right: 8px;

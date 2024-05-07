@@ -101,8 +101,7 @@
 </div>
 
 <!--Master container content-->
-<div *ngIf="!isLoadingProgressBar" class="master" [ngStyle]="{ 'filter': isShowSecondSidebar ? 'blur(2px)' : 'none' }"
-     [ngClass]="{ 'no-pointer-events': isShowSidebar }">
+<div *ngIf="!isLoadingProgressBar" class="master" [ngStyle]="{ 'filter': isShowSecondSidebar ? 'blur(2px)' : 'none' }">
 
   <mat-icon class="back-button-pos" color="primary" (click)="handleClickNextView()"
             *ngIf="isShowNextPageBtn && !isShowSidebar">

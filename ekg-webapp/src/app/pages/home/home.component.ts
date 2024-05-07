@@ -16,7 +16,7 @@ export class HomeComponent implements OnInit {
 
   /**
    * Constructor for HomeComponent component
-   * @param router
+   * @param router the Router
    * @param dialog the Material dialog
    */
   constructor(
