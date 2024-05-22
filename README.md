@@ -23,11 +23,11 @@ Through object-centric it is possible to view the graph in detail and with all t
 As previously described, to create the final project that satisfied all the requirements, 
 various technologies were necessary which in turn were studied and explored in depth during the first weeks of development.
 
-### 1. Neo4j Database
+### 1. Memgraph Database
 One of the fundamental technologies on which the main purpose of the project was based is certainly the Graph database. <br>
-As a Graph database, the famous and professional Neo4j environment was used as requested.
+As a Graph database, the famous and professional Memgraph environment was used as requested.
 Useful links : 
-- [Neo4j Aura](https://neo4j.com/cloud/platform/aura-graph-database/?ref=neo4j-home-hero&utm_medium=PaidSearch&utm_source=google&utm_campaign=GDB&utm_content=EMEA-X-Conversion-GDB-Text&utm_term=neo4j&gclid=CjwKCAiA9ourBhAVEiwA3L5RFhxyyrshnQQxHYRr9kknTgOzdBtpGC7F9lulOw4pJd4ihAI-A1o_4xoCc3QQAvD_BwE)
+- [Memgraph](https://memgraph.com/)
 - [Chyper Query Language](https://neo4j.com/product/cypher-graph-query-language/?utm_source=google&utm_medium=PaidSearch&utm_campaign=GDB&utm_content=EMEA-X-Awareness-GDB-Text&utm_term=cypher%20query%20language&gad_source=1&gclid=CjwKCAiA9ourBhAVEiwA3L5RFhfAegfrPme8ND2NcBymbz8fhWHLrDI-HbSaK5lhBIA0kp-iR8ZZgRoC47wQAvD_BwE)
 
 ### 2. Python
@@ -48,6 +48,41 @@ Useful links:
 - [Angular](https://angular.io/)
 - [Dagre-d3](https://www.npmjs.com/package/dagre-d3)
 and other library visible in package.json.
+
+## Use case
+As described previously, the tool allows the end user to upload a .csv file containing evet logs and create EKG-based graphs. <br>
+First, go to the corresponding "Upload CSV" section and follow the tool's instructions to correctly upload the csv file. <br>
+Once loaded, the file will be parsed and the user can see a preview of the entities and properties of the file through the table. <br>
+A Sidebar coming from the right has the task of letting the user filter the entities and properties to take into consideration for his analysis.<br>
+
+photo
+
+Once this first phase is completed, the graph will be automatically generated within our Memgraph database and the graph data will be reported in the form of Cards, as illustrated:
+
+photo
+
+Then you can expand the cards to see the corresponding and specific JSON of the newly created data, with the possibility of searching within the JSON or even downloading it : 
+
+photo
+
+
+In the Sidebar coming from the right, you can perform operations such as downloading the complete JSON of the Graph, deleting the graph or above all grouping the nodes <br> 
+to create the graph composed of aggregate nodes (Class Graph). Again, in this section the previously selected entities are presented, with warnings in case some nodes have that null property.
+
+photo
+
+Once the attributes to aggregate the nodes have been chosen, the Classes node will be created, and the user will automatically be redirected to the page which aims to view the complete graph. 
+
+In this section you can already place studies and analyses, navigating within the graph. Above all, you can search for nodes or relationships, and through the Sidebar you can carry out other <br> 
+operations such as customizing the graph view, exporting the graph to .svg or deleting the graph.
+At the top left there is an arrow to return to the previous screen. In this case the tool recognizes that an aggregate graph has already been created (or in any case is present within the Database)<br> 
+so you have the possibility to see the graph or create a new one (the current graph will be eliminated).
+
+photo
+
+## Download Project
+
+
 
 ## Final Product
 The user has the possibility to upload his own .csv file containing the data of interest via Drag&Drop. 
