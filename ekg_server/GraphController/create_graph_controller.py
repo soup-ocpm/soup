@@ -17,20 +17,13 @@ import time
 import pandas as pd
 from datetime import datetime
 from flask import request, jsonify
-
-from Models.memgraph_connector_model import MemgraphConnector
 from Models.api_response_model import ApiResponse
 from Utils.query_library import create_df_relation_query, create_node_event_query, create_node_entity_query, \
     create_corr_relation_query
 
-# Database information:
-uri_mem = 'bolt://localhost:7687'
-auth_mem = ("", "")
-database_connection_mem = MemgraphConnector(uri_mem, auth_mem)
-
 
 # Create standard Graph function
-def create_graph_c():
+def create_graph_c(database_connector):
     apiResponse = ApiResponse(None, None, None)
 
     if request.files['file'] is None:
@@ -54,13 +47,13 @@ def create_graph_c():
     values_column = json.loads(values_column_json)
 
     try:
-        database_connection_mem.connect()
+        database_connector.connect()
 
         start_time = time.time()
 
         file_data = file.read().decode('utf-8')
         df = pd.read_csv(io.StringIO(file_data))
-        standard_process_query_c(df, filtered_column, values_column)
+        standard_process_query_c(database_connector, df, filtered_column, values_column)
 
         stop_time = time.time()
 
@@ -79,11 +72,11 @@ def create_graph_c():
         return jsonify(apiResponse.to_dict()), 500
 
     finally:
-        database_connection_mem.close()
+        database_connector.close()
 
 
 # Process the .csv file and execute query for create standard Graph
-def standard_process_query_c(df, filtered_columns, values_column):
+def standard_process_query_c(database_connector, df, filtered_columns, values_column):
     try:
         now = datetime.now()
 
@@ -124,8 +117,8 @@ def standard_process_query_c(df, filtered_columns, values_column):
                         cypher_properties.append(f"{key}: coalesce(${key}, '')")
                         parameters[key] = value
             cypher_query = create_node_event_query(cypher_properties)
-            database_connection_mem.run_query_memgraph(cypher_query, parameters)
-            
+            database_connector.run_query_memgraph(cypher_query, parameters)
+
             for key, value in row.items():
                 if key not in [event_id_col, timestamp_col, activity_name_col] and key in filtered_columns:
                     entity_query = create_node_entity_query()
@@ -135,31 +128,31 @@ def standard_process_query_c(df, filtered_columns, values_column):
                                 "property_value": value,
                                 "type_value": key
                             }
-                            database_connection_mem.run_query_memgraph(entity_query, entity_parameters)
-                    elif ',' in value: # check if entities are a set of elements
+                            database_connector.run_query_memgraph(entity_query, entity_parameters)
+                    elif ',' in value:  # check if entities are a set of elements
                         value = value.split(',')
                         for val in value:
                             entity_parameters = {
                                 "property_value": val,
                                 "type_value": key
                             }
-                            database_connection_mem.run_query_memgraph(entity_query, entity_parameters)
+                            database_connector.run_query_memgraph(entity_query, entity_parameters)
                     else:
                         entity_parameters = {
                             "property_value": value,
                             "type_value": key
                         }
-                        database_connection_mem.run_query_memgraph(entity_query, entity_parameters)
+                        database_connector.run_query_memgraph(entity_query, entity_parameters)
 
         for key in filtered_columns:
             if key not in [event_id_col, timestamp_col, activity_name_col]:
                 correlation_query_corr = create_corr_relation_query(key)
-                database_connection_mem.run_query_memgraph(correlation_query_corr)
+                database_connector.run_query_memgraph(correlation_query_corr)
 
         for key in filtered_columns:
             if key not in [event_id_col, timestamp_col, activity_name_col]:
                 correlation_query_df = create_df_relation_query(key)
-                database_connection_mem.run_query_memgraph(correlation_query_df)
+                database_connector.run_query_memgraph(correlation_query_df)
         now = datetime.now()
 
         current_time = now.strftime("%H:%M:%S")

@@ -1,0 +1,41 @@
+version: '3.8'
+
+services:
+  angular:
+    build:
+      context: ./ekg-webapp
+    container_name: ekg_webapp
+    ports:
+      - "4200:4200"
+    depends_on:
+      - flask
+    networks:
+      - app-network
+
+  flask:
+    build:
+      context: ./ekg_server
+    container_name: ekg_server
+    ports:
+      - "8080:8080"
+    networks:
+      - app-network
+    environment:
+      - MEMGRAPH_HOST=memgraph
+      - MEMGRAPH_PORT=7687  
+
+  memgraph:
+    image: memgraph/memgraph-platform
+    container_name: memgraph-platform
+    ports:
+      - "7687:7687"
+      - "7444:7444"
+      - "3000:3000"
+    networks:
+      - app-network
+
+
+
+networks:
+  app-network:
+    driver: bridge

@@ -20,10 +20,12 @@ class MemgraphConnector:
         self._uri = uri
         self._auth = auth
         self._driver = None
+        print(f'Database information : bolt://{self._uri}')
 
     # Connect function
     def connect(self):
         self._driver = GraphDatabase.driver(self._uri, auth=self._auth)
+        print('Success connect with Memgraph')
 
     # Close connect function
     def close(self):

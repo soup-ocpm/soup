@@ -12,26 +12,20 @@ License : MIT
 # Import
 import json
 from flask import request, jsonify
-from Models.memgraph_connector_model import MemgraphConnector
 from Models.api_response_model import ApiResponse
 from Utils.query_library import *
 
-# Database information
-uri_mem = 'bolt://localhost:7687'
-auth_mem = ("", "")
-database_connection_mem = MemgraphConnector(uri_mem, auth_mem)
-
 
 # Create Class Graph function
-def create_class_graph_c():
+def create_class_graph_c(database_connector):
     apiResponse = ApiResponse(None, None, None)
 
     filtered_column_json = request.form.get('filteredColumn')
     filtered_column = json.loads(filtered_column_json)
 
     try:
-        database_connection_mem.connect()
-        class_process_query_c(filtered_column)
+        database_connector.connect()
+        class_process_query_c(database_connector, filtered_column)
 
         apiResponse.http_status_code = 201
         apiResponse.message = 'Class Graph created successfully.'
@@ -46,27 +40,27 @@ def create_class_graph_c():
         return jsonify(apiResponse.to_dict()), 500
 
     finally:
-        database_connection_mem.close()
+        database_connector.close()
 
 
 # Execute query for create Class Graph
-def class_process_query_c(filtered_columns):
+def class_process_query_c(database_connector, filtered_columns):
     try:
         # check nan entities with nan values
         cypher_query = get_nan_entities()
-        res = database_connection_mem.run_query_memgraph(cypher_query)
+        res = database_connector.run_query_memgraph(cypher_query)
 
         # cast from float to string
         for element in res:
             entity = element['prop']
             cypher_query = change_nan(entity)
-            database_connection_mem.run_query_memgraph(cypher_query)
+            database_connector.run_query_memgraph(cypher_query)
 
         cypher_query = create_class_multi_query(filtered_columns)
-        database_connection_mem.run_query_memgraph(cypher_query)
+        database_connector.run_query_memgraph(cypher_query)
 
         df_query = class_df_aggregation(rel_type='DF', class_rel_type='DF_C')
-        database_connection_mem.run_query_memgraph(df_query)
+        database_connector.run_query_memgraph(df_query)
     except Exception as e:
         print(f"Internal Server error: {str(e)}")
         raise

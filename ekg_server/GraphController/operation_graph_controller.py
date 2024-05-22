@@ -13,26 +13,19 @@ License : MIT
 import math
 from flask import jsonify
 from collections.abc import Iterable
-from Models.memgraph_connector_model import MemgraphConnector
 from Models.api_response_model import ApiResponse
 from Utils.query_library import *
 
 
-# Database information:
-uri_mem = 'bolt://localhost:7687'
-auth_mem = ("", "")
-database_connection_mem = MemgraphConnector(uri_mem, auth_mem)
-
-
 # Get Event nodes
-def get_event_nodes_c():
+def get_event_nodes_c(database_connector):
     apiResponse = ApiResponse(None, None, None)
 
     try:
-        database_connection_mem.connect()
+        database_connector.connect()
 
         query = get_nodes_event_query()
-        result = database_connection_mem.run_query_memgraph(query)
+        result = database_connector.run_query_memgraph(query)
 
         if not isinstance(result, Iterable):
             apiResponse.http_status_code = 404
@@ -71,18 +64,18 @@ def get_event_nodes_c():
         return jsonify(apiResponse.to_dict()), 500
 
     finally:
-        database_connection_mem.close()
+        database_connector.close()
 
 
 # Get Entity nodes
-def get_entity_nodes_c():
+def get_entity_nodes_c(database_connector):
     apiResponse = ApiResponse(None, None, None)
 
     try:
-        database_connection_mem.connect()
+        database_connector.connect()
 
         query = get_nodes_entity_query()
-        result = database_connection_mem.run_query_memgraph(query)
+        result = database_connector.run_query_memgraph(query)
 
         if not isinstance(result, Iterable):
             apiResponse.http_status_code = 404
@@ -121,18 +114,18 @@ def get_entity_nodes_c():
         return jsonify(apiResponse.to_dict()), 500
 
     finally:
-        database_connection_mem.close()
+        database_connector.close()
 
 
 # Get :CORR relationships
-def get_corr_relationships_c():
+def get_corr_relationships_c(database_connector):
     apiResponse = ApiResponse(None, None, None)
 
     try:
-        database_connection_mem.connect()
+        database_connector.connect()
 
         query = get_corr_relation_query()
-        result = database_connection_mem.run_query_memgraph(query)
+        result = database_connector.run_query_memgraph(query)
 
         if not isinstance(result, Iterable):
             apiResponse.http_status_code = 404
@@ -192,18 +185,18 @@ def get_corr_relationships_c():
         return jsonify(apiResponse.to_dict()), 500
 
     finally:
-        database_connection_mem.close()
+        database_connector.close()
 
 
 # Get :DF relationships
-def get_df_relationships_c():
+def get_df_relationships_c(database_connector):
     apiResponse = ApiResponse(None, None, None)
 
     try:
-        database_connection_mem.connect()
+        database_connector.connect()
 
         query = get_df_relation_query()
-        result = database_connection_mem.run_query_memgraph(query)
+        result = database_connector.run_query_memgraph(query)
 
         if not isinstance(result, Iterable):
             apiResponse.http_status_code = 404
@@ -263,18 +256,18 @@ def get_df_relationships_c():
         return jsonify(apiResponse.to_dict()), 500
 
     finally:
-        database_connection_mem.close()
+        database_connector.close()
 
 
 # Get standard graph (Event node and :DF Relationships)
-def get_graph_c():
+def get_graph_c(database_connector):
     apiResponse = ApiResponse(None, None, None)
 
     try:
-        database_connection_mem.connect()
+        database_connector.connect()
 
         query = get_df_relation_query()
-        result = database_connection_mem.run_query_memgraph(query)
+        result = database_connector.run_query_memgraph(query)
 
         if not isinstance(result, Iterable):
             apiResponse.http_status_code = 404
@@ -325,18 +318,18 @@ def get_graph_c():
         return jsonify(apiResponse.to_dict()), 500
 
     finally:
-        database_connection_mem.close()
+        database_connector.close()
 
 
 # Get standard graph details(event, count, entity, df, corr)
-def get_graph_details_c():
+def get_graph_details_c(database_connector):
     apiResponse = ApiResponse(None, None, None)
 
     try:
-        database_connection_mem.connect()
+        database_connector.connect()
 
         query = get_nodes_details_query()
-        result = database_connection_mem.run_query_memgraph(query)
+        result = database_connector.run_query_memgraph(query)
 
         if not isinstance(result, Iterable):
             apiResponse.http_status_code = 404
@@ -364,7 +357,7 @@ def get_graph_details_c():
                     in entity_nodes]
 
         query = get_corr_relation_query()
-        result = database_connection_mem.run_query_memgraph(query)
+        result = database_connector.run_query_memgraph(query)
 
         if not isinstance(result, Iterable):
             apiResponse.http_status_code = 404
@@ -400,7 +393,7 @@ def get_graph_details_c():
             })
 
         query = get_df_relation_query()
-        result = database_connection_mem.run_query_memgraph(query)
+        result = database_connector.run_query_memgraph(query)
 
         if not isinstance(result, Iterable):
             apiResponse.http_status_code = 404
@@ -466,18 +459,18 @@ def get_graph_details_c():
         return jsonify(apiResponse.to_dict()), 500
 
     finally:
-        database_connection_mem.close()
+        database_connector.close()
 
 
 # Return the entities key
-def get_entities_key_c():
+def get_entities_key_c(database_connector):
     apiResponse = ApiResponse(None, None, None)
 
     try:
-        database_connection_mem.connect()
+        database_connector.connect()
 
         query = get_distinct_entities_keys()
-        result = database_connection_mem.run_query_memgraph(query)
+        result = database_connector.run_query_memgraph(query)
 
         if not isinstance(result, Iterable):
             apiResponse.http_status_code = 404
@@ -503,17 +496,17 @@ def get_entities_key_c():
         return jsonify(apiResponse.to_dict()), 500
 
     finally:
-        database_connection_mem.close()
+        database_connector.close()
 
 
-def get_null_entities_c():
+def get_null_entities_c(database_connector):
     apiResponse = ApiResponse(None, None, None)
 
     try:
-        database_connection_mem.connect()
+        database_connector.connect()
 
         query = get_nan_entities()
-        result = database_connection_mem.run_query_memgraph(query)
+        result = database_connector.run_query_memgraph(query)
 
         if not isinstance(result, Iterable):
             apiResponse.http_status_code = 404
@@ -544,29 +537,29 @@ def get_null_entities_c():
         return jsonify(apiResponse.to_dict()), 500
 
     finally:
-        database_connection_mem.close()
+        database_connector.close()
 
 
 # Delete Standard Graph (Event node and :DF Relationships)
-def delete_graph_c():
+def delete_graph_c(database_connector):
     apiResponse = ApiResponse(None, None, None)
 
     try:
-        database_connection_mem.connect()
+        database_connector.connect()
 
         # Delete entity nodes
         query = delete_entity_graph_query()
-        database_connection_mem.run_query_memgraph(query)
+        database_connector.run_query_memgraph(query)
 
         verification_query = get_count_entity_query()
-        result_entity = database_connection_mem.run_query_memgraph(verification_query)
+        result_entity = database_connector.run_query_memgraph(verification_query)
 
         # Delete event nodes
         query = delete_event_graph_query()
-        database_connection_mem.run_query_memgraph(query)
+        database_connector.run_query_memgraph(query)
 
         verification_query = get_count_event_query()
-        result_event = database_connection_mem.run_query_memgraph(verification_query)
+        result_event = database_connector.run_query_memgraph(verification_query)
 
         if result_entity and result_event and result_entity[0]['count'] == 0 and result_event[0]['count'] == 0:
             apiResponse.http_status_code = 200
@@ -586,21 +579,20 @@ def delete_graph_c():
         return jsonify(apiResponse.to_dict()), 500
 
     finally:
-        database_connection_mem.close()
+        database_connector.close()
 
 
-def delete_all_graph_c():
+def delete_all_graph_c(database_connector):
     apiResponse = ApiResponse(None, None, None)
 
     try:
-        database_connection_mem.connect()
+        database_connector.connect()
 
         query = delete_graph_query()
-        database_connection_mem.run_query_memgraph(query)
+        database_connector.run_query_memgraph(query)
 
         verification_query = get_count_node_query()
-        result_node = database_connection_mem.run_query_memgraph(verification_query)
-        
+        result_node = database_connector.run_query_memgraph(verification_query)
 
         if result_node and result_node[0]['count'] == 0:
             apiResponse.http_status_code = 200
@@ -620,4 +612,4 @@ def delete_all_graph_c():
         return jsonify(apiResponse.to_dict()), 500
 
     finally:
-        database_connection_mem.close()
+        database_connector.close()

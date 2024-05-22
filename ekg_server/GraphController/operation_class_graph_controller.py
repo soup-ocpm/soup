@@ -11,27 +11,22 @@ License : MIT
 
 # Import
 import math
+import os
 from flask import jsonify
 from collections.abc import Iterable
-from Models.memgraph_connector_model import MemgraphConnector
 from Models.api_response_model import ApiResponse
 from Utils.query_library import get_class_graph_query, delete_class_graph_query, get_count_class_graph_query
 
-# Database information:
-uri_mem = 'bolt://localhost:7687'
-auth_mem = ("", "")
-database_connection_mem = MemgraphConnector(uri_mem, auth_mem)
-
 
 # Get Class Graph (Class nodes, :DF_C Relationships)
-def get_class_graph_c():
+def get_class_graph_c(database_connector):
     apiResponse = ApiResponse(None, None, None)
 
     try:
-        database_connection_mem.connect()
+        database_connector.connect()
 
         query_result = get_class_graph_query()
-        result = database_connection_mem.run_query_memgraph(query_result)
+        result = database_connector.run_query_memgraph(query_result)
 
         if not isinstance(result, Iterable):
             apiResponse.http_status_code = 404
@@ -81,21 +76,21 @@ def get_class_graph_c():
         return jsonify(apiResponse.to_dict()), 500
 
     finally:
-        database_connection_mem.close()
+        database_connector.close()
 
 
 # Delete Class Graph (Class nodes, :DF_C Relationships)
-def delete_class_graph_c():
+def delete_class_graph_c(database_connector):
     apiResponse = ApiResponse(None, None, None)
 
     try:
-        database_connection_mem.connect()
+        database_connector.connect()
 
         query = delete_class_graph_query()
-        database_connection_mem.run_query_memgraph(query)
+        database_connector.run_query_memgraph(query)
 
         verification_query = get_count_class_graph_query()
-        result = database_connection_mem.run_query_memgraph(verification_query)
+        result = database_connector.run_query_memgraph(verification_query)
 
         if result and result[0]['count'] == 0:
             apiResponse.http_status_code = 200
@@ -115,4 +110,4 @@ def delete_class_graph_c():
         return jsonify(apiResponse.to_dict()), 500
 
     finally:
-        database_connection_mem.close()
+        database_connector.close()

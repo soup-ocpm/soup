@@ -10,16 +10,25 @@ License : MIT
 """
 
 # Import
-from flask import Flask, jsonify
+import os
+from flask import Flask
 from flask_cors import CORS
 from GraphController.create_graph_controller import create_graph_c
 from GraphController.create_class_graph_controller import create_class_graph_c
 from GraphController.operation_graph_controller import *
 from GraphController.operation_class_graph_controller import get_class_graph_c, delete_class_graph_c
+from Models.memgraph_connector_model import MemgraphConnector
 
 # App
 app = Flask(__name__)
 CORS(app)
+
+# Database information
+memgraph_host = os.getenv("MEMGRAPH_HOST", "memgraph")
+memgraph_port = int(os.getenv("MEMGRAPH_PORT", 7687))
+uri_mem = f'bolt://{memgraph_host}:{memgraph_port}'
+auth_mem = ("", "")
+database_connector = MemgraphConnector(uri_mem, auth_mem)
 
 
 # WELCOME API
@@ -34,48 +43,48 @@ def welcome_api():
 # All API for Graph (Standard)
 @app.route('/api/v1/graph', methods=['POST'])
 def create_graph():
-    return create_graph_c()
+    return create_graph_c(database_connector)
 
 
 @app.route('/api/v1/graph/nodes/event', methods=['GET'])
 def get_event_nodes():
-    return get_event_nodes_c()
+    return get_event_nodes_c(database_connector)
 
 
 @app.route('/api/v1/graph/nodes/entity', methods=['GET'])
 def get_entity_nodes():
-    return get_entity_nodes_c()
+    return get_entity_nodes_c(database_connector)
 
 
 @app.route('/api/v1/graph/relationships/corr', methods=['GET'])
 def get_corr_relationships():
-    return get_corr_relationships_c()
+    return get_corr_relationships_c(database_connector)
 
 
 @app.route('/api/v1/graph/relationships/df', methods=['GET'])
 def get_df_relationships():
-    return get_df_relationships_c()
+    return get_df_relationships_c(database_connector)
 
 
 @app.route('/api/v1/graph', methods=['GET'])
 def get_graph():
-    return get_graph_c()
+    return get_graph_c(database_connector)
 
 
 @app.route('/api/v1/graph/details', methods=['GET'])
 def get_graph_details():
-    return get_graph_details_c()
+    return get_graph_details_c(database_connector)
 
 
 @app.route('/api/v1/graph', methods=['DELETE'])
 def delete_graph():
-    return delete_all_graph_c()
+    return delete_all_graph_c(database_connector)
 
 
 # All API for Graph (Class)
 @app.route('/api/v1/graph-class', methods=['POST'])
 def create_class_graph():
-    return create_class_graph_c()
+    return create_class_graph_c(database_connector)
 
 
 @app.route('/api/v1/graph-class/nodes/class', methods=['GET'])
@@ -88,23 +97,23 @@ def get_class_nodes():
 
 @app.route('/api/v1/graph-class', methods=['GET'])
 def get_class_graph():
-    return get_class_graph_c()
+    return get_class_graph_c(database_connector)
 
 
 @app.route('/api/v1/graph-class', methods=['DELETE'])
 def delete_class_graph():
-    return delete_class_graph_c()
+    return delete_class_graph_c(database_connector)
 
 
 # Other utils API
 @app.route('/api/v1/support/entities_key', methods=['GET'])
 def get_entities_key():
-    return get_entities_key_c()
+    return get_entities_key_c(database_connector)
 
 
 @app.route('/api/v1/support/null-entities', methods=['GET'])
 def get_null_entities():
-    return get_null_entities_c()
+    return get_null_entities_c(database_connector)
 
 
 if __name__ == '__main__':
