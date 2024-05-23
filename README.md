@@ -55,32 +55,60 @@ First, go to the corresponding "Upload CSV" section and follow the tool's instru
 Once loaded, the file will be parsed and the user can see a preview of the entities and properties of the file through the table. <br>
 A Sidebar coming from the right has the task of letting the user filter the entities and properties to take into consideration for his analysis.<br>
 
-photo
+[Filter data](https://bitbucket.org/proslabteam/easy-knowledge-graph/raw/c4753811b425eb364664e811c11c984a1b51c275/ekg_screenshots/screen1.png)
 
 Once this first phase is completed, the graph will be automatically generated within our Memgraph database and the graph data will be reported in the form of Cards, as illustrated:
 
-photo
+[Cards data](https://bitbucket.org/proslabteam/easy-knowledge-graph/raw/c4753811b425eb364664e811c11c984a1b51c275/ekg_screenshots/screen2.png)
 
 Then you can expand the cards to see the corresponding and specific JSON of the newly created data, with the possibility of searching within the JSON or even downloading it : 
 
-photo
-
+[Card visualization](https://bitbucket.org/proslabteam/easy-knowledge-graph/raw/c4753811b425eb364664e811c11c984a1b51c275/ekg_screenshots/screen3.png)
 
 In the Sidebar coming from the right, you can perform operations such as downloading the complete JSON of the Graph, deleting the graph or above all grouping the nodes <br> 
 to create the graph composed of aggregate nodes (Class Graph). Again, in this section the previously selected entities are presented, with warnings in case some nodes have that null property.
 
-photo
+[Class graph](https://bitbucket.org/proslabteam/easy-knowledge-graph/raw/c4753811b425eb364664e811c11c984a1b51c275/ekg_screenshots/screen4.png)
 
 Once the attributes to aggregate the nodes have been chosen, the Classes node will be created, and the user will automatically be redirected to the page which aims to view the complete graph. 
 
-In this section you can already place studies and analyses, navigating within the graph. Above all, you can search for nodes or relationships, and through the Sidebar you can carry out other <br> 
+In this section you can already place studies and analyses, navigating within the graprh. Above all, you can search fo nodes or relationships, and through the Sidebar you can carry out other <br> 
 operations such as customizing the graph view, exporting the graph to .svg or deleting the graph.
+
+[Search nodes](https://bitbucket.org/proslabteam/easy-knowledge-graph/raw/c4753811b425eb364664e811c11c984a1b51c275/ekg_screenshots/screen5.png)
+
+[Change graph visualization](https://bitbucket.org/proslabteam/easy-knowledge-graph/raw/c4753811b425eb364664e811c11c984a1b51c275/ekg_screenshots/screen6.png)
+
 At the top left there is an arrow to return to the previous screen. In this case the tool recognizes that an aggregate graph has already been created (or in any case is present within the Database)<br> 
 so you have the possibility to see the graph or create a new one (the current graph will be eliminated).
 
-photo
+[New class graph](https://bitbucket.org/proslabteam/easy-knowledge-graph/raw/c4753811b425eb364664e811c11c984a1b51c275/ekg_screenshots/screen7.png)
 
-## Download Project
+## Tool Setup - Instruction
+
+The first step is to clone the project. <br> ([Clone a Git repository](https://support.atlassian.com/bitbucket-cloud/docs/clone-a-git-repository/))<br>
+You must have Git downloaded into your computer. If Git is not present, you will receive an error message.<br>
+To download Git, go to the specific page:
+
+[Download Git](https://git-scm.com/downloads)
+
+### Start tool by Docker
+First, install Docker inside your computer.
+
+[Download Docker](https://www.docker.com/get-started/)
+
+Once Docker has been correctly downloaded, open the terminal inside the main folder of the (cloned) project.  
+At this point, you can run the following commands from the terminal to create a Container in Docker made up of all the projects:<br>
+
+```
+docker-compose -p soup-tool up --build
+```
+
+When the command is finished, a Container is automatically created by Docker compose composed of the following sub-containers (all already started): 
+
+- Angular container: represents the web tool, contactable at the <h4>lcalhost:4200</h4>
+- Python container (Backend): represents the Backend and Engine of the system, contactable at the <h4>lcalhost:8080</h4>
+- Memgraph container: in this container, the Memgraph database runs which offers 3 different ports.The most important is certainly<h4>lcalhost:3000</h4>which, if navigated, will open Memgraph Lab.
 
 
 
@@ -91,5 +119,3 @@ Once this operation has been done (optional) the Server will begin to create the
 and will return the generated graph as a result. Obviously, the user has the possibility to download his graph in .svg format, as
 the possibility of eliminating it, but above all grouping the entities by Classes, in such a way as to obtain a new graph of interest.
 All this achieved thanks to the Neo4j, Python and Angular libraries and documentation.
-
-
