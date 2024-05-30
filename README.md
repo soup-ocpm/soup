@@ -1,4 +1,4 @@
-# Easy Knowledge Graph
+# SOuP
 Project created for the Group Project exam of the third year of computer science in Camerino.
 
 ## Description
