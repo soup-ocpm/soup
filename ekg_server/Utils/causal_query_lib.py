@@ -80,8 +80,8 @@ def set_target_df(trigger, target):
             WITH n, no, collect(e) AS event_list
             UNWIND range(0, size(event_list)-2) AS i
             WITH no, n, event_list[i] AS e1, event_list[i+1] AS e2
-            MERGE (e1)-[df:DF {{Type:n.Type, ID:n.ID}}]->(e2)
-            MERGE (e1)-[df0:DF {{Type:no.Type, ID:no.ID, relation: 'causal'}}]->(e2)
+            MERGE (e1)-[df:DF {{Type:n.Type, ID:n.Value, edge_weight: 1}}]->(e2)
+            MERGE (e1)-[df0:DF {{Type:no.Type, ID:no.Value, relation: 'causal', edge_weight: 1}}]->(e2)
            """
     )
 
@@ -94,7 +94,7 @@ def set_trigger_df(trigger):
             UNWIND range(0, size(event_list)-2) AS i
             WITH a, event_list[i] AS e1, event_list[i+1] AS e2
             WHERE not (e1.relation = 'confounder' AND e2.relation = 'collider')
-            MERGE (e1)-[df:DF {{Type:a.Type, ID:a.ID}}]->(e2)
+            MERGE (e1)-[df:DF {{Type:a.Type, ID:a.Value, edge_weight: 1}}]->(e2)
            """)
 
 
