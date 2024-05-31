@@ -26,9 +26,11 @@ export class StandardGraphService {
    * @param valuesColumn the values for node
    * @returns Observable of Http request
    */
-  public createGraph(formData: FormData, filteredColumn: string[], valuesColumn: string[]): Observable<any> {
+  public createGraph(formData: FormData, filteredColumn: string[], valuesColumn: string[], fixed: string, variable: string): Observable<any> {
     formData.append('filteredColumn', JSON.stringify(filteredColumn));
     formData.append('valuesColumn', JSON.stringify(valuesColumn));
+    formData.append('fixed', JSON.stringify(fixed));
+    formData.append('variable', JSON.stringify(variable));
     return this.httpClient.post('http://127.0.0.1:8080/api/v1/graph', formData);
   }
 

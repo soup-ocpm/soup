@@ -23,10 +23,8 @@ from Models.memgraph_connector_model import MemgraphConnector
 app = Flask(__name__)
 CORS(app)
 
-# Database information
-memgraph_host = os.getenv("MEMGRAPH_HOST", "memgraph")
-memgraph_port = int(os.getenv("MEMGRAPH_PORT", 7687))
-uri_mem = f'bolt://{memgraph_host}:{memgraph_port}'
+# Database information:
+uri_mem = 'bolt://localhost:7687'
 auth_mem = ("", "")
 database_connector = MemgraphConnector(uri_mem, auth_mem)
 

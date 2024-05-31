@@ -46,6 +46,12 @@ def create_graph_c(database_connector):
     values_column_json = request.form.get('valuesColumn')
     values_column = json.loads(values_column_json)
 
+    fixed_column = request.form.get('fixed')
+    variable_column = request.form.get('variable')
+
+    print(fixed_column)
+    print(variable_column)
+
     try:
         database_connector.connect()
 

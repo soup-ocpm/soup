@@ -58,6 +58,12 @@ export class LoadCsvComponent implements OnInit, OnDestroy {
   // Activity name of the event id entity
   public activityNameColumn: string = '';
 
+  // The fixed column
+  public fixedColumn: string = '';
+
+  // The variable column
+  public variableColumn: string = '';
+
   // If the tutorial is terminated or not
   public isTutorialTerminated: boolean = false
 
@@ -251,7 +257,7 @@ export class LoadCsvComponent implements OnInit, OnDestroy {
 
   // Prepare to build graph
   public preBuildGraph(): void {
-    if (!this.eventIdColumn || !this.timestampColumn || !this.activityNameColumn) {
+    if (!this.eventIdColumn || !this.timestampColumn || !this.activityNameColumn || !this.fixedColumn || !this.variableColumn || this.getFilteredColumn().length == 0 || this.getFilteredValuesColumn().length == 0) {
       this.messageService.show('Please map the information.', false, 2000);
       return;
     }
@@ -301,8 +307,7 @@ export class LoadCsvComponent implements OnInit, OnDestroy {
     formData.append('file', file, 'filtered.csv');
     try {
       let apiResponse: any = null;
-
-      this.standardGraphService.createGraph(formData, allFilteredColumn, allValuesColumn).subscribe(
+      this.standardGraphService.createGraph(formData, allFilteredColumn, allValuesColumn, this.fixedColumn, this.variableColumn).subscribe(
         response => {
           apiResponse = response;
           if (apiResponse != null && apiResponse.http_status_code == 201) {
@@ -371,6 +376,13 @@ export class LoadCsvComponent implements OnInit, OnDestroy {
       .map(column => column.name);
   }
 
+  // Return the filtered values .csv column choice by User.
+  public getAllFileEntities(): string[] {
+    return this.allFileEntities
+      .filter(column => column.selected)
+      .map(column => column.name);
+  }
+
   // ------ SUPPORT METHODS ------
 
   // Close the Tutorial
@@ -392,6 +404,7 @@ export class LoadCsvComponent implements OnInit, OnDestroy {
   public resetCSVData(): void {
     this.files = [];
     this.allFileEntities = [];
+    this.allFileValuesSelected = [];
     this.selectedFile = undefined;
     this.hasSelectedFile = false;
     this.dataSource = [];

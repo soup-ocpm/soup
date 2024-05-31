@@ -178,7 +178,7 @@
   <div class="map-information">
     <p class="text-font" style="font-size: 17px; margin-left: 7px">Map the following
       information</p>
-    <div class="column-selection" *ngIf="allFileEntities.length > 0">
+    <div class="column-selection" *ngIf="allFileValuesSelected.length > 0">
 
       <mat-form-field>
         <mat-label>Event id</mat-label>
@@ -202,6 +202,32 @@
         <mat-label>Activity Name</mat-label>
         <mat-select (selectionChange)="activityNameColumn = $event.value">
           <mat-option *ngFor="let camp of getFilteredValuesColumn()" [value]="camp">
+            {{ camp }}
+          </mat-option>
+        </mat-select>
+      </mat-form-field>
+    </div>
+  </div>
+
+  <div style="margin-top: 10px"></div>
+
+  <div class="map-information">
+    <p class="text-font" style="font-size: 17px; margin-left: 7px">Select the fixed and variable column</p>
+
+    <div class="column-selection" *ngIf="allFileValuesSelected.length > 0">
+      <mat-form-field>
+        <mat-label>Fixed</mat-label>
+        <mat-select (selectionChange)="fixedColumn = $event.value">
+          <mat-option *ngFor="let camp of getAllFileEntities()" [value]="camp">
+            {{ camp }}
+          </mat-option>
+        </mat-select>
+      </mat-form-field>
+
+      <mat-form-field style="margin-left: 20px">
+        <mat-label>Variable</mat-label>
+        <mat-select (selectionChange)="variableColumn = $event.value">
+          <mat-option *ngFor="let camp of getAllFileEntities()" [value]="camp">
             {{ camp }}
           </mat-option>
         </mat-select>
