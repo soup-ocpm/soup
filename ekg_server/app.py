@@ -10,7 +10,6 @@ License : MIT
 """
 
 # Import
-import os
 from flask import Flask
 from flask_cors import CORS
 from GraphController.create_graph_controller import create_graph_c
@@ -103,7 +102,7 @@ def delete_class_graph():
     return delete_class_graph_c(database_connector)
 
 
-# Other utils API
+# Other supports API
 @app.route('/api/v1/support/entities_key', methods=['GET'])
 def get_entities_key():
     return get_entities_key_c(database_connector)
