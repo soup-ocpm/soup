@@ -19,6 +19,7 @@ import {Card} from "../../core/models/card.model";
 // Other import
 import {saveAs} from "file-saver";
 import {NotificationService} from "../../services/notification.service";
+import {SocketService} from "../../core/services/SocketService";
 
 @Component({
   selector: 'app-details',
@@ -73,6 +74,13 @@ export class DetailsComponent implements OnInit {
   // If the User have access to the view of Graph
   public isShowNextPageBtn: boolean = false;
 
+  public progressData: any;
+
+  public completeData: any;
+
+  public errorData: any;
+
+
   /**
    * Constructor for DetailsComponent component
    * @param router the Router
@@ -81,6 +89,7 @@ export class DetailsComponent implements OnInit {
    * @param standardGraphService the StandardGraphService service
    * @param classGraphService the ClassGraphService service
    * @param supportService the SupportDataService service
+   * @param socketService the SocketService service
    */
   constructor(
     private router: Router,
@@ -89,6 +98,7 @@ export class DetailsComponent implements OnInit {
     private standardGraphService: StandardGraphService,
     private classGraphService: ClassGraphService,
     private supportService: SupportDataService,
+    private socketService: SocketService
   ) {
   }
 
@@ -109,6 +119,24 @@ export class DetailsComponent implements OnInit {
       this.isShowNextPageBtn = true;
       this.haveCreatedClassGraph = true;
     }
+
+    this.socketService.progress.subscribe(
+      data => {
+        this.progressData = data;
+        console.log(this.progressData);
+      });
+
+    this.socketService.complete.subscribe(
+      data => {
+        this.completeData = data;
+        console.log(this.completeData);
+      });
+
+    this.socketService.error.subscribe(
+      data => {
+        this.errorData = data;
+        console.log(this.errorData);
+      });
   }
 
   // Inject the JSON data to the specific Cards

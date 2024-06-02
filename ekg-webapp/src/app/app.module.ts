@@ -5,6 +5,7 @@ import {BrowserAnimationsModule} from '@angular/platform-browser/animations';
 import {FormsModule, ReactiveFormsModule} from '@angular/forms';
 import {HttpClientModule} from '@angular/common/http';
 import {provideAnimationsAsync} from '@angular/platform-browser/animations/async';
+import {SocketIoConfig, SocketIoModule} from "ngx-socket-io";
 
 // Component import
 import {AppComponent} from './app.component';
@@ -17,6 +18,8 @@ import {PagesModule} from "./pages/pages.module";
 
 // Other import
 import {ServiceWorkerModule} from '@angular/service-worker';
+
+const config: SocketIoConfig = {url: 'http://localhost:8080', options: {}}
 
 @NgModule({
   declarations: [
@@ -34,6 +37,8 @@ import {ServiceWorkerModule} from '@angular/service-worker';
     SharedModule,
     ComponentsModule,
     PagesModule,
+    // Socket IO
+    SocketIoModule.forRoot(config),
     // Service worker
     ServiceWorkerModule.register('ngsw-worker.js', {
       enabled: !isDevMode(),

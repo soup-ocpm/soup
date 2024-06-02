@@ -12,18 +12,24 @@ License : MIT
 # Import
 import io
 import json
-import math
 import time
 import pandas as pd
 from datetime import datetime
-from flask import request, jsonify
-from Models.api_response_model import ApiResponse
+from flask import request
+from GraphController.operation_graph_controller import *
 from Utils.query_library import create_df_relation_query, create_node_event_query, create_node_entity_query, \
     create_corr_relation_query
 
+have_finished = False
+
 
 # Create standard Graph function
-def create_graph_c(database_connector):
+def create_graph_c(database_connector, socketio):
+    global have_finished
+
+    if have_finished:
+        have_finished = False
+
     apiResponse = ApiResponse(None, None, None)
 
     if request.files['file'] is None:
@@ -49,13 +55,14 @@ def create_graph_c(database_connector):
     fixed_column = request.form.get('fixed')
     variable_column = request.form.get('variable')
 
-    print(fixed_column)
-    print(variable_column)
-
     try:
         database_connector.connect()
 
         start_time = time.time()
+
+        # Start the Socket IO for WebSocket
+        socketio.start_background_task(target=track_graph_creation_progress, socketio=socketio,
+                                       db_connector=database_connector, start_time=start_time)
 
         file_data = file.read().decode('utf-8')
         df = pd.read_csv(io.StringIO(file_data))
@@ -69,12 +76,17 @@ def create_graph_c(database_connector):
         apiResponse.message = 'Standard Graph created successfully.'
         apiResponse.response_data = f'Temp : {duration_time}'
 
+        have_finished = True
+
         return jsonify(apiResponse.to_dict()), 200
 
     except Exception as e:
         apiResponse.http_status_code = 500
         apiResponse.message = f'Error while importing data to Neo4j: {str(e)}.'
         apiResponse.response_data = None
+
+        have_finished = True
+
         return jsonify(apiResponse.to_dict()), 500
 
     finally:
@@ -135,7 +147,7 @@ def standard_process_query_c(database_connector, df, filtered_columns, values_co
                                 "type_value": key
                             }
                             database_connector.run_query_memgraph(entity_query, entity_parameters)
-                    elif ',' in value:  # check if entities are a set of elements
+                    elif ',' in value:
                         value = value.split(',')
                         for val in value:
                             entity_parameters = {
@@ -165,3 +177,43 @@ def standard_process_query_c(database_connector, df, filtered_columns, values_co
         print("Current End Time =", current_time)
     except Exception as e:
         return e
+
+
+def track_graph_creation_progress(socketio, db_connector, start_time):
+    try:
+        while True:
+            event_nodes_count = get_count_event_nodes_c(db_connector)
+            entity_nodes_count = get_count_entity_nodes_c(db_connector)
+
+            total_nodes = event_nodes_count + entity_nodes_count
+
+            corr_rel_count = get_count_corr_relationships_c(db_connector)
+            df_rel_count = get_count_df_relationships_c(db_connector)
+
+            total_relationships = corr_rel_count + df_rel_count
+
+            socketio.emit('progress', {
+                'event_nodes': event_nodes_count,
+                'entity_nodes': entity_nodes_count,
+                'corr_relationships': corr_rel_count,
+                'df_relationships': df_rel_count,
+                'total_nodes': total_nodes,
+                'total_relationships': total_relationships,
+                'elapsed_time': time.time() - start_time
+            })
+
+            if have_finished:
+                break
+
+            time.sleep(2)
+
+        socketio.emit('complete', {
+            'message': 'Graph creation complete',
+            'total_nodes': total_nodes,
+            'total_relationships': total_relationships,
+            'total_time': time.time() - start_time
+        })
+
+    except Exception as ex:
+        print(f"Error in track_graph_creation_progress: {ex}")
+        socketio.emit('error', {'message': str(ex)})

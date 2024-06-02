@@ -11,13 +11,22 @@ License : MIT
 
 # Import
 import json
-from flask import request, jsonify
-from Models.api_response_model import ApiResponse
+import time
+
+from flask import request
 from Utils.query_library import *
+from GraphController.operation_class_graph_controller import *
+
+have_finished = False
 
 
 # Create Class Graph function
-def create_class_graph_c(database_connector):
+def create_class_graph_c(database_connector, socketio):
+    global have_finished
+
+    if have_finished:
+        have_finished = False
+
     apiResponse = ApiResponse(None, None, None)
 
     filtered_column_json = request.form.get('filteredColumn')
@@ -25,11 +34,24 @@ def create_class_graph_c(database_connector):
 
     try:
         database_connector.connect()
+
+        start_time = time.time()
+
+        # Start the Socket IO for WebSocket
+        socketio.start_background_task(target=track_class_graph_creation_progress, socketio=socketio,
+                                       db_connector=database_connector, start_time=start_time)
+
         class_process_query_c(database_connector, filtered_column)
+
+        stop_time = time.time()
+
+        duration_time = stop_time - start_time
 
         apiResponse.http_status_code = 201
         apiResponse.message = 'Class Graph created successfully.'
-        apiResponse.response_data = None
+        apiResponse.response_data = f'Temp : {duration_time}'
+
+        have_finished = True
 
         return jsonify(apiResponse.to_dict()), 201
 
@@ -37,6 +59,9 @@ def create_class_graph_c(database_connector):
         apiResponse.http_status_code = 500
         apiResponse.message = f'Error while importing data to Neo4j: {str(e)}.'
         apiResponse.response_data = None
+
+        have_finished = True
+
         return jsonify(apiResponse.to_dict()), 500
 
     finally:
@@ -64,3 +89,38 @@ def class_process_query_c(database_connector, filtered_columns):
     except Exception as e:
         print(f"Internal Server error: {str(e)}")
         raise
+
+
+def track_class_graph_creation_progress(socketio, db_connector, start_time):
+    try:
+        while True:
+            class_nodes_count = get_count_class_nodes_c(db_connector)
+
+            obs_rel_count = get_count_obs_relationships_c(db_connector)
+            dfc_rel_count = get_count_dfc_relationships_c(db_connector)
+
+            total_relationships = obs_rel_count + dfc_rel_count
+
+            socketio.emit('progress', {
+                'class_nodes': class_nodes_count,
+                'obs_relationships': obs_rel_count,
+                'dfc_relationships': dfc_rel_count,
+                'total_relationships': total_relationships,
+                'elapsed_time': time.time() - start_time
+            })
+
+            if have_finished:
+                break
+
+            time.sleep(2)
+
+        socketio.emit('complete', {
+            'message': 'Graph creation complete',
+            'class_nodes': class_nodes_count,
+            'total_relationships': total_relationships,
+            'total_time': time.time() - start_time
+        })
+
+    except Exception as ex:
+        print(f"Error in track_graph_creation_progress: {ex}")
+        socketio.emit('error', {'message': str(ex)})

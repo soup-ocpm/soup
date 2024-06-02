@@ -96,10 +96,24 @@ def get_nodes_event_query():
             """
 
 
+def get_count_nodes_event_query():
+    return """
+            MATCH (n: Event)
+            RETURN COUNT(n) as node_count
+            """
+
+
 def get_nodes_entity_query():
     return """
             MATCH (e:Entity)
             RETURN e AS node
+            """
+
+
+def get_count_nodes_entity_query():
+    return """
+            MATCH (n: Entity)
+            RETURN COUNT(n) as entity_count
             """
 
 
@@ -122,10 +136,24 @@ def get_corr_relation_query():
             """
 
 
+def get_count_corr_rel_query():
+    return """
+            MATCH (e:Event)-[corr:CORR]->(e1:Entity)
+            RETURN COUNT(corr) as corr_count
+            """
+
+
 def get_df_relation_query():
     return """
             MATCH (e:Event)-[df:DF]->(e1:Event)
             RETURN e, df, e1
+            """
+
+
+def get_count_df_rel_query():
+    return """
+            MATCH (e:Event)-[df:DF]->(e1:Event)
+            RETURN COUNT(df) as df_count
             """
 
 
@@ -135,6 +163,27 @@ def get_nodes_class_query():
             MATCH (e:Class) 
             RETURN e AS node
             """
+
+
+def get_count_nodes_class_query():
+    return """
+            MATCH (c:Class)
+            RETURN COUNT(c) as class_count
+    """
+
+
+def get_count_obs_relationships_query():
+    return """
+    MATCH (e:Event)-[obs:OBSERVED]->(c:Class)
+    RETURN COUNT(obs) as obs_count
+    """
+
+
+def get_count_dfc_relationships_query():
+    return """
+    MATCH (c1:Class)-[dfc:DF_C]->(c2:Class)
+    RETURN COUNT(dfc) as dfc_count
+    """
 
 
 def get_class_graph_query():

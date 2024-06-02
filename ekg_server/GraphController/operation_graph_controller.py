@@ -67,6 +67,21 @@ def get_event_nodes_c(database_connector):
         database_connector.close()
 
 
+# Get count of Event nodes in specific time
+def get_count_event_nodes_c(database_connector):
+    try:
+        query = get_count_nodes_event_query()
+        result = database_connector.run_query_memgraph(query)
+
+        if isinstance(result, list) and len(result) > 0 and 'node_count' in result[0]:
+            return result[0]['node_count']
+
+        return 0
+    except Exception as e:
+        print(f"Error in get_count_event_nodes: {e}")
+        return 0
+
+
 # Get Entity nodes
 def get_entity_nodes_c(database_connector):
     apiResponse = ApiResponse(None, None, None)
@@ -115,6 +130,21 @@ def get_entity_nodes_c(database_connector):
 
     finally:
         database_connector.close()
+
+
+# Get count of Entity nodes in specific time
+def get_count_entity_nodes_c(database_connector):
+    try:
+        query = get_count_nodes_entity_query()
+        result = database_connector.run_query_memgraph(query)
+
+        if isinstance(result, list) and len(result) > 0 and 'entity_count' in result[0]:
+            return result[0]['entity_count']
+
+        return 0
+    except Exception as e:
+        print(f"Error in get_count_event_nodes: {e}")
+        return 0
 
 
 # Get :CORR relationships
@@ -188,6 +218,21 @@ def get_corr_relationships_c(database_connector):
         database_connector.close()
 
 
+# Get count of :CORR relationships in specific time
+def get_count_corr_relationships_c(database_connector):
+    try:
+        query = get_count_corr_rel_query()
+        result = database_connector.run_query_memgraph(query)
+
+        if isinstance(result, list) and len(result) > 0 and 'corr_count' in result[0]:
+            return result[0]['corr_count']
+
+        return 0
+    except Exception as e:
+        print(f"Error in get_count_event_nodes: {e}")
+        return 0
+
+
 # Get :DF relationships
 def get_df_relationships_c(database_connector):
     apiResponse = ApiResponse(None, None, None)
@@ -257,6 +302,21 @@ def get_df_relationships_c(database_connector):
 
     finally:
         database_connector.close()
+
+
+# Get count of :DF relationships in specific time
+def get_count_df_relationships_c(database_connector):
+    try:
+        query = get_count_df_rel_query()
+        result = database_connector.run_query_memgraph(query)
+
+        if isinstance(result, list) and len(result) > 0 and 'df_count' in result[0]:
+            return result[0]['df_count']
+
+        return 0
+    except Exception as e:
+        print(f"Error in get_count_event_nodes: {e}")
+        return 0
 
 
 # Get standard graph (Event node and :DF Relationships)
