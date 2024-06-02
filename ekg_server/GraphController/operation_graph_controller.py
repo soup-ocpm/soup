@@ -17,7 +17,7 @@ from Models.api_response_model import ApiResponse
 from Utils.query_library import *
 
 
-# Get Event nodes
+# Get event nodes
 def get_event_nodes_c(database_connector):
     apiResponse = ApiResponse(None, None, None)
 
@@ -67,7 +67,7 @@ def get_event_nodes_c(database_connector):
         database_connector.close()
 
 
-# Get count of Event nodes in specific time
+# Get count of event nodes
 def get_count_event_nodes_c(database_connector):
     try:
         query = get_count_nodes_event_query()
@@ -82,7 +82,7 @@ def get_count_event_nodes_c(database_connector):
         return 0
 
 
-# Get Entity nodes
+# Get entity nodes
 def get_entity_nodes_c(database_connector):
     apiResponse = ApiResponse(None, None, None)
 
@@ -132,7 +132,7 @@ def get_entity_nodes_c(database_connector):
         database_connector.close()
 
 
-# Get count of Entity nodes in specific time
+# Get count of entity nodes
 def get_count_entity_nodes_c(database_connector):
     try:
         query = get_count_nodes_entity_query()
@@ -218,7 +218,7 @@ def get_corr_relationships_c(database_connector):
         database_connector.close()
 
 
-# Get count of :CORR relationships in specific time
+# Get count of :CORR relationships
 def get_count_corr_relationships_c(database_connector):
     try:
         query = get_count_corr_rel_query()
@@ -304,7 +304,7 @@ def get_df_relationships_c(database_connector):
         database_connector.close()
 
 
-# Get count of :DF relationships in specific time
+# Get count of :DF relationships
 def get_count_df_relationships_c(database_connector):
     try:
         query = get_count_df_rel_query()
@@ -319,7 +319,7 @@ def get_count_df_relationships_c(database_connector):
         return 0
 
 
-# Get standard graph (Event node and :DF Relationships)
+# Get complete graph
 def get_graph_c(database_connector):
     apiResponse = ApiResponse(None, None, None)
 
@@ -381,7 +381,7 @@ def get_graph_c(database_connector):
         database_connector.close()
 
 
-# Get standard graph details(event, count, entity, df, corr)
+# Get complete graph details
 def get_graph_details_c(database_connector):
     apiResponse = ApiResponse(None, None, None)
 
@@ -522,7 +522,7 @@ def get_graph_details_c(database_connector):
         database_connector.close()
 
 
-# Return the entities key
+# Get the entity key
 def get_entities_key_c(database_connector):
     apiResponse = ApiResponse(None, None, None)
 
@@ -559,6 +559,7 @@ def get_entities_key_c(database_connector):
         database_connector.close()
 
 
+# Get the null entity
 def get_null_entities_c(database_connector):
     apiResponse = ApiResponse(None, None, None)
 
@@ -600,7 +601,7 @@ def get_null_entities_c(database_connector):
         database_connector.close()
 
 
-# Delete Standard Graph (Event node and :DF Relationships)
+# Delete the complete graph
 def delete_graph_c(database_connector):
     apiResponse = ApiResponse(None, None, None)
 
@@ -642,6 +643,7 @@ def delete_graph_c(database_connector):
         database_connector.close()
 
 
+# Delete all inside the database
 def delete_all_graph_c(database_connector):
     apiResponse = ApiResponse(None, None, None)
 

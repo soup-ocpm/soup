@@ -103,3 +103,15 @@ p {
   bottom: 2px;
   right: 3px;
 }
+
+.search-info {
+  display: flex;
+
+  input {
+    width: 90%;
+  }
+
+  button {
+    margin-left: 20px;
+  }
+}

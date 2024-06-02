@@ -19,7 +19,7 @@ from Utils.query_library import get_class_graph_query, get_count_nodes_class_que
     get_count_class_graph_query
 
 
-# Get Class Graph (Class nodes, :DF_C Relationships)
+# Get the complete class graph
 def get_class_graph_c(database_connector):
     apiResponse = ApiResponse(None, None, None)
 
@@ -80,7 +80,7 @@ def get_class_graph_c(database_connector):
         database_connector.close()
 
 
-# Get count of Event nodes in specific time
+# Get count of class nodes
 def get_count_class_nodes_c(database_connector):
     try:
         query = get_count_nodes_class_query()
@@ -125,7 +125,7 @@ def get_count_dfc_relationships_c(database_connector):
         return 0
 
 
-# Delete Class Graph (Class nodes, :DF_C Relationships)
+# Delete Class Graph
 def delete_class_graph_c(database_connector):
     apiResponse = ApiResponse(None, None, None)
 

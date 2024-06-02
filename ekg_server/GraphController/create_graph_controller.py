@@ -19,6 +19,7 @@ from flask import request
 from GraphController.operation_graph_controller import *
 from Utils.query_library import create_df_relation_query, create_node_event_query, create_node_entity_query, \
     create_corr_relation_query
+from Utils.causal_query_lib import reveal_causal_rels
 
 have_finished = False
 
@@ -52,8 +53,15 @@ def create_graph_c(database_connector, socketio):
     values_column_json = request.form.get('valuesColumn')
     values_column = json.loads(values_column_json)
 
-    fixed_column = request.form.get('fixed')
-    variable_column = request.form.get('variable')
+    fixed_column = request.form.get('fixed').replace('"', '')
+    variable_column = request.form.get('variable').replace('"', '')
+
+    causality = None
+
+    if not (fixed_column == None and values_column == None):
+        print(fixed_column)
+        print(variable_column)
+        causality = (fixed_column, variable_column)
 
     try:
         database_connector.connect()
@@ -66,7 +74,7 @@ def create_graph_c(database_connector, socketio):
 
         file_data = file.read().decode('utf-8')
         df = pd.read_csv(io.StringIO(file_data))
-        standard_process_query_c(database_connector, df, filtered_column, values_column)
+        standard_process_query_c(database_connector, df, filtered_column, values_column, causality)
 
         stop_time = time.time()
 
@@ -82,7 +90,7 @@ def create_graph_c(database_connector, socketio):
 
     except Exception as e:
         apiResponse.http_status_code = 500
-        apiResponse.message = f'Error while importing data to Neo4j: {str(e)}.'
+        apiResponse.message = f'Error while importing data to Memgraph: {str(e)}.'
         apiResponse.response_data = None
 
         have_finished = True
@@ -94,7 +102,7 @@ def create_graph_c(database_connector, socketio):
 
 
 # Process the .csv file and execute query for create standard Graph
-def standard_process_query_c(database_connector, df, filtered_columns, values_column):
+def standard_process_query_c(database_connector, df, filtered_columns, values_column, causality=None):
     try:
         now = datetime.now()
 
@@ -147,7 +155,7 @@ def standard_process_query_c(database_connector, df, filtered_columns, values_co
                                 "type_value": key
                             }
                             database_connector.run_query_memgraph(entity_query, entity_parameters)
-                    elif ',' in value:
+                    elif ',' in value:  # check if entities are a set of elements
                         value = value.split(',')
                         for val in value:
                             entity_parameters = {
@@ -164,13 +172,24 @@ def standard_process_query_c(database_connector, df, filtered_columns, values_co
 
         for key in filtered_columns:
             if key not in [event_id_col, timestamp_col, activity_name_col]:
-                correlation_query_corr = create_corr_relation_query(key)
-                database_connector.run_query_memgraph(correlation_query_corr)
+                relation_query_corr = create_corr_relation_query(key)
+                database_connector.run_query_memgraph(relation_query_corr)
 
-        for key in filtered_columns:
-            if key not in [event_id_col, timestamp_col, activity_name_col]:
-                correlation_query_df = create_df_relation_query(key)
-                database_connector.run_query_memgraph(correlation_query_df)
+        if causality is not None:
+            queries = reveal_causal_rels(causality[0], causality[1])
+            print(queries)
+            for query in queries:
+                print(query)
+                database_connector.run_query_memgraph(query)
+            for key in filtered_columns:
+                if key not in [event_id_col, timestamp_col, activity_name_col, causality[0]]:
+                    relation_query_df = create_df_relation_query(key)
+                    database_connector.run_query_memgraph(relation_query_df)
+        else:
+            for key in filtered_columns:
+                if key not in [event_id_col, timestamp_col, activity_name_col]:
+                    relation_query_df = create_df_relation_query(key)
+                    database_connector.run_query_memgraph(relation_query_df)
         now = datetime.now()
 
         current_time = now.strftime("%H:%M:%S")

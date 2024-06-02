@@ -17,7 +17,7 @@ import {Entity} from "../../core/models/entity.model";
 
 // Other import
 import {Papa} from "ngx-papaparse";
-import {SocketService} from "../../core/services/SocketService";
+import {SocketService} from "../../core/services/socket.service";
 
 @Component({
   selector: 'app-load-csv',

@@ -51,7 +51,7 @@ def create_df_relation_query(key):
             WITH n, collect(nodes) AS event_node_list
             UNWIND range(0, size(event_node_list)-2) AS i
             WITH n, event_node_list[i] AS e1, event_node_list[i+1] AS e2
-            MERGE (e1)-[df:DF {{ Type:n.Type, ID:n.entity_id, edge_weight: 1}}]->(e2)
+            MERGE (e1)-[df:DF {{ Type:n.Type, ID:n.Value, edge_weight: 1}}]->(e2)
             """
 
 

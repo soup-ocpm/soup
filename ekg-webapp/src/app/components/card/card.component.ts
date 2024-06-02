@@ -21,6 +21,9 @@ export class CardComponent implements OnInit {
   // The variable that show if the Card is expanded or not
   public expandedCard: boolean | undefined;
 
+  // Original search text
+  public originalSearchText = '';
+
   // Search string text
   public searchText: string = '';
 
@@ -44,37 +47,56 @@ export class CardComponent implements OnInit {
   }
 
   // Method that call when User input string
-  updateSearch(): void {
-    if (!this.searchText.trim()) {
-      this.filteredData = this.card?.jsonData;
+  public updateSearch() {
+    if (this.searchText.trim()) {
+      this.filteredData = [];
+      this.searchInJson(this.card?.jsonData, this.searchText, this.filteredData);
+      this.originalSearchText = this.searchText;
     } else {
-      this.filteredData = this.filterData(this.card?.jsonData, this.searchText);
+      this.filteredData = [];
     }
   }
 
-  /**
-   * Filter the json data
-   * @param data the data
-   * @param searchText the search text
-   */
-  filterData(data: any, searchText: string): any {
-    if (!searchText.trim()) {
-      return data;
+  public searchInJson(json: any, keyword: string, results: any[]): boolean {
+    let found = false;
+
+    if (typeof json === 'string') {
+      return json.includes(keyword);
     }
 
-    const filtered: any = Array.isArray(data) ? [] : {};
-    Object.keys(data).forEach(key => {
-      const value = data[key];
-      if (typeof value === 'object') {
-        const filteredValue = this.filterData(value, searchText);
-        if (filteredValue !== null && Object.keys(filteredValue).length > 0) {
-          filtered[key] = filteredValue;
+    if (Array.isArray(json)) {
+      for (let item of json) {
+        if (this.searchInJson(item, keyword, results)) {
+          found = true;
         }
-      } else if (typeof value === 'string' && value.toLowerCase().includes(searchText.toLowerCase())) {
-        filtered[key] = value;
       }
-    });
-    return Object.keys(filtered).length > 0 ? filtered : null;
+    } else if (typeof json === 'object') {
+      for (let key in json) {
+        if (json.hasOwnProperty(key)) {
+          if (this.searchInJson(json[key], keyword, results)) {
+            found = true;
+          }
+        }
+      }
+      if (found) {
+        results.push(json);
+      }
+    }
+    return found;
+  }
+
+  public clearSearch() {
+    this.searchText = '';
+    this.filteredData = [];
+    this.originalSearchText = '';
+  }
+
+  public handleSearchClick() {
+    if (this.searchText === this.originalSearchText && this.searchText.trim()) {
+      this.clearSearch();
+    } else {
+      this.updateSearch();
+    }
   }
 
   /**

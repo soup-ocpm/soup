@@ -15,13 +15,18 @@
       <div class="card-expanded" *ngIf="expandedCard">
         <hr>
         <div class="form-group" style="padding-left: 20px; padding-right: 18px;">
-          <input type="text" class="form-control" placeholder="Search..." aria-label="Small"
-                 aria-describedby="inputGroup-sizing-sm" [(ngModel)]="searchText" (input)="updateSearch()">
+          <div class="search-info">
+            <input type="text" class="form-control" placeholder="Search..." aria-label="Small"
+                   aria-describedby="inputGroup-sizing-sm" [(ngModel)]="searchText">
+            <button mat-stroked-button color="primary" (click)="handleSearchClick()">
+              {{ searchText === originalSearchText && searchText.trim() ? 'Clear' : 'Search' }}
+            </button>
+          </div>
         </div>
 
         <textarea class="card-expanded-textarea" readonly>
-                    {{ filteredData ? (filteredData | json) : (card?.jsonData | json) }}
-                </textarea>
+          {{ (filteredData.length > 0 ? filteredData : [card?.jsonData]) | json }}
+        </textarea>
       </div>
 
     </mat-card-content>

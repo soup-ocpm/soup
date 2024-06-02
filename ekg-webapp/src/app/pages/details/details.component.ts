@@ -19,7 +19,7 @@ import {Card} from "../../core/models/card.model";
 // Other import
 import {saveAs} from "file-saver";
 import {NotificationService} from "../../services/notification.service";
-import {SocketService} from "../../core/services/SocketService";
+import {SocketService} from "../../core/services/socket.service";
 
 @Component({
   selector: 'app-details',
