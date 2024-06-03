@@ -127,7 +127,7 @@
     margin-top: -5px;
   }
 
-  mat-icon{
+  mat-icon {
     color: #c4a805;
     float: right;
     margin-right: 20px;
@@ -163,4 +163,11 @@
 // Other Scss support
 .icon-operation {
   cursor: pointer;
+}
+
+.progress-terminal {
+  padding: 20px;
+  background-color: #d2d2d2;
+  border: 1px solid black;
+  border-radius: 5px;
 }

@@ -11,14 +11,15 @@ License : MIT
 
 # Import
 import math
-import os
 from flask import jsonify
 from collections.abc import Iterable
 from Models.api_response_model import ApiResponse
-from Utils.query_library import get_class_graph_query, delete_class_graph_query, get_count_class_graph_query
+from Utils.query_library import get_class_graph_query, get_count_nodes_class_query, get_count_obs_relationships_query, \
+    get_count_dfc_relationships_query, delete_class_graph_query, \
+    get_count_class_graph_query
 
 
-# Get Class Graph (Class nodes, :DF_C Relationships)
+# Get the complete class graph
 def get_class_graph_c(database_connector):
     apiResponse = ApiResponse(None, None, None)
 
@@ -79,7 +80,52 @@ def get_class_graph_c(database_connector):
         database_connector.close()
 
 
-# Delete Class Graph (Class nodes, :DF_C Relationships)
+# Get count of class nodes
+def get_count_class_nodes_c(database_connector):
+    try:
+        query = get_count_nodes_class_query()
+        result = database_connector.run_query_memgraph(query)
+
+        if isinstance(result, list) and len(result) > 0 and 'class_count' in result[0]:
+            return result[0]['class_count']
+
+        return 0
+    except Exception as e:
+        print(f"Error in get_count_nodes_class_query: {e}")
+        return 0
+
+
+# Get count of :OBS relationships
+def get_count_obs_relationships_c(database_connector):
+    try:
+        query = get_count_obs_relationships_query()
+        result = database_connector.run_query_memgraph(query)
+
+        if isinstance(result, list) and len(result) > 0 and 'obs_count' in result[0]:
+            return result[0]['obs_count']
+
+        return 0
+    except Exception as e:
+        print(f"Error in get_count_obs_relationships_query: {e}")
+        return 0
+
+
+# Get count of :DF_C relationships
+def get_count_dfc_relationships_c(database_connector):
+    try:
+        query = get_count_dfc_relationships_query()
+        result = database_connector.run_query_memgraph(query)
+
+        if isinstance(result, list) and len(result) > 0 and 'dfc_count' in result[0]:
+            return result[0]['dfc_count']
+
+        return 0
+    except Exception as e:
+        print(f"Error in get_count_dfc_relationships_query: {e}")
+        return 0
+
+
+# Delete Class Graph
 def delete_class_graph_c(database_connector):
     apiResponse = ApiResponse(None, None, None)
 

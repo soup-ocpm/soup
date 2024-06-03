@@ -17,6 +17,7 @@ import {Entity} from "../../core/models/entity.model";
 
 // Other import
 import {Papa} from "ngx-papaparse";
+import {SocketService} from "../../core/services/socket.service";
 
 @Component({
   selector: 'app-load-csv',
@@ -79,6 +80,12 @@ export class LoadCsvComponent implements OnInit, OnDestroy {
   // If the progress bar is loading or not
   public isLoadingProgressBar: boolean = false;
 
+  public progressData: any;
+
+  public completeData: any;
+
+  public errorData: any;
+
   /**
    * Constructor for LoadCsvComponent component
    * @param router the Router
@@ -87,6 +94,7 @@ export class LoadCsvComponent implements OnInit, OnDestroy {
    * @param messageService the NotificationService service
    * @param standardGraphService the StandardGraphService service
    * @param supportService the SupportDataService service
+   * @param socketService the SocketService service
    */
   constructor(
     private router: Router,
@@ -94,12 +102,31 @@ export class LoadCsvComponent implements OnInit, OnDestroy {
     private dialog: MatDialog,
     private messageService: NotificationService,
     private standardGraphService: StandardGraphService,
-    private supportService: SupportDataService
+    private supportService: SupportDataService,
+    private socketService: SocketService
   ) {
   }
 
   // NgOnInit implementation
   ngOnInit(): void {
+    // Listen progress creation graph events
+    this.socketService.progress.subscribe(
+      data => {
+        this.progressData = data;
+        console.log(this.progressData);
+      });
+
+    this.socketService.complete.subscribe(
+      data => {
+        this.completeData = data;
+        console.log(this.completeData);
+      });
+
+    this.socketService.error.subscribe(
+      data => {
+        this.errorData = data;
+        console.log(this.errorData);
+      });
   }
 
   // NgOnDestroy implementation

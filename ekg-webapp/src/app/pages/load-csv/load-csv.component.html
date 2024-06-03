@@ -245,4 +245,14 @@
   <h2 style="font-family: Georgia, 'Times New Roman', Times, serif; font-size: 32px;">BUILDING THE EKG…</h2>
   <h3 style="font-family: Georgia, 'Times New Roman', Times, serif; font-size: 26px;">This operation may take a few
     minutes</h3>
+
+  <div class="progress-terminal"
+       *ngIf="this.progressData['total_nodes'] != null && this.progressData['total_relationships'] != null">
+    <p>Created {{ progressData['event_nodes'] }} event nodes</p>
+    <p>Created {{ progressData['entity_nodes'] }} entity nodes</p>
+    <p>Created {{ progressData['corr_relationships'] }} :CORR relationships</p>
+    <p>Created {{ progressData['df_relationships'] }} :DF relationships</p>
+    <p style="font-weight: bold">Total : {{ progressData['total_nodes'] }} nodes</p>
+    <p style="font-weight: bold">Total : {{ progressData['total_relationships'] }} relationships</p>
+  </div>
 </div>

@@ -17,7 +17,7 @@ from Models.api_response_model import ApiResponse
 from Utils.query_library import *
 
 
-# Get Event nodes
+# Get event nodes
 def get_event_nodes_c(database_connector):
     apiResponse = ApiResponse(None, None, None)
 
@@ -67,7 +67,22 @@ def get_event_nodes_c(database_connector):
         database_connector.close()
 
 
-# Get Entity nodes
+# Get count of event nodes
+def get_count_event_nodes_c(database_connector):
+    try:
+        query = get_count_nodes_event_query()
+        result = database_connector.run_query_memgraph(query)
+
+        if isinstance(result, list) and len(result) > 0 and 'node_count' in result[0]:
+            return result[0]['node_count']
+
+        return 0
+    except Exception as e:
+        print(f"Error in get_count_event_nodes: {e}")
+        return 0
+
+
+# Get entity nodes
 def get_entity_nodes_c(database_connector):
     apiResponse = ApiResponse(None, None, None)
 
@@ -115,6 +130,21 @@ def get_entity_nodes_c(database_connector):
 
     finally:
         database_connector.close()
+
+
+# Get count of entity nodes
+def get_count_entity_nodes_c(database_connector):
+    try:
+        query = get_count_nodes_entity_query()
+        result = database_connector.run_query_memgraph(query)
+
+        if isinstance(result, list) and len(result) > 0 and 'entity_count' in result[0]:
+            return result[0]['entity_count']
+
+        return 0
+    except Exception as e:
+        print(f"Error in get_count_event_nodes: {e}")
+        return 0
 
 
 # Get :CORR relationships
@@ -188,6 +218,21 @@ def get_corr_relationships_c(database_connector):
         database_connector.close()
 
 
+# Get count of :CORR relationships
+def get_count_corr_relationships_c(database_connector):
+    try:
+        query = get_count_corr_rel_query()
+        result = database_connector.run_query_memgraph(query)
+
+        if isinstance(result, list) and len(result) > 0 and 'corr_count' in result[0]:
+            return result[0]['corr_count']
+
+        return 0
+    except Exception as e:
+        print(f"Error in get_count_event_nodes: {e}")
+        return 0
+
+
 # Get :DF relationships
 def get_df_relationships_c(database_connector):
     apiResponse = ApiResponse(None, None, None)
@@ -259,7 +304,22 @@ def get_df_relationships_c(database_connector):
         database_connector.close()
 
 
-# Get standard graph (Event node and :DF Relationships)
+# Get count of :DF relationships
+def get_count_df_relationships_c(database_connector):
+    try:
+        query = get_count_df_rel_query()
+        result = database_connector.run_query_memgraph(query)
+
+        if isinstance(result, list) and len(result) > 0 and 'df_count' in result[0]:
+            return result[0]['df_count']
+
+        return 0
+    except Exception as e:
+        print(f"Error in get_count_event_nodes: {e}")
+        return 0
+
+
+# Get complete graph
 def get_graph_c(database_connector):
     apiResponse = ApiResponse(None, None, None)
 
@@ -321,7 +381,7 @@ def get_graph_c(database_connector):
         database_connector.close()
 
 
-# Get standard graph details(event, count, entity, df, corr)
+# Get complete graph details
 def get_graph_details_c(database_connector):
     apiResponse = ApiResponse(None, None, None)
 
@@ -462,7 +522,7 @@ def get_graph_details_c(database_connector):
         database_connector.close()
 
 
-# Return the entities key
+# Get the entity key
 def get_entities_key_c(database_connector):
     apiResponse = ApiResponse(None, None, None)
 
@@ -499,6 +559,7 @@ def get_entities_key_c(database_connector):
         database_connector.close()
 
 
+# Get the null entity
 def get_null_entities_c(database_connector):
     apiResponse = ApiResponse(None, None, None)
 
@@ -540,7 +601,7 @@ def get_null_entities_c(database_connector):
         database_connector.close()
 
 
-# Delete Standard Graph (Event node and :DF Relationships)
+# Delete the complete graph
 def delete_graph_c(database_connector):
     apiResponse = ApiResponse(None, None, None)
 
@@ -582,6 +643,7 @@ def delete_graph_c(database_connector):
         database_connector.close()
 
 
+# Delete all inside the database
 def delete_all_graph_c(database_connector):
     apiResponse = ApiResponse(None, None, None)
 

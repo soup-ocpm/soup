@@ -41,7 +41,7 @@
 
     <div class="group">
       <h2>Export Json Graph</h2>
-      <p>This operation allow you to group nodes into chosen classes</p>
+      <p>This operation allow you to export the complete graph in JSON</p>
 
       <button mat-stroked-button color="primary" (click)="exportGraphJSON()">Export</button>
     </div>
@@ -134,4 +134,12 @@
   <h2 style="font-family: Georgia, 'Times New Roman', Times, serif; font-size: 32px;">BUILDING THE EKG…</h2>
   <h3 style="font-family: Georgia, 'Times New Roman', Times, serif; font-size: 26px;">This operation may take a few
     minutes</h3>
+
+  <div class="progress-terminal"
+       *ngIf="this.progressData['class_nodes'] != null && this.progressData['total_relationships'] != null">
+    <p>Created {{ progressData['class_nodes'] }} class nodes</p>
+    <p>Created {{ progressData['obs_relationships'] }} :OBS relationships</p>
+    <p>Created {{ progressData['dfc_relationships'] }} :DF_C relationships</p>
+    <p style="font-weight: bold">Total : {{ progressData['total_relationships'] }} relationships</p>
+  </div>
 </div>
