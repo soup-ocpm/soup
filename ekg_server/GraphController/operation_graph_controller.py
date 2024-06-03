@@ -326,7 +326,7 @@ def get_graph_c(database_connector):
     try:
         database_connector.connect()
 
-        query = get_df_relation_query()
+        query = get_complete_standard_graph_query()
         result = database_connector.run_query_memgraph(query)
 
         if not isinstance(result, Iterable):
@@ -338,33 +338,32 @@ def get_graph_c(database_connector):
         graph_data = []
 
         for record in result:
-            relation = record['df']
-            event = relation[0]
-            relation_type = relation[1]
-            related_event = relation[2]
+            source = record['source']
+            source['id'] = record['source_id']
+            edge = record['edge']
+            edge['id'] = record['edge_id']
+            target = record['target']
+            target['id'] = record['target_id']
 
-            for key, value in event.items():
+            for key, value in source.items():
                 if isinstance(value, (int, float)) and math.isnan(value):
-                    event[key] = None
+                    source[key] = None
 
-            for key, value in related_event.items():
+            for key, value in target.items():
                 if isinstance(value, (int, float)) and math.isnan(value):
-                    related_event[key] = None
-            relation_id = f"{related_event['EventID']}_{related_event['EventID']}"
+                    target[key] = None
 
             graph_data.append({
-                'relaton:type': relation_type,
-                'relationId': relation_id,
-                'node': event,
-                'related_node': related_event,
+                'node_source': source,
+                'edge': edge,
+                'node_target': target
             })
 
-        if len(graph_data) == 0:
-            apiResponse.http_status_code = 202
-            apiResponse.message = 'No content'
-            apiResponse.response_data = graph_data
-
-            return jsonify(apiResponse.to_dict()), 202
+        if not graph_data:
+            apiResponse.http_status_code = 404
+            apiResponse.response_data = None
+            apiResponse.message = "Not found"
+            return jsonify(apiResponse.to_dict()), 404
 
         apiResponse.http_status_code = 200
         apiResponse.response_data = graph_data

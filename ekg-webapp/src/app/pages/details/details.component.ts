@@ -1,4 +1,4 @@
-import {Component, OnInit} from '@angular/core';
+import {AfterViewChecked, AfterViewInit, Component, ElementRef, OnInit, ViewChild} from '@angular/core';
 import {Router} from "@angular/router";
 
 // Services import
@@ -74,10 +74,13 @@ export class DetailsComponent implements OnInit {
   // If the User have access to the view of Graph
   public isShowNextPageBtn: boolean = false;
 
+  // The progress data from WebSocket
   public progressData: any;
 
+  // The complete data from WebSocket
   public completeData: any;
 
+  // The error data from WebSocket
   public errorData: any;
 
 
@@ -120,6 +123,7 @@ export class DetailsComponent implements OnInit {
       this.haveCreatedClassGraph = true;
     }
 
+    // Subscription for Web Socket service
     this.socketService.progress.subscribe(
       data => {
         this.progressData = data;
@@ -258,6 +262,10 @@ export class DetailsComponent implements OnInit {
     } else {
       this.selectedEntities.push(entity.name);
     }
+  }
+
+  public showStandardGraph(): void {
+    this.router.navigate(['/details-graph']);
   }
 
   /**
