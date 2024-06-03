@@ -159,6 +159,14 @@ def get_count_df_rel_query():
             """
 
 
+def get_complete_standard_graph_query():
+    return """
+            MATCH (e1:Event)-[r:DF]->(e2:Event)
+            RETURN e1 as source, id(e1) as source_id, properties(r) as edge, 
+            id(r) as edge_id, e2 as target, id(e2) as target_id
+            """
+
+
 # Other utils query for Graph (Class)
 def get_nodes_class_query():
     return """

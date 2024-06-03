@@ -1,0 +1,261 @@
+// SCSS FOR PROCESSING
+.process-div {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.master-div {
+  position: absolute;
+  width: 100%;
+  height: 88%;
+}
+
+
+// SCSS FOR MASTER CONTAINER GRAPH
+svg {
+  width: 100%;
+  height: 100%;
+}
+
+.graph-container {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  margin-left: 10px;
+  overflow: hidden;
+}
+
+.graph-container {
+  height: 100%;
+}
+
+
+// SCSS FOR RIGHT CONTAINER
+.sidebar {
+  position: fixed;
+  top: 59px;
+  right: -350px;
+  width: 350px;
+  height: 85vh;
+  transition: right 0.5s;
+  background-color: #f6f6f6;
+  z-index: 2;
+  padding: 10px;
+}
+
+.sidebar.open {
+  right: 0;
+}
+
+.right-inside {
+  display: flex;
+  flex-direction: column;
+}
+
+.operation {
+  font-family: Georgia, 'Times New Roman', Times, serif;
+  font-size: 20px;
+
+  h2 {
+    font-size: 23px;
+    margin-top: 15px;
+    font-family: 'Times New Roman', Times, serif;
+  }
+
+}
+
+.nodes-operation {
+  height: 40px;
+  display: flex;
+  align-items: center;
+
+  mat-icon {
+    margin-top: 6px;
+    margin-left: 11px;
+    width: 23px;
+    height: 23px;
+    color: #c4a805;
+  }
+
+  p {
+    font-size: 30px;
+  }
+}
+
+.operation h3 {
+  font-size: 20px;
+}
+
+.operation p {
+  font-size: 15px;
+}
+
+.operation button.delete-button {
+  width: 100%;
+}
+
+.operation .operation-group {
+  margin-left: 20px;
+}
+
+
+// SCSS FOR GROUP CLASS SIDEBAR
+.group-sidebar {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 50px;
+  width: 370px;
+  padding: 5px;
+  background-color: rgb(224, 224, 224);
+  z-index: 2;
+}
+
+.close-icon {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  cursor: pointer;
+}
+
+.slide-in-sidebar {
+  right: 0;
+}
+
+.graph-container {
+  display: flex;
+  position: absolute;
+  align-items: flex-start;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  right: 0;
+
+  svg {
+    width: 100%;
+    height: 100%;
+  }
+
+  .back-button,
+  .icon-button {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    background-color: transparent;
+    border: none;
+    outline: none;
+    cursor: pointer;
+    margin: 0;
+    padding: 0;
+  }
+
+  .icon-buttons-container {
+    position: absolute;
+    top: 0;
+    bottom: 10px;
+    right: 120px;
+    display: flex;
+
+    .icon-button {
+      background-color: transparent;
+      border: none;
+      outline: none;
+      cursor: pointer;
+      padding: 0;
+    }
+
+    .icon-button.menu-button {
+      margin-left: 40px;
+    }
+  }
+}
+
+.back-button-pos {
+  position: absolute;
+  top: 20px;
+  left: 16px;
+  cursor: pointer;
+
+  mat-icon {
+    width: 30px;
+    height: 30px;
+  }
+}
+
+// SCSS FOR MANAGE GRAPH
+.example-radio-group {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+// RETRIEVE SEARCHED NODES AND EDGES CARD SCSS
+.custom-card {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: 15px;
+  margin: 7px;
+  max-height: 40px;
+  overflow: hidden;
+  border: 1px solid #b6b4b4;
+  background-color: #fff;
+}
+
+.custom-card.card-selected {
+  background-color: #8AC5FF;
+  border: 1px solid #488FEF;
+  color: white;
+}
+
+.search-results {
+  cursor: pointer;
+}
+
+.custom-card mat-card-content {
+  text-align: center;
+}
+
+// SCSS FOR TOAST CARD
+.toast-card {
+  position: absolute;
+  bottom: 60px;
+  right: 400px;
+  background-color: #fff;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+  padding: 20px;
+  z-index: 9999;
+  width: 250px;
+}
+
+.toast-card h3 {
+  font-size: 18px;
+  margin-bottom: 10px;
+  color: #333;
+}
+
+.toast-card p {
+  font-size: 16px;
+  color: #555;
+}
+
+.close-button {
+  position: absolute;
+  top: 10px;
+  right: 7px;
+  z-index: 2;
+  cursor: pointer;
+}
+
+.toggle-right {
+  float: right;
+  margin-top: -5px;
+}
+
+
+.create-graph-button {
+  position: absolute;
+}

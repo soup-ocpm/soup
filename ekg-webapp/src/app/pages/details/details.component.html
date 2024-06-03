@@ -1,9 +1,12 @@
 <!--Show the progress bar-->
 <mat-progress-bar mode="indeterminate" *ngIf="isLoadingProgressBar"></mat-progress-bar>
 
-<!--Open sidebar button-->
-<button *ngIf="!isLoadingProgressBar" class="btn-sidebar" mat-icon-button color="primary"
-        (click)="toggleFirstSidebar()">
+<!--Menu sidebar button-->
+<button *ngIf="!isLoadingProgressBar"
+        mat-icon-button
+        color="primary"
+        (click)="toggleFirstSidebar()"
+        class="btn-sidebar">
   <mat-icon>menu</mat-icon>
 </button>
 
@@ -18,9 +21,17 @@
 
     <p>A list of operations available for this section</p>
 
+    <div class="group">
+      <h2>Graph visualization</h2>
+      <p>This operation allow you to view the graph</p>
+
+      <button mat-stroked-button color="primary" (click)="this.showStandardGraph()">Show graph</button>
+    </div>
+
     <div class="group" *ngIf="haveCreatedClassGraph">
       <h2>Show Class Graph</h2>
       <p>In your database is already created Class Graph.</p>
+      <p>Show the class graph</p>
 
       <button mat-stroked-button color="primary" (click)="handleClickNextView()">Show Graph</button>
     </div>
@@ -53,6 +64,7 @@
       <button mat-stroked-button color="warn" (click)="openDialogDelete()">Delete</button>
     </div>
 
+    <div style="margin-top: 20px"></div>
   </div>
 
 </div>
@@ -100,13 +112,9 @@
 
 </div>
 
-<!--Master container content-->
-<div *ngIf="!isLoadingProgressBar" class="master" [ngStyle]="{ 'filter': isShowSecondSidebar ? 'blur(2px)' : 'none' }">
-
-  <mat-icon class="back-button-pos" color="primary" (click)="handleClickNextView()"
-            *ngIf="isShowNextPageBtn && !isShowSidebar">
-    keyboard_backspace
-  </mat-icon>
+<!--Master container content for Cards-->
+<div *ngIf="!isLoadingProgressBar" class="master"
+     [ngStyle]="{ 'filter': isShowSecondSidebar ? 'blur(2px)' : 'none' }">
 
   <div class="master-grid" [ngClass]="{'leave-grid': isCardExtended}">
 
