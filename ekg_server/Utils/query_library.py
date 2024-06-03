@@ -33,12 +33,10 @@ def create_corr_relation_query(key):  # checks if an entity has multiple values
             MATCH (e:Event) 
             WITH e, 
                 CASE WHEN toString(e.{key}) <> "nan"
-                    THEN split(e.{key}, ';')
+                    THEN split(e.{key}, ',')
                     ELSE [e.{key}]
                 END AS entities
-            SET e.{key} = entities
-            WITH e 
-            UNWIND e.{key} AS entity_id
+            UNWIND entities AS entity_id
             WITH DISTINCT entity_id, e
             MATCH (ent:Entity {{Value: entity_id}})
             MERGE (e)-[c:CORR {{Type: '{key}'}}]->(ent)
