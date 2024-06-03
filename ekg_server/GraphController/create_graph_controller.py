@@ -52,8 +52,6 @@ def create_graph_c(database_connector):
     causality = None
     
     if not (fixed_column == None and values_column == None):
-        print(fixed_column)
-        print(variable_column)
         causality = (fixed_column, variable_column)
 
     try:
@@ -161,9 +159,7 @@ def standard_process_query_c(database_connector, df, filtered_columns, values_co
 
         if causality is not None:
             queries = reveal_causal_rels(causality[0], causality[1])
-            print(queries)
             for query in queries:
-                print(query)
                 database_connector.run_query_memgraph(query)
             for key in filtered_columns:
                 if key not in [event_id_col, timestamp_col, activity_name_col, causality[0]]:

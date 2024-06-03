@@ -46,15 +46,16 @@ def create_class_graph_c(database_connector):
 # Execute query for create Class Graph
 def class_process_query_c(database_connector, filtered_columns):
     try:
-        # check nan entities with nan values
-        cypher_query = get_nan_entities()
-        res = database_connector.run_query_memgraph(cypher_query)
+        if (len(filtered_columns) > 1):
+            # check nan entities with nan values if there are other column other than activity name
+            cypher_query = get_nan_entities()
+            res = database_connector.run_query_memgraph(cypher_query)
 
-        # cast from float to string
-        for element in res:
-            entity = element['prop']
-            cypher_query = change_nan(entity)
-            database_connector.run_query_memgraph(cypher_query)
+            # cast from float to string
+            for element in res:
+                entity = element['prop']
+                cypher_query = change_nan(entity)
+                database_connector.run_query_memgraph(cypher_query)
 
         cypher_query = create_class_multi_query(filtered_columns)
         database_connector.run_query_memgraph(cypher_query)
