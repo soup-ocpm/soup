@@ -4,6 +4,8 @@
 The Soup Tool is a WebApp that allows the end user to create an Event Knowledge Graph (EKG) <br>
 Starting from an event log, saved in a .csv file, the user is guided in the creation of the EKG with the aim of performing object-centric process mining analysis. <br>
 
+Please refer to the project [wiki](https://bitbucket.org/proslabteam/soup/wiki/Home) for all the details.
+
 ### Causal Event Relationships
 Soup supports the creation of EKGs considering event-to-event causal relationships.
 Indeed, causal relationships allow to retrieve 1:n or n:1 relationships between events.
