@@ -7,6 +7,7 @@ import {LoadCsvComponent} from "./pages/load-csv/load-csv.component";
 import {DetailsComponent} from "./pages/details/details.component";
 import {DetailsGraphComponent} from "./pages/details-graph/details-graph.component";
 import {GraphComponent} from "./pages/graph/graph.component";
+import {TestComponent} from "./pages/test/test.component";
 
 // All application routes
 const routes: Routes = [
@@ -16,6 +17,7 @@ const routes: Routes = [
   {path: 'details', component: DetailsComponent},
   {path: 'details-graph', component: DetailsGraphComponent},
   {path: 'graph', component: GraphComponent},
+  {path: 'test', component: TestComponent},
 
   {path: '**', redirectTo: 'welcome'}
 ];

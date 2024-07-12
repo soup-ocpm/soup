@@ -15,6 +15,7 @@ import {ComponentsModule} from "../components/components.module";
 // Other modules import
 import {NgxDropzoneModule} from "ngx-dropzone";
 import {DetailsGraphComponent} from './details-graph/details-graph.component';
+import { TestComponent } from './test/test.component';
 
 @NgModule({
   declarations: [
@@ -23,6 +24,7 @@ import {DetailsGraphComponent} from './details-graph/details-graph.component';
     DetailsComponent,
     GraphComponent,
     DetailsGraphComponent,
+    TestComponent,
   ],
   imports: [
     CommonModule,
@@ -37,6 +39,7 @@ import {DetailsGraphComponent} from './details-graph/details-graph.component';
     DetailsComponent,
     GraphComponent,
     DetailsGraphComponent,
+    TestComponent
   ]
 })
 export class PagesModule {

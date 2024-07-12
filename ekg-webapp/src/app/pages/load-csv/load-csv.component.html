@@ -89,7 +89,7 @@
   </mat-card>
 
   <!--Table card-->
-  <div *ngIf="isTutorialTerminated && isShowTable">
+  <div *ngIf="isTutorialTerminated && isShowTable && !this.isShowContainers">
     <mat-card class="upload-card"
               [ngClass]="{'extend-card': isShowTable, 'move-right' : isShowSidebar}">
 
@@ -130,6 +130,22 @@
     </mat-card>
   </div>
 
+  <!--Docker Container card-->
+  <mat-card class="master-container"
+            *ngIf="!this.isShowUpload && !this.isShowTable && this.isTutorialTerminated && this.dockerContainers.length > 0">
+    <div class="title">
+      <p style="font-size: 23px; font-family: 'Times New Roman', Times, serif;">Docker Container</p>
+    </div>
+    <mat-tab-group #tabGroup animationDuration="600ms" style="overflow: auto">
+      <mat-tab label="Choice Container">
+        <p style="margin-top: 10px; display: flex; align-items: center; justify-content: center">Specifies the Docker
+          container representing the Memgraph database.</p>
+        <div style="height: 10px"></div>
+        <app-docker-tile *ngFor="let container of this.dockerContainers" [container]="this.container"
+                         (containerClicked)="this.onContainerClicked(container)"></app-docker-tile>
+      </mat-tab>
+    </mat-tab-group>
+  </mat-card>
 </div>
 
 <!--Sidebar-->
@@ -236,7 +252,7 @@
   </div>
 
   <div class="button-sidebar">
-    <button mat-button color="primary" (click)="preBuildGraph()">Build</button>
+    <button mat-button color="primary" (click)="this.showContainers()">Build</button>
   </div>
 </div>
 

@@ -1,4 +1,4 @@
-import {Component, OnDestroy, OnInit} from '@angular/core';
+import {Component, OnDestroy, OnInit, ViewChild} from '@angular/core';
 import {Router} from "@angular/router";
 
 // Components import
@@ -8,6 +8,8 @@ import {HelpStandardDialogComponent} from "../../components/help-standard-dialog
 import {NotificationService} from "../../services/notification.service";
 import {StandardGraphService} from "../../services/standard_graph.service";
 import {SupportDataService} from "../../services/support_data.service";
+import {SocketService} from "../../core/services/socket.service";
+import {DockerService} from "../../services/docker.service";
 
 // Material import
 import {MatDialog} from "@angular/material/dialog";
@@ -17,7 +19,9 @@ import {Entity} from "../../core/models/entity.model";
 
 // Other import
 import {Papa} from "ngx-papaparse";
-import {SocketService} from "../../core/services/socket.service";
+import {Container} from "../../core/models/container.model";
+import {FormControl} from "@angular/forms";
+import {MatTabGroup} from "@angular/material/tabs";
 
 @Component({
   selector: 'app-load-csv',
@@ -25,6 +29,9 @@ import {SocketService} from "../../core/services/socket.service";
   styleUrl: './load-csv.component.scss'
 })
 export class LoadCsvComponent implements OnInit, OnDestroy {
+
+  // The api response
+  public apiResponse: any;
 
   // List of files
   public files: File[] = [];
@@ -77,14 +84,37 @@ export class LoadCsvComponent implements OnInit, OnDestroy {
   // Show the sidebar
   public isShowSidebar: boolean = false;
 
+  // Show the containers
+  public isShowContainers: boolean = false;
+
   // If the progress bar is loading or not
   public isLoadingProgressBar: boolean = false;
 
+  // All docker containers
+  public dockerContainers: Container[] = [];
+
+  // The selected container
+  public selectedContainer: Container | any;
+
+  // The selected container directory
+  public selectedDirectory: string | any;
+
+  // If the user choice the container
+  public haveChoiceContainer: boolean = false;
+
+  // If the user choice the directory for the csv file
+  public haveChoiceDirectory: boolean = false;
+
+  // The progress data
   public progressData: any;
 
+  // The complete data
   public completeData: any;
 
+  // The error data
   public errorData: any;
+
+  @ViewChild('tabGroup') tabGroup: MatTabGroup | undefined;
 
   /**
    * Constructor for LoadCsvComponent component
@@ -93,6 +123,7 @@ export class LoadCsvComponent implements OnInit, OnDestroy {
    * @param dialog the Material dialog
    * @param messageService the NotificationService service
    * @param standardGraphService the StandardGraphService service
+   * @param dockerService the DockerService service
    * @param supportService the SupportDataService service
    * @param socketService the SocketService service
    */
@@ -102,6 +133,7 @@ export class LoadCsvComponent implements OnInit, OnDestroy {
     private dialog: MatDialog,
     private messageService: NotificationService,
     private standardGraphService: StandardGraphService,
+    private dockerService: DockerService,
     private supportService: SupportDataService,
     private socketService: SocketService
   ) {
@@ -277,9 +309,90 @@ export class LoadCsvComponent implements OnInit, OnDestroy {
     }
   }
 
+  /**
+   * Handle the choice container
+   * @param container the container
+   */
+  public onContainerClicked(container: any): void {
+    if (container != null && container.status) {
+      this.selectedContainer = container;
+      this.haveChoiceContainer = true;
+      this.preBuildGraph();
+    }
+  }
+
+  /**directory
+   * Handle the choice container
+   * @param directory the directory
+   */
+  public onDirectoryClicked(directory: any): void {
+    if (directory != null) {
+      this.selectedDirectory = directory;
+      this.haveChoiceDirectory = true;
+      this.preBuildGraph();
+    }
+  }
+
+  public getContainerDirectories(): void {
+    if (this.selectedContainer.directories.length == 0) {
+      this.dockerService.containerDirectories(this.selectedContainer.id).subscribe({
+        next: responseData => {
+          let response: any;
+          response = responseData;
+          if (response['http_status_code'] == 200 && response['response_data'] != null) {
+            let dockerFolders: any;
+            response.response_data['directories'].forEach((item: any): void => {
+              this.selectedContainer.directories.push(item);
+            });
+          } else {
+            this.messageService.show('Unable to load Container directories. Retry', false, 2000);
+          }
+        }, error: errorData => {
+          this.messageService.show('Unable to load Container directories. Retry', false, 2000);
+        }, complete: () => {
+        }
+      })
+    }
+  }
+
   // Show the Sidebar
   public showSidebar(): void {
     this.isShowSidebar = true;
+  }
+
+  // Show the card for choice container
+  public showContainers(): void {
+    if (this.dockerContainers.length == 0) {
+      this.dockerService.containers().subscribe({
+        next: responseData => {
+          this.apiResponse = responseData;
+          if (this.apiResponse['http_status_code'] == 200 && this.apiResponse['response_data'] != null) {
+            this.apiResponse.response_data['all_containers'].forEach((item: any) => {
+              let status = false;
+              if (item.status == 'running') {
+                status = true;
+              }
+              let container = new Container(item.id, item.name, status, item.image);
+              this.dockerContainers.push(container);
+            });
+
+            if (this.dockerContainers.length > 0) {
+              this.isShowTable = false;
+              this.isShowContainers = true;
+            }
+          } else {
+            this.messageService.show('Unable to load Memgraph docker container. Please start Memgraph', false, 3000);
+          }
+        }, error: errorData => {
+          this.apiResponse = errorData;
+          this.messageService.show('Unable to load Memgraph docker container. Please start Memgraph', false, 3000);
+        }, complete: () => {
+        }
+      });
+    } else {
+      this.isShowTable = false;
+      this.isShowContainers = true;
+    }
   }
 
   // Prepare to build graph
@@ -334,8 +447,8 @@ export class LoadCsvComponent implements OnInit, OnDestroy {
     formData.append('file', file, 'filtered.csv');
     try {
       let apiResponse: any = null;
-      this.standardGraphService.createGraph(formData, allFilteredColumn, allValuesColumn, this.fixedColumn, this.variableColumn).subscribe(
-        response => {
+      this.standardGraphService.createGraph(formData, allFilteredColumn, allValuesColumn, this.fixedColumn, this.variableColumn, this.selectedContainer).subscribe({
+        next: response => {
           apiResponse = response;
           if (apiResponse != null && apiResponse.http_status_code == 201) {
             this.removeStandardProperties();
@@ -343,17 +456,16 @@ export class LoadCsvComponent implements OnInit, OnDestroy {
             this.getGraph();
             return;
           }
-        },
-        error => {
+        }, error: error => {
           apiResponse = error;
           this.messageService.show('Error while creatin the Graph. Retry', false, 3000);
           this.isLoadingProgressBar = false;
-          this.isShowTable = false;
-          this.isShowUpload = true;
           this.resetCSVData();
           return;
 
-        });
+        }, complete: () => {
+        }
+      });
     } catch (error) {
       this.messageService.show('Internal Server Error. Retry', false, 2000);
       this.resetCSVData();
@@ -429,13 +541,6 @@ export class LoadCsvComponent implements OnInit, OnDestroy {
 
   // Delete the selected .csv file and reset files array
   public resetCSVData(): void {
-    this.files = [];
-    this.allFileEntities = [];
-    this.allFileValuesSelected = [];
-    this.selectedFile = undefined;
-    this.hasSelectedFile = false;
-    this.dataSource = [];
-    this.displayedColumns = [];
   }
 
   // Handle the click for close tutorial
