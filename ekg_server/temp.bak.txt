@@ -11,10 +11,10 @@ License : MIT
 
 # Import
 import io
-import pandas as pd
 import subprocess
+import pandas as pd
 from pathlib import Path
-from datetime import datetime
+from datetime import datetime, time
 from Utils.causal_query_lib import *
 from Models.memgraph_connector_model import *
 from Services.op_graph_service import *
@@ -33,6 +33,8 @@ class GraphService:
                        socketio):
         global have_finished
 
+        file_bak = file
+
         if have_finished:
             have_finished = False
 
@@ -44,29 +46,110 @@ class GraphService:
             causality = (fixed_column, variable_column)
 
         try:
-            database_connector.connect()
+            project_dir = Path(__file__).parent
 
-            start_time = time.time()
+            temp_dir = project_dir / 'temp'
 
-            # Start the Socket IO for WebSocket
-            socketio.start_background_task(target=track_graph_creation_progress, socketio=socketio,
-                                           db_connector=database_connector, start_time=start_time)
+            # 1. Create temp directory
+            if not temp_dir.exists():
+                temp_dir.mkdir(parents=True)
 
-            file_data = file.read().decode('utf-8')
-            df = pd.read_csv(io.StringIO(file_data))
-            standard_process_query_c(database_connector, df, filtered_column, values_column, causality)
+            ct = datetime.now().strftime("%Y%m%d%H%M%S")
+            file_name = f'{ct}_{file.filename}'
+            temp_csv_path = temp_dir / file_name
 
-            stop_time = time.time()
+            # 2. Save the file in the directory
+            file.save(temp_csv_path)
+            print(f'File saved in: {temp_csv_path}')
 
-            duration_time = stop_time - start_time
+            # 3. Copy the file in the container
+            container_csv_path = f'/tmp/{file_name}'
+            result = subprocess.run(['docker', 'exec', container_id, 'mkdir', '-p', '/tmp'], capture_output=True,
+                                    text=True)
+            if result.returncode != 0:
+                apiResponse.http_status_code = 500
+                apiResponse.message = 'Failed to create /temp directory'
+                apiResponse.response_data = None
 
-            apiResponse.http_status_code = 201
-            apiResponse.message = 'Standard Graph created successfully.'
-            apiResponse.response_data = f'Temp : {duration_time}'
+                have_finished = True
 
-            have_finished = True
+                return apiResponse
 
-            return jsonify(apiResponse.to_dict()), 200
+            result = subprocess.run(['docker', 'cp', str(temp_csv_path), f'{container_id}:{container_csv_path}'],
+                                    capture_output=True, text=True)
+            if result.returncode != 0:
+                apiResponse.http_status_code = 500
+                apiResponse.message = 'Failed to copy the file in the container'
+                apiResponse.response_data = None
+
+                have_finished = True
+
+                return apiResponse
+
+            # 4. Check if the file was copied or not
+            result = subprocess.run(['docker', 'exec', container_id, 'ls', '/tmp'], capture_output=True, text=True)
+            if result.returncode != 0:
+                apiResponse.http_status_code = 500
+                apiResponse.message = 'Failed to list files in the container'
+                apiResponse.response_data = None
+
+                have_finished = True
+
+                return apiResponse
+            if file_name in result.stdout:
+                print(f"File {file_name} exists in container {container_id}")
+            else:
+                print(f"File {file_name} does not exist in container {container_id}")
+                apiResponse.http_status_code = 500
+                apiResponse.message = 'File not found in the container'
+                apiResponse.response_data = None
+
+                have_finished = True
+
+                return apiResponse
+
+            print(f'File saved on container with path: {container_csv_path}')
+
+            try:
+                # 5. Process the graph creation
+                database_connector.connect()
+
+                start_time = time.time()
+
+                # Start the Socket IO for WebSocket
+                socketio.start_background_task(target=track_graph_creation_progress, socketio=socketio,
+                                               db_connector=database_connector, start_time=start_time)
+
+                stop_time = time.time()
+
+                file_data = file_bak.read().decode('utf-8')
+                df = pd.read_csv(io.StringIO(file_data))
+                standard_process_query_c(database_connector, df, filtered_column, values_column, causality)
+
+                duration_time = stop_time - start_time
+
+                # 6. Remove the file in the container
+                subprocess.run(['docker', 'exec', container_id, 'rm', container_csv_path], check=True)
+                print('File remove')
+
+                # 7. Remove the file in the /temp directory
+                temp_csv_path.unlink()
+                print('File remove on the container')
+
+                have_finished = True
+
+                apiResponse.http_status_code = 201
+                apiResponse.message = 'Standard Graph created successfully.'
+                apiResponse.response_data = f'Temp : {duration_time}'
+
+            except Exception as e:
+                apiResponse.http_status_code = 500
+                apiResponse.message = f'Error while importing data to Memgraph: {str(e)}.'
+                apiResponse.response_data = None
+
+                have_finished = True
+
+                return jsonify(apiResponse.to_dict()), 500
 
         except Exception as e:
             apiResponse.http_status_code = 500
@@ -176,25 +259,7 @@ def standard_process_query_c(database_connector, df, filtered_columns, values_co
         return e
 
 
-def copy_file(file):
-    shared_dir = Path('shared-memgraph')
-
-    if not shared_dir.exists():
-        print(f"Creating directory : {shared_dir}")
-        shared_dir.mkdir(parents=True)
-
-    # Create the file name by the timestamp
-    ct = datetime.now()
-    file_name = f'csv_{ct}'
-
-    # Create path and save the file
-    dest_csv_path = shared_dir / file_name
-    file.save(dest_csv_path)
-    print(f"File saved to: {dest_csv_path}")
-
-    return file.filename
-
-
+# For WebSocket tracking process
 def track_graph_creation_progress(socketio, db_connector, start_time):
     try:
         while True:

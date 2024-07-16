@@ -47,10 +47,7 @@ def create_graph():
         return jsonify(apiResponse.to_dict()), 400
 
     # Container
-    container_name = request.form.get('container_name')
-    real_container_name = container_name.replace("'", '"')
     container_id = request.form.get('container_id')
-    real_container_id = container_id.replace("'", '"')
 
     # Query properties
     filtered_column_json = request.form.get('filteredColumn')
@@ -63,7 +60,6 @@ def create_graph():
     variable_column = request.form.get('variable').replace('"', '')
 
     return GraphService.create_graph_s(file, filtered_column, values_column, fixed_column, variable_column,
-                                       container_name,
-                                       container_id,
-                                       database_connector,
-                                       socketio)
+                                          container_id,
+                                          database_connector,
+                                          socketio)
