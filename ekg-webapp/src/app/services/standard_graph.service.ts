@@ -37,7 +37,6 @@ export class StandardGraphService {
     formData.append('valuesColumn', JSON.stringify(valuesColumn));
     formData.append('fixed', JSON.stringify(fixed));
     formData.append('variable', JSON.stringify(variable));
-    formData.append('container_name', JSON.stringify(container.name));
     formData.append('container_id', container.id);
     return this.httpClient.post('http://127.0.0.1:5000/api/v2/graph', formData);
   }
@@ -47,7 +46,7 @@ export class StandardGraphService {
    * @returns Observable of Http request
    */
   public getEventNodes(): Observable<any> {
-    return this.httpClient.get('http://127.0.0.1:8080/api/v2/graph/nodes/event');
+    return this.httpClient.get('http://127.0.0.1:5000/api/v2/graph/nodes/event');
   }
 
   /**
@@ -55,7 +54,7 @@ export class StandardGraphService {
    * @returns Observable of Http request
    */
   public getEntityNodes(): Observable<any> {
-    return this.httpClient.get('http://127.0.0.1:8080/api/v2/graph/nodes/entity');
+    return this.httpClient.get('http://127.0.0.1:5000/api/v2/graph/nodes/entity');
   }
 
   /**
@@ -63,7 +62,7 @@ export class StandardGraphService {
    * @returns Observable of Http request
    */
   public getCorrRelationships(): Observable<any> {
-    return this.httpClient.get('http://127.0.0.1:8080/api/v2/graph/relationships/corr');
+    return this.httpClient.get('http://127.0.0.1:5000/api/v2/graph/relationships/corr');
   }
 
   /**
@@ -71,17 +70,17 @@ export class StandardGraphService {
    * @returns Observable of Http request
    */
   public getDfRelationships(): Observable<any> {
-    return this.httpClient.get('http://127.0.0.1:8080/api/v2/graph/relationships/df');
+    return this.httpClient.get('http://127.0.0.1:5000/api/v2/graph/relationships/df');
   }
 
   // Get the Graph Entities (filtered column)
   public getGraphEntities(): Observable<any> {
-    return this.httpClient.get('http://127.0.0.1:8080/api/v2/support/entities_key');
+    return this.httpClient.get('http://127.0.0.1:5000/api/v2/support/entities_key');
   }
 
   // Get the NaN entities
   public getNaNEntities(): Observable<any> {
-    return this.httpClient.get('http://127.0.0.1:8080/api/v2/support/null-entities');
+    return this.httpClient.get('http://127.0.0.1:5000/api/v2/support/null-entities');
   }
 
   /**

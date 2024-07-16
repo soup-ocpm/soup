@@ -10,12 +10,19 @@
   margin-right: 10px;
 }
 
+.docker-tile:hover{
+  background-color: rgb(238, 238, 238);
+}
+
 .tile-row {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background-color: white;
   transition: background-color 0.3s ease;
+}
+
+.tile-row:hover{
+  background-color: rgb(238, 238, 238);
 }
 
 .tile-title {
@@ -29,6 +36,10 @@
 .tile-title {
   margin: 0;
   line-height: 1.5;
+}
+
+.tile-title:hover{
+  background-color: rgb(238, 238, 238);
 }
 
 .icon-container {
@@ -76,4 +87,8 @@ p {
 
 .exited {
   color: red;
+}
+
+mat-card:hover{
+  background-color: rgb(238, 238, 238);
 }

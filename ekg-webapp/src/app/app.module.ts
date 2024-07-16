@@ -19,7 +19,7 @@ import {PagesModule} from "./pages/pages.module";
 // Other import
 import {ServiceWorkerModule} from '@angular/service-worker';
 
-const config: SocketIoConfig = {url: 'http://localhost:8080', options: {}}
+const config: SocketIoConfig = {url: 'http://localhost:5000', options: {}}
 
 @NgModule({
   declarations: [

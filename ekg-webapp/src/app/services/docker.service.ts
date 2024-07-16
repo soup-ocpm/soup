@@ -26,14 +26,14 @@ export class DockerService {
    * Get all active containers
    */
   public activeContainers(): Observable<any> {
-    return this.httpClient.get('http://127.0.0.1:8080/api/v2/docker/active');
+    return this.httpClient.get('http://127.0.0.1:5000/api/v2/docker/active');
   }
 
   /**
    * Get all exited containers
    */
   public exitedContainers(): Observable<any> {
-    return this.httpClient.get('http://127.0.0.1:8080/api/v2/docker/exited');
+    return this.httpClient.get('http://127.0.0.1:5000/api/v2/docker/exited');
   }
 
   /**
@@ -49,7 +49,7 @@ export class DockerService {
    * @param containerId the container id
    */
   public startContainer(containerId: string): Observable<any> {
-    return this.httpClient.post('http://127.0.0.1:8080/api/v1/docker/start', {'container_id': containerId});
+    return this.httpClient.post('http://127.0.0.1:5000/api/v1/docker/start', {'container_id': containerId});
   }
 
   /**
@@ -57,6 +57,6 @@ export class DockerService {
    * @param containerId the container id
    */
   public stopContainer(containerId: string): Observable<any> {
-    return this.httpClient.post('http://127.0.0.1:8080/api/v1/docker/stop', {'container_id': containerId});
+    return this.httpClient.post('http://127.0.0.1:5000/api/v1/docker/stop', {'container_id': containerId});
   }
 }
