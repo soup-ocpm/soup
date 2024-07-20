@@ -4,14 +4,15 @@ File : class_graph_service.py
 Description: Service for class graph
 Date creation: 07-07-2024
 Project : ekg_server
-Author: DiscoHub12 (Alessio Giacché)
+Author: Alessio Giacché
+Copyright: Copyright (c) 2024 Alessio Giacché <ale.giacc.dev@gmail.com>
 License : MIT
 -------------------------------
 """
 
 # Import
-from flask import request
-from Models.memgraph_connector_model import *
+import time
+
 from Services.op_class_graph_service import *
 
 # Global variable for socket
@@ -37,11 +38,11 @@ class ClassGraphService:
             start_time = time.time()
 
             # Start the Socket IO for WebSocket
-            socketio.start_background_task(target=ClassGraphService.track_class_graph_creation_progress_c,
+            socketio.start_background_task(target=track_class_graph_creation_progress_c,
                                            socketio=socketio,
                                            db_connector=database_connector, start_time=start_time)
 
-            database_connector.class_process_query_c(database_connector, filtered_column)
+            class_process_query_c(database_connector, filtered_column)
 
             stop_time = time.time()
 
@@ -68,59 +69,60 @@ class ClassGraphService:
             database_connector.close()
 
     # Execute query for create Class Graph
-    @staticmethod
-    def class_process_query_c(database_connector, filtered_columns):
-        try:
-            # check nan entities with nan values
-            cypher_query = get_nan_entities()
-            res = database_connector.run_query_memgraph(cypher_query)
 
-            # cast from float to string
-            for element in res:
-                entity = element['prop']
-                cypher_query = change_nan(entity)
-                database_connector.run_query_memgraph(cypher_query)
 
-            cypher_query = create_class_multi_query(filtered_columns)
+def class_process_query_c(database_connector, filtered_columns):
+    try:
+        # check nan entities with nan values
+        cypher_query = get_nan_entities()
+        res = database_connector.run_query_memgraph(cypher_query)
+
+        # cast from float to string
+        for element in res:
+            entity = element['prop']
+            cypher_query = change_nan(entity)
             database_connector.run_query_memgraph(cypher_query)
 
-            df_query = class_df_aggregation(rel_type='DF', class_rel_type='DF_C')
-            database_connector.run_query_memgraph(df_query)
-        except Exception as e:
-            print(f"Internal Server error: {str(e)}")
-            raise
+        cypher_query = create_class_multi_query(filtered_columns)
+        database_connector.run_query_memgraph(cypher_query)
 
-    @staticmethod
-    def track_class_graph_creation_progress_c(socketio, db_connector, start_time):
-        try:
-            while True:
-                class_nodes_count = OperationClassGraphService.get_count_class_nodes_s(db_connector)
+        df_query = class_df_aggregation(rel_type='DF', class_rel_type='DF_C')
+        database_connector.run_query_memgraph(df_query)
+    except Exception as e:
+        print(f"Internal Server error: {str(e)}")
+        raise
 
-                obs_rel_count = OperationClassGraphService.get_count_obs_relationships_s(db_connector)
-                dfc_rel_count = OperationClassGraphService.get_count_dfc_relationships_s(db_connector)
 
-                total_relationships = obs_rel_count + dfc_rel_count
+def track_class_graph_creation_progress_c(socketio, db_connector, start_time):
+    try:
+        while True:
+            class_nodes_count = OperationClassGraphService.get_count_class_nodes_s(db_connector)
 
-                socketio.emit('progress', {
-                    'class_nodes': class_nodes_count,
-                    'obs_relationships': obs_rel_count,
-                    'dfc_relationships': dfc_rel_count,
-                    'total_relationships': total_relationships,
-                    'elapsed_time': time.time() - start_time
-                })
+            obs_rel_count = OperationClassGraphService.get_count_obs_relationships_s(db_connector)
+            dfc_rel_count = OperationClassGraphService.get_count_dfc_relationships_s(db_connector)
 
-                if have_finished:
-                    break
+            total_relationships = obs_rel_count + dfc_rel_count
 
-                time.sleep(2)
-
-            socketio.emit('complete', {
-                'message': 'Graph creation complete',
+            socketio.emit('progress', {
                 'class_nodes': class_nodes_count,
+                'obs_relationships': obs_rel_count,
+                'dfc_relationships': dfc_rel_count,
                 'total_relationships': total_relationships,
-                'total_time': time.time() - start_time
+                'elapsed_time': time.time() - start_time
             })
 
-        except Exception as ex:
-            print(f"Error in track_graph_creation_progress: {ex}")
-            socketio.emit('error', {'message': str(ex)})
+            if have_finished:
+                break
+
+            time.sleep(2)
+
+        socketio.emit('complete', {
+            'message': 'Graph creation complete',
+            'class_nodes': class_nodes_count,
+            'total_relationships': total_relationships,
+            'total_time': time.time() - start_time
+        })
+
+    except Exception as ex:
+        print(f"Error in track_graph_creation_progress: {ex}")
+        socketio.emit('error', {'message': str(ex)})

@@ -1,27 +1,27 @@
-import {Component, OnDestroy, OnInit, ViewChild} from '@angular/core';
-import {Router} from "@angular/router";
+import { Component, OnDestroy, OnInit, ViewChild } from '@angular/core';
+import { Router } from "@angular/router";
 
 // Components import
-import {HelpStandardDialogComponent} from "../../components/help-standard-dialog/help-standard-dialog.component";
+import { HelpStandardDialogComponent } from "../../components/help-standard-dialog/help-standard-dialog.component";
+import { HelpCreationDialogComponent } from '../../components/help-creation-dialog/help-creation-dialog.component';
 
 // Services import
-import {NotificationService} from "../../services/notification.service";
-import {StandardGraphService} from "../../services/standard_graph.service";
-import {SupportDataService} from "../../services/support_data.service";
-import {SocketService} from "../../core/services/socket.service";
-import {DockerService} from "../../services/docker.service";
+import { NotificationService } from "../../services/notification.service";
+import { StandardGraphService } from "../../services/standard_graph.service";
+import { SupportDataService } from "../../services/support_data.service";
+import { SocketService } from "../../core/services/socket.service";
+import { DockerService } from "../../services/docker.service";
 
 // Material import
-import {MatDialog} from "@angular/material/dialog";
+import { MatDialog } from "@angular/material/dialog";
+import { MatTabGroup } from "@angular/material/tabs";
 
 // Models import
-import {Entity} from "../../core/models/entity.model";
+import { Entity } from "../../core/models/entity.model";
+import { Container } from "../../core/models/container.model";
 
 // Other import
-import {Papa} from "ngx-papaparse";
-import {Container} from "../../core/models/container.model";
-import {FormControl} from "@angular/forms";
-import {MatTabGroup} from "@angular/material/tabs";
+import { Papa } from "ngx-papaparse";
 
 @Component({
   selector: 'app-load-csv',
@@ -49,10 +49,10 @@ export class LoadCsvComponent implements OnInit, OnDestroy {
   public dataSource: any[] = [];
 
   // All the .csv file entities
-  public allFileEntities: Entity [] = [];
+  public allFileEntities: Entity[] = [];
 
   // All the .csv file values selected
-  public allFileValuesSelected: Entity [] = [];
+  public allFileValuesSelected: Entity[] = [];
 
   // Filtered entities by the user
   public filteredColumn: string[] = [];
@@ -73,7 +73,7 @@ export class LoadCsvComponent implements OnInit, OnDestroy {
   public variableColumn: string = '';
 
   // If the tutorial is terminated or not
-  public isTutorialTerminated: boolean = false
+  public isTutorialTerminated: boolean = false;
 
   // Show the upload area
   public isShowUpload: boolean = false;
@@ -89,6 +89,9 @@ export class LoadCsvComponent implements OnInit, OnDestroy {
 
   // If the progress bar is loading or not
   public isLoadingProgressBar: boolean = false;
+
+  // The creation methods for graph (standard or LOAD)
+  public creationMethod: string = "1";
 
   // All docker containers
   public dockerContainers: Container[] = [];
@@ -224,8 +227,8 @@ export class LoadCsvComponent implements OnInit, OnDestroy {
             complete: (result): void => {
               const allColumn: string[] = result.meta.fields;
               if (allColumn.length > 0) {
-                this.allFileEntities = allColumn.map(columnName => ({name: columnName, selected: false}));
-                this.allFileValuesSelected = allColumn.map(columnName => ({name: columnName, selected: false}));
+                this.allFileEntities = allColumn.map(columnName => ({ name: columnName, selected: false }));
+                this.allFileValuesSelected = allColumn.map(columnName => ({ name: columnName, selected: false }));
                 this.allFileEntities.forEach((item: Entity) => {
                   this.displayedColumns.push(item.name);
                 });
@@ -362,42 +365,46 @@ export class LoadCsvComponent implements OnInit, OnDestroy {
 
   // Show the card for choice container
   public showContainers(): void {
-    if (this.dockerContainers.length == 0) {
-      this.dockerService.containers().subscribe({
-        next: responseData => {
-          this.apiResponse = responseData;
-          if (this.apiResponse['http_status_code'] == 200 && this.apiResponse['response_data'] != null) {
-            this.apiResponse.response_data['all_containers'].forEach((item: any) => {
-              let status = false;
-              if (item.status == 'running') {
-                status = true;
-              }
-              let container = new Container(item.id, item.name, status, item.image);
-              this.dockerContainers.push(container);
-            });
+    if (this.creationMethod == "2") {
+      if (this.dockerContainers.length == 0) {
+        this.dockerService.containers().subscribe({
+          next: responseData => {
+            this.apiResponse = responseData;
+            if (this.apiResponse['http_status_code'] == 200 && this.apiResponse['response_data'] != null) {
+              this.apiResponse.response_data['all_containers'].forEach((item: any) => {
+                let status = false;
+                if (item.status == 'running') {
+                  status = true;
+                }
+                let container = new Container(item.id, item.name, status, item.image);
+                this.dockerContainers.push(container);
+              });
 
-            if (this.dockerContainers.length > 0) {
-              this.isShowTable = false;
-              this.isShowContainers = true;
+              if (this.dockerContainers.length > 0) {
+                this.isShowTable = false;
+                this.isShowContainers = true;
+              }
+            } else {
+              this.messageService.show('Unable to load Memgraph docker container. Please start Memgraph', false, 3000);
             }
-          } else {
+          }, error: errorData => {
+            this.apiResponse = errorData;
             this.messageService.show('Unable to load Memgraph docker container. Please start Memgraph', false, 3000);
+          }, complete: () => {
           }
-        }, error: errorData => {
-          this.apiResponse = errorData;
-          this.messageService.show('Unable to load Memgraph docker container. Please start Memgraph', false, 3000);
-        }, complete: () => {
-        }
-      });
+        });
+      } else {
+        this.isShowTable = false;
+        this.isShowContainers = true;
+      }
     } else {
-      this.isShowTable = false;
-      this.isShowContainers = true;
+      this.preBuildGraph();
     }
   }
 
   // Prepare to build graph
   public preBuildGraph(): void {
-    if (!this.eventIdColumn || !this.timestampColumn || !this.activityNameColumn || !this.fixedColumn || !this.variableColumn || this.getFilteredColumn().length == 0 || this.getFilteredValuesColumn().length == 0) {
+    if (!this.eventIdColumn || !this.timestampColumn || !this.activityNameColumn || this.getFilteredColumn().length == 0 || this.getFilteredValuesColumn().length == 0) {
       this.messageService.show('Please map the information.', false, 2000);
       return;
     }
@@ -420,7 +427,7 @@ export class LoadCsvComponent implements OnInit, OnDestroy {
             }
             lines[0] = header.join(',');
             const modifiedCSV = lines.join('\n');
-            const modifiedFile: File = new File([new Blob([modifiedCSV], {type: 'text/csv'})], 'modified_data.csv', {type: 'text/csv'});
+            const modifiedFile: File = new File([new Blob([modifiedCSV], { type: 'text/csv' })], 'modified_data.csv', { type: 'text/csv' });
             this.buildGraph(modifiedFile);
           }
         }
@@ -439,17 +446,23 @@ export class LoadCsvComponent implements OnInit, OnDestroy {
     if (!file) {
       return;
     }
-    this.isShowSidebar = false;
-    this.isLoadingProgressBar = true;
     const allFilteredColumn: string[] = this.getFilteredColumn();
     const allValuesColumn: string[] = this.getFilteredValuesColumn();
+
+    let standardColumn: string[] = [this.eventIdColumn, this.timestampColumn, this.activityNameColumn];
+
     const formData: FormData = new FormData();
     formData.append('file', file, 'filtered.csv');
+    formData.append('copy_file', file, 'filtered.csv');
+
+    this.isShowSidebar = false;
+    this.isLoadingProgressBar = true;
     try {
       let apiResponse: any = null;
-      this.standardGraphService.createGraph(formData, allFilteredColumn, allValuesColumn, this.fixedColumn, this.variableColumn, this.selectedContainer).subscribe({
+      this.standardGraphService.createGraph(formData, this.creationMethod, standardColumn, allFilteredColumn, allValuesColumn, this.fixedColumn, this.variableColumn, this?.selectedContainer).subscribe({
         next: response => {
           apiResponse = response;
+          console.log(apiResponse);
           if (apiResponse != null && apiResponse.http_status_code == 201) {
             this.removeStandardProperties();
             this.supportService.setFilteredColumn(this.filteredColumn);
@@ -563,5 +576,9 @@ export class LoadCsvComponent implements OnInit, OnDestroy {
   // Handle the click for Help icon
   public toggleHelp(): void {
     this.dialog.open(HelpStandardDialogComponent);
+  }
+
+  public toggleCreationMethods(): void {
+    this.dialog.open(HelpCreationDialogComponent);
   }
 }

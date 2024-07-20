@@ -7,11 +7,11 @@
     <svg #graphSvg></svg>
     <div class="icon-buttons-container">
       <button mat-icon-button color="primary" aria-label="Example icon button with a menu icon"
-              (click)="toggleSidebarSearch()" class="icon-button search-button" style="margin-right: 30px;">
+        (click)="toggleSidebarSearch()" class="icon-button search-button" style="margin-right: 30px;">
         <mat-icon>search</mat-icon>
       </button>
       <button mat-icon-button color="primary" aria-label="Example icon button with a menu icon"
-              (click)="isShowMenuSidebar = true" class="icon-button menu-button">
+        (click)="isShowMenuSidebar = true" class="icon-button menu-button">
         <mat-icon>menu</mat-icon>
       </button>
     </div>
@@ -37,9 +37,8 @@
 
       <div class="search-results" *ngIf="searchQuery.length > 0" style="margin-top: 20px">
         <mat-card *ngFor="let result of searchResults" class="custom-card"
-                  [ngClass]="{ 'card-selected': this.selectedResult === result }">
-          <mat-card-content
-            (click)="selectClassNodeSearched(result)">Node id : {{ result.id }} Name:
+          [ngClass]="{ 'card-selected': this.selectedResult === result }">
+          <mat-card-content (click)="selectClassNodeSearched(result)">Node id : {{ result.id }} Name:
             {{ result.ActivityName }}
           </mat-card-content>
         </mat-card>
@@ -106,13 +105,10 @@
         <mat-icon color="" matTooltip="The size of the circle does not correspond to the weight">warning</mat-icon>
       </div>
       <p style="margin-top: 8px">Change the view of your nodes</p>
-      <mat-radio-group
-        aria-labelledby="example-radio-group-label"
-        class="example-radio-group"
-        [(ngModel)]="nodeViewType"
-        (ngModelChange)="onChangeNodeView($event)">
+      <mat-radio-group aria-labelledby="example-radio-group-label" class="example-radio-group"
+        [(ngModel)]="nodeViewType" (ngModelChange)="onChangeNodeView($event)">
         @for (type of allNodesViewType; track type) {
-          <mat-radio-button class="example-radio-button" color="primary" [value]="type">{{ type }}</mat-radio-button>
+        <mat-radio-button class="example-radio-button" color="primary" [value]="type">{{ type }}</mat-radio-button>
         }
       </mat-radio-group>
     </div>
@@ -124,8 +120,8 @@
     </div>
 
     <div *ngFor="let rel of allRelationships">
-      <mat-checkbox color="primary" [ngModel]="rel.selected"
-                    (ngModelChange)="onChangeRelationshipsView(rel, $event)">{{ rel.name }}
+      <mat-checkbox color="primary" [ngModel]="rel.selected" (ngModelChange)="onChangeRelationshipsView(rel, $event)">{{
+        rel.name }}
       </mat-checkbox>
     </div>
   </div>

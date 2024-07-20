@@ -1,18 +1,31 @@
 """
--------------------------------
+------------------------------------------------------------------------
 File : query_library.py
 Description: Cypher query library for EKG
 Date creation: 06-02-2024
 Project : ekg_server
-Author: DiscoHub12 (Alessio Giacché)
+Author: Alessio Giacché
+Copyright: Copyright (c) 2024 Alessio Giacché <ale.giacc.dev@gmail.com>
 License : MIT
--------------------------------
+------------------------------------------------------------------------
 """
 
 
 # Query for Graph (Standard)
+
+def load_event_node_query(container_csv_path, event_id_col, timestamp_col, activity_col, cypher_properties):
+    properties_string = ', '.join(cypher_properties)
+    return (f"LOAD CSV FROM '{container_csv_path}' WITH HEADER AS row "
+            f"CREATE (e:Event {{EventID: row.{event_id_col}, Timestamp: row.{timestamp_col}, ActivityName: row.{activity_col}, {properties_string}}});")
+
+
 def create_node_event_query(cypher_properties):
     return f"CREATE (e:Event {{EventID: $event_id, Timestamp: $timestamp, ActivityName: $activity_name, {', '.join(cypher_properties)}}})"
+
+
+def load_entity_node_query(container_csv_path, property_value, type_value):
+    return (f"LOAD CSV FROM '{container_csv_path}' WITH HEADER AS row "
+            f"MERGE (e:Entity {{Value: row.{property_value}, Type: row.{type_value}}})")
 
 
 def create_node_entity_query():
@@ -248,7 +261,7 @@ def get_nan_entities():
             WITH e, properties(e) AS props
             UNWIND keys(props) AS prop
             WITH e, prop, props[prop] AS value
-            WHERE toString(value) = 'nan'
+            WHERE toString(value) = 'nan' OR toString(value) = ''
             WITH DISTINCT prop, count(DISTINCT e) AS nodeCount
             RETURN prop, nodeCount
     """

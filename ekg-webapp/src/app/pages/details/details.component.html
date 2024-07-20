@@ -2,11 +2,8 @@
 <mat-progress-bar mode="indeterminate" *ngIf="isLoadingProgressBar"></mat-progress-bar>
 
 <!--Menu sidebar button-->
-<button *ngIf="!isLoadingProgressBar"
-        mat-icon-button
-        color="primary"
-        (click)="toggleFirstSidebar()"
-        class="btn-sidebar">
+<button *ngIf="!isLoadingProgressBar" mat-icon-button color="primary" (click)="toggleFirstSidebar()"
+  class="btn-sidebar">
   <mat-icon>menu</mat-icon>
 </button>
 
@@ -42,7 +39,7 @@
       <div class="another-class" *ngIf="haveCreatedClassGraph">
         <h2 *ngIf="haveCreatedClassGraph">Group by another Classes</h2>
         <mat-icon *ngIf="haveCreatedClassGraph" color=""
-                  matTooltip="This operation will remove the present class graph.">warning
+          matTooltip="This operation will remove the present class graph.">warning
         </mat-icon>
       </div>
       <p>This operation allow you to group nodes into chosen classes</p>
@@ -76,8 +73,8 @@
     <div class="header-sidebar">
       <h2>GROUP BY CLASS</h2>
       <mat-icon color="primary" class="icon-operation" (click)="toggleSecondSidebar()">clear</mat-icon>
-      <mat-icon color="primary" class="icon-operation" style="margin-right: 28px;"
-                (click)="openDialogHelpClass()" matTooltip="Help">help_outline
+      <mat-icon color="primary" class="icon-operation" style="margin-right: 28px;" (click)="openDialogHelpClass()"
+        matTooltip="Help">help_outline
       </mat-icon>
     </div>
 
@@ -113,26 +110,25 @@
 </div>
 
 <!--Master container content for Cards-->
-<div *ngIf="!isLoadingProgressBar" class="master"
-     [ngStyle]="{ 'filter': isShowSecondSidebar ? 'blur(2px)' : 'none' }">
+<div *ngIf="!isLoadingProgressBar" class="master" [ngStyle]="{ 'filter': isShowSecondSidebar ? 'blur(2px)' : 'none' }">
 
   <div class="master-grid" [ngClass]="{'leave-grid': isCardExtended}">
 
     <!--Card 1-->
     <app-card *ngIf="!isCardExtended || isCardExtended && cardExtended == eventCard" [card]="eventCard"
-              (haveChanged)="resizeCard($event, eventCard!)"></app-card>
+      (haveChanged)="resizeCard($event, eventCard!)"></app-card>
 
     <!--Card 2-->
     <app-card *ngIf="!isCardExtended || isCardExtended && cardExtended == entityCard" [card]="entityCard"
-              (haveChanged)="resizeCard($event, entityCard!)"></app-card>
+      (haveChanged)="resizeCard($event, entityCard!)"></app-card>
 
     <!--Card 3-->
     <app-card *ngIf="!isCardExtended || isCardExtended && cardExtended == corrEdgeCard" [card]="corrEdgeCard"
-              (haveChanged)="resizeCard($event, corrEdgeCard!)"></app-card>
+      (haveChanged)="resizeCard($event, corrEdgeCard!)"></app-card>
 
     <!--Card 4-->
     <app-card *ngIf="!isCardExtended || isCardExtended && cardExtended == dfEdgeCard" [card]="dfEdgeCard"
-              (haveChanged)="resizeCard($event, dfEdgeCard!)"></app-card>
+      (haveChanged)="resizeCard($event, dfEdgeCard!)"></app-card>
 
   </div>
 </div>
@@ -144,7 +140,7 @@
     minutes</h3>
 
   <div class="progress-terminal"
-       *ngIf="this.progressData['class_nodes'] != null && this.progressData['total_relationships'] != null">
+    *ngIf="this.progressData['class_nodes'] != null && this.progressData['total_relationships'] != null">
     <p>Created {{ progressData['class_nodes'] }} class nodes</p>
     <p>Created {{ progressData['obs_relationships'] }} :OBS relationships</p>
     <p>Created {{ progressData['dfc_relationships'] }} :DF_C relationships</p>

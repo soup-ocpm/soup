@@ -1,16 +1,18 @@
 """
--------------------------------
+------------------------------------------------------------------------
 File : docker_service.py
 Description: Service for Docker container controller
 Date creation: 07-07-2024
 Project : ekg_server
-Author: DiscoHub12 (Alessio Giacché)
+Author: Alessio Giacché
+Copyright: Copyright (c) 2024 Alessio Giacché <ale.giacc.dev@gmail.com>
 License : MIT
--------------------------------
+------------------------------------------------------------------------
 """
 
 # Import
 import docker
+
 from flask import jsonify
 from Models.api_response_model import ApiResponse
 

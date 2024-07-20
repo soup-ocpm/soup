@@ -246,8 +246,23 @@
     </div>
   </div>
 
+  <div class="map-information">
+    <div class="map-information-tile">
+      <p class="text-font" style="font-size: 17px; margin-left: 7px">Select the graph creation method</p> <span>
+        <mat-icon color="primary" style="margin-left: 5px;" (click)="toggleCreationMethods()" matTooltip="Help">help_outline
+        </mat-icon></span>
+    </div>
+    <div class="column-selection">
+      <mat-radio-group aria-label="Select an option" class="radio-group-creation" [(ngModel)]="this.creationMethod">
+        <mat-radio-button color="primary" value="1" style="margin-left: 50px;">Standard</mat-radio-button>
+        <mat-radio-button color="primary" value="2" style="margin-right: 50px;">Load CSV</mat-radio-button>
+      </mat-radio-group>
+    </div>
+  </div>
+
   <div class="button-sidebar">
-    <button mat-button color="primary" (click)="this.showContainers()">Build</button>
+    <button mat-button color="primary" (click)="this.showContainers()">{{this.creationMethod === "1" ? 'Build' :
+      'Continue'}}</button>
   </div>
 </div>
 

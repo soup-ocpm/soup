@@ -7,7 +7,7 @@
     <svg #graphSvg></svg>
     <div class="icon-buttons-container">
       <button mat-icon-button color="primary" aria-label="Example icon button with a menu icon"
-              (click)="toggleSidebarSearch()" class="icon-button search-button">
+        (click)="toggleSidebarSearch()" class="icon-button search-button">
         <mat-icon>search</mat-icon>
       </button>
     </div>
@@ -33,9 +33,8 @@
 
       <div class="search-results" *ngIf="searchQuery.length > 0" style="margin-top: 20px">
         <mat-card *ngFor="let result of searchResults" class="custom-card"
-                  [ngClass]="{ 'card-selected': this.selectedResult === result }">
-          <mat-card-content
-            (click)="selectClassNodeSearched(result)">Node id : {{ result.id }} Name:
+          [ngClass]="{ 'card-selected': this.selectedResult === result }">
+          <mat-card-content (click)="selectClassNodeSearched(result)">Node id : {{ result.id }} Name:
             {{ result.ActivityName }}
           </mat-card-content>
         </mat-card>

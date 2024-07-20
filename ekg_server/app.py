@@ -1,12 +1,13 @@
 """
--------------------------------
+------------------------------------------------------------------------
 File : app.py
 Description: Main project
 Date creation: 20-02-2024
 Project : ekg_server
-Author: DiscoHub12 (Alessio Giacché)
+Author: Alessio Giacché
+Copyright: Copyright (c) 2024 Alessio Giacché <ale.giacc.dev@gmail.com>
 License : MIT
--------------------------------
+------------------------------------------------------------------------
 """
 
 # Import
@@ -18,6 +19,7 @@ from flask_socketio import SocketIO
 from Controllers.docker_controller import docker_controller_bp
 from Controllers.graph_controller import graph_controller_bp
 from Controllers.class_graph_controller import class_graph_controller_bp
+from Controllers.generic_graph_controller import generic_graph_controller_bp
 from Controllers.op_graph_controller import op_graph_controller_bp
 from Controllers.op_class_graph_controller import op_class_graph_controller_bp
 
@@ -28,6 +30,7 @@ app = Flask(__name__)
 app.register_blueprint(docker_controller_bp)
 app.register_blueprint(graph_controller_bp)
 app.register_blueprint(class_graph_controller_bp)
+app.register_blueprint(generic_graph_controller_bp)
 app.register_blueprint(op_graph_controller_bp)
 app.register_blueprint(op_class_graph_controller_bp)
 
@@ -42,7 +45,7 @@ CORS(app)
 
 
 # Welcome API
-@app.route('/api/v1/welcome')
+@app.route('/api/v2/welcome')
 def welcome_api():
     return jsonify({
         'status': 200,
@@ -50,7 +53,7 @@ def welcome_api():
     })
 
 
-# Main
+# Main (run the Server on 8080)
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=8080, debug=True)
     socketio.run(app, debug=True)

@@ -1,12 +1,13 @@
 """
--------------------------------
+------------------------------------------------------------------------
 File : docker_controller.py
 Description: Controller for docker containers
 Date creation: 05-07-2024
 Project : ekg_server
-Author: DiscoHub12 (Alessio Giacché)
+Author: Alessio Giacché
+Copyright: Copyright (c) 2024 Alessio Giacché <ale.giacc.dev@gmail.com>
 License : MIT
--------------------------------
+------------------------------------------------------------------------
 """
 
 # Import

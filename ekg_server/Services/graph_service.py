@@ -12,8 +12,9 @@ License : MIT
 
 # Import
 import io
+import tarfile
 import time
-import subprocess
+import docker
 import pandas as pd
 
 from pathlib import Path
@@ -50,9 +51,10 @@ class GraphService:
         try:
             container_csv_path = ''
             temp_csv_path = ''
+            container = None
 
             # 2 for LOAD CSV method, 1 otherwise
-            if standard_process is "2":
+            if standard_process == "2":
                 print('[EXECUTE - LOAD CSV METHOD] Pre-Load')
                 project_dir = Path(__file__).parent
 
@@ -70,52 +72,33 @@ class GraphService:
                 file.save(temp_csv_path)
                 print(f'File saved in: {temp_csv_path}')
 
-                # 3. Copy the file in the container
+                client = docker.from_env()
+                container = client.containers.get(container_id)
+
+                # 3. Create a tar archive of the file
+                tarstream = io.BytesIO()
+                with tarfile.open(fileobj=tarstream, mode='w') as tar:
+                    tar.add(temp_csv_path, arcname=file_name)
+                tarstream.seek(0)
+
+                # 4. Copy the tar archive into the container
+                container.put_archive('/tmp', tarstream)
                 container_csv_path = f'/tmp/{file_name}'
-                result = subprocess.run(['docker', 'exec', container_id, 'mkdir', '-p', '/tmp'], capture_output=True,
-                                        text=True)
-                if result.returncode != 0:
-                    apiResponse.http_status_code = 500
-                    apiResponse.message = 'Failed to create /temp directory'
-                    apiResponse.response_data = None
 
-                    have_finished = True
-
-                    return apiResponse
-
-                result = subprocess.run(['docker', 'cp', str(temp_csv_path), f'{container_id}:{container_csv_path}'],
-                                        capture_output=True, text=True)
-                if result.returncode != 0:
-                    apiResponse.http_status_code = 500
-                    apiResponse.message = 'Failed to copy the file in the container'
-                    apiResponse.response_data = None
-
-                    have_finished = True
-
-                    return apiResponse
-
-                # 4. Check if the file was copied or not
-                result = subprocess.run(['docker', 'exec', container_id, 'ls', '/tmp'], capture_output=True, text=True)
-                if result.returncode != 0:
+                # 5. Check if the file was copied or not
+                result = container.exec_run(['ls', '/tmp'])
+                if result.exit_code != 0:
                     apiResponse.http_status_code = 500
                     apiResponse.message = 'Failed to list files in the container'
-                    apiResponse.response_data = None
+                    return jsonify(apiResponse.to_dict()), 500
 
-                    have_finished = True
-
-                    return apiResponse
-
-                if file_name in result.stdout:
-                    print(f"File correctly import : {file_name} exists in container {container_id}")
+                if file_name in result.output.decode():
+                    print(f"File correctly imported: {file_name} exists in container {container_id}")
                 else:
                     print(f"File {file_name} does not exist in container {container_id}")
                     apiResponse.http_status_code = 500
                     apiResponse.message = 'File not found in the container'
-                    apiResponse.response_data = None
-
-                    have_finished = True
-
-                    return apiResponse
+                    return jsonify(apiResponse.to_dict()), 500
 
                 print(f'File saved on container with path: {container_csv_path}')
 
@@ -142,17 +125,21 @@ class GraphService:
 
                 duration_time = stop_time - start_time
 
-                if standard_process is "2":
-                    print('[EXECUTE - LOAD CSV METHOD] Delete file')
+                if standard_process == "2":
+
                     # 6. Remove the file in the container
-                    subprocess.run(['docker', 'exec', container_id, 'rm', container_csv_path], check=True)
-                    print('File remove')
+                    result = container.exec_run(['rm', container_csv_path])
+                    if result.exit_code != 0:
+                        apiResponse.http_status_code = 500
+                        apiResponse.message = 'Failed to remove file in the container'
+                        return jsonify(apiResponse.to_dict()), 500
+                    print('File removed in the container')
 
                     # 7. Remove the file in the /temp directory
                     temp_csv_path.unlink()
-                    print('File remove on the container')
+                    print('File removed on the container')
 
-                    have_finished = True
+                have_finished = True
 
                 apiResponse.http_status_code = 201
                 apiResponse.message = 'Standard Graph created successfully.'

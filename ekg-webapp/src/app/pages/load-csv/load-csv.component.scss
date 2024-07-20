@@ -246,6 +246,19 @@ mat-divider {
   border-radius: 5px;
 }
 
+.map-information-tile{
+  display: flex;
+}
+
+.radio-group-creation{
+  .mat-mdc-radio-button ~ .mat-mdc-radio-button {
+    margin-left: 16px;
+  }
+
+  display: flex;
+  justify-content: space-between;
+}
+
 .button-sidebar {
   margin-top: 10px;
   right: 10px;
@@ -256,7 +269,7 @@ mat-divider {
 .master-container {
   width: 800px;
   height: 650px;
-  margin-right: 400px;
+  margin-right: 200px;
 
   .title {
     width: 100%;

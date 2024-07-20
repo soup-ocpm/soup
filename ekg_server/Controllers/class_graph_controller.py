@@ -1,29 +1,35 @@
 """
--------------------------------
+------------------------------------------------------------------------
 File : class_graph_controller.py
 Description: Controller for class graph
 Date creation: 07-07-2024
 Project : ekg_server
-Author: DiscoHub12 (Alessio Giacché)
+Author: Alessio Giacché
+Copyright: Copyright (c) 2024 Alessio Giacché <ale.giacc.dev@gmail.com>
 License : MIT
--------------------------------
+------------------------------------------------------------------------
 """
 
 # Import
-from flask import Blueprint, current_app
+import os
+import json
+
+from flask import Blueprint, current_app, request
 from Services.class_graph_service import *
 from Models.memgraph_connector_model import *
 
 # Init the bp
 class_graph_controller_bp = Blueprint('class_graph_controller_bp', __name__)
 
-# Database information:
-uri_mem = 'bolt://localhost:7687'
+# Database information
+memgraph_host = os.getenv("MEMGRAPH_HOST", "memgraph")
+memgraph_port = int(os.getenv("MEMGRAPH_PORT", 7687))
+uri_mem = f'bolt://{memgraph_host}:{memgraph_port}'
 auth_mem = ("", "")
 database_connector = MemgraphConnector(uri_mem, auth_mem)
 
 
-@class_graph_controller_bp.route('/api/v1/graph-class', methods=['POST'])
+@class_graph_controller_bp.route('/api/v2/graph-class', methods=['POST'])
 def create_class_graph():
     socketio = current_app.config['socketio']
 

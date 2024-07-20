@@ -1,13 +1,14 @@
-import {Component, ElementRef, OnInit, ViewChild} from '@angular/core';
-import {Router} from "@angular/router";
+import { Component, ElementRef, OnInit, ViewChild } from '@angular/core';
+import { Router } from '@angular/router';
+
 // Services import
-import {StandardGraphService} from "../../services/standard_graph.service";
-import {NotificationService} from "../../services/notification.service";
+import { NotificationService } from '../../services/notification.service';
+import { GenericGraphService } from '../../services/generic_graph.service';
 
 // Graph library import:
 import * as d3 from 'd3';
 import * as dagreD3 from 'dagre-d3';
-import {zoom} from 'd3-zoom';
+import { zoom } from 'd3-zoom';
 
 @Component({
   selector: 'app-details-graph',
@@ -67,7 +68,7 @@ export class DetailsGraphComponent implements OnInit {
   public relationLabelColors: Map<string, string> = new Map<string, string>();
 
   // ElementRef container to show SVG of the Graph.
-  @ViewChild('graphSvg', {static: true}) graphContainer!: ElementRef;
+  @ViewChild('graphSvg', { static: true }) graphContainer!: ElementRef;
 
   // Color palette for Edges
   private predefinedColors: string[] = [
@@ -80,18 +81,19 @@ export class DetailsGraphComponent implements OnInit {
    * Constructor for DetailsGraphComponent component
    * @param router the Router
    * @param messageService the MessageService service
+   * @param genericGraphService the GenericGraphService service
    * @param standardGraphService the StandardGraphService service
    */
   constructor(
     private router: Router,
     private messageService: NotificationService,
-    private standardGraphService: StandardGraphService
+    private genericGraphService: GenericGraphService
   ) {
   }
 
   // NgOnInit implementation
   ngOnInit() {
-    this.standardGraphService.getGraph().subscribe({
+    this.genericGraphService.getGraph('1').subscribe({
       next: responseData => {
         this.responseData = responseData;
         if (this.responseData['http_status_code'] == 200 && this.responseData['response_data'] != null) {
@@ -107,7 +109,7 @@ export class DetailsGraphComponent implements OnInit {
       }
     });
 
-    this.g = new dagreD3.graphlib.Graph().setGraph({rankdir: 'LR'});
+    this.g = new dagreD3.graphlib.Graph().setGraph({ rankdir: 'LR' });
   }
 
   /**
@@ -161,6 +163,8 @@ export class DetailsGraphComponent implements OnInit {
 
     this.nodes = Array.from(uniqueEventNodes);
     this.edges = [...uniqueDfLinks];
+    console.log(this.nodes);
+    console.log(this.edges);
 
     if (this.nodes.length > 0 && this.edges.length > 0) {
       this.assignRelationLabelColors(this.edges);
@@ -183,8 +187,8 @@ export class DetailsGraphComponent implements OnInit {
       const width: number = container.clientWidth;
       const height: number = container.clientHeight;
 
-      this.g = new dagreD3.graphlib.Graph({multigraph: true, compound: true})
-        .setGraph({rankdir: 'LR', nodesep: 25, multiedgesep: 10});
+      this.g = new dagreD3.graphlib.Graph({ multigraph: true, compound: true })
+        .setGraph({ rankdir: 'LR', nodesep: 25, multiedgesep: 10 });
 
       this.nodes.forEach((node: any): void => {
         let nodeId = node['id'];
@@ -228,8 +232,8 @@ export class DetailsGraphComponent implements OnInit {
 
       // Set up an SVG group to render the graph
       const svg = d3.select(graphContainer.nativeElement)
-        .attr("viewBox", `0 0 ${width} ${height}`)
-        .attr("preserveAspectRatio", "xMidYMid meet");
+        .attr('viewBox', `0 0 ${width} ${height}`)
+        .attr('preserveAspectRatio', 'xMidYMid meet');
 
       const svgGroup = svg.append('g');
 
@@ -272,7 +276,7 @@ export class DetailsGraphComponent implements OnInit {
         const colorIndex = this.relationLabelColors.size % this.predefinedColors.length;
         const color = this.predefinedColors[colorIndex];
         this.relationLabelColors.set(label, color);
-        this.allRelationships.push({name: label, selected: true});
+        this.allRelationships.push({ name: label, selected: true });
       }
     });
   }

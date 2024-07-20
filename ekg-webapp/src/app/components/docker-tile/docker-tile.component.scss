@@ -10,7 +10,7 @@
   margin-right: 10px;
 }
 
-.docker-tile:hover{
+.docker-tile:hover {
   background-color: rgb(238, 238, 238);
 }
 
@@ -21,7 +21,7 @@
   transition: background-color 0.3s ease;
 }
 
-.tile-row:hover{
+.tile-row:hover {
   background-color: rgb(238, 238, 238);
 }
 
@@ -38,7 +38,7 @@
   line-height: 1.5;
 }
 
-.tile-title:hover{
+.tile-title:hover {
   background-color: rgb(238, 238, 238);
 }
 
@@ -72,7 +72,7 @@
 }
 
 p {
-  font-family: 'Times New Roman', Times, serif;
+  font-family: "Times New Roman", Times, serif;
   margin: 0;
 }
 
@@ -89,6 +89,22 @@ p {
   color: red;
 }
 
-mat-card:hover{
+mat-card:hover {
   background-color: rgb(238, 238, 238);
+}
+
+.actions {
+  height: 100px;
+  width: 100%;
+}
+
+.button-action{
+  position: absolute;
+  bottom: 5px;
+  left: 5px;
+}
+
+.button-action-spinner{
+  height: 30px;
+  width: 30px;
 }

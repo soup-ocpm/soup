@@ -1,14 +1,14 @@
 """
--------------------------------
+------------------------------------------------------------------------
 File : api_response_model.py
 Description: Api Response model class
 Date creation: 06-02-2024
 Project : ekg_server
-Author: DiscoHub12 (Alessio Giacché)
+Author: Alessio Giacché
+Copyright: Copyright (c) 2024 Alessio Giacché <ale.giacc.dev@gmail.com>
 License : MIT
--------------------------------
+------------------------------------------------------------------------
 """
-import json
 
 
 # Api Response model class
