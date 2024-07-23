@@ -23,9 +23,9 @@ def create_node_event_query(cypher_properties):
     return f"CREATE (e:Event {{EventID: $event_id, Timestamp: $timestamp, ActivityName: $activity_name, {', '.join(cypher_properties)}}})"
 
 
-def load_entity_node_query(container_csv_path, property_value, type_value):
+def load_entity_node_query(container_csv_path):
     return (f"LOAD CSV FROM '{container_csv_path}' WITH HEADER AS row "
-            f"MERGE (e:Entity {{Value: row.{property_value}, Type: row.{type_value}}})")
+            f"MERGE (e:Entity {{Value: row.value, Type: row.type}})")
 
 
 def create_node_entity_query():

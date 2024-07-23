@@ -58,7 +58,7 @@ class GraphService:
                 print('[EXECUTE - LOAD CSV METHOD] Pre-Load')
                 project_dir = Path(__file__).parent
 
-                temp_dir = project_dir / 'temp'
+                temp_dir = project_dir / 'temp_csv'
 
                 # 1. Create temp directory
                 if not temp_dir.exists():
@@ -116,7 +116,8 @@ class GraphService:
                 file_data = copy_file.read().decode('utf-8')
                 df = pd.read_csv(io.StringIO(file_data))
 
-                standard_process_query_c(database_connector, standard_process, df, container_csv_path, standard_column,
+                standard_process_query_c(database_connector, standard_process, df, container_id, container_csv_path,
+                                         standard_column,
                                          filtered_column,
                                          values_column,
                                          causality)
@@ -170,7 +171,8 @@ class GraphService:
 
 
 # Process the .CSV file and execute query for create standard Graph
-def standard_process_query_c(database_connector, standard_process, df, container_csv_path, standard_column,
+def standard_process_query_c(database_connector, standard_process, df, container_id, container_csv_path,
+                             standard_column,
                              filtered_columns,
                              values_column, causality):
     try:
@@ -183,6 +185,7 @@ def standard_process_query_c(database_connector, standard_process, df, container
         timestamp_col = 'timestamp'
         activity_name_col = 'activity_name'
 
+        # 1. Create Event nodes
         if standard_process is "1":
             for index, row in df.iterrows():
                 event_id = row[event_id_col]
@@ -202,6 +205,7 @@ def standard_process_query_c(database_connector, standard_process, df, container
                         if key in values_column:
                             cypher_properties.append(f"{key}: coalesce(${key}, '')")
                             parameters[key] = value
+
                 cypher_query = create_node_event_query(cypher_properties)
                 database_connector.run_query_memgraph(cypher_query, parameters)
         else:
@@ -213,39 +217,80 @@ def standard_process_query_c(database_connector, standard_process, df, container
                     if key not in [event_id_col, timestamp_col, activity_name_col]:
                         cypher_properties.append(f"{key}: coalesce(row.{key}, '')")
 
-            # 1. Create Event nodes
             query = load_event_node_query(container_csv_path, event_id_col, timestamp_col, activity_name_col,
                                           cypher_properties)
             database_connector.run_query_memgraph(query)
 
         # 2. Create Entity nodes
-        for index, row in df.iterrows():
-            for key, value in row.items():
-                if key not in [event_id_col, timestamp_col, activity_name_col] and key in filtered_columns:
-                    entity_query = create_node_entity_query()
-                    if type(value) is float:
-                        if not math.isnan(value):
+        if standard_process is "1":
+            for index, row in df.iterrows():
+                for key, value in row.items():
+                    if key not in [event_id_col, timestamp_col, activity_name_col] and key in filtered_columns:
+                        entity_query = create_node_entity_query()
+                        if type(value) is float:
+                            if not math.isnan(value):
+                                entity_parameters = {
+                                    "property_value": value,
+                                    "type_value": key
+                                }
+                                database_connector.run_query_memgraph(entity_query, entity_parameters)
+                        elif ',' in value:  # check if entities are a set of elements
+                            value = value.split(',')
+                            for val in value:
+                                entity_parameters = {
+                                    "property_value": val,
+                                    "type_value": key
+                                }
+                                database_connector.run_query_memgraph(entity_query, entity_parameters)
+                        else:
                             entity_parameters = {
                                 "property_value": value,
                                 "type_value": key
                             }
                             database_connector.run_query_memgraph(entity_query, entity_parameters)
-                    elif ',' in value:  # check if entities are a set of elements
-                        value = value.split(',')
-                        for val in value:
-                            entity_parameters = {
-                                "property_value": val,
-                                "type_value": key
-                            }
-                            database_connector.run_query_memgraph(entity_query, entity_parameters)
-                    else:
-                        entity_parameters = {
-                            "property_value": value,
-                            "type_value": key
-                        }
-                        database_connector.run_query_memgraph(entity_query, entity_parameters)
+        else:
+            entities = filtered_columns
+            unique_values_data = []
+            for col in entities:
+                unique_values = df[col].unique()
+                for value in unique_values:
+                    if not str(value) == "nan":
+                        unique_values_data.append({'type': col, 'value': value})
+            unique_values_df = pd.DataFrame(unique_values_data)
 
-        # 3. Create corr relationships
+            # 1. Copy the file in /temp folder
+            project_dir = Path(__file__).parent
+
+            temp_dir = project_dir / 'temp'
+
+            if not temp_dir.exists():
+                temp_dir.mkdir(parents=True)
+
+            ct = datetime.now().strftime("%Y%m%d%H%M%S")
+            file_name = f'{ct}_entities_unique_value.csv'
+            temp_csv_path = temp_dir / file_name
+
+            unique_values_df.to_csv(temp_csv_path, index=False)
+            print(f'File saved in: {temp_csv_path}')
+
+            # 2. Copy the file into the container
+            client = docker.from_env()
+            container = client.containers.get(container_id)
+
+            # 3. Create a tar archive of the file
+            tarstream = io.BytesIO()
+            with tarfile.open(fileobj=tarstream, mode='w') as tar:
+                tar.add(temp_csv_path, arcname=file_name)
+            tarstream.seek(0)
+
+            # 4. Copy the tar archive into the container
+            container.put_archive('/tmp', tarstream)
+            container_csv_path = f'/tmp/{file_name}'
+
+            query = load_entity_node_query(container_csv_path)
+            database_connector.run_query_memgraph(query)
+
+        # 3. Create :CORR relationships
         for key in filtered_columns:
             if key not in [event_id_col, timestamp_col, activity_name_col]:
                 relation_query_corr = create_corr_relation_query(key)
