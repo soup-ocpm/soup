@@ -18,16 +18,15 @@ from flask import Blueprint, current_app, request, jsonify
 from Models.api_response_model import ApiResponse
 from Models.memgraph_connector_model import MemgraphConnector
 from Services.graph_service import GraphService
+from Controllers.graph_config import get_db_connector
+
 
 # Init the bp
 graph_controller_bp = Blueprint('graph_bp', __name__)
 
 # Database information
-memgraph_host = os.getenv("MEMGRAPH_HOST", "memgraph")
-memgraph_port = int(os.getenv("MEMGRAPH_PORT", 7687))
-uri_mem = f'bolt://{memgraph_host}:{memgraph_port}'
-auth_mem = ("", "")
-database_connector = MemgraphConnector(uri_mem, auth_mem)
+database_connector = get_db_connector(debug=True)
+
 
 
 @graph_controller_bp.route('/api/v2/graph', methods=['POST'])

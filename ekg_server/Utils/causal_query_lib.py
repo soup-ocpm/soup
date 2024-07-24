@@ -1,11 +1,11 @@
 """
 ------------------------------------------------------------------------
 File : casual_query.py
-Description: Cypher query casual for support EKG creation
+Description: Cypher casual query for support EKG creation
 Date creation:
 Project : ekg_server
 Author: Sara Pettinari
-Copyright: Copyright (c) 2024 Sara Pettinari <email@email.com>
+Copyright: Copyright (c) 2024 Sara Pettinari <sara.pettinari@gssi.it>
 License : MIT
 ------------------------------------------------------------------------
 """

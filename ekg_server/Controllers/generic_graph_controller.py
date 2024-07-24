@@ -16,16 +16,14 @@ import os
 from flask import Blueprint, request
 from Services.generic_graph_service import *
 from Models.memgraph_connector_model import *
+from Controllers.graph_config import get_db_connector
+
 
 # Init the bp
 generic_graph_controller_bp = Blueprint('generic_graph_controller_bp', __name__)
 
 # Database information
-memgraph_host = os.getenv("MEMGRAPH_HOST", "memgraph")
-memgraph_port = int(os.getenv("MEMGRAPH_PORT", 7687))
-uri_mem = f'bolt://{memgraph_host}:{memgraph_port}'
-auth_mem = ("", "")
-database_connector = MemgraphConnector(uri_mem, auth_mem)
+database_connector = get_db_connector(debug=True)
 
 
 @generic_graph_controller_bp.route('/api/v2/complete-graph', methods=['POST'])
