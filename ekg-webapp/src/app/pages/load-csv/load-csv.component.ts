@@ -554,6 +554,8 @@ export class LoadCsvComponent implements OnInit, OnDestroy {
 
   // Delete the selected .csv file and reset files array
   public resetCSVData(): void {
+    this.files = [];
+    this.selectedFile = undefined;
   }
 
   // Handle the click for close tutorial
