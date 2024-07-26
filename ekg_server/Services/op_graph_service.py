@@ -17,7 +17,7 @@ from flask import jsonify
 from collections.abc import Iterable
 from Utils.query_library import *
 from Models.api_response_model import ApiResponse
-
+from Controllers.graph_config import datetime_to_json
 
 # The Service for operation graph controller
 class OperationGraphService:
@@ -351,8 +351,10 @@ class OperationGraphService:
                     event_count = record['count']
                     event_nodes = [
                         {k: None if isinstance(v, (int, float)) and math.isnan(v) else v for k, v in node.items()} for
-                        node
-                        in event_nodes]
+                        node in event_nodes]
+                    for e in event_nodes:
+                        e["Timestamp"] = datetime_to_json(e["Timestamp"])
+                    #print(event_nodes)
                 elif record['type'] == 'entities':
                     entity_nodes = record['data']
                     entity_count = record['count']
@@ -382,10 +384,13 @@ class OperationGraphService:
                 for key, value in event.items():
                     if isinstance(value, (int, float)) and math.isnan(value):
                         event[key] = None
+                    elif key == 'Timestamp':
+                        event[key] = datetime_to_json(event[key])
 
                 for key, value in related_event.items():
                     if isinstance(value, (int, float)) and math.isnan(value):
                         related_event[key] = None
+                    
 
                 correlation_count = correlation_count + 1
                 relation_id = correlation_count
@@ -418,10 +423,14 @@ class OperationGraphService:
                 for key, value in event.items():
                     if isinstance(value, (int, float)) and math.isnan(value):
                         event[key] = None
+                    elif key == 'Timestamp':
+                        event[key] = datetime_to_json(event[key])
 
                 for key, value in related_event.items():
                     if isinstance(value, (int, float)) and math.isnan(value):
                         related_event[key] = None
+                    elif key == 'Timestamp':
+                        related_event[key] = datetime_to_json(related_event[key])
 
                 df_count = df_count + 1
                 relation_id = df_count

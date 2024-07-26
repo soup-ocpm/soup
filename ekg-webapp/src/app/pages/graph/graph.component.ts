@@ -208,6 +208,7 @@ export class GraphComponent implements OnInit {
         const node = this.g.node(v);
         node.rx = node.ry = 5;
         node.style = 'fill: #fff; stroke: #000; stroke-width: 2px';
+        node.labelStyle = "font-size: 2.3em";
       });
 
       const uniqueEdgeWeight: Set<any> = new Set<any>();
@@ -237,7 +238,8 @@ export class GraphComponent implements OnInit {
             curve: d3.curveBasis,
             labelpos: 'c', // label position to center
             labeloffset: 5,
-            extensible: true
+            extensible: true,
+            labelStyle: "font-size: 2.3em"
           }, edge.label);
         }
       });

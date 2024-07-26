@@ -211,6 +211,9 @@ def standard_process_query_c(database_connector, standard_process, df, container
         else:
             print('[EXECUTE - LOAD CSV METHOD] Process')
             cypher_properties = []
+            
+            event_time_start = datetime.now()
+            
 
             for key in values_column:
                 if key not in standard_column:
@@ -220,6 +223,10 @@ def standard_process_query_c(database_connector, standard_process, df, container
             query = load_event_node_query(container_csv_path, event_id_col, timestamp_col, activity_name_col,
                                           cypher_properties)
             database_connector.run_query_memgraph(query)
+            
+            event_time_end = datetime.now()
+            event_diff = (event_time_end - event_time_start).total_seconds()
+            print(f"Created :Event nodes in {event_diff} seconds")
 
         # 2. Create Entity nodes
         if standard_process is "1":
@@ -249,6 +256,8 @@ def standard_process_query_c(database_connector, standard_process, df, container
                             }
                             database_connector.run_query_memgraph(entity_query, entity_parameters)
         else:
+            ent_time_start = datetime.now()
+            
             entities = filtered_columns
             unique_values_data = []
             for col in entities:
@@ -289,15 +298,25 @@ def standard_process_query_c(database_connector, standard_process, df, container
 
             query = load_entity_node_query(container_csv_path)
             database_connector.run_query_memgraph(query)
-
+            
+            ent_time_end = datetime.now()
+            ent_diff = (ent_time_end - ent_time_start).total_seconds()
+            print(f"Created :Entity nodes in {ent_diff} seconds")
+            
+        corr_time_start = datetime.now()
         # 3. Create :CORR relationships
         for key in filtered_columns:
             if key not in [event_id_col, timestamp_col, activity_name_col]:
                 relation_query_corr = create_corr_relation_query(key)
                 database_connector.run_query_memgraph(relation_query_corr)
+        corr_time_end = datetime.now()
+        corr_diff = (corr_time_end - corr_time_start).total_seconds()
+        print(f"Created :CORR relationships in {corr_diff} seconds")
 
         # 4. Causality check
+        df_time_start = datetime.now()
         if causality is not None:
+            # 4.1. Create :CAUS relationships
             queries = reveal_causal_rels(causality[0], causality[1])
             for query in queries:
                 database_connector.run_query_memgraph(query)
@@ -306,10 +325,14 @@ def standard_process_query_c(database_connector, standard_process, df, container
                     relation_query_df = create_df_relation_query(key)
                     database_connector.run_query_memgraph(relation_query_df)
         else:
+            # 4.2. Create :DF relationships
             for key in filtered_columns:
                 if key not in [event_id_col, timestamp_col, activity_name_col]:
                     relation_query_df = create_df_relation_query(key)
                     database_connector.run_query_memgraph(relation_query_df)
+            df_time_end = datetime.now()
+            df_diff = (df_time_end - df_time_start).total_seconds()
+        print(f"Created :DF relationships in {df_diff} seconds")
 
         now = datetime.now()
         current_time = now.strftime("%H:%M:%S")

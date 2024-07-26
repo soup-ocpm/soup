@@ -85,6 +85,9 @@ def class_process_query_c(database_connector, filtered_columns):
 
         cypher_query = create_class_multi_query(filtered_columns)
         database_connector.run_query_memgraph(cypher_query)
+        
+        cypher_query = set_class_weight()
+        database_connector.run_query_memgraph(cypher_query)
 
         df_query = class_df_aggregation(rel_type='DF', class_rel_type='DF_C')
         database_connector.run_query_memgraph(df_query)

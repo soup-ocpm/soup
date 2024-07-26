@@ -16,7 +16,7 @@ License : MIT
 def load_event_node_query(container_csv_path, event_id_col, timestamp_col, activity_col, cypher_properties):
     properties_string = ', '.join(cypher_properties)
     return (f"LOAD CSV FROM '{container_csv_path}' WITH HEADER AS row "
-            f"CREATE (e:Event {{EventID: row.{event_id_col}, Timestamp: row.{timestamp_col}, ActivityName: row.{activity_col}, {properties_string}}});")
+            f"CREATE (e:Event {{EventID: row.{event_id_col}, Timestamp: localDateTime(row.{timestamp_col}), ActivityName: row.{activity_col}, {properties_string}}});")
 
 
 def create_node_event_query(cypher_properties):
@@ -88,7 +88,7 @@ def create_class_multi_query(matching_perspectives):
     class_creation = f'MERGE (c:Class {res_dict})'
 
     main_query += class_creation + '\n WITH c, e' + '\n MERGE (e) -[:OBSERVED]-> (c)'
-
+    
     return main_query
 
 
@@ -281,3 +281,10 @@ def get_distinct_entities_keys():
             WITH DISTINCT n.Type as entityType
             RETURN entityType
     """
+
+def set_class_weight():
+    return("""
+        MATCH (:Event)-[obs:OBSERVED]->(c:Class)
+        WITH c, COUNT(obs) as weight
+        SET c.Count = weight
+        """)
