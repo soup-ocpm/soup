@@ -93,7 +93,7 @@ export class DetailsGraphComponent implements OnInit {
 
   // NgOnInit implementation
   ngOnInit() {
-    this.genericGraphService.getGraph('1').subscribe({
+    this.genericGraphService.getGraph('1', 100).subscribe({
       next: responseData => {
         this.responseData = responseData;
         if (this.responseData['http_status_code'] == 200 && this.responseData['response_data'] != null) {

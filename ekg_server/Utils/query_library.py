@@ -16,7 +16,7 @@ License : MIT
 def load_event_node_query(container_csv_path, event_id_col, timestamp_col, activity_col, cypher_properties):
     properties_string = ', '.join(cypher_properties)
     return (f"LOAD CSV FROM '{container_csv_path}' WITH HEADER AS row "
-            f"CREATE (e:Event {{EventID: row.{event_id_col}, Timestamp: localDateTime(row.{timestamp_col}), ActivityName: row.{activity_col}, {properties_string}}});")
+            f"CREATE (e:Event {{EventID: row.{event_id_col}, Timestamp: row.{timestamp_col}, ActivityName: row.{activity_col}, {properties_string}}});")
 
 
 def create_node_event_query(cypher_properties):
@@ -88,7 +88,7 @@ def create_class_multi_query(matching_perspectives):
     class_creation = f'MERGE (c:Class {res_dict})'
 
     main_query += class_creation + '\n WITH c, e' + '\n MERGE (e) -[:OBSERVED]-> (c)'
-    
+
     return main_query
 
 
@@ -142,6 +142,20 @@ def get_nodes_details_query():
             """
 
 
+def get_nodes_details_length_query(limit):
+    return f"""
+            MATCH (event:Event)
+            WITH collect(event) AS data, 'events' AS type, size(collect(event)) AS count
+            RETURN data, type, count
+            LIMIT {limit}
+            UNION
+            MATCH (entity:Entity)
+            WITH collect(entity) AS data, 'entities' AS type, size(collect(entity)) AS count
+            RETURN data, type, count
+            LIMIT {limit}
+            """
+
+
 def get_corr_relation_query():
     return """
             MATCH (e: Event)-[corr:CORR]->(en:Entity)
@@ -178,6 +192,15 @@ def get_complete_standard_graph_query():
             """
 
 
+def get_limit_standard_graph_query(limit):
+    return f"""
+            MATCH (e1:Event)-[r:DF]->(e2:Event)
+            RETURN e1 as source, id(e1) as source_id, properties(r) as edge, 
+            id(r) as edge_id, e2 as target, id(e2) as target_id
+            LIMIT {limit}
+            """
+
+
 # Other utils query for Graph (Class)
 def get_nodes_class_query():
     return """
@@ -207,11 +230,27 @@ def get_count_dfc_relationships_query():
     """
 
 
-def get_class_graph_query():
+def get_complete_class_graph_query():
     return """
             MATCH (c1:Class)-[r:DF_C]->(c2:Class)
             RETURN c1 as source, id(c1) as source_id, properties(r) as edge, 
             id(r) as edge_id, c2 as target, id(c2) as target_id
+            """
+
+
+def get_limit_class_graph_query(limit):
+    return f"""
+            MATCH (c1:Class)-[r:DF_C]->(c2:Class)
+            RETURN c1 as source, id(c1) as source_id, properties(r) as edge, 
+            id(r) as edge_id, c2 as target, id(c2) as target_id
+            LIMIT {limit}
+            """
+
+
+def get_df_class_relation_simple_query():
+    return """
+            MATCH (e:Class)-[df:DF_C]->(e1:Class)
+            RETURN e, df, e1
             """
 
 
@@ -282,8 +321,9 @@ def get_distinct_entities_keys():
             RETURN entityType
     """
 
+
 def set_class_weight():
-    return("""
+    return ("""
         MATCH (:Event)-[obs:OBSERVED]->(c:Class)
         WITH c, COUNT(obs) as weight
         SET c.Count = weight

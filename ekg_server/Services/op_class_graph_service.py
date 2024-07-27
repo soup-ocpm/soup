@@ -11,10 +11,7 @@ License : MIT
 """
 
 # Import
-import math
-
 from flask import jsonify
-from collections.abc import *
 from Utils.query_library import *
 from Models.api_response_model import *
 

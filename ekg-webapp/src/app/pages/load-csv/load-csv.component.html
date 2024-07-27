@@ -162,7 +162,7 @@
             Entities
           </div>
 
-          <div *ngFor="let check of allFileEntities">
+          <div *ngFor="let check of allFileEntitiesSelected">
             <mat-checkbox class="example-margin" color="primary" [ngModel]="check.selected"
               (ngModelChange)="submitEntity(check, $event)">{{ check.name }}
             </mat-checkbox>

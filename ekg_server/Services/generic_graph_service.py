@@ -24,20 +24,26 @@ class GenericGraphService:
 
     # Get complete graph (standard or class)
     @staticmethod
-    def get_class_graph_s(database_connector, standard_graph):
+    def get_class_graph_s(database_connector, standard_graph, limit):
         apiResponse = ApiResponse(None, None, None)
 
         try:
             database_connector.connect()
 
             if standard_graph is "1":
-                query_result = get_complete_standard_graph_query()
+                if not limit:
+                    query_result = get_complete_standard_graph_query()
+                else:
+                    query_result = get_limit_standard_graph_query(limit)
             else:
-                query_result = get_class_graph_query()
+                if not limit:
+                    query_result = get_complete_class_graph_query()
+                else:
+                    query_result = get_limit_class_graph_query(limit)
 
             result = database_connector.run_query_memgraph(query_result)
 
-            if not isinstance(result, Iterable):
+            if not isinstance(result, Iterable) or len(result) == 0:
                 apiResponse.http_status_code = 404
                 apiResponse.response_data = None
                 apiResponse.message = "Not found"

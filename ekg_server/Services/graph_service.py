@@ -211,9 +211,8 @@ def standard_process_query_c(database_connector, standard_process, df, container
         else:
             print('[EXECUTE - LOAD CSV METHOD] Process')
             cypher_properties = []
-            
+
             event_time_start = datetime.now()
-            
 
             for key in values_column:
                 if key not in standard_column:
@@ -223,7 +222,7 @@ def standard_process_query_c(database_connector, standard_process, df, container
             query = load_event_node_query(container_csv_path, event_id_col, timestamp_col, activity_name_col,
                                           cypher_properties)
             database_connector.run_query_memgraph(query)
-            
+
             event_time_end = datetime.now()
             event_diff = (event_time_end - event_time_start).total_seconds()
             print(f"Created :Event nodes in {event_diff} seconds")
@@ -257,7 +256,7 @@ def standard_process_query_c(database_connector, standard_process, df, container
                             database_connector.run_query_memgraph(entity_query, entity_parameters)
         else:
             ent_time_start = datetime.now()
-            
+
             entities = filtered_columns
             unique_values_data = []
             for col in entities:
@@ -298,11 +297,11 @@ def standard_process_query_c(database_connector, standard_process, df, container
 
             query = load_entity_node_query(container_csv_path)
             database_connector.run_query_memgraph(query)
-            
+
             ent_time_end = datetime.now()
             ent_diff = (ent_time_end - ent_time_start).total_seconds()
             print(f"Created :Entity nodes in {ent_diff} seconds")
-            
+
         corr_time_start = datetime.now()
         # 3. Create :CORR relationships
         for key in filtered_columns:

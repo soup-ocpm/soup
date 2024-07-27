@@ -1,10 +1,10 @@
 import os
 import datetime
-import json 
+import json
 from Models.memgraph_connector_model import *
 
 
-def get_db_connector(debug = False):
+def get_db_connector(debug=False):
     if not debug:
         memgraph_host = os.getenv("MEMGRAPH_HOST", "memgraph")
         memgraph_port = int(os.getenv("MEMGRAPH_PORT", 7687))
@@ -18,22 +18,32 @@ def get_db_connector(debug = False):
     return database_connector
 
 
-def neo_datetime_conversion(Time):
-    '''
-    From Neo4j datetime to datetime
-    '''
-    if type(Time) != float:
-        millis = int(Time.nanosecond/1000)
-        t = datetime.datetime(Time.year, Time.month, Time.day,
-                              Time.hour, Time.minute, Time.second, millis)
-        return t
+def string_to_datetime(timestamp_str):
+    return datetime.datetime.fromisoformat(timestamp_str)
 
-def serialize_datetime(obj): 
-    if isinstance(obj, datetime.datetime): 
-        return obj.isoformat() 
-    raise TypeError("Type not serializable") 
+
+def neo_datetime_conversion(time):
+    '''
+    From string or Neo4j datetime to datetime
+    '''
+    if isinstance(time, str):
+        time = string_to_datetime(time)
+
+    if isinstance(time, datetime.datetime):
+        millis = int(time.microsecond / 1000)
+        t = datetime.datetime(time.year, time.month, time.day,
+                              time.hour, time.minute, time.second, millis)
+        return t
+    else:
+        raise ValueError("Il formato del timestamp non è valido")
+
+
+def serialize_datetime(obj):
+    if isinstance(obj, datetime.datetime):
+        return obj.isoformat()
+    raise TypeError("Type not serializable")
+
 
 def datetime_to_json(time):
     timestamp = neo_datetime_conversion(time)
-    json_time = json.dumps(timestamp, default=serialize_datetime) 
-    return json_time
+    return serialize_datetime(timestamp)

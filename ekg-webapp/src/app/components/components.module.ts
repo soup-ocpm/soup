@@ -13,6 +13,8 @@ import { DockerTileComponent } from './docker-tile/docker-tile.component';
 // Application module import
 import { MaterialModule } from '../material.module';
 import { HelpCreationDialogComponent } from './help-creation-dialog/help-creation-dialog.component';
+import { SpinnerComponent } from './spinner/spinner.component';
+import { FlipCardComponent } from './flip-card/flip-card.component';
 
 @NgModule({
   declarations: [
@@ -23,6 +25,8 @@ import { HelpCreationDialogComponent } from './help-creation-dialog/help-creatio
     RetrieveCardComponent,
     DockerTileComponent,
     HelpCreationDialogComponent,
+    SpinnerComponent,
+    FlipCardComponent,
   ],
   imports: [CommonModule, FormsModule, NgOptimizedImage, MaterialModule],
   exports: [
@@ -33,6 +37,8 @@ import { HelpCreationDialogComponent } from './help-creation-dialog/help-creatio
     RetrieveCardComponent,
     DockerTileComponent,
     HelpCreationDialogComponent,
+    SpinnerComponent,
+    FlipCardComponent
   ],
 })
 export class ComponentsModule {}

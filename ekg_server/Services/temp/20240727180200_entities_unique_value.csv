@@ -1,0 +1,10 @@
+type,value
+Actor,R1
+Actor,R3
+Actor,R2
+Actor,R4
+Actor,R5
+Order,O1
+Order,O2
+SupplierOrder,A
+SupplierOrder,B
