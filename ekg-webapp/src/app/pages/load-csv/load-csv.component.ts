@@ -442,13 +442,6 @@ export class LoadCsvComponent implements OnInit, OnDestroy {
               const values = lines[i].split(',');
               const timestampValue = values[timestampIndex];
               console.log('Timestamp value: ' + timestampValue);
-
-              /**
-               *               if (!this.isValidDateFormat(timestampValue)) {
-                this.messageService.show(`Invalid timestamp format found in row ${i + 1}: ${timestampValue}`, false, 2000);
-                return;
-              }
-               */
             }
 
             lines[0] = header.join(',');
