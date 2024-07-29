@@ -16,7 +16,7 @@ License : MIT
 def load_event_node_query(container_csv_path, event_id_col, timestamp_col, activity_col, cypher_properties):
     properties_string = ', '.join(cypher_properties)
     return (f"LOAD CSV FROM '{container_csv_path}' WITH HEADER AS row "
-            f"CREATE (e:Event {{EventID: row.{event_id_col}, Timestamp: row.{timestamp_col}, ActivityName: row.{activity_col}, {properties_string}}});")
+            f"CREATE (e:Event {{EventID: row.{event_id_col}, Timestamp: localDateTime(row.{timestamp_col}), ActivityName: row.{activity_col}, {properties_string}}});")
 
 
 def create_node_event_query(cypher_properties):
