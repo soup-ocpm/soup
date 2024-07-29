@@ -11,22 +11,18 @@ License : MIT
 """
 
 # Import
-import os
 import json
 
 from flask import Blueprint, current_app, request, jsonify
 from Models.api_response_model import ApiResponse
-from Models.memgraph_connector_model import MemgraphConnector
 from Services.graph_service import GraphService
 from Controllers.graph_config import get_db_connector
-
 
 # Init the bp
 graph_controller_bp = Blueprint('graph_bp', __name__)
 
 # Database information
-database_connector = get_db_connector(debug=True)
-
+database_connector = get_db_connector(debug=False)
 
 
 @graph_controller_bp.route('/api/v2/graph', methods=['POST'])

@@ -19,6 +19,7 @@ from Utils.query_library import *
 from Models.api_response_model import ApiResponse
 from Controllers.graph_config import datetime_to_json
 
+
 # The Service for operation graph controller
 class OperationGraphService:
 
@@ -325,13 +326,17 @@ class OperationGraphService:
 
     # Get complete graph details
     @staticmethod
-    def get_graph_details_s(database_connector):
+    def get_graph_details_s(database_connector, limit):
         apiResponse = ApiResponse(None, None, None)
 
         try:
             database_connector.connect()
 
-            query = get_nodes_details_query()
+            if not limit:
+                query = get_nodes_details_query()
+            else:
+                query = get_nodes_details_length_query(limit)
+
             result = database_connector.run_query_memgraph(query)
 
             if not isinstance(result, Iterable):
@@ -354,7 +359,7 @@ class OperationGraphService:
                         node in event_nodes]
                     for e in event_nodes:
                         e["Timestamp"] = datetime_to_json(e["Timestamp"])
-                    #print(event_nodes)
+                    # print(event_nodes)
                 elif record['type'] == 'entities':
                     entity_nodes = record['data']
                     entity_count = record['count']
@@ -390,7 +395,6 @@ class OperationGraphService:
                 for key, value in related_event.items():
                     if isinstance(value, (int, float)) and math.isnan(value):
                         related_event[key] = None
-                    
 
                 correlation_count = correlation_count + 1
                 relation_id = correlation_count

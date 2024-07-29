@@ -18,6 +18,7 @@ import { MatDialog } from '@angular/material/dialog';
 
 // Models import
 import { Card } from '../../core/models/card.model';
+import { DataGraphEnum } from '../../core/enums/data_enum';
 
 // Other import
 import { saveAs } from 'file-saver';
@@ -148,69 +149,69 @@ export class DetailsComponent implements OnInit {
     }
 
     // Create Event nodes Card
-    if (this.fullJsonData.event_count != null) {
+    if (this.fullJsonData[0].event_count != null) {
       const cardTitle = 'Event Nodes';
-      const cardType = 'nodes';
-      let numberOfData = this.fullJsonData.event_count;
+      const cardType = 'event nodes';
+      let numberOfData = this.fullJsonData[0].event_count;
       const cardDescription: string = `Generated ${numberOfData} event nodes`;
-      const jsonData = this.fullJsonData.event_nodes;
 
       this.eventCard = new Card(
         cardTitle,
         cardType,
         cardDescription,
-        jsonData,
-        numberOfData
+        null,
+        numberOfData,
+        DataGraphEnum.EventNodes
       );
     }
 
     // Create Entity nodes Card
-    if (this.fullJsonData.entity_count != null) {
+    if (this.fullJsonData[0].entity_count != null) {
       const cardTitle = 'Entity Nodes';
-      const cardType = 'nodes';
-      let numberOfData = this.fullJsonData.entity_count;
+      const cardType = 'entity nodes';
+      let numberOfData = this.fullJsonData[0].entity_count;
       const cardDescription: string = `Generated ${numberOfData} entity nodes`;
-      const jsonData = this.fullJsonData.entity_nodes;
 
       this.entityCard = new Card(
         cardTitle,
         cardType,
         cardDescription,
-        jsonData,
-        numberOfData
+        null,
+        numberOfData,
+        DataGraphEnum.EntityNodes
       );
     }
 
     // Create :CORR relationsips card
-    if (this.fullJsonData.correlation_count != null) {
+    if (this.fullJsonData[0].corr_count != null) {
       const cardTitle = ':CORR Relationships';
-      const cardType = 'relationships';
-      let numberOfData = this.fullJsonData.correlation_count;
+      const cardType = ':CORR relationships';
+      let numberOfData = this.fullJsonData[0].corr_count;
       const cardDescription: string = `Generated ${numberOfData} :corr edges`;
-      const jsonData = this.fullJsonData.correlation_data;
 
       this.corrEdgeCard = new Card(
         cardTitle,
         cardType,
         cardDescription,
-        jsonData,
-        numberOfData
+        null,
+        numberOfData,
+        DataGraphEnum.CORRLinks
       );
     }
 
-    if (this.fullJsonData.df_count != null) {
+    if (this.fullJsonData[0].df_count != null) {
       const cardTitle = ':DF Relationships';
-      const cardType = 'relationships';
-      let numberOfData = this.fullJsonData.df_count;
+      const cardType = ':DF relationships';
+      let numberOfData = this.fullJsonData[0].df_count;
       const cardDescription: string = `Generated ${numberOfData} :df edges`;
-      const jsonData = this.fullJsonData.df_data;
 
       this.dfEdgeCard = new Card(
         cardTitle,
         cardType,
         cardDescription,
-        jsonData,
-        numberOfData
+        null,
+        numberOfData,
+        DataGraphEnum.DFCLinks
       );
     }
     this.getGraphEntities();
@@ -396,7 +397,7 @@ export class DetailsComponent implements OnInit {
    */
   public getClassGraph(creation: boolean): void {
     let apiResponse: any;
-    this.genericGraphService.getGraph('2').subscribe(
+    this.genericGraphService.getGraph('2', 100).subscribe(
       (response) => {
         apiResponse = response;
         if (apiResponse != null && apiResponse.response_data != null) {
@@ -425,26 +426,6 @@ export class DetailsComponent implements OnInit {
         }
       }
     );
-  }
-
-  /**
-   * Resize the Card selected by the User
-   * @param event the Event Emitter <boolean>
-   * @param card the Card to resize
-   */
-  public resizeCard(event: boolean, card: Card): void {
-    if (event) {
-      this.isCardExtended = true;
-      this.cardExtended = card;
-
-      if (this.isShowSidebar) {
-        this.isShowSidebar = !this.isShowSidebar;
-      }
-    } else {
-      this.isCardExtended = false;
-      this.cardExtended = null;
-      this.isShowSidebar = !this.isShowSidebar;
-    }
   }
 
   // -------SUPPORT METHODS-----------

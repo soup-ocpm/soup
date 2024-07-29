@@ -1,10 +1,10 @@
-import {Component, OnInit} from '@angular/core';
-import {Router} from "@angular/router";
+import { Component, OnInit } from '@angular/core';
+import { Router } from "@angular/router";
 
 // Service import
-import {StandardGraphService} from "../../services/standard_graph.service";
-import {SupportDataService} from "../../services/support_data.service";
-import {NotificationService} from "../../services/notification.service";
+import { StandardGraphService } from "../../services/standard_graph.service";
+import { SupportDataService } from "../../services/support_data.service";
+import { NotificationService } from "../../services/notification.service";
 
 @Component({
   selector: 'app-retrieve-card',
@@ -47,8 +47,8 @@ export class RetrieveCardComponent implements OnInit {
     try {
       let apiResponse: any = null;
 
-      this.standardGraphService.getGraphDetails().subscribe(
-        response => {
+      this.standardGraphService.getGraphDetilsInfo().subscribe({
+        next: response => {
           apiResponse = response;
           if (apiResponse.http_status_code === 200 && apiResponse.response_data != null) {
             this.standardGraphService.saveResponse(apiResponse.response_data);
@@ -61,12 +61,13 @@ export class RetrieveCardComponent implements OnInit {
             this.isLoadingProgressBar = false;
             this.allowToCloseDialog = true;
           }
-        },
-        error => {
-          apiResponse = error;
+        }, error: errorData => {
+          apiResponse = errorData;
           this.messageService.show('Error while retrieve Graph. Retry', false, 2000);
           this.isLoadingProgressBar = false;
-        });
+        }, complete: () => { }
+      });
+
     } catch (error) {
       this.isLoadingProgressBar = false;
       this.messageService.show('Internal Server Error. Retry', false, 2000);

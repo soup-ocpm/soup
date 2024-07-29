@@ -22,6 +22,7 @@ from Controllers.class_graph_controller import class_graph_controller_bp
 from Controllers.generic_graph_controller import generic_graph_controller_bp
 from Controllers.op_graph_controller import op_graph_controller_bp
 from Controllers.op_class_graph_controller import op_class_graph_controller_bp
+from Controllers.graph_json_controller import graph_json_controller_bp
 
 # App
 app = Flask(__name__)
@@ -33,6 +34,7 @@ app.register_blueprint(class_graph_controller_bp)
 app.register_blueprint(generic_graph_controller_bp)
 app.register_blueprint(op_graph_controller_bp)
 app.register_blueprint(op_class_graph_controller_bp)
+app.register_blueprint(graph_json_controller_bp)
 
 # Init the Socket
 socketio = SocketIO(app, cors_allowed_origins="*")

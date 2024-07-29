@@ -22,6 +22,7 @@ import { Container } from "../../core/models/container.model";
 
 // Other import
 import { Papa } from "ngx-papaparse";
+import { Card } from '../../core/models/card.model';
 
 @Component({
   selector: 'app-load-csv',
@@ -49,7 +50,7 @@ export class LoadCsvComponent implements OnInit, OnDestroy {
   public dataSource: any[] = [];
 
   // All the .csv file entities
-  public allFileEntities: Entity[] = [];
+  public allFileEntitiesSelected: Entity[] = [];
 
   // All the .csv file values selected
   public allFileValuesSelected: Entity[] = [];
@@ -169,7 +170,7 @@ export class LoadCsvComponent implements OnInit, OnDestroy {
     this.files = [];
     this.selectedFile = undefined;
     this.hasSelectedFile = false;
-    this.allFileEntities = [];
+    this.allFileEntitiesSelected = [];
     this.filteredColumn = [];
   }
 
@@ -212,7 +213,7 @@ export class LoadCsvComponent implements OnInit, OnDestroy {
   // Parse (read) the .csv file and save the entities
   public parseCSV(): void {
     if (this.selectedFile) {
-      if (this.allFileEntities.length > 0 && this.dataSource.length > 0 && this.displayedColumns.length > 0) {
+      if (this.allFileEntitiesSelected.length > 0 && this.dataSource.length > 0 && this.displayedColumns.length > 0) {
         this.isShowUpload = false;
         this.isShowTable = true;
         return;
@@ -227,9 +228,9 @@ export class LoadCsvComponent implements OnInit, OnDestroy {
             complete: (result): void => {
               const allColumn: string[] = result.meta.fields;
               if (allColumn.length > 0) {
-                this.allFileEntities = allColumn.map(columnName => ({ name: columnName, selected: false }));
+                this.allFileEntitiesSelected = allColumn.map(columnName => ({ name: columnName, selected: false }));
                 this.allFileValuesSelected = allColumn.map(columnName => ({ name: columnName, selected: false }));
-                this.allFileEntities.forEach((item: Entity) => {
+                this.allFileEntitiesSelected.forEach((item: Entity) => {
                   this.displayedColumns.push(item.name);
                 });
                 for (let i: number = 0; i < 8; i++) {
@@ -257,7 +258,7 @@ export class LoadCsvComponent implements OnInit, OnDestroy {
    */
   public checkSelectedEntity(entity: string) {
     let checked = 0;
-    this.allFileEntities.forEach((e: Entity) => {
+    this.allFileEntitiesSelected.forEach((e: Entity) => {
       if (e.name == entity && e.selected) {
         checked = 1;
       }
@@ -304,7 +305,7 @@ export class LoadCsvComponent implements OnInit, OnDestroy {
   public submitValue(entity: Entity, event: any): void {
     entity.selected = event;
     if (event == false) {
-      this.allFileEntities.forEach((e: Entity): void => {
+      this.allFileEntitiesSelected.forEach((e: Entity): void => {
         if (e.name == entity.name) {
           e.selected = entity.selected;
         }
@@ -404,7 +405,7 @@ export class LoadCsvComponent implements OnInit, OnDestroy {
 
   // Prepare to build graph
   public preBuildGraph(): void {
-    if (!this.eventIdColumn || !this.timestampColumn || !this.activityNameColumn || this.getFilteredColumn().length == 0 || this.getFilteredValuesColumn().length == 0) {
+    if (!this.eventIdColumn || !this.timestampColumn || !this.activityNameColumn || this.getFilteredColumn().length === 0 || this.getFilteredValuesColumn().length === 0) {
       this.messageService.show('Please map the information.', false, 2000);
       return;
     }
@@ -416,6 +417,16 @@ export class LoadCsvComponent implements OnInit, OnDestroy {
           const lines = csvData.split('\n');
           if (lines.length > 0) {
             const header = lines[0].split(',');
+
+            // Trova l'indice della colonna del timestamp
+            const timestampIndex = header.indexOf(this.timestampColumn);
+
+            if (timestampIndex === -1) {
+              this.messageService.show('Timestamp column not found in the CSV file.', false, 2000);
+              return;
+            }
+
+            // Aggiorna l'intestazione
             for (let i = 0; i < header.length; i++) {
               if (header[i] === this.eventIdColumn) {
                 header[i] = 'event_id';
@@ -425,6 +436,21 @@ export class LoadCsvComponent implements OnInit, OnDestroy {
                 header[i] = 'activity_name';
               }
             }
+
+            // Controlla i valori del timestamp
+            for (let i = 1; i < lines.length; i++) {
+              const values = lines[i].split(',');
+              const timestampValue = values[timestampIndex];
+              console.log('Timestamp value: ' + timestampValue);
+
+              /**
+               *               if (!this.isValidDateFormat(timestampValue)) {
+                this.messageService.show(`Invalid timestamp format found in row ${i + 1}: ${timestampValue}`, false, 2000);
+                return;
+              }
+               */
+            }
+
             lines[0] = header.join(',');
             const modifiedCSV = lines.join('\n');
             const modifiedFile: File = new File([new Blob([modifiedCSV], { type: 'text/csv' })], 'modified_data.csv', { type: 'text/csv' });
@@ -437,6 +463,7 @@ export class LoadCsvComponent implements OnInit, OnDestroy {
       this.messageService.show('Please upload .csv file', false, 2000);
     }
   }
+
 
   /**
    * Build the standard Graph
@@ -493,21 +520,21 @@ export class LoadCsvComponent implements OnInit, OnDestroy {
     try {
       let apiResponse: any = null;
 
-      this.standardGraphService.getGraphDetails().subscribe(
-        (response): void => {
-          apiResponse = response;
+      this.standardGraphService.getGraphDetilsInfo().subscribe({
+        next: responseData => {
+          apiResponse = responseData;
           if (apiResponse.http_status_code === 200 && apiResponse.response_data != null) {
             this.standardGraphService.saveResponse(apiResponse.response_data);
             this.isLoadingProgressBar = false;
             this.messageService.show('The Graph was successfully created within the Memgraph Database', true, 3000);
             this.router.navigateByUrl('/details');
           }
-        },
-        error => {
-          apiResponse = error;
+        }, error: errorData => {
+          apiResponse = errorData;
           this.messageService.show('Error receiving the created graph. Retry', false, 2000);
           this.resetCSVData();
-        });
+        }, complete: () => { }
+      });
     } catch (error) {
       this.messageService.show('Internal Server Error. Retry', false, 2000);
       this.resetCSVData();
@@ -516,7 +543,7 @@ export class LoadCsvComponent implements OnInit, OnDestroy {
 
   // Return the filtered .csv column choice by User.
   public getFilteredColumn(): string[] {
-    return this.allFileEntities
+    return this.allFileEntitiesSelected
       .filter(column => column.selected)
       .map(column => column.name);
   }
@@ -530,7 +557,7 @@ export class LoadCsvComponent implements OnInit, OnDestroy {
 
   // Return the filtered values .csv column choice by User.
   public getAllFileEntities(): string[] {
-    return this.allFileEntities
+    return this.allFileEntitiesSelected
       .filter(column => column.selected)
       .map(column => column.name);
   }
@@ -573,6 +600,15 @@ export class LoadCsvComponent implements OnInit, OnDestroy {
   // Handle the click for close Sidebar
   public toggleSidebar(): void {
     this.isShowSidebar = false;
+    this.allFileValuesSelected.forEach((e: Entity): void => {
+      e.selected = false;
+    });
+    this.allFileEntitiesSelected.forEach((e: Entity): void => {
+      e.selected = false;
+    });
+    this.eventIdColumn = '';
+    this.timestampColumn = '';
+    this.activityNameColumn = '';
   }
 
   // Handle the click for Help icon

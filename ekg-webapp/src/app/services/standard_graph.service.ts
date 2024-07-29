@@ -90,10 +90,27 @@ export class StandardGraphService {
   }
 
   /**
+   * Get only info about the graph
+   * @returns Observable of Http request
+   */
+  public getGraphDetilsInfo(): Observable<any> {
+    return this.httpClient.get('http://127.0.0.1:8080/api/v2/graph/details/info');
+  }
+
+  /**
+   * Get standard graph details
+   * @param lenght the max nodes-links
+   * @returns Observable of Http request
+   */
+  public getMinorGraphDetails(limit: number): Observable<any> {
+    return this.httpClient.get(`http://127.0.0.1:8080/api/v2/graph/minor-details?limit=${limit}`)
+  }
+
+  /**
    * Get standard graph details
    * @returns Observable of Http request
    */
-  public getGraphDetails(): Observable<any> {
+  public getCompleteGraphDetails(): Observable<any> {
     return this.httpClient.get('http://127.0.0.1:8080/api/v2/graph/details');
   }
 

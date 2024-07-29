@@ -1,3 +1,4 @@
+import { DataGraphEnum } from '../enums/data_enum';
 /**
  * Card model class
  * @version 1.0
@@ -5,19 +6,22 @@
 export class Card {
 
   // The Card title
-  title: string = '';
+  public title: string = '';
 
   // The Card description
-  type: string = '';
+  public type: string = '';
 
   // The Card description
-  description: string = '';
+  public description: string = '';
 
   // The Card json data
-  jsonData: any;
+  public jsonData: any;
 
   // The Card data number (number of node or edges)
-  dataNumber: number = 0;
+  public dataNumber: number = 0;
+
+  // The data type
+  public dataType: DataGraphEnum = DataGraphEnum.EventNodes;
 
   /**
    * Initialize a new instance of Card
@@ -27,11 +31,12 @@ export class Card {
    * @param jsonData the JSON data
    * @param dataNumber the number of data
    */
-  constructor(title: string, type: string, description: string, jsonData: any, dataNumber: number) {
+  constructor(title: string, type: string, description: string, jsonData: any, dataNumber: number, dataType: DataGraphEnum) {
     this.title = title;
     this.type = type;
     this.description = description;
     this.jsonData = jsonData;
     this.dataNumber = dataNumber;
+    this.dataType = dataType;
   }
 }
