@@ -17,6 +17,7 @@ import * as d3 from 'd3';
 import * as dagreD3 from 'dagre-d3';
 import saveAs from 'file-saver';
 import { zoom } from 'd3-zoom';
+import { StandardGraphService } from '../../services/standard_graph.service';
 
 @Component({
   selector: 'app-graph',
@@ -85,6 +86,9 @@ export class GraphComponent implements OnInit {
   // All type of relationships
   public allRelationships: { name: string, selected: boolean }[] = [];
 
+  // The dataset name
+  public datasetName: string = '';
+
   // ElementRef container to show SVG of the Graph.
   @ViewChild('graphSvg', { static: true }) graphContainer!: ElementRef;
 
@@ -113,6 +117,7 @@ export class GraphComponent implements OnInit {
     private router: Router,
     private dialog: MatDialog,
     private messageService: NotificationService,
+    private standardGraphService: StandardGraphService,
     private classGraphService: ClassGraphService,
     private supportDataService: SupportDataService,
   ) {
@@ -127,6 +132,7 @@ export class GraphComponent implements OnInit {
     }
     this.g = new dagreD3.graphlib.Graph().setGraph({ rankdir: 'LR' });
     this.retrievedData = this.classGraphService.getResponse();
+    this.datasetName = this.standardGraphService.datasetName;
     this.injectClassData(this.retrievedData);
   }
 
@@ -456,7 +462,7 @@ export class GraphComponent implements OnInit {
   // Open dialog for delete graph
   public openDialogDelete(): void {
     this.dialog.open(DeleteDialogComponent, {
-      data: { isClass: true },
+      data: { isClass: true, datasetName: this.datasetName },
     });
   }
 

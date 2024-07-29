@@ -6,6 +6,7 @@ import { RetrieveCardComponent } from '../../components/retrieve-card/retrieve-c
 
 // Material import
 import { MatDialog } from '@angular/material/dialog';
+import { StandardGraphService } from '../../services/standard_graph.service';
 
 @Component({
   selector: 'app-home',
@@ -22,6 +23,7 @@ export class HomeComponent implements OnInit {
   constructor(
     private router: Router,
     private dialog: MatDialog,
+    private service: StandardGraphService
   ) {
   }
 

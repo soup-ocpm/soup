@@ -31,4 +31,6 @@ def create_class_graph():
     filtered_column_json = request.form.get('filteredColumn')
     filtered_column = json.loads(filtered_column_json)
 
-    return ClassGraphService.create_class_graph_s(filtered_column, database_connector, socketio)
+    dataset_name = request.form.get('name')
+
+    return ClassGraphService.create_class_graph_s(filtered_column, dataset_name, database_connector, socketio)

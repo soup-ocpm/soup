@@ -48,6 +48,9 @@ def create_graph():
 
     copy_file = request.files['copy_file']
 
+    # Dataset name
+    dataset_name = request.form.get('name')
+
     # Creation method
     standardCreation = request.form.get('standardCreation')
 
@@ -70,6 +73,7 @@ def create_graph():
     variable_column = request.form.get('variable').replace('"', '')
 
     return GraphService.create_graph_s(file, copy_file,
+                                       dataset_name,
                                        standardCreation,
                                        standard_column,
                                        filtered_column,

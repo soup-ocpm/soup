@@ -1,0 +1,29 @@
+<div class="master" *ngIf="datasetForm">
+    <div class="title">
+        <p>Dataset Name</p>
+    </div>
+
+    <div class="content">
+        <p style="text-align: center;">Insert the name for this Dataset</p>
+        <form [formGroup]="datasetForm" (ngSubmit)="checkDatasetName()">
+            <div class="form-group" style="padding: 20px">
+                <input type="text" class="form-control" id="datasetName" formControlName="datasetName"
+                    style="margin-top: 10px; border: 1px solid rgb(63, 81, 181);" placeholder="Enter dataset name"
+                    [ngClass]="{'is-invalid': datasetForm.get('datasetName')!.invalid && datasetForm.get('datasetName')!.touched}">
+                <span *ngIf="datasetForm.get('datasetName')!.invalid && datasetForm.get('datasetName')!.touched"
+                    class="help-block">
+                    <ng-container *ngIf="datasetForm.get('datasetName')!.errors?.['required']">Please enter a valid
+                        name.</ng-container>
+                    <ng-container *ngIf="datasetForm.get('datasetName')!.errors?.['minlength']">Name must be at least 3
+                        characters long.</ng-container>
+                    <ng-container *ngIf="datasetForm.get('datasetName')!.errors?.['nameExists']">A dataset with this
+                        name already
+                        exists. Please choose a different name.</ng-container>
+                </span>
+            </div>
+        </form>
+        <button *ngIf="!this.loading" mat-button color="primary" style="float: left;"
+            (click)="this.checkDatasetName()">Build</button>
+        <app-spinner *ngIf="loading"></app-spinner>
+    </div>
+</div>

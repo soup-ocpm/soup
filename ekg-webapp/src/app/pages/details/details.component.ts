@@ -47,6 +47,9 @@ export class DetailsComponent implements OnInit {
   // The extended Card
   public cardExtended: any;
 
+  // The dataset name
+  public datasetName: string = '';
+
   // List of entities
   public entitiesList: {
     name: string;
@@ -112,6 +115,10 @@ export class DetailsComponent implements OnInit {
       return;
     }
     this.fullJsonData = this.standardGraphService.apiResponse;
+    this.datasetName = this.standardGraphService.datasetName;
+
+    console.log(this.datasetName);
+
     this.injectDataToCard();
 
     if (this.supportService.getHaveRetrievedInformation()) {
@@ -321,6 +328,7 @@ export class DetailsComponent implements OnInit {
     this.isLoadingProgressBar = true;
 
     const formData: FormData = new FormData();
+    formData.append('name', this.datasetName);
     let responseData: any;
     this.classGraphService
       .createClassGraph(formData, this.selectedEntities)
@@ -360,7 +368,7 @@ export class DetailsComponent implements OnInit {
   public deleteAndBuildClassGraph(): void {
     if (this.haveCreatedClassGraph) {
       let apiResponse: any;
-      this.classGraphService.deleteClassGraph().subscribe(
+      this.classGraphService.deleteClassGraph(this.datasetName).subscribe(
         (response) => {
           apiResponse = response;
           if (apiResponse != null && apiResponse.http_status_code == 200) {
@@ -447,7 +455,7 @@ export class DetailsComponent implements OnInit {
   // Open dialog for delete graph
   public openDialogDelete(): void {
     this.dialog.open(DeleteDialogComponent, {
-      data: { isClass: false },
+      data: { isClass: false, datasetName: this.datasetName },
     });
   }
 

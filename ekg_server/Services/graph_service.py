@@ -30,7 +30,8 @@ have_finished = False
 class GraphService:
 
     @staticmethod
-    def create_graph_s(file, copy_file, standard_process, standard_column, filtered_column, values_column, fixed_column,
+    def create_graph_s(file, copy_file, dataset_name, standard_process, standard_column, filtered_column, values_column,
+                       fixed_column,
                        variable_column,
                        container_id,
                        database_connector,
@@ -116,7 +117,8 @@ class GraphService:
                 file_data = copy_file.read().decode('utf-8')
                 df = pd.read_csv(io.StringIO(file_data))
 
-                standard_process_query_c(database_connector, standard_process, df, container_id, container_csv_path,
+                standard_process_query_c(database_connector, dataset_name, standard_process, df, container_id,
+                                         container_csv_path,
                                          standard_column,
                                          filtered_column,
                                          values_column,
@@ -171,7 +173,7 @@ class GraphService:
 
 
 # Process the .CSV file and execute query for create standard Graph
-def standard_process_query_c(database_connector, standard_process, df, container_id, container_csv_path,
+def standard_process_query_c(database_connector, dataset_name, standard_process, df, container_id, container_csv_path,
                              standard_column,
                              filtered_columns,
                              values_column, causality):
@@ -195,7 +197,8 @@ def standard_process_query_c(database_connector, standard_process, df, container
                 parameters = {
                     "event_id": event_id,
                     "timestamp": time_stamp,
-                    "activity_name": activity_name
+                    "activity_name": activity_name,
+                    "dataset_name": dataset_name,
                 }
 
                 cypher_properties = []
@@ -220,6 +223,7 @@ def standard_process_query_c(database_connector, standard_process, df, container
                         cypher_properties.append(f"{key}: coalesce(row.{key}, '')")
 
             query = load_event_node_query(container_csv_path, event_id_col, timestamp_col, activity_name_col,
+                                          dataset_name,
                                           cypher_properties)
             database_connector.run_query_memgraph(query)
 
@@ -237,7 +241,8 @@ def standard_process_query_c(database_connector, standard_process, df, container
                             if not math.isnan(value):
                                 entity_parameters = {
                                     "property_value": value,
-                                    "type_value": key
+                                    "type_value": key,
+                                    "dataset_name": dataset_name
                                 }
                                 database_connector.run_query_memgraph(entity_query, entity_parameters)
                         elif ',' in value:  # check if entities are a set of elements
@@ -245,13 +250,15 @@ def standard_process_query_c(database_connector, standard_process, df, container
                             for val in value:
                                 entity_parameters = {
                                     "property_value": val,
-                                    "type_value": key
+                                    "type_value": key,
+                                    "dataset_name": dataset_name
                                 }
                                 database_connector.run_query_memgraph(entity_query, entity_parameters)
                         else:
                             entity_parameters = {
                                 "property_value": value,
-                                "type_value": key
+                                "type_value": key,
+                                "dataset_name": dataset_name
                             }
                             database_connector.run_query_memgraph(entity_query, entity_parameters)
         else:
@@ -295,7 +302,7 @@ def standard_process_query_c(database_connector, standard_process, df, container
             container.put_archive('/tmp', tarstream)
             container_csv_path = f'/tmp/{file_name}'
 
-            query = load_entity_node_query(container_csv_path)
+            query = load_entity_node_query(container_csv_path, dataset_name)
             database_connector.run_query_memgraph(query)
 
             ent_time_end = datetime.now()
@@ -331,7 +338,11 @@ def standard_process_query_c(database_connector, standard_process, df, container
                     database_connector.run_query_memgraph(relation_query_df)
             df_time_end = datetime.now()
             df_diff = (df_time_end - df_time_start).total_seconds()
-        print(f"Created :DF relationships in {df_diff} seconds")
+            print(f"Created :DF relationships in {df_diff} seconds")
+
+        # 5. Finally, create Dataset Node
+        query = create_dataset_node(dataset_name)
+        database_connector.run_query_memgraph(query)
 
         now = datetime.now()
         current_time = now.strftime("%H:%M:%S")

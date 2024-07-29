@@ -43,8 +43,10 @@ export class ClassGraphService {
    * Delete the class graph by the Database
    * @returns Observable of Http request
    */
-  public deleteClassGraph(): Observable<any> {
-    return this.httpClient.delete('http://127.0.0.1:8080/api/v2/graph-class');
+  public deleteClassGraph(datasetName: string): Observable<any> {
+    const formData: FormData = new FormData();
+    formData.append('name', datasetName);
+    return this.httpClient.post('http://127.0.0.1:8080/api/v2/graph-class/delete', formData);
   }
 
   // --------SUPPORT METHODS---------

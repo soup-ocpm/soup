@@ -66,13 +66,13 @@ class OperationClassGraphService:
 
     # Delete Class Graph
     @staticmethod
-    def delete_class_graph_s(database_connector):
+    def delete_class_graph_s(database_connector, dataset_name):
         apiResponse = ApiResponse(None, None, None)
 
         try:
             database_connector.connect()
 
-            query = delete_class_graph_query()
+            query = delete_class_graph_query(dataset_name)
             database_connector.run_query_memgraph(query)
 
             verification_query = get_count_class_graph_query()

@@ -11,11 +11,8 @@ License : MIT
 """
 
 # Import
-import os
-
-from flask import Blueprint
+from flask import Blueprint, request
 from Services.op_class_graph_service import *
-from Models.memgraph_connector_model import *
 from Controllers.graph_config import get_db_connector
 
 # Init the bp
@@ -105,6 +102,7 @@ def get_dfc_relationships_count():
         database_connector.close()
 
 
-@op_class_graph_controller_bp.route('/api/v2/graph-class', methods=['DELETE'])
+@op_class_graph_controller_bp.route('/api/v2/graph-class/delete', methods=['POST'])
 def delete_class_graph():
-    return OperationClassGraphService.delete_class_graph_s(database_connector)
+    dataset_name = request.form.get('name')
+    return OperationClassGraphService.delete_class_graph_s(database_connector, dataset_name)

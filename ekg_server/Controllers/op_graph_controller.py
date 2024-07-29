@@ -186,9 +186,10 @@ def get_graph_details():
     return OperationGraphService.get_graph_details_s(database_connector, limit)
 
 
-@op_graph_controller_bp.route('/api/v2/graph', methods=['DELETE'])
+@op_graph_controller_bp.route('/api/v2/graph/delete', methods=['POST'])
 def delete_graph():
-    return OperationGraphService.delete_graph_s(database_connector)
+    dataset_name = request.form.get('name')
+    return OperationGraphService.delete_graph_s(database_connector, dataset_name)
 
 
 @op_graph_controller_bp.route('/api/v2/support/entities_key', methods=['GET'])
@@ -199,3 +200,14 @@ def get_entities_key():
 @op_graph_controller_bp.route('/api/v2/support/null-entities', methods=['GET'])
 def get_null_entities():
     return OperationGraphService.get_null_entities_s(database_connector)
+
+
+@op_graph_controller_bp.route('/api/v2/support/unique-dataset', methods=['POST'])
+def check_unique_dataset():
+    dataset_name = request.form.get('name')
+    return OperationGraphService.check_unique_dataset_name_s(database_connector, dataset_name)
+
+
+@op_graph_controller_bp.route('/api/v2/support/dataset', methods=['GET'])
+def get_all_dataset():
+    return OperationGraphService.get_all_dataset_s(database_connector)

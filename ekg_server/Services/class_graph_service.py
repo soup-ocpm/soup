@@ -24,7 +24,7 @@ class ClassGraphService:
 
     # Create Class Graph function
     @staticmethod
-    def create_class_graph_s(filtered_column, database_connector, socketio):
+    def create_class_graph_s(filtered_column, dataset_name, database_connector, socketio):
         global have_finished
 
         if have_finished:
@@ -42,7 +42,7 @@ class ClassGraphService:
                                            socketio=socketio,
                                            db_connector=database_connector, start_time=start_time)
 
-            class_process_query_c(database_connector, filtered_column)
+            class_process_query_c(database_connector, filtered_column, dataset_name)
 
             stop_time = time.time()
 
@@ -71,7 +71,7 @@ class ClassGraphService:
     # Execute query for create Class Graph
 
 
-def class_process_query_c(database_connector, filtered_columns):
+def class_process_query_c(database_connector, filtered_columns, dataset_name):
     try:
         # check nan entities with nan values
         cypher_query = get_nan_entities()
@@ -83,9 +83,10 @@ def class_process_query_c(database_connector, filtered_columns):
             cypher_query = change_nan(entity)
             database_connector.run_query_memgraph(cypher_query)
 
-        cypher_query = create_class_multi_query(filtered_columns)
+        print('DatasetName: ' + dataset_name)
+        cypher_query = create_class_multi_query(filtered_columns, dataset_name)
         database_connector.run_query_memgraph(cypher_query)
-        
+
         cypher_query = set_class_weight()
         database_connector.run_query_memgraph(cypher_query)
 

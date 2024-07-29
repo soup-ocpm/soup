@@ -23,6 +23,7 @@ import { Container } from "../../core/models/container.model";
 // Other import
 import { Papa } from "ngx-papaparse";
 import { Card } from '../../core/models/card.model';
+import { InputDatasetComponent } from '../../components/input-dataset/input-dataset.component';
 
 @Component({
   selector: 'app-load-csv',
@@ -117,6 +118,9 @@ export class LoadCsvComponent implements OnInit, OnDestroy {
 
   // The error data
   public errorData: any;
+
+  // The dataset name
+  public datasetName: string | any;
 
   @ViewChild('tabGroup') tabGroup: MatTabGroup | undefined;
 
@@ -313,30 +317,7 @@ export class LoadCsvComponent implements OnInit, OnDestroy {
     }
   }
 
-  /**
-   * Handle the choice container
-   * @param container the container
-   */
-  public onContainerClicked(container: any): void {
-    if (container != null && container.status) {
-      this.selectedContainer = container;
-      this.haveChoiceContainer = true;
-      this.preBuildGraph();
-    }
-  }
-
-  /**directory
-   * Handle the choice container
-   * @param directory the directory
-   */
-  public onDirectoryClicked(directory: any): void {
-    if (directory != null) {
-      this.selectedDirectory = directory;
-      this.haveChoiceDirectory = true;
-      this.preBuildGraph();
-    }
-  }
-
+  // Retrieve the container directories
   public getContainerDirectories(): void {
     if (this.selectedContainer.directories.length == 0) {
       this.dockerService.containerDirectories(this.selectedContainer.id).subscribe({
@@ -357,11 +338,6 @@ export class LoadCsvComponent implements OnInit, OnDestroy {
         }
       })
     }
-  }
-
-  // Show the Sidebar
-  public showSidebar(): void {
-    this.isShowSidebar = true;
   }
 
   // Show the card for choice container
@@ -399,7 +375,19 @@ export class LoadCsvComponent implements OnInit, OnDestroy {
         this.isShowContainers = true;
       }
     } else {
-      this.preBuildGraph();
+      this.toggleDatasetNameInput();
+    }
+  }
+
+  /**
+   * Handle the choice container
+   * @param container the container
+  */
+  public onContainerClicked(container: any): void {
+    if (container != null && container.status) {
+      this.selectedContainer = container;
+      this.haveChoiceContainer = true;
+      this.toggleDatasetNameInput();
     }
   }
 
@@ -479,7 +467,7 @@ export class LoadCsvComponent implements OnInit, OnDestroy {
     this.isLoadingProgressBar = true;
     try {
       let apiResponse: any = null;
-      this.standardGraphService.createGraph(formData, this.creationMethod, standardColumn, allFilteredColumn, allValuesColumn, this.fixedColumn, this.variableColumn, this?.selectedContainer).subscribe({
+      this.standardGraphService.createGraph(formData, this.datasetName, this.creationMethod, standardColumn, allFilteredColumn, allValuesColumn, this.fixedColumn, this.variableColumn, this?.selectedContainer).subscribe({
         next: response => {
           apiResponse = response;
           console.log(apiResponse);
@@ -518,6 +506,7 @@ export class LoadCsvComponent implements OnInit, OnDestroy {
           apiResponse = responseData;
           if (apiResponse.http_status_code === 200 && apiResponse.response_data != null) {
             this.standardGraphService.saveResponse(apiResponse.response_data);
+            this.standardGraphService.saveDatasetName(this.datasetName);
             this.isLoadingProgressBar = false;
             this.messageService.show('The Graph was successfully created within the Memgraph Database', true, 3000);
             this.router.navigateByUrl('/details');
@@ -578,6 +567,11 @@ export class LoadCsvComponent implements OnInit, OnDestroy {
     this.selectedFile = undefined;
   }
 
+  // Show the Sidebar
+  public showSidebar(): void {
+    this.isShowSidebar = true;
+  }
+
   // Handle the click for close tutorial
   public toggleTutorial(): void {
     this.isTutorialTerminated = true;
@@ -609,7 +603,19 @@ export class LoadCsvComponent implements OnInit, OnDestroy {
     this.dialog.open(HelpStandardDialogComponent);
   }
 
+  // Handle the creation method dialog
   public toggleCreationMethods(): void {
     this.dialog.open(HelpCreationDialogComponent);
+  }
+
+  // Handle the dataset name dialog
+  public toggleDatasetNameInput(): void {
+    const dialogRef = this.dialog.open(InputDatasetComponent);
+
+    dialogRef.componentInstance.datasetNameChange.subscribe((datasetName: string) => {
+      this.dialog.closeAll();
+      this.datasetName = datasetName;
+      this.preBuildGraph();
+    });
   }
 }

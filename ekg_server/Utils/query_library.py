@@ -13,23 +13,24 @@ License : MIT
 
 # Query for Graph (Standard)
 
-def load_event_node_query(container_csv_path, event_id_col, timestamp_col, activity_col, cypher_properties):
+def load_event_node_query(container_csv_path, event_id_col, timestamp_col, activity_col, dataset_name,
+                          cypher_properties):
     properties_string = ', '.join(cypher_properties)
     return (f"LOAD CSV FROM '{container_csv_path}' WITH HEADER AS row "
-            f"CREATE (e:Event {{EventID: row.{event_id_col}, Timestamp: row.{timestamp_col}, ActivityName: row.{activity_col}, {properties_string}}});")
+            f"CREATE (e:Event {{EventID: row.{event_id_col}, Timestamp: row.{timestamp_col}, ActivityName: row.{activity_col}, DatasetName: '{dataset_name}', {properties_string}}});")
 
 
 def create_node_event_query(cypher_properties):
-    return f"CREATE (e:Event {{EventID: $event_id, Timestamp: $timestamp, ActivityName: $activity_name, {', '.join(cypher_properties)}}})"
+    return f"CREATE (e:Event {{EventID: $event_id, Timestamp: $timestamp, ActivityName: $activity_name, DatasetName: $dataset_name ,{', '.join(cypher_properties)}}})"
 
 
-def load_entity_node_query(container_csv_path):
+def load_entity_node_query(container_csv_path, dataset_name):
     return (f"LOAD CSV FROM '{container_csv_path}' WITH HEADER AS row "
-            f"MERGE (e:Entity {{Value: row.value, Type: row.type}})")
+            f"MERGE (e:Entity {{Value: row.value, Type: row.type, DatasetName: '{dataset_name}'}})")
 
 
 def create_node_entity_query():
-    return "MERGE (e:Entity {Value: $property_value, Type: $type_value})"
+    return "MERGE (e:Entity {Value: $property_value, Type: $type_value, DatasetName: $dataset_name})"
 
 
 def create_entity_from_events(entity_type):
@@ -68,7 +69,7 @@ def create_df_relation_query(key):
             """
 
 
-def create_class_multi_query(matching_perspectives):
+def create_class_multi_query(matching_perspectives, dataset_name):
     class_type = 'Class'
     main_query = 'MATCH (e:Event)\n'
 
@@ -83,6 +84,8 @@ def create_class_multi_query(matching_perspectives):
 
     perspectives_dict['Event_Id'] = event_id
     perspectives_dict['Type'] = f'"{class_type}"'
+    perspectives_dict['DatasetName'] = f'"{dataset_name}"'
+
     res_dict = str(perspectives_dict).replace("'", "")
 
     class_creation = f'MERGE (c:Class {res_dict})'
@@ -102,6 +105,20 @@ def class_df_aggregation(rel_type, class_rel_type):
 
 
 # Other utils query for Graph (Standard)
+
+def create_dataset_node(dataset_name):
+    return f"CREATE (e: Dataset {{Name: '{dataset_name}'}})"
+
+
+def check_unique_dataset_name_query(dataset_name):
+    return (f"MATCH (e: Dataset {{Name: '{dataset_name}'}}) "
+            f"RETURN COUNT(e) AS count")
+
+
+def get_dataset_nodes_query():
+    return "MATCH (e: Dataset) RETURN e as node"
+
+
 def get_nodes_event_query():
     return """
             MATCH (e:Event) 
@@ -262,24 +279,33 @@ def get_df_class_relation_query():
 
 
 # Other utils query (supports)
-def delete_event_graph_query():
-    return "MATCH(e: Event) DETACH DELETE e"
+def delete_event_graph_query(dataset_name):
+    return (f"MATCH(e: Event {{DatasetName: '{dataset_name}'}}) "
+            f"DETACH DELETE e")
 
 
-def delete_entity_graph_query():
-    return "MATCH(e: Entity) DETACH DELETE e"
+def delete_entity_graph_query(dataset_name):
+    return f"""
+    MATCH (e:Entity {{DatasetName: '{dataset_name}'}})
+    DETACH DELETE e
+    """
 
 
-def get_count_event_query():
-    return "MATCH (n : Event) RETURN COUNT(n) AS count"
+def get_count_event_query(dataset_name):
+    return (f"MATCH (n : Event {{DatasetName: '{dataset_name}'}}) "
+            f"RETURN COUNT(n) AS count")
 
 
-def get_count_entity_query():
-    return "MATCH (n : Entity) RETURN COUNT(n) AS count"
+def get_count_entity_query(dataset_name):
+    return (f"MATCH (n : Entity {{DatasetName: '{dataset_name}'}}) "
+            f"RETURN COUNT(n) AS count")
 
 
-def delete_class_graph_query():
-    return "MATCH(n: Class) DETACH DELETE n"
+def delete_class_graph_query(dataset_name):
+    return f"""
+    MATCH (n:Class {{DatasetName: '{dataset_name}'}})
+    DETACH DELETE n
+    """
 
 
 def get_count_class_graph_query():

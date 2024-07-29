@@ -561,24 +561,24 @@ class OperationGraphService:
 
     # Delete the complete graph
     @staticmethod
-    def delete_graph_s(database_connector):
+    def delete_graph_s(database_connector, dataset_name):
         apiResponse = ApiResponse(None, None, None)
 
         try:
             database_connector.connect()
 
             # Delete entity nodes
-            query = delete_entity_graph_query()
+            query = delete_entity_graph_query(dataset_name)
             database_connector.run_query_memgraph(query)
 
-            verification_query = get_count_entity_query()
+            verification_query = get_count_entity_query(dataset_name)
             result_entity = database_connector.run_query_memgraph(verification_query)
 
             # Delete event nodes
-            query = delete_event_graph_query()
+            query = delete_event_graph_query(dataset_name)
             database_connector.run_query_memgraph(query)
 
-            verification_query = get_count_event_query()
+            verification_query = get_count_event_query(dataset_name)
             result_event = database_connector.run_query_memgraph(verification_query)
 
             if result_entity and result_event and result_entity[0]['count'] == 0 and result_event[0]['count'] == 0:
@@ -630,6 +630,85 @@ class OperationGraphService:
             apiResponse.http_status_code = 500
             apiResponse.message = f"Internal Server Error : {str(e)}"
             apiResponse.response_data = None
+            return jsonify(apiResponse.to_dict()), 500
+
+        finally:
+            database_connector.close()
+
+    @staticmethod
+    def check_unique_dataset_name_s(database_connector, dataset_name):
+        apiResponse = ApiResponse(None, None, None)
+
+        try:
+            database_connector.connect()
+
+            query = check_unique_dataset_name_query(dataset_name)
+            result = database_connector.run_query_memgraph(query)
+
+            if result and result[0]['count'] == 0:
+                apiResponse.http_status_code = 202
+                apiResponse.message = 'No content'
+                apiResponse.response_data = None
+                return jsonify(apiResponse.to_dict()), 202
+            else:
+                apiResponse.http_status_code = 404
+                apiResponse.message = 'Dataset with this name already exist'
+                apiResponse.response_data = None
+                return jsonify(apiResponse.to_dict()), 404
+
+        except Exception as e:
+            apiResponse.http_status_code = 500
+            apiResponse.message = f"Internal Server Error : {str(e)}"
+            apiResponse.response_data = None
+            return jsonify(apiResponse.to_dict()), 500
+
+        finally:
+            database_connector.close()
+
+    @staticmethod
+    def get_all_dataset_s(database_connector):
+        apiResponse = ApiResponse(None, None, None)
+
+        try:
+            database_connector.connect()
+
+            query = get_dataset_nodes_query()
+            result = database_connector.run_query_memgraph(query)
+
+            if not isinstance(result, Iterable):
+                apiResponse.http_status_code = 404
+                apiResponse.response_data = None
+                apiResponse.message = "Not found"
+                return jsonify(apiResponse.to_dict()), 404
+
+            graph_data = []
+
+            for record in result:
+                event_node = record['node']
+
+                for key, value in event_node.items():
+                    if isinstance(value, (int, float)) and math.isnan(value):
+                        event_node[key] = None
+
+                graph_data.append(event_node)
+
+            if len(graph_data) == 0:
+                apiResponse.http_status_code = 202
+                apiResponse.message = 'No content'
+                apiResponse.response_data = graph_data
+
+                return jsonify(apiResponse.to_dict()), 202
+
+            apiResponse.http_status_code = 200
+            apiResponse.message = 'Dataset nodes retrieve successfully'
+            apiResponse.response_data = graph_data
+
+            return jsonify(apiResponse.to_dict()), 200
+
+        except Exception as e:
+            apiResponse.http_status_code = 500
+            apiResponse.response_data = None
+            apiResponse.message = f'Internal Server Error : {str(e)}'
             return jsonify(apiResponse.to_dict()), 500
 
         finally:

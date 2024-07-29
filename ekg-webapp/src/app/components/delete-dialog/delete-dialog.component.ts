@@ -1,12 +1,12 @@
-import {Component, Inject, OnInit} from '@angular/core';
-import {Router} from "@angular/router";
+import { Component, Inject, OnInit } from '@angular/core';
+import { Router } from "@angular/router";
 
 // Material import
-import {MAT_DIALOG_DATA} from "@angular/material/dialog";
-import {StandardGraphService} from "../../services/standard_graph.service";
-import {ClassGraphService} from "../../services/class_graph.service";
-import {SupportDataService} from "../../services/support_data.service";
-import {NotificationService} from "../../services/notification.service";
+import { MAT_DIALOG_DATA } from "@angular/material/dialog";
+import { StandardGraphService } from "../../services/standard_graph.service";
+import { ClassGraphService } from "../../services/class_graph.service";
+import { SupportDataService } from "../../services/support_data.service";
+import { NotificationService } from "../../services/notification.service";
 
 @Component({
   selector: 'app-delete-dialog',
@@ -17,6 +17,9 @@ export class DeleteDialogComponent implements OnInit {
 
   // If the dialog is for delete Class graph
   public isDeleteClassGraph: boolean = false;
+
+  // The dataset name
+  public datasetName: string = '';
 
   /**
    * Constructor for DeleteDialogComponent component
@@ -33,20 +36,21 @@ export class DeleteDialogComponent implements OnInit {
     private standardGraphService: StandardGraphService,
     private classGraphService: ClassGraphService,
     private supportService: SupportDataService,
-    @Inject(MAT_DIALOG_DATA) public data: { isClass: boolean }
+    @Inject(MAT_DIALOG_DATA) public data: { isClass: boolean, datasetName: string }
   ) {
   }
 
   // NgOnInit implementation
   ngOnInit(): void {
     this.isDeleteClassGraph = this.data.isClass;
+    this.datasetName = this.data.datasetName;
   }
 
   // Delete the graph
   public deleteGraph(): void {
     let apiResponse: any;
-    if (this.isDeleteClassGraph) {
-      this.classGraphService.deleteClassGraph().subscribe(
+    if (this.isDeleteClassGraph && this.datasetName != '') {
+      this.classGraphService.deleteClassGraph(this.datasetName).subscribe(
         response => {
           apiResponse = response;
           if (apiResponse != null && apiResponse.http_status_code == 200) {
@@ -65,7 +69,7 @@ export class DeleteDialogComponent implements OnInit {
           }
         });
     } else {
-      this.standardGraphService.deleteGraph().subscribe(
+      this.standardGraphService.deleteGraph(this.datasetName).subscribe(
         response => {
           apiResponse = response;
           if (apiResponse != null && apiResponse.http_status_code == 200) {

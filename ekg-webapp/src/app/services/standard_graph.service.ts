@@ -13,6 +13,9 @@ export class StandardGraphService {
   // Save the api response for the Guard and navigation
   public apiResponse: any;
 
+  // Save the dataset name
+  public datasetName: string = '';
+
   /**
    * Initialize a new instance of StandardGraphService service
    * @param httpClient the Http client
@@ -32,7 +35,8 @@ export class StandardGraphService {
    * @param container the docker container
    * @returns Observable of Http request
    */
-  public createGraph(formData: FormData, standardCreation: string, standardColumn: string[], filteredColumn: string[], valuesColumn: string[], fixed: string, variable: string, container: Container): Observable<any> {
+  public createGraph(formData: FormData, datasetName: string, standardCreation: string, standardColumn: string[], filteredColumn: string[], valuesColumn: string[], fixed: string, variable: string, container: Container): Observable<any> {
+    formData.append('name', datasetName);
     formData.append('standardCreation', standardCreation);
     formData.append('standardColumn', JSON.stringify(standardColumn));
     formData.append('filteredColumn', JSON.stringify(filteredColumn));
@@ -45,6 +49,26 @@ export class StandardGraphService {
       formData.append('container_id', '');
     }
     return this.httpClient.post('http://127.0.0.1:8080/api/v2/graph', formData);
+  }
+
+  /**
+   * Check unique dataset name
+   * @param datasetName the dataset name
+   * @returns Observable of Http request
+   */
+  public checkUniqueDataset(datasetName: string): Observable<any> {
+    const formData = new FormData();
+    formData.append('name', datasetName);
+    return this.httpClient.post(`http://127.0.0.1:8080/api/v2/support/unique-dataset`, formData);
+  }
+
+
+  /**
+   * Get all dataset
+   * @returns Observable of Http request
+   */
+  public getAllDataset(): Observable<any> {
+    return this.httpClient.get('http://127.0.0.1:8080/api/v2/support/dataset');
   }
 
   /**
@@ -118,8 +142,10 @@ export class StandardGraphService {
    * Delete the standard graph by the Database
    * @returns Observable of Http request
    */
-  public deleteGraph(): Observable<any> {
-    return this.httpClient.delete('http://127.0.0.1:8080/api/v2/graph');
+  public deleteGraph(datasetName: string): Observable<any> {
+    const formData: FormData = new FormData();
+    formData.append('name', datasetName);
+    return this.httpClient.post('http://127.0.0.1:8080/api/v2/graph/delete', formData);
   }
 
   // --------SUPPORT METHODS---------
@@ -130,6 +156,14 @@ export class StandardGraphService {
    */
   public saveResponse(response: any): void {
     this.apiResponse = response;
+  }
+
+  /**
+   * Save the dataset name
+   * @param datasetName the dataset name
+   */
+  public saveDatasetName(datasetName: string): void {
+    this.datasetName = datasetName;
   }
 
   // Delete the response http.
