@@ -302,6 +302,9 @@ def standard_process_query_c(database_connector, standard_process, df, container
             ent_diff = (ent_time_end - ent_time_start).total_seconds()
             print(f"Created :Entity nodes in {ent_diff} seconds")
 
+
+        database_connector.run_query_memgraph(create_entity_index()) # create entities index to optimize :CORR creation
+        
         corr_time_start = datetime.now()
         # 3. Create :CORR relationships
         for key in filtered_columns:

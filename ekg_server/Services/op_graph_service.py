@@ -570,9 +570,12 @@ class OperationGraphService:
             # Delete entity nodes
             query = delete_entity_graph_query()
             database_connector.run_query_memgraph(query)
-
+            
             verification_query = get_count_entity_query()
             result_entity = database_connector.run_query_memgraph(verification_query)
+            
+            # Drop entity index
+            database_connector.run_query_memgraph(drop_entity_index())
 
             # Delete event nodes
             query = delete_event_graph_query()
