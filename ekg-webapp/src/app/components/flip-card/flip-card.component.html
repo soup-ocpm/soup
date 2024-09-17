@@ -10,9 +10,9 @@
         </div>
         <div class="flip-card-back">
             <div class="card-content-description-back">
-                <p>Inside your Memgraph database, they have been generated</p>
                 <p style="font-weight: bold;">{{this.card?.dataNumber}}</p>
-                <p>{{this.card?.type}} nodes</p>
+                <p>{{this.card?.type}}</p>
+                <p>have been generated inside the Memgraph database</p>
                 <button *ngIf="!this.isLoading" class="back-button" (click)="this.downloadJson()">Download JSON</button>
                 <app-spinner *ngIf="this.isLoading" class="spinning"></app-spinner>
             </div>

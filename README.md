@@ -4,13 +4,11 @@
 The Soup Tool is a WebApp that allows the end user to create an Event Knowledge Graph (EKG) <br>
 Starting from an event log, saved in a .csv file, the user is guided in the creation of the EKG with the aim of performing object-centric process mining analysis. <br>
 
-Please refer to the project [wiki](https://bitbucket.org/proslabteam/soup/wiki/Home) for all the details.
+ℹ Please refer to the project [wiki](https://bitbucket.org/proslabteam/soup/wiki/Home) for all the details.
 
-### Causal Event Relationships
-Soup supports the creation of EKGs considering event-to-event causal relationships.
-Indeed, causal relationships allow to retrieve 1:n or n:1 relationships between events.
+📃You can download some event logs [here](https://bitbucket.org/proslabteam/soup-validation/src/main/).
 
-Revealing of such a relationship has been conducted in two case studies. Please refer to the corresponding [wiki](https://bitbucket.org/proslabteam/soup/wiki/Causal%20Event%20Relationships) page for more details.
+⚠ Notably, as required by Memgraph, the timestamp should be in the following formats (optionally with milliseconds): `YYYY-MM-DDThh:mm:ss` or `YYYY-MM-DDThh:mm` or `YYYYMMDDThhmmss` or `YYYYMMDDThhmm` or `YYYYMMDDThh`.
 
 ## Tecnhnologies
 ### 1. Memgraph Database
@@ -37,8 +35,10 @@ and other library visible in package.json.
 ## Tool Setup - Instruction
 
 The first step is to clone the project. <br> ([Clone a Git repository](https://support.atlassian.com/bitbucket-cloud/docs/clone-a-git-repository/))<br>
-You must have Git downloaded into your computer. If Git is not present, you will receive an error message.<br>
-To download Git, go to the specific page:
+
+Make sure Git is installed on your computer. If Git is not installed, you will encounter an error message.
+
+To download Git, visit the following page:
 
 [Download Git](https://git-scm.com/downloads)
 
@@ -47,18 +47,18 @@ First, install Docker inside your computer.
 
 [Download Docker](https://www.docker.com/get-started/)
 
-Once Docker has been correctly downloaded, open the terminal inside the main folder of the (cloned) project.  
-At this point, you can run the following commands from the terminal to create a Container in Docker made up of all the projects:<br>
+After successfully installing Docker, open the terminal in the main folder of the cloned project.
+
+Run the following commands from the terminal to create a Container in Docker made up of all the projects:<br>
 
 ```
 docker-compose -p soup-tool up --build
 ```
 
-When the command is finished, a Container is automatically created by Docker compose composed of the following sub-containers (all already started): 
-
+Once the command is completed, Docker Compose automatically creates a container that includes the following sub-containers, all of which are already running:
 - Angular container: represents the web tool, contactable at the <h4>localhost:4200</h4>
 - Python container (Backend): represents the Backend and Engine of the system, contactable at the <h4>localhost:8080</h4>
-- Memgraph container: in this container, the Memgraph database runs which offers 3 different ports.The most important is certainly<h4>localhost:3000</h4>which, if navigated, will open Memgraph Lab.
+- Memgraph container: in this container, the Memgraph database runs which offers 3 different ports.The most important is <h4>localhost:3000</h4>which will open Memgraph Lab.
 
 
 
@@ -103,3 +103,10 @@ The user has the possibility to upload his own .csv file containing the data of 
 Once the .csv file is loaded, the user has the possibility to filter the data and therefore the columns of his .csv file.
 Once this operation has been done (optional) the Server will begin to create the Graph of interest through queries to the Memgraph Database and will return the generated graph as a result. Obviously, the user has the possibility to download his graph in .svg format, as the possibility of eliminating it, but above all grouping the entities by Classes, in such a way as to obtain a new graph of interest.
 All this achieved thanks to the Memgraph, Python and Angular libraries and documentation.
+
+## Additional Features
+### Causal Event Relationships
+Soup supports the creation of EKGs considering event-to-event causal relationships.
+Indeed, causal relationships allow to retrieve 1:n or n:1 relationships between events.
+
+Revealing of such a relationship has been conducted in two case studies. Please refer to the corresponding [wiki](https://bitbucket.org/proslabteam/soup/wiki/CausalRelationships) page for more details.
