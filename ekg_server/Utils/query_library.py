@@ -20,7 +20,7 @@ def load_event_node_query(container_csv_path, event_id_col, timestamp_col, activ
 
 
 def create_node_event_query(cypher_properties):
-    return f"CREATE (e:Event {{EventID: $event_id, Timestamp: $timestamp, ActivityName: $activity_name, {', '.join(cypher_properties)}}})"
+    return f"CREATE (e:Event {{EventID: $event_id, Timestamp: localDateTime($timestamp), ActivityName: $activity_name, {', '.join(cypher_properties)}}})"
 
 
 def load_entity_node_query(container_csv_path):
@@ -39,11 +39,13 @@ def create_entity_from_events(entity_type):
                 MERGE (n:Entity {{entity_id: entity_name, type: '{entity_type}'}})
                 RETURN keys(n) LIMIT 1
             """
-            
+
+
 def create_entity_index():
-    return("""
+    return ("""
            CREATE INDEX ON :Entity(Value)
            """)
+
 
 def create_corr_relation_query(key):  # checks if an entity has multiple values
     return (f"""
@@ -273,8 +275,10 @@ def delete_event_graph_query():
 def delete_entity_graph_query():
     return "MATCH(e: Entity) DETACH DELETE e"
 
+
 def drop_entity_index():
     return ("DROP INDEX ON :Entity(Value)")
+
 
 def get_count_event_query():
     return "MATCH (n : Event) RETURN COUNT(n) AS count"

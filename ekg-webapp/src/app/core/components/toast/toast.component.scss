@@ -6,7 +6,6 @@
   background-color: #333;
   color: #fff;
   padding: 10px 20px;
-  border-radius: 7px;
   box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
   opacity: 0;
   transition: bottom 0.5s ease, opacity 0.5s ease, height 0.5s ease;
@@ -28,11 +27,11 @@ body {
 }
 
 .toast.success {
-  background-color: #28a745;
+  background-color: #2fca53;
 }
 
 .toast.error {
-  background-color: #ce0b1d;
+  background-color: #eb1d32;
 }
 
 .sidebarOpen {

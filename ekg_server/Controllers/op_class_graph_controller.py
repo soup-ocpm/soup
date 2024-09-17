@@ -11,11 +11,8 @@ License : MIT
 """
 
 # Import
-import os
-
 from flask import Blueprint
 from Services.op_class_graph_service import *
-from Models.memgraph_connector_model import *
 from Controllers.graph_config import get_db_connector
 
 # Init the bp

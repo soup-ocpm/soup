@@ -64,7 +64,7 @@ export class FlipCardComponent implements OnInit {
         request = this.graphJSONService.classNodesJS();
         break;
       case DataGraphEnum.DFCLinks:
-        request = this.graphJSONService.dfcLinksJS();
+        request = this.graphJSONService.dfLinksJS();
         break;
       default:
         request = this.graphJSONService.eventNodesJS();

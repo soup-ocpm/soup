@@ -23,9 +23,9 @@ def string_to_datetime(timestamp_str):
 
 
 def neo_datetime_conversion(time):
-    '''
+    """
     From string or Neo4j datetime to datetime
-    '''
+    """
     if isinstance(time, str):
         time = string_to_datetime(time)
 

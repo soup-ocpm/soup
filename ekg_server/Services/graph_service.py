@@ -233,14 +233,15 @@ def standard_process_query_c(database_connector, standard_process, df, container
                 for key, value in row.items():
                     if key not in [event_id_col, timestamp_col, activity_name_col] and key in filtered_columns:
                         entity_query = create_node_entity_query()
-                        if type(value) is float:
+
+                        if isinstance(value, float):
                             if not math.isnan(value):
                                 entity_parameters = {
                                     "property_value": value,
                                     "type_value": key
                                 }
                                 database_connector.run_query_memgraph(entity_query, entity_parameters)
-                        elif ',' in value:  # check if entities are a set of elements
+                        elif isinstance(value, str) and ',' in value:  # check if entities are a set of elements
                             value = value.split(',')
                             for val in value:
                                 entity_parameters = {
@@ -249,6 +250,9 @@ def standard_process_query_c(database_connector, standard_process, df, container
                                 }
                                 database_connector.run_query_memgraph(entity_query, entity_parameters)
                         else:
+                            if not isinstance(value, str):
+                                value = str(value)
+
                             entity_parameters = {
                                 "property_value": value,
                                 "type_value": key
@@ -302,10 +306,10 @@ def standard_process_query_c(database_connector, standard_process, df, container
             ent_diff = (ent_time_end - ent_time_start).total_seconds()
             print(f"Created :Entity nodes in {ent_diff} seconds")
 
+        database_connector.run_query_memgraph(create_entity_index())  # create entities index to optimize :CORR creation
 
-        database_connector.run_query_memgraph(create_entity_index()) # create entities index to optimize :CORR creation
-        
         corr_time_start = datetime.now()
+
         # 3. Create :CORR relationships
         for key in filtered_columns:
             if key not in [event_id_col, timestamp_col, activity_name_col]:
@@ -332,15 +336,14 @@ def standard_process_query_c(database_connector, standard_process, df, container
                 if key not in [event_id_col, timestamp_col, activity_name_col]:
                     relation_query_df = create_df_relation_query(key)
                     database_connector.run_query_memgraph(relation_query_df)
-            df_time_end = datetime.now()
-            df_diff = (df_time_end - df_time_start).total_seconds()
-        print(f"Created :DF relationships in {df_diff} seconds")
+        print(f"Created :DF relationships in {(datetime.now() - df_time_start).total_seconds()} seconds")
 
         now = datetime.now()
         current_time = now.strftime("%H:%M:%S")
         print("Current End Time =", current_time)
 
     except Exception as e:
+        print(e)
         return e
 
 
