@@ -1,16 +1,16 @@
 """
--------------------------------
+------------------------------------------------------------------------
 File : memgraph_connector_model.py
 Description: Memgraph connector model class
 Date creation: 06-02-2024
 Project : ekg_server
-Author: DiscoHub12 (Alessio Giacché)
+Author: Alessio Giacché
+Copyright: Copyright (c) 2024 Alessio Giacché <ale.giacc.dev@gmail.com>
 License : MIT
--------------------------------
+------------------------------------------------------------------------
 """
 
 # Import
-import time
 from neo4j import GraphDatabase
 
 
@@ -20,12 +20,10 @@ class MemgraphConnector:
         self._uri = uri
         self._auth = auth
         self._driver = None
-        print(f'Database information : bolt://{self._uri}')
 
     # Connect function
     def connect(self):
         self._driver = GraphDatabase.driver(self._uri, auth=self._auth)
-        print('Success connect with Memgraph')
 
     # Close connect function
     def close(self):

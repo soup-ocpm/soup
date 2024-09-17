@@ -1,18 +1,31 @@
 """
--------------------------------
+------------------------------------------------------------------------
 File : query_library.py
 Description: Cypher query library for EKG
 Date creation: 06-02-2024
 Project : ekg_server
-Author: DiscoHub12 (Alessio Giacché)
+Author: Alessio Giacché
+Copyright: Copyright (c) 2024 Alessio Giacché <ale.giacc.dev@gmail.com>
 License : MIT
--------------------------------
+------------------------------------------------------------------------
 """
 
 
 # Query for Graph (Standard)
+
+def load_event_node_query(container_csv_path, event_id_col, timestamp_col, activity_col, cypher_properties):
+    properties_string = ', '.join(cypher_properties)
+    return (f"LOAD CSV FROM '{container_csv_path}' WITH HEADER AS row "
+            f"CREATE (e:Event {{EventID: row.{event_id_col}, Timestamp: localDateTime(row.{timestamp_col}), ActivityName: row.{activity_col}, {properties_string}}});")
+
+
 def create_node_event_query(cypher_properties):
     return f"CREATE (e:Event {{EventID: $event_id, Timestamp: $timestamp, ActivityName: $activity_name, {', '.join(cypher_properties)}}})"
+
+
+def load_entity_node_query(container_csv_path):
+    return (f"LOAD CSV FROM '{container_csv_path}' WITH HEADER AS row "
+            f"MERGE (e:Entity {{Value: row.value, Type: row.type}})")
 
 
 def create_node_entity_query():
@@ -26,7 +39,11 @@ def create_entity_from_events(entity_type):
                 MERGE (n:Entity {{entity_id: entity_name, type: '{entity_type}'}})
                 RETURN keys(n) LIMIT 1
             """
-
+            
+def create_entity_index():
+    return("""
+           CREATE INDEX ON :Entity(Value)
+           """)
 
 def create_corr_relation_query(key):  # checks if an entity has multiple values
     return (f"""
@@ -51,7 +68,7 @@ def create_df_relation_query(key):
             WITH n, collect(nodes) AS event_node_list
             UNWIND range(0, size(event_node_list)-2) AS i
             WITH n, event_node_list[i] AS e1, event_node_list[i+1] AS e2
-            MERGE (e1)-[df:DF {{ Type:n.Type, ID:n.entity_id, edge_weight: 1}}]->(e2)
+            MERGE (e1)-[df:DF {{ Type:n.Type, ID:n.Value, edge_weight: 1}}]->(e2)
             """
 
 
@@ -96,10 +113,24 @@ def get_nodes_event_query():
             """
 
 
+def get_count_nodes_event_query():
+    return """
+            MATCH (n: Event)
+            RETURN COUNT(n) as node_count
+            """
+
+
 def get_nodes_entity_query():
     return """
             MATCH (e:Entity)
             RETURN e AS node
+            """
+
+
+def get_count_nodes_entity_query():
+    return """
+            MATCH (n: Entity)
+            RETURN COUNT(n) as entity_count
             """
 
 
@@ -115,6 +146,20 @@ def get_nodes_details_query():
             """
 
 
+def get_nodes_details_length_query(limit):
+    return f"""
+            MATCH (event:Event)
+            WITH collect(event) AS data, 'events' AS type, size(collect(event)) AS count
+            RETURN data, type, count
+            LIMIT {limit}
+            UNION
+            MATCH (entity:Entity)
+            WITH collect(entity) AS data, 'entities' AS type, size(collect(entity)) AS count
+            RETURN data, type, count
+            LIMIT {limit}
+            """
+
+
 def get_corr_relation_query():
     return """
             MATCH (e: Event)-[corr:CORR]->(en:Entity)
@@ -122,10 +167,41 @@ def get_corr_relation_query():
             """
 
 
+def get_count_corr_rel_query():
+    return """
+            MATCH (e:Event)-[corr:CORR]->(e1:Entity)
+            RETURN COUNT(corr) as corr_count
+            """
+
+
 def get_df_relation_query():
     return """
             MATCH (e:Event)-[df:DF]->(e1:Event)
             RETURN e, df, e1
+            """
+
+
+def get_count_df_rel_query():
+    return """
+            MATCH (e:Event)-[df:DF]->(e1:Event)
+            RETURN COUNT(df) as df_count
+            """
+
+
+def get_complete_standard_graph_query():
+    return """
+            MATCH (e1:Event)-[r:DF]->(e2:Event)
+            RETURN e1 as source, id(e1) as source_id, properties(r) as edge, 
+            id(r) as edge_id, e2 as target, id(e2) as target_id
+            """
+
+
+def get_limit_standard_graph_query(limit):
+    return f"""
+            MATCH (e1:Event)-[r:DF]->(e2:Event)
+            RETURN e1 as source, id(e1) as source_id, properties(r) as edge, 
+            id(r) as edge_id, e2 as target, id(e2) as target_id
+            LIMIT {limit}
             """
 
 
@@ -137,11 +213,48 @@ def get_nodes_class_query():
             """
 
 
-def get_class_graph_query():
+def get_count_nodes_class_query():
+    return """
+            MATCH (c:Class)
+            RETURN COUNT(c) as class_count
+    """
+
+
+def get_count_obs_relationships_query():
+    return """
+    MATCH (e:Event)-[obs:OBSERVED]->(c:Class)
+    RETURN COUNT(obs) as obs_count
+    """
+
+
+def get_count_dfc_relationships_query():
+    return """
+    MATCH (c1:Class)-[dfc:DF_C]->(c2:Class)
+    RETURN COUNT(dfc) as dfc_count
+    """
+
+
+def get_complete_class_graph_query():
     return """
             MATCH (c1:Class)-[r:DF_C]->(c2:Class)
             RETURN c1 as source, id(c1) as source_id, properties(r) as edge, 
             id(r) as edge_id, c2 as target, id(c2) as target_id
+            """
+
+
+def get_limit_class_graph_query(limit):
+    return f"""
+            MATCH (c1:Class)-[r:DF_C]->(c2:Class)
+            RETURN c1 as source, id(c1) as source_id, properties(r) as edge, 
+            id(r) as edge_id, c2 as target, id(c2) as target_id
+            LIMIT {limit}
+            """
+
+
+def get_df_class_relation_simple_query():
+    return """
+            MATCH (e:Class)-[df:DF_C]->(e1:Class)
+            RETURN e, df, e1
             """
 
 
@@ -160,6 +273,8 @@ def delete_event_graph_query():
 def delete_entity_graph_query():
     return "MATCH(e: Entity) DETACH DELETE e"
 
+def drop_entity_index():
+    return ("DROP INDEX ON :Entity(Value)")
 
 def get_count_event_query():
     return "MATCH (n : Event) RETURN COUNT(n) AS count"
@@ -191,7 +306,7 @@ def get_nan_entities():
             WITH e, properties(e) AS props
             UNWIND keys(props) AS prop
             WITH e, prop, props[prop] AS value
-            WHERE toString(value) = 'nan'
+            WHERE toString(value) = 'nan' OR toString(value) = ''
             WITH DISTINCT prop, count(DISTINCT e) AS nodeCount
             RETURN prop, nodeCount
     """
@@ -211,3 +326,11 @@ def get_distinct_entities_keys():
             WITH DISTINCT n.Type as entityType
             RETURN entityType
     """
+
+
+def set_class_weight():
+    return ("""
+        MATCH (:Event)-[obs:OBSERVED]->(c:Class)
+        WITH c, COUNT(obs) as weight
+        SET c.Count = weight
+        """)

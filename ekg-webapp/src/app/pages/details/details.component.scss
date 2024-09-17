@@ -64,6 +64,7 @@
 
 .sidebar.open {
   right: 0;
+  overflow: auto;
 }
 
 .master-content-sidebar {
@@ -127,7 +128,7 @@
     margin-top: -5px;
   }
 
-  mat-icon{
+  mat-icon {
     color: #c4a805;
     float: right;
     margin-right: 20px;
@@ -162,5 +163,33 @@
 
 // Other Scss support
 .icon-operation {
+  cursor: pointer;
+}
+
+.progress-terminal {
+  padding: 20px;
+  background-color: #d2d2d2;
+  border: 1px solid black;
+  border-radius: 5px;
+}
+
+// SCSS FOR GRAPH VISUALIZATION
+.graph-container {
+  width: 98%;
+  height: 82%;
+  margin-left: 20px;
+  background-color: #f6f6f6;
+
+  svg {
+    width: 100%;
+    height: 100%;
+  }
+}
+
+.close-button {
+  position: absolute;
+  top: 10px;
+  right: 7px;
+  z-index: 2;
   cursor: pointer;
 }

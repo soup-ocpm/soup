@@ -23,6 +23,8 @@ services:
     environment:
       - MEMGRAPH_HOST=memgraph
       - MEMGRAPH_PORT=7687  
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
 
   memgraph:
     image: memgraph/memgraph-platform

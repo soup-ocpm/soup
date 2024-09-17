@@ -1,11 +1,11 @@
-import {Component, OnInit} from '@angular/core';
-import {Router} from "@angular/router";
+import { Component, OnInit } from '@angular/core';
+import { Router } from '@angular/router';
 
 // Component import
-import {RetrieveCardComponent} from "../../components/retrieve-card/retrieve-card.component";
+import { RetrieveCardComponent } from '../../components/retrieve-card/retrieve-card.component';
 
 // Material import
-import {MatDialog} from "@angular/material/dialog";
+import { MatDialog } from '@angular/material/dialog';
 
 @Component({
   selector: 'app-home',

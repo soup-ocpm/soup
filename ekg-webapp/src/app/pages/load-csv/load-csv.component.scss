@@ -125,12 +125,12 @@ mat-stepper {
 
   .entity {
     padding: 2px;
-    border: 1px solid rgb(63, 81, 181);;
+    border: 1px solid rgb(63, 81, 181);
     border-radius: 5px;
   }
 }
 
-.color-element{
+.color-element {
   font-size: 17px;
   color: rgb(225, 91, 61);
 
@@ -186,7 +186,7 @@ mat-stepper {
   font-size: 14px;
 }
 
-.entities-list.properties{
+.entities-list.properties {
   background-color: rgb(225, 91, 61);
 }
 
@@ -246,10 +246,57 @@ mat-divider {
   border-radius: 5px;
 }
 
+.map-information-tile{
+  display: flex;
+}
+
+.radio-group-creation{
+  .mat-mdc-radio-button ~ .mat-mdc-radio-button {
+    margin-left: 16px;
+  }
+
+  display: flex;
+  justify-content: space-between;
+}
+
 .button-sidebar {
   margin-top: 10px;
   right: 10px;
   bottom: 7px;
+}
+
+// SCSS FOR DOCKER CONTAINERS
+.master-container {
+  width: 800px;
+  height: 650px;
+  margin-right: 200px;
+
+  .title {
+    width: 100%;
+    height: 50px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    background-color: rgb(63, 81, 181);
+  }
+}
+
+.labelClass {
+  font-size: 23px;
+  font-family: 'Times New Roman', Times, serif;
+}
+
+.container-div {
+  display: flex;
+  align-items: center;
+  overflow: auto;
+}
+
+.button-container{
+  position: absolute;
+  right: 10px;
+  bottom: 10px;
 }
 
 // SCSS FOR PROCESSING
@@ -258,4 +305,11 @@ mat-divider {
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
+}
+
+.progress-terminal {
+  padding: 20px;
+  background-color: #d2d2d2;
+  border: 1px solid black;
+  border-radius: 5px;
 }

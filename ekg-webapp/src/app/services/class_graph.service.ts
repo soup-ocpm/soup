@@ -1,6 +1,6 @@
-import {HttpClient} from "@angular/common/http";
-import {Observable} from "rxjs";
-import {Injectable} from "@angular/core";
+import { HttpClient } from '@angular/common/http';
+import { Observable } from 'rxjs';
+import { Injectable } from '@angular/core';
 
 @Injectable({
   providedIn: 'root',
@@ -28,7 +28,7 @@ export class ClassGraphService {
   public createClassGraph(formData: FormData, filteredColumn: string[]): Observable<any> {
     filteredColumn.push('ActivityName');
     formData.append('filteredColumn', JSON.stringify(filteredColumn));
-    return this.httpClient.post('http://127.0.0.1:8080/api/v1/graph-class', formData);
+    return this.httpClient.post('http://127.0.0.1:8080/api/v2/graph-class', formData);
   }
 
   /**
@@ -36,15 +36,7 @@ export class ClassGraphService {
    * @returns Observable of Http request
    */
   public getClassNodes(): Observable<any> {
-    return this.httpClient.get('http://127.0.0.1:8080/api/v1/graph-class/nodes/class');
-  }
-
-  /**
-   * Get full Class graph
-   * @returns Observable of Http request
-   */
-  public getClassGraph(): Observable<any> {
-    return this.httpClient.get('http://127.0.0.1:8080/api/v1/graph-class');
+    return this.httpClient.get('http://127.0.0.1:8080/api/v2/graph-class/nodes/class');
   }
 
   /**
@@ -52,7 +44,7 @@ export class ClassGraphService {
    * @returns Observable of Http request
    */
   public deleteClassGraph(): Observable<any> {
-    return this.httpClient.delete('http://127.0.0.1:8080/api/v1/graph-class');
+    return this.httpClient.delete('http://127.0.0.1:8080/api/v2/graph-class');
   }
 
   // --------SUPPORT METHODS---------

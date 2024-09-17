@@ -1,38 +1,53 @@
 """
--------------------------------
+------------------------------------------------------------------------
 File : app.py
 Description: Main project
 Date creation: 20-02-2024
 Project : ekg_server
-Author: DiscoHub12 (Alessio Giacché)
+Author: Alessio Giacché
+Copyright: Copyright (c) 2024 Alessio Giacché <ale.giacc.dev@gmail.com>
 License : MIT
--------------------------------
+------------------------------------------------------------------------
 """
 
 # Import
-import os
-from flask import Flask
+from flask import Flask, jsonify
 from flask_cors import CORS
-from GraphController.create_graph_controller import create_graph_c
-from GraphController.create_class_graph_controller import create_class_graph_c
-from GraphController.operation_graph_controller import *
-from GraphController.operation_class_graph_controller import get_class_graph_c, delete_class_graph_c
-from Models.memgraph_connector_model import MemgraphConnector
+from flask_socketio import SocketIO
+
+# Controllers
+from Controllers.docker_controller import docker_controller_bp
+from Controllers.graph_controller import graph_controller_bp
+from Controllers.class_graph_controller import class_graph_controller_bp
+from Controllers.generic_graph_controller import generic_graph_controller_bp
+from Controllers.op_graph_controller import op_graph_controller_bp
+from Controllers.op_class_graph_controller import op_class_graph_controller_bp
+from Controllers.graph_json_controller import graph_json_controller_bp
 
 # App
 app = Flask(__name__)
+
+# Register the App Blueprint
+app.register_blueprint(docker_controller_bp)
+app.register_blueprint(graph_controller_bp)
+app.register_blueprint(class_graph_controller_bp)
+app.register_blueprint(generic_graph_controller_bp)
+app.register_blueprint(op_graph_controller_bp)
+app.register_blueprint(op_class_graph_controller_bp)
+app.register_blueprint(graph_json_controller_bp)
+
+# Init the Socket
+socketio = SocketIO(app, cors_allowed_origins="*")
+
+# Store the Socket in the app configuration
+app.config['socketio'] = socketio
+
+# Add application CORS
 CORS(app)
 
-# Database information
-memgraph_host = os.getenv("MEMGRAPH_HOST", "memgraph")
-memgraph_port = int(os.getenv("MEMGRAPH_PORT", 7687))
-uri_mem = f'bolt://{memgraph_host}:{memgraph_port}'
-auth_mem = ("", "")
-database_connector = MemgraphConnector(uri_mem, auth_mem)
 
-
-# WELCOME API
-@app.route('/api/v1/welcome')
+# Welcome API
+@app.route('/api/v2/welcome')
 def welcome_api():
     return jsonify({
         'status': 200,
@@ -40,81 +55,7 @@ def welcome_api():
     })
 
 
-# All API for Graph (Standard)
-@app.route('/api/v1/graph', methods=['POST'])
-def create_graph():
-    return create_graph_c(database_connector)
-
-
-@app.route('/api/v1/graph/nodes/event', methods=['GET'])
-def get_event_nodes():
-    return get_event_nodes_c(database_connector)
-
-
-@app.route('/api/v1/graph/nodes/entity', methods=['GET'])
-def get_entity_nodes():
-    return get_entity_nodes_c(database_connector)
-
-
-@app.route('/api/v1/graph/relationships/corr', methods=['GET'])
-def get_corr_relationships():
-    return get_corr_relationships_c(database_connector)
-
-
-@app.route('/api/v1/graph/relationships/df', methods=['GET'])
-def get_df_relationships():
-    return get_df_relationships_c(database_connector)
-
-
-@app.route('/api/v1/graph', methods=['GET'])
-def get_graph():
-    return get_graph_c(database_connector)
-
-
-@app.route('/api/v1/graph/details', methods=['GET'])
-def get_graph_details():
-    return get_graph_details_c(database_connector)
-
-
-@app.route('/api/v1/graph', methods=['DELETE'])
-def delete_graph():
-    return delete_all_graph_c(database_connector)
-
-
-# All API for Graph (Class)
-@app.route('/api/v1/graph-class', methods=['POST'])
-def create_class_graph():
-    return create_class_graph_c(database_connector)
-
-
-@app.route('/api/v1/graph-class/nodes/class', methods=['GET'])
-def get_class_nodes():
-    return jsonify({
-        'status': 500,
-        'message': 'Not implemented yet'
-    }), 500
-
-
-@app.route('/api/v1/graph-class', methods=['GET'])
-def get_class_graph():
-    return get_class_graph_c(database_connector)
-
-
-@app.route('/api/v1/graph-class', methods=['DELETE'])
-def delete_class_graph():
-    return delete_class_graph_c(database_connector)
-
-
-# Other utils API
-@app.route('/api/v1/support/entities_key', methods=['GET'])
-def get_entities_key():
-    return get_entities_key_c(database_connector)
-
-
-@app.route('/api/v1/support/null-entities', methods=['GET'])
-def get_null_entities():
-    return get_null_entities_c(database_connector)
-
-
+# Main (run the Server on 8080)
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=8080, debug=True)
+    socketio.run(app, debug=True)

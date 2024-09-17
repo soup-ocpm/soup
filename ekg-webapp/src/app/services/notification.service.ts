@@ -1,5 +1,5 @@
-import {Injectable} from "@angular/core";
-import {BehaviorSubject, Observable} from "rxjs";
+import { Injectable } from '@angular/core';
+import { BehaviorSubject, Observable } from 'rxjs';
 
 @Injectable({
   providedIn: 'root'
@@ -23,6 +23,6 @@ export class NotificationService {
    * @param time the time for show message
    */
   public show(message: string, success: boolean, time: number) {
-    this.toastSubject.next({message, success, time});
+    this.toastSubject.next({ message, success, time });
   }
 }

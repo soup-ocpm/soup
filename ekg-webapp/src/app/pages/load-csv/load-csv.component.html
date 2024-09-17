@@ -30,8 +30,8 @@
         <mat-step>
           <ng-template matStepLabel class="title-step">Step 2</ng-template>
           <p class="title-step">Filter data</p>
-          <p class="inside-text">Once the .csv file is uploaded, our tool will parse it and show all the columns present
-            in the file. Now you can customize the analysis by selecting only the entities (columns) you want to take
+          <p class="inside-text">Once the .csv file is uploaded, the tool will parse it and show all the columns
+            in the file. Now you can customize the graph creation by selecting only the entities (columns) you want to take
             into account when creating the graph.</p>
           <p class="title-warning" style="margin-top: 30px">Warning:</p>
           <p class="inside-text">Make sure you choose only the entities that are relevant to your analysis, so that you
@@ -46,12 +46,11 @@
         <mat-step>
           <ng-template matStepLabel class="title-step">Step 3</ng-template>
           <p class="title-step">Graph creation</p>
-          <p class="inside-text">After filtering the data, you will get a graph with Nodes, properties, and
+          <p class="inside-text">After filtering the data, you will get a graph with nodes, properties, and
             relationships based on your .csv file data.</p>
           <div class="step-buttons" style="margin-top: 230px">
             <button mat-button matStepperPrevious class="step-button">Back</button>
-            <button mat-button color="primary" matStepperNext (click)="terminateTutorial()"
-                    class="step-buttons">Start
+            <button mat-button color="primary" matStepperNext (click)="terminateTutorial()" class="step-buttons">Start
             </button>
           </div>
         </mat-step>
@@ -80,38 +79,34 @@
     </ngx-dropzone>
     <div class="button-container">
       <button mat-button color="warn" (click)="resetCSVData()" *ngIf="hasSelectedFile" [disabled]="isShowSidebar"
-              style="margin-top: 30px;">Delete
+        style="margin-top: 30px;">Delete
       </button>
-      <button mat-button color="primary" (click)="parseCSV()" [disabled]="isShowSidebar"
-              style="margin-top: 30px;">Done
+      <button mat-button color="primary" (click)="parseCSV()" [disabled]="isShowSidebar" style="margin-top: 30px;">Done
       </button>
     </div>
   </mat-card>
 
   <!--Table card-->
-  <div *ngIf="isTutorialTerminated && isShowTable">
-    <mat-card class="upload-card"
-              [ngClass]="{'extend-card': isShowTable, 'move-right' : isShowSidebar}">
+  <div *ngIf="isTutorialTerminated && isShowTable && !this.isShowContainers">
+    <mat-card class="upload-card" [ngClass]="{'extend-card': isShowTable, 'move-right' : isShowSidebar}">
 
       <div class="table-container">
         <div class="table-title">
           <h3>Event log preview</h3>
           <button *ngIf="isShowTable" [disabled]="isShowSidebar" mat-icon-button class="btn-close-card"
-                  (click)="toggleTable()">
+            (click)="toggleTable()">
             <mat-icon color="primary">clear</mat-icon>
           </button>
         </div>
 
         <div class="table-scroll">
-          <table style="margin-top: 8px;" mat-table [dataSource]="dataSource"
-                 class="mat-elevation-z8">
+          <table style="margin-top: 8px;" mat-table [dataSource]="dataSource" class="mat-elevation-z8">
 
             <ng-container *ngFor="let entity of displayedColumns" matColumnDef="{{entity}}">
 
               <th
                 [ngClass]="{'color-entity' : checkSelectedEntity(entity), 'color-element' : checkSelectedElement(entity)}"
-                mat-header-cell
-                *matHeaderCellDef>
+                mat-header-cell *matHeaderCellDef>
                 <div class="entity">{{ entity }}</div>
               </th>
 
@@ -130,6 +125,22 @@
     </mat-card>
   </div>
 
+  <!--Docker Container card-->
+  <mat-card class="master-container" [ngClass]="{'move-right' : isShowSidebar}"
+    *ngIf="!this.isShowUpload && !this.isShowTable && this.isTutorialTerminated && this.dockerContainers.length > 0">
+    <div class="title">
+      <p style="font-size: 23px; font-family: 'Times New Roman', Times, serif;">Docker Container</p>
+    </div>
+    <mat-tab-group #tabGroup animationDuration="600ms" style="overflow: auto">
+      <mat-tab label="Choice Container">
+        <p style="margin-top: 10px; display: flex; align-items: center; justify-content: center">Select the Docker
+          container representing the Memgraph database.</p>
+        <div style="height: 10px"></div>
+        <app-docker-tile *ngFor="let container of this.dockerContainers" [container]="this.container"
+          (containerClicked)="this.onContainerClicked(container)"></app-docker-tile>
+      </mat-tab>
+    </mat-tab-group>
+  </mat-card>
 </div>
 
 <!--Sidebar-->
@@ -138,9 +149,9 @@
   <!--<h3 class="text-font" style="margin-bottom: 10px;">Filter data</h3>-->
   <mat-icon color="primary" class="toggle-tutorial" (click)="toggleSidebar()">clear</mat-icon>
   <mat-icon color="primary" class="toggle-tutorial" style="margin-right: 28px" (click)="toggleHelp()"
-            matTooltip="Help">help_outline
+    matTooltip="Help">help_outline
   </mat-icon>
-  <p class="text-font" style="font-size: 15px">Choose the fields that need to be taken.</p>
+  <p class="text-font" style="font-size: 15px">Choose the desired fields.</p>
   <ul class="list-group list-group-light">
     <mat-divider></mat-divider>
 
@@ -151,9 +162,9 @@
             Entities
           </div>
 
-          <div *ngFor="let check of allFileEntities">
+          <div *ngFor="let check of allFileEntitiesSelected">
             <mat-checkbox class="example-margin" color="primary" [ngModel]="check.selected"
-                          (ngModelChange)="submitEntity(check, $event)">{{ check.name }}
+              (ngModelChange)="submitEntity(check, $event)">{{ check.name }}
             </mat-checkbox>
           </div>
         </div>
@@ -165,7 +176,7 @@
 
           <div style="margin-left: 20px" *ngFor="let check of allFileValuesSelected">
             <mat-checkbox class="example-margin" color="primary" [ngModel]="check.selected"
-                          (ngModelChange)="submitValue(check, $event)">{{ check.name }}
+              (ngModelChange)="submitValue(check, $event)">{{ check.name }}
             </mat-checkbox>
           </div>
         </div>
@@ -178,7 +189,7 @@
   <div class="map-information">
     <p class="text-font" style="font-size: 17px; margin-left: 7px">Map the following
       information</p>
-    <div class="column-selection" *ngIf="allFileEntities.length > 0">
+    <div class="column-selection" *ngIf="allFileValuesSelected.length > 0">
 
       <mat-form-field>
         <mat-label>Event id</mat-label>
@@ -209,8 +220,49 @@
     </div>
   </div>
 
+  <div style="margin-top: 10px"></div>
+
+  <!--<div class="map-information">
+    <p class="text-font" style="font-size: 17px; margin-left: 7px">Select the trigger and target columns</p>
+
+    <div class="column-selection" *ngIf="allFileValuesSelected.length > 0">
+      <mat-form-field>
+        <mat-label>Trigger</mat-label>
+        <mat-select (selectionChange)="fixedColumn = $event.value">
+          <mat-option *ngFor="let camp of getAllFileEntities()" [value]="camp">
+            {{ camp }}
+          </mat-option>
+        </mat-select>
+      </mat-form-field>
+
+      <mat-form-field style="margin-left: 20px">
+        <mat-label>Target</mat-label>
+        <mat-select (selectionChange)="variableColumn = $event.value">
+          <mat-option *ngFor="let camp of getAllFileEntities()" [value]="camp">
+            {{ camp }}
+          </mat-option>
+        </mat-select>
+      </mat-form-field>
+    </div>
+  </div>-->
+
+  <div class="map-information">
+    <div class="map-information-tile">
+      <p class="text-font" style="font-size: 17px; margin-left: 7px">Select the graph creation method</p> <span>
+        <mat-icon color="primary" style="margin-left: 5px;" (click)="toggleCreationMethods()" matTooltip="Help">help_outline
+        </mat-icon></span>
+    </div>
+    <div class="column-selection">
+      <mat-radio-group aria-label="Select an option" class="radio-group-creation" [(ngModel)]="this.creationMethod">
+        <mat-radio-button color="primary" value="1" style="margin-left: 50px;">Standard</mat-radio-button>
+        <mat-radio-button color="primary" value="2" style="margin-right: 50px;">Load CSV</mat-radio-button>
+      </mat-radio-group>
+    </div>
+  </div>
+
   <div class="button-sidebar">
-    <button mat-button color="primary" (click)="preBuildGraph()">Build</button>
+    <button mat-button color="primary" (click)="this.showContainers()">{{this.creationMethod === "1" ? 'Build' :
+      'Continue'}}</button>
   </div>
 </div>
 
@@ -219,4 +271,14 @@
   <h2 style="font-family: Georgia, 'Times New Roman', Times, serif; font-size: 32px;">BUILDING THE EKG…</h2>
   <h3 style="font-family: Georgia, 'Times New Roman', Times, serif; font-size: 26px;">This operation may take a few
     minutes</h3>
+
+  <div class="progress-terminal"
+    *ngIf="this.progressData['total_nodes'] != null && this.progressData['total_relationships'] != null">
+    <p>Created {{ progressData['event_nodes'] }} event nodes</p>
+    <p>Created {{ progressData['entity_nodes'] }} entity nodes</p>
+    <p>Created {{ progressData['corr_relationships'] }} :CORR relationships</p>
+    <p>Created {{ progressData['df_relationships'] }} :DF relationships</p>
+    <p style="font-weight: bold">Total : {{ progressData['total_nodes'] }} nodes</p>
+    <p style="font-weight: bold">Total : {{ progressData['total_relationships'] }} relationships</p>
+  </div>
 </div>

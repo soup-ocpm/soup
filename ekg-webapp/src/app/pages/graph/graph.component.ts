@@ -1,22 +1,22 @@
-import {Component, ElementRef, OnInit, ViewChild} from '@angular/core';
-import {Router} from '@angular/router';
+import { Component, ElementRef, OnInit, ViewChild } from '@angular/core';
+import { Router } from '@angular/router';
 
 // Material Import
-import {MatDialog} from '@angular/material/dialog';
+import { MatDialog } from '@angular/material/dialog';
 
 // Service Import
-import {ClassGraphService} from "../../services/class_graph.service";
-import {SupportDataService} from "../../services/support_data.service";
+import { ClassGraphService } from '../../services/class_graph.service';
+import { SupportDataService } from '../../services/support_data.service';
+import { NotificationService } from '../../services/notification.service';
 
 // Other components import
-import {DeleteDialogComponent} from "../../components/delete-dialog/delete-dialog.component";
+import { DeleteDialogComponent } from '../../components/delete-dialog/delete-dialog.component';
 
 // Graph library import:
 import * as d3 from 'd3';
 import * as dagreD3 from 'dagre-d3';
 import saveAs from 'file-saver';
-import {zoom} from 'd3-zoom';
-import {NotificationService} from "../../services/notification.service";
+import { zoom } from 'd3-zoom';
 
 @Component({
   selector: 'app-graph',
@@ -86,7 +86,7 @@ export class GraphComponent implements OnInit {
   public allRelationships: { name: string, selected: boolean }[] = [];
 
   // ElementRef container to show SVG of the Graph.
-  @ViewChild('graphSvg', {static: true}) graphContainer!: ElementRef;
+  @ViewChild('graphSvg', { static: true }) graphContainer!: ElementRef;
 
   // Map for track colors for Edges
   public relationLabelColors: Map<string, string> = new Map<string, string>();
@@ -125,7 +125,7 @@ export class GraphComponent implements OnInit {
       this.router.navigate(['/details']);
       return;
     }
-    this.g = new dagreD3.graphlib.Graph().setGraph({rankdir: 'LR'});
+    this.g = new dagreD3.graphlib.Graph().setGraph({ rankdir: 'LR' });
     this.retrievedData = this.classGraphService.getResponse();
     this.injectClassData(this.retrievedData);
   }
@@ -186,8 +186,8 @@ export class GraphComponent implements OnInit {
       const width: number = container.clientWidth;
       const height: number = container.clientHeight;
 
-      this.g = new dagreD3.graphlib.Graph({multigraph: true, compound: true})
-        .setGraph({rankdir: 'LR', nodesep: 25, multiedgesep: 10});
+      this.g = new dagreD3.graphlib.Graph({ multigraph: true, compound: true })
+        .setGraph({ rankdir: 'LR', nodesep: 25, multiedgesep: 10 });
 
       this.nodes.forEach((node: any): void => {
         let nodeId = node.id;
@@ -208,6 +208,7 @@ export class GraphComponent implements OnInit {
         const node = this.g.node(v);
         node.rx = node.ry = 5;
         node.style = 'fill: #fff; stroke: #000; stroke-width: 2px';
+        node.labelStyle = "font-size: 2.3em";
       });
 
       const uniqueEdgeWeight: Set<any> = new Set<any>();
@@ -237,7 +238,8 @@ export class GraphComponent implements OnInit {
             curve: d3.curveBasis,
             labelpos: 'c', // label position to center
             labeloffset: 5,
-            extensible: true
+            extensible: true,
+            labelStyle: "font-size: 2.3em"
           }, edge.label);
         }
       });
@@ -292,7 +294,7 @@ export class GraphComponent implements OnInit {
         const colorIndex = this.relationLabelColors.size % this.predefinedColors.length;
         const color = this.predefinedColors[colorIndex];
         this.relationLabelColors.set(label, color);
-        this.allRelationships.push({name: label, selected: true});
+        this.allRelationships.push({ name: label, selected: true });
       }
     });
   }
@@ -380,7 +382,7 @@ export class GraphComponent implements OnInit {
   public exportSvg(): void {
     const svgContent = document.querySelector('#myGraphContainer svg');
     if (svgContent != null) {
-      const svgBlob = new Blob([svgContent.outerHTML], {type: 'image/svg+xml'});
+      const svgBlob = new Blob([svgContent.outerHTML], { type: 'image/svg+xml' });
       saveAs(svgBlob, 'graph.svg');
     }
   }
@@ -454,7 +456,7 @@ export class GraphComponent implements OnInit {
   // Open dialog for delete graph
   public openDialogDelete(): void {
     this.dialog.open(DeleteDialogComponent, {
-      data: {isClass: true},
+      data: { isClass: true },
     });
   }
 
