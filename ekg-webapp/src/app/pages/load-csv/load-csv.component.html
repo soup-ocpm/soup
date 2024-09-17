@@ -30,8 +30,8 @@
         <mat-step>
           <ng-template matStepLabel class="title-step">Step 2</ng-template>
           <p class="title-step">Filter data</p>
-          <p class="inside-text">Once the .csv file is uploaded, our tool will parse it and show all the columns present
-            in the file. Now you can customize the analysis by selecting only the entities (columns) you want to take
+          <p class="inside-text">Once the .csv file is uploaded, the tool will parse it and show all the columns
+            in the file. Now you can customize the graph creation by selecting only the entities (columns) you want to take
             into account when creating the graph.</p>
           <p class="title-warning" style="margin-top: 30px">Warning:</p>
           <p class="inside-text">Make sure you choose only the entities that are relevant to your analysis, so that you
@@ -46,7 +46,7 @@
         <mat-step>
           <ng-template matStepLabel class="title-step">Step 3</ng-template>
           <p class="title-step">Graph creation</p>
-          <p class="inside-text">After filtering the data, you will get a graph with Nodes, properties, and
+          <p class="inside-text">After filtering the data, you will get a graph with nodes, properties, and
             relationships based on your .csv file data.</p>
           <div class="step-buttons" style="margin-top: 230px">
             <button mat-button matStepperPrevious class="step-button">Back</button>
@@ -133,7 +133,7 @@
     </div>
     <mat-tab-group #tabGroup animationDuration="600ms" style="overflow: auto">
       <mat-tab label="Choice Container">
-        <p style="margin-top: 10px; display: flex; align-items: center; justify-content: center">Specifies the Docker
+        <p style="margin-top: 10px; display: flex; align-items: center; justify-content: center">Select the Docker
           container representing the Memgraph database.</p>
         <div style="height: 10px"></div>
         <app-docker-tile *ngFor="let container of this.dockerContainers" [container]="this.container"
@@ -151,7 +151,7 @@
   <mat-icon color="primary" class="toggle-tutorial" style="margin-right: 28px" (click)="toggleHelp()"
     matTooltip="Help">help_outline
   </mat-icon>
-  <p class="text-font" style="font-size: 15px">Choose the fields that need to be taken.</p>
+  <p class="text-font" style="font-size: 15px">Choose the desired fields.</p>
   <ul class="list-group list-group-light">
     <mat-divider></mat-divider>
 

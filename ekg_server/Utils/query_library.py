@@ -17,11 +17,11 @@ def load_event_node_query(container_csv_path, event_id_col, timestamp_col, activ
                           cypher_properties):
     properties_string = ', '.join(cypher_properties)
     return (f"LOAD CSV FROM '{container_csv_path}' WITH HEADER AS row "
-            f"CREATE (e:Event {{EventID: row.{event_id_col}, Timestamp: row.{timestamp_col}, ActivityName: row.{activity_col}, DatasetName: '{dataset_name}', {properties_string}}});")
+            f"CREATE (e:Event {{EventID: row.{event_id_col}, Timestamp: localDateTime(row.{timestamp_col}), ActivityName: row.{activity_col}, {properties_string}}});")
 
 
 def create_node_event_query(cypher_properties):
-    return f"CREATE (e:Event {{EventID: $event_id, Timestamp: $timestamp, ActivityName: $activity_name, DatasetName: $dataset_name ,{', '.join(cypher_properties)}}})"
+    return f"CREATE (e:Event {{EventID: $event_id, Timestamp: localDateTime($timestamp), ActivityName: $activity_name, {', '.join(cypher_properties)}}})"
 
 
 def load_entity_node_query(container_csv_path, dataset_name):
@@ -40,6 +40,12 @@ def create_entity_from_events(entity_type):
                 MERGE (n:Entity {{entity_id: entity_name, type: '{entity_type}'}})
                 RETURN keys(n) LIMIT 1
             """
+
+
+def create_entity_index():
+    return ("""
+           CREATE INDEX ON :Entity(Value)
+           """)
 
 
 def create_corr_relation_query(key):  # checks if an entity has multiple values
@@ -294,6 +300,14 @@ def delete_entity_graph_query(dataset_name):
 def get_count_event_query(dataset_name):
     return (f"MATCH (n : Event {{DatasetName: '{dataset_name}'}}) "
             f"RETURN COUNT(n) AS count")
+            
+            
+def drop_entity_index():
+    return ("DROP INDEX ON :Entity(Value)")
+
+
+def get_count_event_query():
+    return "MATCH (n : Event) RETURN COUNT(n) AS count"
 
 
 def get_count_entity_query(dataset_name):

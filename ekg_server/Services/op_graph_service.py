@@ -45,6 +45,10 @@ class OperationGraphService:
                 event_node = record['node']
 
                 for key, value in event_node.items():
+                    if 'Timestamp' in key:
+                        event_node[key] = datetime_to_json(value)
+
+                for key, value in event_node.items():
                     if isinstance(value, (int, float)) and math.isnan(value):
                         event_node[key] = None
 
@@ -108,6 +112,10 @@ class OperationGraphService:
 
             for record in result:
                 event_node = record['node']
+
+                for key, value in event_node.items():
+                    if 'Timestamp' in key:
+                        event_node[key] = datetime_to_json(value)
 
                 for key, value in event_node.items():
                     if isinstance(value, (int, float)) and math.isnan(value):
@@ -181,6 +189,10 @@ class OperationGraphService:
                 for key, value in event.items():
                     if isinstance(value, (int, float)) and math.isnan(value):
                         event[key] = None
+
+                for key, value in event.items():
+                    if 'Timestamp' in key:
+                        event[key] = datetime_to_json(value)
 
                 for key, value in related_event.items():
                     if isinstance(value, (int, float)) and math.isnan(value):
@@ -267,10 +279,14 @@ class OperationGraphService:
                 for key, value in event.items():
                     if isinstance(value, (int, float)) and math.isnan(value):
                         event[key] = None
+                    if 'Timestamp' in key:
+                        event[key] = datetime_to_json(value)
 
                 for key, value in related_event.items():
                     if isinstance(value, (int, float)) and math.isnan(value):
                         related_event[key] = None
+                    if 'Timestamp' in key:
+                        related_event[key] = datetime_to_json(value)
 
                 df_count = df_count + 1
                 relation_id = df_count
@@ -573,6 +589,9 @@ class OperationGraphService:
 
             verification_query = get_count_entity_query(dataset_name)
             result_entity = database_connector.run_query_memgraph(verification_query)
+
+            # Drop entity index
+            database_connector.run_query_memgraph(drop_entity_index())
 
             # Delete event nodes
             query = delete_event_graph_query(dataset_name)

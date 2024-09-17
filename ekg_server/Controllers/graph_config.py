@@ -23,19 +23,19 @@ def string_to_datetime(timestamp_str):
 
 
 def neo_datetime_conversion(time):
-    '''
+    """
     From string or Neo4j datetime to datetime
-    '''
+    """
     if isinstance(time, str):
         time = string_to_datetime(time)
 
-    if isinstance(time, datetime.datetime):
-        millis = int(time.microsecond / 1000)
+    if not isinstance(time, datetime.datetime) or not isinstance(time, float):        
+        millis = int(time.nanosecond / 1000)        
         t = datetime.datetime(time.year, time.month, time.day,
                               time.hour, time.minute, time.second, millis)
         return t
     else:
-        raise ValueError("Il formato del timestamp non è valido")
+        raise ValueError("Timestamp format is not valid")
 
 
 def serialize_datetime(obj):

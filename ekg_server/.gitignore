@@ -1,5 +1,6 @@
-# Created by https://www.toptal.com/developers/gitignore/api/python,flask,pycharm
-# Edit at https://www.toptal.com/developers/gitignore?templates=python,flask,pycharm
+### Docker ###
+*/temp*
+
 
 ### Flask ###
 instance/*

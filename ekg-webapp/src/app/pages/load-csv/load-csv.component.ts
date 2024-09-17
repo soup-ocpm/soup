@@ -409,10 +409,10 @@ export class LoadCsvComponent implements OnInit, OnDestroy {
             // Trova l'indice della colonna del timestamp
             const timestampIndex = header.indexOf(this.timestampColumn);
 
-            if (timestampIndex === -1) {
+            /*if (timestampIndex === -1) {
               this.messageService.show('Timestamp column not found in the CSV file.', false, 2000);
               return;
-            }
+            }*/
 
             // Aggiorna l'intestazione
             for (let i = 0; i < header.length; i++) {

@@ -449,7 +449,8 @@ export class DetailsComponent implements OnInit {
   }
 
   public getEntityWarningPhrase(entity: any) {
-    return `${entity.numberOfNanNodes} nodes have Nan value. The generated graph may not be accurate.`;
+    return `${entity.numberOfNanNodes} nodes have NaN value.`;
+    //The generated graph may not be accurate.
   }
 
   // Open dialog for delete graph
