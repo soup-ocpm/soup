@@ -24,13 +24,13 @@ from Controllers.graph_config import datetime_to_json
 class OperationGraphService:
 
     @staticmethod
-    def get_event_nodes_s(database_connector):
+    def get_event_nodes_s(database_connector, dataset_name):
         apiResponse = ApiResponse(None, None, None)
 
         try:
             database_connector.connect()
 
-            query = get_nodes_event_query()
+            query = get_nodes_event_query(dataset_name)
             result = database_connector.run_query_memgraph(query)
 
             if not isinstance(result, Iterable):
@@ -78,9 +78,10 @@ class OperationGraphService:
 
     # Get count of event nodes
     @staticmethod
-    def get_count_event_nodes_s(database_connector):
+    def get_count_event_nodes_s(database_connector, dataset_name):
         try:
-            query = get_count_nodes_event_query()
+            query = get_count_nodes_event_query(dataset_name)
+            print(dataset_name)
             result = database_connector.run_query_memgraph(query)
 
             if isinstance(result, list) and len(result) > 0 and 'node_count' in result[0]:
@@ -93,13 +94,13 @@ class OperationGraphService:
 
     # Get entity nodes
     @staticmethod
-    def get_entity_nodes_s(database_connector):
+    def get_entity_nodes_s(database_connector, dataset_name):
         apiResponse = ApiResponse(None, None, None)
 
         try:
             database_connector.connect()
 
-            query = get_nodes_entity_query()
+            query = get_nodes_entity_query(dataset_name)
             result = database_connector.run_query_memgraph(query)
 
             if not isinstance(result, Iterable):
@@ -147,9 +148,9 @@ class OperationGraphService:
 
     # Get count of entity nodes
     @staticmethod
-    def get_count_entity_nodes_s(database_connector):
+    def get_count_entity_nodes_s(database_connector, dataset_name):
         try:
-            query = get_count_nodes_entity_query()
+            query = get_count_nodes_entity_query(dataset_name)
             result = database_connector.run_query_memgraph(query)
 
             if isinstance(result, list) and len(result) > 0 and 'entity_count' in result[0]:
@@ -162,13 +163,13 @@ class OperationGraphService:
 
     # Get :CORR relationships
     @staticmethod
-    def get_corr_relationships_s(database_connector):
+    def get_corr_relationships_s(database_connector, dataset_name):
         apiResponse = ApiResponse(None, None, None)
 
         try:
             database_connector.connect()
 
-            query = get_corr_relation_query()
+            query = get_corr_relation_query(dataset_name)
             result = database_connector.run_query_memgraph(query)
 
             if not isinstance(result, Iterable):
@@ -237,9 +238,9 @@ class OperationGraphService:
 
     # Get count of :CORR relationships
     @staticmethod
-    def get_count_corr_relationships_s(database_connector):
+    def get_count_corr_relationships_s(database_connector, dataset_name):
         try:
-            query = get_count_corr_rel_query()
+            query = get_count_corr_rel_query(dataset_name)
             result = database_connector.run_query_memgraph(query)
 
             if isinstance(result, list) and len(result) > 0 and 'corr_count' in result[0]:
@@ -252,13 +253,13 @@ class OperationGraphService:
 
     # Get :DF relationships
     @staticmethod
-    def get_df_relationships_s(database_connector):
+    def get_df_relationships_s(database_connector, dataset_name):
         apiResponse = ApiResponse(None, None, None)
 
         try:
             database_connector.connect()
 
-            query = get_df_relation_query()
+            query = get_df_relation_query(dataset_name)
             result = database_connector.run_query_memgraph(query)
 
             if not isinstance(result, Iterable):
@@ -327,9 +328,9 @@ class OperationGraphService:
 
     # Get count of :DF relationships
     @staticmethod
-    def get_count_df_relationships_s(database_connector):
+    def get_count_df_relationships_s(database_connector, dataset_name):
         try:
-            query = get_count_df_rel_query()
+            query = get_count_df_rel_query(dataset_name)
             result = database_connector.run_query_memgraph(query)
 
             if isinstance(result, list) and len(result) > 0 and 'df_count' in result[0]:
@@ -342,7 +343,7 @@ class OperationGraphService:
 
     # Get complete graph details
     @staticmethod
-    def get_graph_details_s(database_connector, limit):
+    def get_graph_details_s(database_connector, dataset_name, limit):
         apiResponse = ApiResponse(None, None, None)
 
         try:
@@ -498,13 +499,13 @@ class OperationGraphService:
 
     # Get the entity key
     @staticmethod
-    def get_entities_key_s(database_connector):
+    def get_entities_key_s(database_connector, dataset_name):
         apiResponse = ApiResponse(None, None, None)
 
         try:
             database_connector.connect()
 
-            query = get_distinct_entities_keys()
+            query = get_distinct_entities_keys(dataset_name)
             result = database_connector.run_query_memgraph(query)
 
             if not isinstance(result, Iterable):
@@ -535,13 +536,13 @@ class OperationGraphService:
 
     # Get the null entity
     @staticmethod
-    def get_null_entities_s(database_connector):
+    def get_null_entities_s(database_connector, dataset_name):
         apiResponse = ApiResponse(None, None, None)
 
         try:
             database_connector.connect()
 
-            query = get_nan_entities()
+            query = get_nan_entities(dataset_name)
             result = database_connector.run_query_memgraph(query)
 
             if not isinstance(result, Iterable):

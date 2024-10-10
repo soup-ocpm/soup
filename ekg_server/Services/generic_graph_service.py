@@ -25,7 +25,7 @@ class GenericGraphService:
 
     # Get complete graph (standard or class)
     @staticmethod
-    def get_class_graph_s(database_connector, standard_graph, limit):
+    def get_class_graph_s(database_connector, standard_graph, dataset_name, limit):
         apiResponse = ApiResponse(None, None, None)
 
         try:
@@ -33,16 +33,16 @@ class GenericGraphService:
 
             if standard_graph == "1":
                 if not limit:
-                    query_result = get_complete_standard_graph_query()
+                    query_result = get_complete_standard_graph_query(dataset_name)
                 else:
-                    query_result = get_limit_standard_graph_query(limit)
+                    query_result = get_limit_standard_graph_query(dataset_name, limit)
             else:
                 if not limit:
-                    query_result = get_complete_class_graph_query()
+                    query_result = get_complete_class_graph_query(dataset_name)
                 else:
-                    query_result = get_limit_class_graph_query(limit)
+                    query_result = get_limit_class_graph_query(dataset_name, limit)
 
-            result = database_connector.run_query_memgraph(query_result)
+            result = database_connector.run_query_memgraph(dataset_name, query_result)
 
             if not isinstance(result, Iterable) or len(result) == 0:
                 apiResponse.http_status_code = 404

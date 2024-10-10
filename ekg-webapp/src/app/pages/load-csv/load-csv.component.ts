@@ -501,7 +501,7 @@ export class LoadCsvComponent implements OnInit, OnDestroy {
     try {
       let apiResponse: any = null;
 
-      this.standardGraphService.getGraphDetilsInfo().subscribe({
+      this.standardGraphService.getGraphDetilsInfo(this.datasetName).subscribe({
         next: responseData => {
           apiResponse = responseData;
           if (apiResponse.http_status_code === 200 && apiResponse.response_data != null) {

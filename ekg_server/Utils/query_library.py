@@ -17,11 +17,11 @@ def load_event_node_query(container_csv_path, event_id_col, timestamp_col, activ
                           cypher_properties):
     properties_string = ', '.join(cypher_properties)
     return (f"LOAD CSV FROM '{container_csv_path}' WITH HEADER AS row "
-            f"CREATE (e:Event {{EventID: row.{event_id_col}, Timestamp: localDateTime(row.{timestamp_col}), ActivityName: row.{activity_col}, {properties_string}}});")
+            f"CREATE (e:Event {{EventID: row.{event_id_col}, DatasetName: '{dataset_name}', Timestamp: localDateTime(row.{timestamp_col}), ActivityName: row.{activity_col}, {properties_string}}});")
 
 
 def create_node_event_query(cypher_properties):
-    return f"CREATE (e:Event {{EventID: $event_id, Timestamp: localDateTime($timestamp), ActivityName: $activity_name, {', '.join(cypher_properties)}}})"
+    return f"CREATE (e:Event {{EventID: $event_id, DatasetName: $dataset_name, Timestamp: localDateTime($timestamp), ActivityName: $activity_name, {', '.join(cypher_properties)}}})"
 
 
 def load_entity_node_query(container_csv_path, dataset_name):
@@ -77,7 +77,7 @@ def create_df_relation_query(key):
 
 def create_class_multi_query(matching_perspectives, dataset_name):
     class_type = 'Class'
-    main_query = 'MATCH (e:Event)\n'
+    main_query = f'MATCH (e:Event {{DatasetName: "{dataset_name}"}}) \n'
 
     perspectives_dict = {}
     event_id = '"c_" + '
@@ -113,7 +113,7 @@ def class_df_aggregation(rel_type, class_rel_type):
 # Other utils query for Graph (Standard)
 
 def create_dataset_node(dataset_name):
-    return f"CREATE (e: Dataset {{Name: '{dataset_name}'}})"
+    return f"MERGE (e: Dataset {{Name: '{dataset_name}'}})"
 
 
 def check_unique_dataset_name_query(dataset_name):
@@ -125,30 +125,30 @@ def get_dataset_nodes_query():
     return "MATCH (e: Dataset) RETURN e as node"
 
 
-def get_nodes_event_query():
-    return """
-            MATCH (e:Event) 
+def get_nodes_event_query(dataset_name):
+    return f"""
+            MATCH (e:Event {{DatasetName: '{dataset_name}'}}) 
             RETURN e AS node
             """
 
 
-def get_count_nodes_event_query():
-    return """
-            MATCH (n: Event)
+def get_count_nodes_event_query(dataset_name):
+    return f"""
+            MATCH (n: Event {{DatasetName: '{dataset_name}'}})
             RETURN COUNT(n) as node_count
             """
 
 
-def get_nodes_entity_query():
-    return """
-            MATCH (e:Entity)
+def get_nodes_entity_query(dataset_name):
+    return f"""
+            MATCH (e:Entity {{DatasetName: '{dataset_name}'}})
             RETURN e AS node
             """
 
 
-def get_count_nodes_entity_query():
-    return """
-            MATCH (n: Entity)
+def get_count_nodes_entity_query(dataset_name):
+    return f"""
+            MATCH (n: Entity {{DatasetName: '{dataset_name}'}})
             RETURN COUNT(n) as entity_count
             """
 
@@ -179,45 +179,45 @@ def get_nodes_details_length_query(limit):
             """
 
 
-def get_corr_relation_query():
-    return """
-            MATCH (e: Event)-[corr:CORR]->(en:Entity)
+def get_corr_relation_query(dataset_name):
+    return f"""
+            MATCH (e: Event {{DatasetName: '{dataset_name}'}})-[corr:CORR]->(en:Entity {{DatasetName: '{dataset_name}'}})
             RETURN e, corr, en
             """
 
 
-def get_count_corr_rel_query():
-    return """
-            MATCH (e:Event)-[corr:CORR]->(e1:Entity)
+def get_count_corr_rel_query(dataset_name):
+    return f"""
+            MATCH (e:Event {{DatasetName: '{dataset_name}'}})-[corr:CORR]->(e1:Entity {{DatasetName: '{dataset_name}'}})
             RETURN COUNT(corr) as corr_count
             """
 
 
-def get_df_relation_query():
-    return """
-            MATCH (e:Event)-[df:DF]->(e1:Event)
+def get_df_relation_query(dataset_name):
+    return f"""
+            MATCH (e:Event {{DatasetName: '{dataset_name}'}})-[df:DF]->(e1:Event {{DatasetName: '{dataset_name}'}})
             RETURN e, df, e1
             """
 
 
-def get_count_df_rel_query():
-    return """
-            MATCH (e:Event)-[df:DF]->(e1:Event)
+def get_count_df_rel_query(dataset_name):
+    return f"""
+            MATCH (e:Event {{DatasetName: '{dataset_name}'}})-[df:DF]->(e1:Event {{DatasetName: '{dataset_name}'}})
             RETURN COUNT(df) as df_count
             """
 
 
-def get_complete_standard_graph_query():
-    return """
-            MATCH (e1:Event)-[r:DF]->(e2:Event)
+def get_complete_standard_graph_query(dataset_name):
+    return f"""
+            MATCH (e1:Event {{DatasetName: "{dataset_name}"}})-[r:DF]->(e2:Event {{DatasetName: "{dataset_name}"}})
             RETURN e1 as source, id(e1) as source_id, properties(r) as edge, 
             id(r) as edge_id, e2 as target, id(e2) as target_id
             """
 
 
-def get_limit_standard_graph_query(limit):
-    return f"""
-            MATCH (e1:Event)-[r:DF]->(e2:Event)
+def get_limit_standard_graph_query(dataset_name, limit):
+    return f"""@
+            MATCH (e1:Event {{DatasetName: "{dataset_name}"}})-[r:DF]->(e2:Event {{DatasetName: "{dataset_name}"}})
             RETURN e1 as source, id(e1) as source_id, properties(r) as edge, 
             id(r) as edge_id, e2 as target, id(e2) as target_id
             LIMIT {limit}
@@ -225,54 +225,54 @@ def get_limit_standard_graph_query(limit):
 
 
 # Other utils query for Graph (Class)
-def get_nodes_class_query():
-    return """
-            MATCH (e:Class) 
+def get_nodes_class_query(dataset_name):
+    return f"""
+            MATCH (e:Class {{DatasetName: '{dataset_name}'}}) 
             RETURN e AS node
             """
 
 
-def get_count_nodes_class_query():
-    return """
-            MATCH (c:Class)
+def get_count_nodes_class_query(dataset_name):
+    return f"""
+            MATCH (c:Class {{DatasetName: '{dataset_name}'}})
             RETURN COUNT(c) as class_count
     """
 
 
-def get_count_obs_relationships_query():
-    return """
-    MATCH (e:Event)-[obs:OBSERVED]->(c:Class)
+def get_count_obs_relationships_query(dataset_name):
+    return f"""
+    MATCH (e:Event {{DatasetName: '{dataset_name}'}})-[obs:OBSERVED]->(c:Class {{DatasetName: '{dataset_name}'}})
     RETURN COUNT(obs) as obs_count
     """
 
 
-def get_count_dfc_relationships_query():
-    return """
-    MATCH (c1:Class)-[dfc:DF_C]->(c2:Class)
+def get_count_dfc_relationships_query(dataset_name):
+    return f"""
+    MATCH (c1:Class {{DatasetName: '{dataset_name}'}})-[dfc:DF_C]->(c2:Class {{DatasetName: '{dataset_name}'}})
     RETURN COUNT(dfc) as dfc_count
     """
 
 
-def get_complete_class_graph_query():
-    return """
-            MATCH (c1:Class)-[r:DF_C]->(c2:Class)
+def get_complete_class_graph_query(dataset_name):
+    return f"""
+            MATCH (c1:Class {{DatasetName: "{dataset_name}"}})-[r:DF_C]->(c2:Class {{DatasetName: "{dataset_name}"}})
             RETURN c1 as source, id(c1) as source_id, properties(r) as edge, 
             id(r) as edge_id, c2 as target, id(c2) as target_id
             """
 
 
-def get_limit_class_graph_query(limit):
+def get_limit_class_graph_query(dataset_name, limit):
     return f"""
-            MATCH (c1:Class)-[r:DF_C]->(c2:Class)
+            MATCH (c1:Class {{DatasetName: "{dataset_name}"}})-[r:DF_C]->(c2:Class {{DatasetName: "{dataset_name}"}})
             RETURN c1 as source, id(c1) as source_id, properties(r) as edge, 
             id(r) as edge_id, c2 as target, id(c2) as target_id
             LIMIT {limit}
             """
 
 
-def get_df_class_relation_simple_query():
-    return """
-            MATCH (e:Class)-[df:DF_C]->(e1:Class)
+def get_df_class_relation_simple_query(dataset_name):
+    return f"""
+            MATCH (e:Class {{DatasetName: '{dataset_name}'}})-[df:DF_C]->(e1:Class {{DatasetName: '{dataset_name}'}})
             RETURN e, df, e1
             """
 
@@ -300,10 +300,10 @@ def delete_entity_graph_query(dataset_name):
 def get_count_event_query(dataset_name):
     return (f"MATCH (n : Event {{DatasetName: '{dataset_name}'}}) "
             f"RETURN COUNT(n) AS count")
-            
-            
+
+
 def drop_entity_index():
-    return ("DROP INDEX ON :Entity(Value)")
+    return "DROP INDEX ON :Entity(Value)"
 
 
 def get_count_event_query():
@@ -334,9 +334,9 @@ def delete_graph_query():
     return "MATCH (e) DETACH DELETE e"
 
 
-def get_nan_entities():
-    return """
-            MATCH (e:Event)
+def get_nan_entities(dataset_name):
+    return f"""
+            MATCH (e:Event {{DatasetName: '{dataset_name}'}})
             WITH e, properties(e) AS props
             UNWIND keys(props) AS prop
             WITH e, prop, props[prop] AS value
@@ -354,9 +354,9 @@ def change_nan(entity):
         """
 
 
-def get_distinct_entities_keys():
-    return """
-            MATCH (n:Entity) 
+def get_distinct_entities_keys(dataset_name):
+    return f"""
+            MATCH (n:Entity {{DatasetName: '{dataset_name}'}}) 
             WITH DISTINCT n.Type as entityType
             RETURN entityType
     """

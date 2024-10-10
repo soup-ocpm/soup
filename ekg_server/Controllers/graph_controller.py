@@ -22,7 +22,7 @@ from Controllers.graph_config import get_db_connector
 graph_controller_bp = Blueprint('graph_bp', __name__)
 
 # Database information
-database_connector = get_db_connector(debug=False)
+database_connector = get_db_connector(debug=True)
 
 
 @graph_controller_bp.route('/api/v2/graph', methods=['POST'])

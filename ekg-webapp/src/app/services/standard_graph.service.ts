@@ -75,50 +75,78 @@ export class StandardGraphService {
    * Get event nodes
    * @returns Observable of Http request
    */
-  public getEventNodes(): Observable<any> {
-    return this.httpClient.get('http://127.0.0.1:8080/api/v2/graph/nodes/event');
+  public getEventNodes(datasetName: string): Observable<any> {
+    const params = {
+      dataset_name: datasetName
+    }
+
+    return this.httpClient.get('http://127.0.0.1:8080/api/v2/graph/nodes/event', { params: params });
   }
 
   /**
    * Get event nodes
    * @returns Observable of Http request
    */
-  public getEntityNodes(): Observable<any> {
-    return this.httpClient.get('http://127.0.0.1:8080/api/v2/graph/nodes/entity');
+  public getEntityNodes(datasetName: string): Observable<any> {
+    const params = {
+      dataset_name: datasetName
+    }
+
+    return this.httpClient.get('http://127.0.0.1:8080/api/v2/graph/nodes/entity', { params: params });
   }
 
   /**
    * Get event nodes
    * @returns Observable of Http request
    */
-  public getCorrRelationships(): Observable<any> {
-    return this.httpClient.get('http://127.0.0.1:8080/api/v2/graph/relationships/corr');
+  public getCorrRelationships(datasetName: string): Observable<any> {
+    const params = {
+      dataset_name: datasetName
+    }
+
+    return this.httpClient.get('http://127.0.0.1:8080/api/v2/graph/relationships/corr', { params: params });
   }
 
   /**
    * Get event nodes
    * @returns Observable of Http request
    */
-  public getDfRelationships(): Observable<any> {
-    return this.httpClient.get('http://127.0.0.1:8080/api/v2/graph/relationships/df');
+  public getDfRelationships(datasetName: string): Observable<any> {
+    const params = {
+      dataset_name: datasetName
+    }
+
+    return this.httpClient.get('http://127.0.0.1:8080/api/v2/graph/relationships/df', { params: params });
   }
 
   // Get the Graph Entities (filtered column)
-  public getGraphEntities(): Observable<any> {
-    return this.httpClient.get('http://127.0.0.1:8080/api/v2/support/entities_key');
+  public getGraphEntities(datasetName: string): Observable<any> {
+    const params = {
+      dataset_name: datasetName
+    }
+
+    return this.httpClient.get('http://127.0.0.1:8080/api/v2/support/entities_key', { params: params });
   }
 
   // Get the NaN entities
-  public getNaNEntities(): Observable<any> {
-    return this.httpClient.get('http://127.0.0.1:8080/api/v2/support/null-entities');
+  public getNaNEntities(datasetName: string): Observable<any> {
+    const params = {
+      dataset_name: datasetName
+    }
+
+    return this.httpClient.get('http://127.0.0.1:8080/api/v2/support/null-entities', { params: params });
   }
 
   /**
    * Get only info about the graph
    * @returns Observable of Http request
    */
-  public getGraphDetilsInfo(): Observable<any> {
-    return this.httpClient.get('http://127.0.0.1:8080/api/v2/graph/details/info');
+  public getGraphDetilsInfo(datasetName: string): Observable<any> {
+    const params = {
+      dataset_name: datasetName
+    }
+
+    return this.httpClient.get('http://127.0.0.1:8080/api/v2/graph/details/info', { params: params });
   }
 
   /**
@@ -126,16 +154,24 @@ export class StandardGraphService {
    * @param lenght the max nodes-links
    * @returns Observable of Http request
    */
-  public getMinorGraphDetails(limit: number): Observable<any> {
-    return this.httpClient.get(`http://127.0.0.1:8080/api/v2/graph/minor-details?limit=${limit}`)
+  public getMinorGraphDetails(limit: number, datasetName: string): Observable<any> {
+    const params = {
+      dataset_name: datasetName
+    }
+
+    return this.httpClient.get(`http://127.0.0.1:8080/api/v2/graph/minor-details?limit=${limit}`, { params: params })
   }
 
   /**
    * Get standard graph details
    * @returns Observable of Http request
    */
-  public getCompleteGraphDetails(): Observable<any> {
-    return this.httpClient.get('http://127.0.0.1:8080/api/v2/graph/details');
+  public getCompleteGraphDetails(datasetName: string): Observable<any> {
+    const params = {
+      dataset_name: datasetName
+    }
+
+    return this.httpClient.get('http://127.0.0.1:8080/api/v2/graph/details', { params: params });
   }
 
   /**
@@ -144,7 +180,8 @@ export class StandardGraphService {
    */
   public deleteGraph(datasetName: string): Observable<any> {
     const formData: FormData = new FormData();
-    formData.append('name', datasetName);
+    formData.append('dataset_name', datasetName);
+
     return this.httpClient.post('http://127.0.0.1:8080/api/v2/graph/delete', formData);
   }
 

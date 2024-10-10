@@ -133,6 +133,7 @@ export class GraphComponent implements OnInit {
     this.g = new dagreD3.graphlib.Graph().setGraph({ rankdir: 'LR' });
     this.retrievedData = this.classGraphService.getResponse();
     this.datasetName = this.standardGraphService.datasetName;
+    
     this.injectClassData(this.retrievedData);
   }
 

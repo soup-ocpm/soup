@@ -21,7 +21,7 @@ from Controllers.graph_config import get_db_connector
 class_graph_controller_bp = Blueprint('class_graph_controller_bp', __name__)
 
 # Database information
-database_connector = get_db_connector(debug=False)
+database_connector = get_db_connector(debug=True)
 
 
 @class_graph_controller_bp.route('/api/v2/graph-class', methods=['POST'])
@@ -31,6 +31,7 @@ def create_class_graph():
     filtered_column_json = request.form.get('filteredColumn')
     filtered_column = json.loads(filtered_column_json)
 
+    # Dataset name
     dataset_name = request.form.get('name')
 
     return ClassGraphService.create_class_graph_s(filtered_column, dataset_name, database_connector, socketio)

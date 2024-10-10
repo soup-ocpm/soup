@@ -117,8 +117,6 @@ export class DetailsComponent implements OnInit {
     this.fullJsonData = this.standardGraphService.apiResponse;
     this.datasetName = this.standardGraphService.datasetName;
 
-    console.log(this.datasetName);
-
     this.injectDataToCard();
 
     if (this.supportService.getHaveRetrievedInformation()) {
@@ -133,17 +131,14 @@ export class DetailsComponent implements OnInit {
     // Subscription for Web Socket service
     this.socketService.progress.subscribe((data) => {
       this.progressData = data;
-      console.log(this.progressData);
     });
 
     this.socketService.complete.subscribe((data) => {
       this.completeData = data;
-      console.log(this.completeData);
     });
 
     this.socketService.error.subscribe((data) => {
       this.errorData = data;
-      console.log(this.errorData);
     });
   }
 
@@ -228,7 +223,7 @@ export class DetailsComponent implements OnInit {
   public getGraphEntities(): void {
     let apiResponse: any;
 
-    this.standardGraphService.getGraphEntities().subscribe(
+    this.standardGraphService.getGraphEntities(this.datasetName).subscribe(
       (responseData) => {
         apiResponse = responseData;
         if (apiResponse != null && apiResponse.http_status_code == 200) {
@@ -256,7 +251,7 @@ export class DetailsComponent implements OnInit {
     let apiResponse: any;
     const nullEntities: string[] = [];
 
-    this.standardGraphService.getNaNEntities().subscribe({
+    this.standardGraphService.getNaNEntities(this.datasetName).subscribe({
       next: (responseData) => {
         apiResponse = responseData;
         console.log(apiResponse);
@@ -299,6 +294,7 @@ export class DetailsComponent implements OnInit {
     }
   }
 
+  // Show the standard graph
   public showStandardGraph(): void {
     this.router.navigate(['/details-graph']);
   }
@@ -328,10 +324,10 @@ export class DetailsComponent implements OnInit {
     this.isLoadingProgressBar = true;
 
     const formData: FormData = new FormData();
-    formData.append('name', this.datasetName);
+    formData.append('dataset_name', this.datasetName);
     let responseData: any;
     this.classGraphService
-      .createClassGraph(formData, this.selectedEntities)
+      .createClassGraph(formData, this.selectedEntities, this.datasetName)
       .subscribe(
         (response) => {
           responseData = response;
@@ -405,7 +401,7 @@ export class DetailsComponent implements OnInit {
    */
   public getClassGraph(creation: boolean): void {
     let apiResponse: any;
-    this.genericGraphService.getGraph('2', 100).subscribe(
+    this.genericGraphService.getGraph('2', 100, this.datasetName).subscribe(
       (response) => {
         apiResponse = response;
         if (apiResponse != null && apiResponse.response_data != null) {

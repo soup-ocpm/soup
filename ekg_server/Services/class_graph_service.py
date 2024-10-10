@@ -83,7 +83,6 @@ def class_process_query_c(database_connector, filtered_columns, dataset_name):
             cypher_query = change_nan(entity)
             database_connector.run_query_memgraph(cypher_query)
 
-        print('DatasetName: ' + dataset_name)
         cypher_query = create_class_multi_query(filtered_columns, dataset_name)
         database_connector.run_query_memgraph(cypher_query)
 

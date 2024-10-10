@@ -4,7 +4,7 @@ import json
 from Models.memgraph_connector_model import *
 
 
-def get_db_connector(debug=False):
+def get_db_connector(debug=True):
     if not debug:
         memgraph_host = os.getenv("MEMGRAPH_HOST", "memgraph")
         memgraph_port = int(os.getenv("MEMGRAPH_PORT", 7687))

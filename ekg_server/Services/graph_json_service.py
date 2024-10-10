@@ -22,13 +22,13 @@ from collections.abc import Iterable
 # The Service for graph json controller
 class GraphJSONService:
     @staticmethod
-    def get_class_graph_nodes_json(database_connector):
+    def get_class_graph_nodes_json(database_connector, dataset_name):
         apiResponse = ApiResponse(None, None, None)
 
         try:
             database_connector.connect()
 
-            query = get_nodes_class_query()
+            query = get_nodes_class_query(dataset_name)
             result = database_connector.run_query_memgraph(query)
 
             if not isinstance(result, Iterable):
@@ -71,13 +71,13 @@ class GraphJSONService:
             database_connector.close()
 
     @staticmethod
-    def get_class_graph_df_links_json(database_connector):
+    def get_class_graph_df_links_json(database_connector, dataset_name):
         apiResponse = ApiResponse(None, None, None)
 
         try:
             database_connector.connect()
 
-            query = get_df_class_relation_simple_query()
+            query = get_df_class_relation_simple_query(dataset_name)
             result = database_connector.run_query_memgraph(query)
 
             if not isinstance(result, Iterable):

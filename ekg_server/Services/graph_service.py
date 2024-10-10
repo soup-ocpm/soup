@@ -345,6 +345,9 @@ def standard_process_query_c(database_connector, dataset_name, standard_process,
                     database_connector.run_query_memgraph(relation_query_df)
         print(f"Created :DF relationships in {(datetime.now() - df_time_start).total_seconds()} seconds")
 
+        query = create_dataset_node(dataset_name)
+        database_connector.run_query_memgraph(query)
+
         now = datetime.now()
         current_time = now.strftime("%H:%M:%S")
         print("Current End Time =", current_time)

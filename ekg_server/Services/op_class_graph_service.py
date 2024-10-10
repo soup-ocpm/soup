@@ -21,9 +21,9 @@ class OperationClassGraphService:
 
     # Get count of class nodes
     @staticmethod
-    def get_count_class_nodes_s(database_connector):
+    def get_count_class_nodes_s(database_connector, dataset_name):
         try:
-            query = get_count_nodes_class_query()
+            query = get_count_nodes_class_query(dataset_name)
             result = database_connector.run_query_memgraph(query)
 
             if isinstance(result, list) and len(result) > 0 and 'class_count' in result[0]:
@@ -36,9 +36,9 @@ class OperationClassGraphService:
 
     # Get count of :OBS relationships
     @staticmethod
-    def get_count_obs_relationships_s(database_connector):
+    def get_count_obs_relationships_s(database_connector, dataset_name):
         try:
-            query = get_count_obs_relationships_query()
+            query = get_count_obs_relationships_query(dataset_name)
             result = database_connector.run_query_memgraph(query)
 
             if isinstance(result, list) and len(result) > 0 and 'obs_count' in result[0]:
@@ -51,9 +51,9 @@ class OperationClassGraphService:
 
     # Get count of :DF_C relationships
     @staticmethod
-    def get_count_dfc_relationships_s(database_connector):
+    def get_count_dfc_relationships_s(database_connector, dataset_name):
         try:
-            query = get_count_dfc_relationships_query()
+            query = get_count_dfc_relationships_query(dataset_name)
             result = database_connector.run_query_memgraph(query)
 
             if isinstance(result, list) and len(result) > 0 and 'dfc_count' in result[0]:

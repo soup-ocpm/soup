@@ -19,7 +19,7 @@ from Controllers.graph_config import get_db_connector
 op_class_graph_controller_bp = Blueprint('op_class_graph_controller_bp', __name__)
 
 # Database information
-database_connector = get_db_connector(debug=False)
+database_connector = get_db_connector(debug=True)
 
 
 @op_class_graph_controller_bp.route('/api/v2/graph-class/nodes/class', methods=['GET'])
@@ -32,11 +32,13 @@ def get_class_nodes():
 
 @op_class_graph_controller_bp.route('/api/v2/graph-class/nodes/class_nodes_count', methods=['GET'])
 def get_class_nodes_count():
+    dataset_name = request.args.get('dataset_name')
+
     apiResponse = ApiResponse(None, None, None)
     try:
         database_connector.connect()
 
-        class_nodes_count = OperationClassGraphService.get_count_class_nodes_s(database_connector)
+        class_nodes_count = OperationClassGraphService.get_count_class_nodes_s(database_connector, dataset_name)
 
         apiResponse.http_status_code = 200
         apiResponse.response_data = class_nodes_count
@@ -56,11 +58,13 @@ def get_class_nodes_count():
 
 @op_class_graph_controller_bp.route('/api/v2/graph-class/relationships/obs_relationships_count', methods=['GET'])
 def get_obs_relationships_count():
+    dataset_name = request.args.get('dataset_name')
+
     apiResponse = ApiResponse(None, None, None)
     try:
         database_connector.connect()
 
-        obs_relationships_count = OperationClassGraphService.get_count_obs_relationships_s(database_connector)
+        obs_relationships_count = OperationClassGraphService.get_count_obs_relationships_s(database_connector, dataset_name)
 
         apiResponse.http_status_code = 200
         apiResponse.response_data = obs_relationships_count
@@ -80,11 +84,13 @@ def get_obs_relationships_count():
 
 @op_class_graph_controller_bp.route('/api/v2/graph-class/relationships/dfc_relationships_count', methods=['GET'])
 def get_dfc_relationships_count():
+    dataset_name = request.args.get('dataset_name')
+
     apiResponse = ApiResponse(None, None, None)
     try:
         database_connector.connect()
 
-        dfc_relationships_count = OperationClassGraphService.get_count_dfc_relationships_s(database_connector)
+        dfc_relationships_count = OperationClassGraphService.get_count_dfc_relationships_s(database_connector, dataset_name)
 
         apiResponse.http_status_code = 200
         apiResponse.response_data = dfc_relationships_count
@@ -104,5 +110,6 @@ def get_dfc_relationships_count():
 
 @op_class_graph_controller_bp.route('/api/v2/graph-class/delete', methods=['POST'])
 def delete_class_graph():
-    dataset_name = request.form.get('name')
+    dataset_name = request.form.get('dataset_name')
+
     return OperationClassGraphService.delete_class_graph_s(database_connector, dataset_name)

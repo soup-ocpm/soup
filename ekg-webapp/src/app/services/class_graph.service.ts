@@ -25,9 +25,11 @@ export class ClassGraphService {
    * @param filteredColumn the filtered column
    * @returns Observable of Http request
    */
-  public createClassGraph(formData: FormData, filteredColumn: string[]): Observable<any> {
+  public createClassGraph(formData: FormData, filteredColumn: string[], datasetName: string): Observable<any> {
     filteredColumn.push('ActivityName');
     formData.append('filteredColumn', JSON.stringify(filteredColumn));
+    formData.append('dataset_name', datasetName);
+
     return this.httpClient.post('http://127.0.0.1:8080/api/v2/graph-class', formData);
   }
 
@@ -35,8 +37,12 @@ export class ClassGraphService {
    * Get Class nodes
    * @returns Observable of Http request
    */
-  public getClassNodes(): Observable<any> {
-    return this.httpClient.get('http://127.0.0.1:8080/api/v2/graph-class/nodes/class');
+  public getClassNodes(datasetName: string): Observable<any> {
+    const params = {
+      dataset_name: datasetName
+    }
+
+    return this.httpClient.get('http://127.0.0.1:8080/api/v2/graph-class/nodes/class', { params: params });
   }
 
   /**
@@ -45,7 +51,7 @@ export class ClassGraphService {
    */
   public deleteClassGraph(datasetName: string): Observable<any> {
     const formData: FormData = new FormData();
-    formData.append('name', datasetName);
+    formData.append('dataset_name', datasetName);
     return this.httpClient.post('http://127.0.0.1:8080/api/v2/graph-class/delete', formData);
   }
 

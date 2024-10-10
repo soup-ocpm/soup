@@ -9,6 +9,7 @@ import { GenericGraphService } from '../../services/generic_graph.service';
 import * as d3 from 'd3';
 import * as dagreD3 from 'dagre-d3';
 import { zoom } from 'd3-zoom';
+import { StandardGraphService } from '../../services/standard_graph.service';
 
 @Component({
   selector: 'app-details-graph',
@@ -18,6 +19,9 @@ import { zoom } from 'd3-zoom';
 export class DetailsGraphComponent implements OnInit {
   // Response data
   public responseData: any;
+
+  // The dataset name
+  public datasetName: string = '';
 
   // The variable for the g graph.
   public g: any;
@@ -87,13 +91,16 @@ export class DetailsGraphComponent implements OnInit {
   constructor(
     private router: Router,
     private messageService: NotificationService,
-    private genericGraphService: GenericGraphService
+    private genericGraphService: GenericGraphService,
+    private standardGraphService: StandardGraphService
   ) {
   }
 
   // NgOnInit implementation
   ngOnInit() {
-    this.genericGraphService.getGraph('1', 100).subscribe({
+    this.datasetName = this.standardGraphService.datasetName;
+
+    this.genericGraphService.getGraph('1', 100, this.datasetName).subscribe({
       next: responseData => {
         this.responseData = responseData;
         if (this.responseData['http_status_code'] == 200 && this.responseData['response_data'] != null) {

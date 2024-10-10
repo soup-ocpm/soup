@@ -20,13 +20,16 @@ from Controllers.graph_config import get_db_connector
 generic_graph_controller_bp = Blueprint('generic_graph_controller_bp', __name__)
 
 # Database information
-database_connector = get_db_connector(debug=False)
+database_connector = get_db_connector(debug=True)
 
 
 @generic_graph_controller_bp.route('/api/v2/complete-graph', methods=['POST'])
 def get_complete_graph():
     data = request.get_json()
     standard_graph = data.get('standard_graph')
+    # Dataset name
+    dataset_name = data.get('dataset_name')
+
     limit = request.args.get('limit', type=int)
 
-    return GenericGraphService.get_class_graph_s(database_connector, standard_graph, limit)
+    return GenericGraphService.get_class_graph_s(database_connector, standard_graph, dataset_name, limit)

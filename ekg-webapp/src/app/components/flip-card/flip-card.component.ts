@@ -10,6 +10,7 @@ import { GraphJSONService } from '../../services/graph_json.service';
 import { HttpRequest } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { NotificationService } from '../../services/notification.service';
+import { StandardGraphService } from '../../services/standard_graph.service';
 
 @Component({
   selector: 'app-flip-card',
@@ -26,18 +27,25 @@ export class FlipCardComponent implements OnInit {
   // Response data
   public responseData: any;
 
+  // The dataset name
+  public datasetName = '';
+
   /**
    * Constructor for FlipCardComponent component
    * @param graphJSONService the GraphJSONService service
    * @param messageService the NotificationService service
+   * @param standardGraphService the StandardGraphService service
    */
   constructor(
     private graphJSONService: GraphJSONService,
-    private messageService: NotificationService
+    private messageService: NotificationService,
+    private standardGraphService: StandardGraphService
   ) { }
 
   // NgOnInit implementation
-  public ngOnInit(): void { }
+  public ngOnInit(): void {
+    this.datasetName = this.standardGraphService.datasetName;
+  }
 
   /**
    * Allow the User to download JSON data
@@ -49,25 +57,25 @@ export class FlipCardComponent implements OnInit {
 
     switch (this.card?.dataType) {
       case DataGraphEnum.EventNodes:
-        request = this.graphJSONService.eventNodesJS();
+        request = this.graphJSONService.eventNodesJS(this.datasetName);
         break;
       case DataGraphEnum.EntityNodes:
-        request = this.graphJSONService.entityNodesJS();
+        request = this.graphJSONService.entityNodesJS(this.datasetName);
         break;
       case DataGraphEnum.CORRLinks:
-        request = this.graphJSONService.corrLinksJS();
+        request = this.graphJSONService.corrLinksJS(this.datasetName);
         break;
       case DataGraphEnum.DFLinks:
-        request = this.graphJSONService.dfLinksJS();
+        request = this.graphJSONService.dfLinksJS(this.datasetName);
         break;
       case DataGraphEnum.ClassNodes:
-        request = this.graphJSONService.classNodesJS();
+        request = this.graphJSONService.classNodesJS(this.datasetName);
         break;
       case DataGraphEnum.DFCLinks:
-        request = this.graphJSONService.dfLinksJS();
+        request = this.graphJSONService.dfLinksJS(this.datasetName);
         break;
       default:
-        request = this.graphJSONService.eventNodesJS();
+        request = this.graphJSONService.eventNodesJS(this.datasetName);
     }
 
     let callResponse: any;
