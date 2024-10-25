@@ -12,7 +12,7 @@ License : MIT
 
 # Import
 from flask import Blueprint, request
-from Services.op_graph_service import *
+from Services.Graph.op_graph_service import *
 from Controllers.graph_config import get_db_connector
 
 # Init the bp
@@ -216,25 +216,13 @@ def delete_graph():
 
 @op_graph_controller_bp.route('/api/v2/support/entities_key', methods=['GET'])
 def get_entities_key():
-    dataset_name = request.form.get('dataset_name')
+    dataset_name = request.args.get('dataset_name')
 
     return OperationGraphService.get_entities_key_s(database_connector, dataset_name)
 
 
 @op_graph_controller_bp.route('/api/v2/support/null-entities', methods=['GET'])
 def get_null_entities():
-    dataset_name = request.form.get('dataset_name')
+    dataset_name = request.args.get('dataset_name')
 
     return OperationGraphService.get_null_entities_s(database_connector, dataset_name)
-
-
-@op_graph_controller_bp.route('/api/v2/support/unique-dataset', methods=['POST'])
-def check_unique_dataset():
-    dataset_name = request.form.get('dataset_name')
-
-    return OperationGraphService.check_unique_dataset_name_s(database_connector, dataset_name)
-
-
-@op_graph_controller_bp.route('/api/v2/support/dataset', methods=['GET'])
-def get_all_dataset():
-    return OperationGraphService.get_all_dataset_s(database_connector)

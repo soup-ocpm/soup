@@ -11,10 +11,9 @@ License : MIT
 """
 
 # Import
-
 from flask import Blueprint, request
-from Services.generic_graph_service import *
 from Controllers.graph_config import get_db_connector
+from Services.generic_graph_service import *
 
 # Init the bp
 generic_graph_controller_bp = Blueprint('generic_graph_controller_bp', __name__)

@@ -4,12 +4,12 @@ import { Router } from '@angular/router';
 // Services import
 import { NotificationService } from '../../services/notification.service';
 import { GenericGraphService } from '../../services/generic_graph.service';
+import { StandardGraphService } from '../../services/standard_graph.service';
 
 // Graph library import:
 import * as d3 from 'd3';
 import * as dagreD3 from 'dagre-d3';
 import { zoom } from 'd3-zoom';
-import { StandardGraphService } from '../../services/standard_graph.service';
 
 @Component({
   selector: 'app-details-graph',
@@ -170,8 +170,6 @@ export class DetailsGraphComponent implements OnInit {
 
     this.nodes = Array.from(uniqueEventNodes);
     this.edges = [...uniqueDfLinks];
-    console.log(this.nodes);
-    console.log(this.edges);
 
     if (this.nodes.length > 0 && this.edges.length > 0) {
       this.assignRelationLabelColors(this.edges);

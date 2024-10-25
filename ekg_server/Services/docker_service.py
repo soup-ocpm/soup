@@ -11,9 +11,13 @@ License : MIT
 """
 
 # Import
+import io
 import docker
+import tarfile
 
+from pathlib import Path
 from flask import jsonify
+from datetime import datetime
 from Models.api_response_model import ApiResponse
 
 
@@ -240,3 +244,105 @@ class DockerService:
             apiResponse.response_data = None
             apiResponse.message = f'Failed to stop container: {str(e)}'
             return jsonify(apiResponse.to_dict()), 500
+
+    @staticmethod
+    def copy_csv_file(container_id, file):
+        try:
+            project_dir = Path(__file__).parent
+
+            temp_dir = project_dir / 'temp_csv'
+
+            # 1. Create temp directory
+            if not temp_dir.exists():
+                temp_dir.mkdir(parents=True)
+
+            ct = datetime.now().strftime("%Y%m%d%H%M%S")
+            file_name = f'{ct}_{file.filename}'
+            temp_csv_path = temp_dir / file_name
+
+            # 2. Save the file in the directory
+            file.save(temp_csv_path)
+
+            client = docker.from_env()
+            container = client.containers.get(container_id)
+
+            # 3. Create a tar archive of the file
+            tarstream = io.BytesIO()
+            with tarfile.open(fileobj=tarstream, mode='w') as tar:
+                tar.add(temp_csv_path, arcname=file_name)
+            tarstream.seek(0)
+
+            # 4. Copy the tar archive into the container
+            container.put_archive('/tmp', tarstream)
+            container_csv_path = f'/tmp/{file_name}'
+
+            # 5. Check if the file was copied or not
+            result = container.exec_run(['ls', '/tmp'])
+            if result.exit_code != 0:
+                return 'error'
+
+            if file_name in result.output.decode():
+                print(f"File correctly imported: {file_name} exists in container {container_id}")
+            else:
+                print(f"File {file_name} does not exist in container {container_id}")
+                return 'error'
+
+            print(f'File saved on container with path: {container_csv_path}')
+            return container_csv_path
+
+        except Exception as e:
+            print(e)
+            return 'error'
+
+    @staticmethod
+    def copy_entity_csv_file(container_id, unique_values_df):
+        try:
+            project_dir = Path(__file__).parent
+            temp_dir = project_dir / 'temp'
+
+            if not temp_dir.exists():
+                temp_dir.mkdir(parents=True)
+
+            ct = datetime.now().strftime("%Y%m%d%H%M%S")
+            file_name = f'{ct}_entities_unique_value.csv'
+            temp_csv_path = temp_dir / file_name
+
+            unique_values_df.to_csv(temp_csv_path, index=False)
+            print(f'File saved in: {temp_csv_path}')
+
+            # 2. Copy the file into the container
+            client = docker.from_env()
+            container = client.containers.get(container_id)
+
+            # 3. Create a tar archive of the file
+            tarstream = io.BytesIO()
+            with tarfile.open(fileobj=tarstream, mode='w') as tar:
+                tar.add(temp_csv_path, arcname=file_name)
+            tarstream.seek(0)
+
+            # 4. Copy the tar archive into the container
+            container.put_archive('/tmp', tarstream)
+            container_csv_path = f'/tmp/{file_name}'
+
+            # 5. Check if the file was copied or not
+            result = container.exec_run(['ls', '/tmp'])
+            if result.exit_code != 0:
+                return 'error'
+
+            if file_name in result.output.decode():
+                print(f"File correctly imported: {file_name} exists in container {container_id}")
+            else:
+                print(f"File {file_name} does not exist in container {container_id}")
+                return 'error'
+
+            print(f'File saved on container with path: {container_csv_path}')
+            return container_csv_path
+        except Exception as e:
+            print(e)
+            return 'error'
+
+    @staticmethod
+    def remove_csv_file(container_id, container_csv_path):
+        client = docker.from_env()
+        container = client.containers.get(container_id)
+        container.exec_run(['rm', container_csv_path])

@@ -17,18 +17,20 @@ from flask_socketio import SocketIO
 
 # Controllers
 from Controllers.docker_controller import docker_controller_bp
-from Controllers.graph_controller import graph_controller_bp
-from Controllers.class_graph_controller import class_graph_controller_bp
+from Controllers.Graph.graph_controller import graph_controller_bp
+from Controllers.AggregateGraph.class_graph_controller import class_graph_controller_bp
 from Controllers.generic_graph_controller import generic_graph_controller_bp
-from Controllers.op_graph_controller import op_graph_controller_bp
-from Controllers.op_class_graph_controller import op_class_graph_controller_bp
+from Controllers.Graph.op_graph_controller import op_graph_controller_bp
+from Controllers.AggregateGraph.op_class_graph_controller import op_class_graph_controller_bp
 from Controllers.graph_json_controller import graph_json_controller_bp
+from Controllers.dataset_controller import dataset_controller_bp
 
 # App
 app = Flask(__name__)
 
 # Register the App Blueprint
 app.register_blueprint(docker_controller_bp)
+app.register_blueprint(dataset_controller_bp)
 app.register_blueprint(graph_controller_bp)
 app.register_blueprint(class_graph_controller_bp)
 app.register_blueprint(generic_graph_controller_bp)
@@ -47,12 +49,12 @@ CORS(app)
 
 
 # Welcome API
-@app.route('/api/v2/welcome')
+@app.route('/api/v2/welcome', methods=['GET'])
 def welcome_api():
     return jsonify({
-        'status': 200,
+        'http_status_code': 200,
         'message': 'Hello User'
-    })
+    }), 200
 
 
 # Main (run the Server on 8080)

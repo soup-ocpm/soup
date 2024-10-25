@@ -15,9 +15,9 @@ import math
 
 from flask import jsonify
 from collections.abc import Iterable
-from Utils.query_library import *
+from Controllers.graph_config import memgraph_datetime_to_string
 from Models.api_response_model import ApiResponse
-from Controllers.graph_config import datetime_to_json
+from Utils.query_library import *
 
 
 # The Service for operation graph controller
@@ -46,7 +46,8 @@ class OperationGraphService:
 
                 for key, value in event_node.items():
                     if 'Timestamp' in key:
-                        event_node[key] = datetime_to_json(value)
+                        timestamp = memgraph_datetime_to_string(value)
+                        event_node[key] = timestamp
 
                 for key, value in event_node.items():
                     if isinstance(value, (int, float)) and math.isnan(value):
@@ -81,7 +82,6 @@ class OperationGraphService:
     def get_count_event_nodes_s(database_connector, dataset_name):
         try:
             query = get_count_nodes_event_query(dataset_name)
-            print(dataset_name)
             result = database_connector.run_query_memgraph(query)
 
             if isinstance(result, list) and len(result) > 0 and 'node_count' in result[0]:
@@ -112,17 +112,18 @@ class OperationGraphService:
             graph_data = []
 
             for record in result:
-                event_node = record['node']
+                entity_node = record['node']
 
-                for key, value in event_node.items():
+                for key, value in entity_node.items():
                     if 'Timestamp' in key:
-                        event_node[key] = datetime_to_json(value)
+                        timestamp = memgraph_datetime_to_string(value)
+                        entity_node[key] = timestamp
 
-                for key, value in event_node.items():
+                for key, value in entity_node.items():
                     if isinstance(value, (int, float)) and math.isnan(value):
-                        event_node[key] = None
+                        entity_node[key] = None
 
-                graph_data.append(event_node)
+                graph_data.append(entity_node)
 
             if len(graph_data) == 0:
                 apiResponse.http_status_code = 202
@@ -191,13 +192,17 @@ class OperationGraphService:
                     if isinstance(value, (int, float)) and math.isnan(value):
                         event[key] = None
 
-                for key, value in event.items():
                     if 'Timestamp' in key:
-                        event[key] = datetime_to_json(value)
+                        timestamp = memgraph_datetime_to_string(value)
+                        event[key] = timestamp
 
                 for key, value in related_event.items():
                     if isinstance(value, (int, float)) and math.isnan(value):
                         related_event[key] = None
+
+                    if 'Timestamp' in key:
+                        timestamp = memgraph_datetime_to_string(value)
+                        related_event[key] = timestamp
 
                 correlation_count = correlation_count + 1
                 relation_id = correlation_count
@@ -281,13 +286,15 @@ class OperationGraphService:
                     if isinstance(value, (int, float)) and math.isnan(value):
                         event[key] = None
                     if 'Timestamp' in key:
-                        event[key] = datetime_to_json(value)
+                        timestamp = memgraph_datetime_to_string(value)
+                        event[key] = timestamp
 
                 for key, value in related_event.items():
                     if isinstance(value, (int, float)) and math.isnan(value):
                         related_event[key] = None
                     if 'Timestamp' in key:
-                        related_event[key] = datetime_to_json(value)
+                        timestamp = memgraph_datetime_to_string(value)
+                        related_event[key] = timestamp
 
                 df_count = df_count + 1
                 relation_id = df_count
@@ -375,8 +382,11 @@ class OperationGraphService:
                         {k: None if isinstance(v, (int, float)) and math.isnan(v) else v for k, v in node.items()} for
                         node in event_nodes]
                     for e in event_nodes:
-                        e["Timestamp"] = datetime_to_json(e["Timestamp"])
-                    # print(event_nodes)
+                        for key, value in e.items():
+                            if 'Timestamp' in key:
+                                timestamp = memgraph_datetime_to_string(value)
+                                e[key] = timestamp
+
                 elif record['type'] == 'entities':
                     entity_nodes = record['data']
                     entity_count = record['count']
@@ -385,7 +395,7 @@ class OperationGraphService:
                         node
                         in entity_nodes]
 
-            query = get_corr_relation_query()
+            query = get_corr_relation_query(dataset_name)
             result = database_connector.run_query_memgraph(query)
 
             if not isinstance(result, Iterable):
@@ -407,7 +417,7 @@ class OperationGraphService:
                     if isinstance(value, (int, float)) and math.isnan(value):
                         event[key] = None
                     elif key == 'Timestamp':
-                        event[key] = datetime_to_json(event[key])
+                        event[key] = memgraph_datetime_to_string(event[key])
 
                 for key, value in related_event.items():
                     if isinstance(value, (int, float)) and math.isnan(value):
@@ -423,7 +433,7 @@ class OperationGraphService:
                     'relation_id': relation_id
                 })
 
-            query = get_df_relation_query()
+            query = get_df_relation_query(dataset_name)
             result = database_connector.run_query_memgraph(query)
 
             if not isinstance(result, Iterable):
@@ -445,13 +455,13 @@ class OperationGraphService:
                     if isinstance(value, (int, float)) and math.isnan(value):
                         event[key] = None
                     elif key == 'Timestamp':
-                        event[key] = datetime_to_json(event[key])
+                        event[key] = memgraph_datetime_to_string(event[key])
 
                 for key, value in related_event.items():
                     if isinstance(value, (int, float)) and math.isnan(value):
                         related_event[key] = None
                     elif key == 'Timestamp':
-                        related_event[key] = datetime_to_json(related_event[key])
+                        related_event[key] = memgraph_datetime_to_string(related_event[key])
 
                 df_count = df_count + 1
                 relation_id = df_count
@@ -650,85 +660,6 @@ class OperationGraphService:
             apiResponse.http_status_code = 500
             apiResponse.message = f"Internal Server Error : {str(e)}"
             apiResponse.response_data = None
-            return jsonify(apiResponse.to_dict()), 500
-
-        finally:
-            database_connector.close()
-
-    @staticmethod
-    def check_unique_dataset_name_s(database_connector, dataset_name):
-        apiResponse = ApiResponse(None, None, None)
-
-        try:
-            database_connector.connect()
-
-            query = check_unique_dataset_name_query(dataset_name)
-            result = database_connector.run_query_memgraph(query)
-
-            if result and result[0]['count'] == 0:
-                apiResponse.http_status_code = 202
-                apiResponse.message = 'No content'
-                apiResponse.response_data = None
-                return jsonify(apiResponse.to_dict()), 202
-            else:
-                apiResponse.http_status_code = 404
-                apiResponse.message = 'Dataset with this name already exist'
-                apiResponse.response_data = None
-                return jsonify(apiResponse.to_dict()), 404
-
-        except Exception as e:
-            apiResponse.http_status_code = 500
-            apiResponse.message = f"Internal Server Error : {str(e)}"
-            apiResponse.response_data = None
-            return jsonify(apiResponse.to_dict()), 500
-
-        finally:
-            database_connector.close()
-
-    @staticmethod
-    def get_all_dataset_s(database_connector):
-        apiResponse = ApiResponse(None, None, None)
-
-        try:
-            database_connector.connect()
-
-            query = get_dataset_nodes_query()
-            result = database_connector.run_query_memgraph(query)
-
-            if not isinstance(result, Iterable):
-                apiResponse.http_status_code = 404
-                apiResponse.response_data = None
-                apiResponse.message = "Not found"
-                return jsonify(apiResponse.to_dict()), 404
-
-            graph_data = []
-
-            for record in result:
-                event_node = record['node']
-
-                for key, value in event_node.items():
-                    if isinstance(value, (int, float)) and math.isnan(value):
-                        event_node[key] = None
-
-                graph_data.append(event_node)
-
-            if len(graph_data) == 0:
-                apiResponse.http_status_code = 202
-                apiResponse.message = 'No content'
-                apiResponse.response_data = graph_data
-
-                return jsonify(apiResponse.to_dict()), 202
-
-            apiResponse.http_status_code = 200
-            apiResponse.message = 'Dataset nodes retrieve successfully'
-            apiResponse.response_data = graph_data
-
-            return jsonify(apiResponse.to_dict()), 200
-
-        except Exception as e:
-            apiResponse.http_status_code = 500
-            apiResponse.response_data = None
-            apiResponse.message = f'Internal Server Error : {str(e)}'
             return jsonify(apiResponse.to_dict()), 500
 
         finally:

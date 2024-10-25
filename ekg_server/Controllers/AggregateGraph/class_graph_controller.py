@@ -14,8 +14,8 @@ License : MIT
 import json
 
 from flask import Blueprint, current_app, request
-from Services.class_graph_service import *
 from Controllers.graph_config import get_db_connector
+from Services.AggregateGraph.class_graph_service import *
 
 # Init the bp
 class_graph_controller_bp = Blueprint('class_graph_controller_bp', __name__)
@@ -32,6 +32,6 @@ def create_class_graph():
     filtered_column = json.loads(filtered_column_json)
 
     # Dataset name
-    dataset_name = request.form.get('name')
+    dataset_name = request.form.get('dataset_name')
 
     return ClassGraphService.create_class_graph_s(filtered_column, dataset_name, database_connector, socketio)

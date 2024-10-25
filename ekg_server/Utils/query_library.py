@@ -10,6 +10,9 @@ License : MIT
 ------------------------------------------------------------------------
 """
 
+# Import
+from datetime import datetime
+
 
 # Query for Graph (Standard)
 
@@ -48,9 +51,10 @@ def create_entity_index():
            """)
 
 
-def create_corr_relation_query(key):  # checks if an entity has multiple values
+def create_corr_relation_query(key, dataset_name):  # checks if an entity has multiple values
     return (f"""
             MATCH (e:Event) 
+            WHERE e.DatasetName = '{dataset_name}'
             WITH e, 
                 CASE WHEN toString(e.{key}) <> "nan"
                     THEN split(e.{key}, ',')
@@ -58,14 +62,14 @@ def create_corr_relation_query(key):  # checks if an entity has multiple values
                 END AS entities
             UNWIND entities AS entity_id
             WITH DISTINCT entity_id, e
-            MATCH (ent:Entity {{Value: entity_id}})
+            MATCH (ent:Entity {{Value: entity_id, DatasetName: '{dataset_name}'}})
             MERGE (e)-[c:CORR {{Type: '{key}'}}]->(ent)
             """)
 
 
-def create_df_relation_query(key):
+def create_df_relation_query(key, dataset_name):
     return f"""
-            MATCH (e:Event)-[:CORR]->(n:Entity)
+            MATCH (e:Event{{DatasetName: "{dataset_name}"}})-[:CORR]->(n:Entity{{DatasetName: "{dataset_name}"}})
             WHERE n.Type = '{key}'
             WITH n, e AS nodes ORDER BY e.Timestamp, ID(e)
             WITH n, collect(nodes) AS event_node_list
@@ -81,11 +85,12 @@ def create_class_multi_query(matching_perspectives, dataset_name):
 
     perspectives_dict = {}
     event_id = '"c_" + '
-    for p in matching_perspectives:
+
+    for i, p in enumerate(matching_perspectives):
         p_val = f'e.{p}'
         event_id += f' {p_val}'
         perspectives_dict[p] = p_val
-        if p != matching_perspectives[-1]:
+        if i != len(matching_perspectives) - 1:
             event_id += ' + "_" +'
 
     perspectives_dict['Event_Id'] = event_id
@@ -101,19 +106,73 @@ def create_class_multi_query(matching_perspectives, dataset_name):
     return main_query
 
 
-def class_df_aggregation(rel_type, class_rel_type):
+def class_df_aggregation(dataset_name, rel_type, class_rel_type):
     return f"""
-                MATCH (c1 : Class) <-[:OBSERVED]- (e1 : Event) -[r]-> (e2 : Event) -[:OBSERVED]-> (c2 : Class)
-                WHERE c1.Type = c2.Type and type(r) = '{rel_type}'
-                WITH r.Type as CType, c1, count(r) AS df_freq, c2
-                MERGE (c1) -[:{class_rel_type} {{Type:CType, edge_weight: df_freq}}]-> (c2)
+            MATCH (c1 : Class {{DatasetName: '{dataset_name}'}}) <-[:OBSERVED]- (e1 : Event {{DatasetName: '{dataset_name}'}}) 
+            -[r]-> (e2 : Event {{DatasetName: '{dataset_name}'}}) -[:OBSERVED]-> (c2 : Class {{DatasetName: '{dataset_name}'}})
+            WHERE c1.Type = c2.Type and type(r) = '{rel_type}'
+            WITH r.Type as CType, c1, count(r) AS df_freq, c2
+            MERGE (c1) -[:{class_rel_type} {{Type:CType, edge_weight: df_freq}}]-> (c2)
             """
 
 
-# Other utils query for Graph (Standard)
+# ----------Query for dataset----------
+def create_dataset_node(dataset_name, dataset_description, event_nodes, entity_nodes, corr_rel, df_rel):
+    return (
+        f"MERGE (e: Dataset {{Name: '{dataset_name}', Description: '{dataset_description}', Event: '{event_nodes}', "
+        f"Entity: '{entity_nodes}', Corr: '{corr_rel}', DF: '{df_rel}', FullInfo: '0', "
+        f"DateCreated: localDateTime('{datetime.now().strftime('%Y-%m-%dT%H:%M:%S.%f')[:-3]}'), "
+        f"DateModified: localDateTime('{datetime.now().strftime('%Y-%m-%dT%H:%M:%S.%f')[:-3]}')}})")
 
-def create_dataset_node(dataset_name):
-    return f"MERGE (e: Dataset {{Name: '{dataset_name}'}})"
+
+def create_dataset_full_node(process_execution, dataset_name, dataset_description, event_nodes, entity_nodes, corr_rel,
+                             df_rel,
+                             process_info):
+    return (f"MERGE (e: Dataset {{Name: '{dataset_name}', Description: '{dataset_description}', "
+            f"Event: {event_nodes}, Entity: {entity_nodes}, Corr: {corr_rel}, DF: {df_rel}, FullInfo: '{process_execution}'}}) "
+            f"SET e.InitTime = localDateTime('{process_info.init_time}'), "
+            f"e.EndTime = localDateTime('{process_info.finish_time}'), "
+            f"e.InitEventTime = localDateTime('{process_info.init_event_time}'), "
+            f"e.FinishEventTime = localDateTime('{process_info.finish_event_time}'), "
+            f"e.InitEntityTime = localDateTime('{process_info.init_entity_time}'), "
+            f"e.FinishEntityTime = localDateTime('{process_info.finish_entity_time}'), "
+            f"e.InitCorrTime = localDateTime('{process_info.init_corr_time}'), "
+            f"e.FinishCorrTime = localDateTime('{process_info.finish_corr_time}'), "
+            f"e.InitDfTime = localDateTime('{process_info.init_df_time}'), "
+            f"e.FinishDfTime = localDateTime('{process_info.finish_df_time}'), "
+            f"e.DateCreated = localDateTime('{datetime.now().strftime('%Y-%m-%dT%H:%M:%S.%f')[:-3]}'), "
+            f"e.DateModified = localDateTime('{datetime.now().strftime('%Y-%m-%dT%H:%M:%S.%f')[:-3]}')")
+
+
+def get_datasets_query():
+    return "MATCH (n: Dataset) RETURN n"
+
+
+def get_dataset_query(dataset_name):
+    return (f"MATCH (n: Dataset {{Name: '{dataset_name}'}})"
+            f"RETURN n")
+
+
+def update_dataset_description_query(dataset_name, dataset_description):
+    return (f"MATCH (n: Dataset {{Name: '{dataset_name}'}})"
+            f"SET n.Description = '{dataset_description}' "
+            f"SET n.DateModified = localDateTime('{datetime.now().strftime('%Y-%m-%dT%H:%M:%S.%f')[:-3]}')")
+
+
+def update_full_dataset_query(dataset_name, process_info, class_nodes, obs_rel, dfc_rel):
+    return (f"MATCH (d: Dataset {{Name: '{dataset_name}'}}) "
+            f"SET d.InitClassTime = localDateTime('{process_info.init_class_time}'), "
+            f"d.Class = {class_nodes},"
+            f"d.OBS = {obs_rel}, "
+            f"d.DFC = {dfc_rel}, "
+            f"d.FinishClassTime = localDateTime('{process_info.finish_class_time}'), "
+            f"d.InitClassNodeTime = localDateTime('{process_info.init_class_node_time}'), "
+            f"d.FinishClassNodeTime = localDateTime('{process_info.finish_class_node_time}'), "
+            f"d.InitObsTime = localDateTime('{process_info.init_obs_time}'), "
+            f"d.FinishObsTime = localDateTime('{process_info.finish_obs_time}'), "
+            f"d.InitDFCTime = localDateTime('{process_info.init_dfc_time}'), "
+            f"d.FinishDFCTime = localDateTime('{process_info.finish_dfc_time}'), "
+            f"d.DateModified = localDateTime('{datetime.now().strftime('%Y-%m-%dT%H:%M:%S.%f')[:-3]}')")
 
 
 def check_unique_dataset_name_query(dataset_name):
@@ -121,9 +180,7 @@ def check_unique_dataset_name_query(dataset_name):
             f"RETURN COUNT(e) AS count")
 
 
-def get_dataset_nodes_query():
-    return "MATCH (e: Dataset) RETURN e as node"
-
+# ----------Other utils query for Graph (Standard)----------
 
 def get_nodes_event_query(dataset_name):
     return f"""
@@ -216,7 +273,7 @@ def get_complete_standard_graph_query(dataset_name):
 
 
 def get_limit_standard_graph_query(dataset_name, limit):
-    return f"""@
+    return f"""
             MATCH (e1:Event {{DatasetName: "{dataset_name}"}})-[r:DF]->(e2:Event {{DatasetName: "{dataset_name}"}})
             RETURN e1 as source, id(e1) as source_id, properties(r) as edge, 
             id(r) as edge_id, e2 as target, id(e2) as target_id
@@ -297,6 +354,11 @@ def delete_entity_graph_query(dataset_name):
     """
 
 
+def drop_dataset_node_query(dataset_name):
+    return (f"MATCH (d: Dataset{{Name: '{dataset_name}'}})"
+            f"DETACH DELETE d")
+
+
 def get_count_event_query(dataset_name):
     return (f"MATCH (n : Event {{DatasetName: '{dataset_name}'}}) "
             f"RETURN COUNT(n) AS count")
@@ -317,7 +379,7 @@ def get_count_entity_query(dataset_name):
 
 def delete_class_graph_query(dataset_name):
     return f"""
-    MATCH (n:Class {{DatasetName: '{dataset_name}'}})
+    MATCH (n:Class {{Name: '{dataset_name}'}})
     DETACH DELETE n
     """
 
@@ -346,12 +408,12 @@ def get_nan_entities(dataset_name):
     """
 
 
-def change_nan(entity):
+def change_nan(dataset_name, entity):
     entity = entity.replace("'", "")
     return f"""
-        MATCH (n:Event)
-        SET n.{entity} = toString(n.{entity})
-        """
+            MATCH (n:Event {{DatasetName: '{dataset_name}'}})
+            SET n.{entity} = toString(n.{entity})
+            """
 
 
 def get_distinct_entities_keys(dataset_name):
@@ -359,12 +421,12 @@ def get_distinct_entities_keys(dataset_name):
             MATCH (n:Entity {{DatasetName: '{dataset_name}'}}) 
             WITH DISTINCT n.Type as entityType
             RETURN entityType
-    """
+            """
 
 
-def set_class_weight():
-    return ("""
-        MATCH (:Event)-[obs:OBSERVED]->(c:Class)
-        WITH c, COUNT(obs) as weight
-        SET c.Count = weight
-        """)
+def set_class_weight(dataset_name):
+    return f"""
+            MATCH (:Event {{DatasetName: '{dataset_name}'}})-[obs:OBSERVED]->(c:Class {{DatasetName: '{dataset_name}'}})
+            WITH c, COUNT(obs) as weight
+            SET c.Count = weight
+            """

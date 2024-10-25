@@ -12,7 +12,7 @@ License : MIT
 
 # Import
 from flask import Blueprint, request
-from Services.op_class_graph_service import *
+from Services.AggregateGraph.op_class_graph_service import *
 from Controllers.graph_config import get_db_connector
 
 # Init the bp

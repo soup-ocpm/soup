@@ -14,9 +14,9 @@ License : MIT
 import json
 
 from flask import Blueprint, current_app, request, jsonify
-from Models.api_response_model import ApiResponse
-from Services.graph_service import GraphService
 from Controllers.graph_config import get_db_connector
+from Services.Graph.graph_service import GraphService
+from Models.api_response_model import ApiResponse
 
 # Init the bp
 graph_controller_bp = Blueprint('graph_bp', __name__)
@@ -48,11 +48,10 @@ def create_graph():
 
     copy_file = request.files['copy_file']
 
-    # Dataset name
-    dataset_name = request.form.get('name')
-
-    # Creation method
-    standardCreation = request.form.get('standardCreation')
+    # Dataset information
+    dataset_name = request.form.get('dataset_name')
+    dataset_description = request.form.get('dataset_description')
+    process_execution = request.form.get('process_execution')
 
     # Container
     container_id = request.form.get('container_id')
@@ -74,7 +73,8 @@ def create_graph():
 
     return GraphService.create_graph_s(file, copy_file,
                                        dataset_name,
-                                       standardCreation,
+                                       dataset_description,
+                                       process_execution,
                                        standard_column,
                                        filtered_column,
                                        values_column,

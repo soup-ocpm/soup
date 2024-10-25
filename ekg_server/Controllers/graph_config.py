@@ -1,6 +1,5 @@
 import os
 import datetime
-import json
 from Models.memgraph_connector_model import *
 
 
@@ -24,13 +23,13 @@ def string_to_datetime(timestamp_str):
 
 def neo_datetime_conversion(time):
     """
-    From string or Neo4j datetime to datetime
+    From string or Neo4j datetime to Python datetime.
     """
     if isinstance(time, str):
         time = string_to_datetime(time)
 
-    if not isinstance(time, datetime.datetime) or not isinstance(time, float):        
-        millis = int(time.nanosecond / 1000)        
+    if isinstance(time, datetime.datetime):
+        millis = int(time.nanosecond / 1000) if hasattr(time, 'nanosecond') else 0
         t = datetime.datetime(time.year, time.month, time.day,
                               time.hour, time.minute, time.second, millis)
         return t
@@ -47,3 +46,14 @@ def serialize_datetime(obj):
 def datetime_to_json(time):
     timestamp = neo_datetime_conversion(time)
     return serialize_datetime(timestamp)
+
+
+def memgraph_datetime_to_string(memgraph_datetime):
+    datetime_str = (f"{memgraph_datetime.year:04d}-{memgraph_datetime.month:02d}-{memgraph_datetime.day:02d}T"
+                    f"{memgraph_datetime.hour:02d}:{memgraph_datetime.minute:02d}:{memgraph_datetime.second:02d}")
+
+    if hasattr(memgraph_datetime, 'nanosecond'):
+        microseconds = memgraph_datetime.nanosecond // 1000
+        datetime_str += f".{microseconds:06d}"
+
+    return datetime_str

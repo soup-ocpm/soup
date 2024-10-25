@@ -15,9 +15,10 @@ import math
 
 from flask import jsonify
 from collections.abc import *
-from Utils.query_library import *
+from neo4j.time import DateTime
+from Controllers.graph_config import memgraph_datetime_to_string
 from Models.api_response_model import *
-from Controllers.graph_config import datetime_to_json
+from Utils.query_library import *
 
 
 # The Service for generic graph controller
@@ -30,6 +31,7 @@ class GenericGraphService:
 
         try:
             database_connector.connect()
+            query_result = get_complete_standard_graph_query(dataset_name)
 
             if standard_graph == "1":
                 if not limit:
@@ -42,7 +44,7 @@ class GenericGraphService:
                 else:
                     query_result = get_limit_class_graph_query(dataset_name, limit)
 
-            result = database_connector.run_query_memgraph(dataset_name, query_result)
+            result = database_connector.run_query_memgraph(query_result)
 
             if not isinstance(result, Iterable) or len(result) == 0:
                 apiResponse.http_status_code = 404
@@ -53,28 +55,30 @@ class GenericGraphService:
             graph_data = []
 
             for record in result:
-                if "Timestamp" in record['source'].keys():
-                    record['source']["Timestamp"] = datetime_to_json(record['source']["Timestamp"])
-
+                # Node source
                 source = record['source']
-
                 source['id'] = record['source_id']
+
+                # Relationship
                 edge = record['edge']
                 edge['id'] = record['edge_id']
 
-                if "Timestamp" in record['target'].keys():
-                    record['target']["Timestamp"] = datetime_to_json(record['target']["Timestamp"])
-
+                # Node target
                 target = record['target']
                 target['id'] = record['target_id']
 
+                # Correct the info
                 for key, value in source.items():
                     if isinstance(value, (int, float)) and math.isnan(value):
                         source[key] = None
+                    elif isinstance(value, DateTime):
+                        source[key] = memgraph_datetime_to_string(value)
 
                 for key, value in target.items():
                     if isinstance(value, (int, float)) and math.isnan(value):
                         target[key] = None
+                    elif isinstance(value, DateTime):
+                        target[key] = memgraph_datetime_to_string(value)
 
                 graph_data.append({
                     'node_source': source,

@@ -12,8 +12,8 @@ License : MIT
 
 # Import
 from flask import jsonify
-from Utils.query_library import *
 from Models.api_response_model import *
+from Utils.query_library import *
 
 
 # The Service for operation class graph controller

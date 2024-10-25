@@ -13,10 +13,10 @@ License : MIT
 # Import
 import math
 
-from flask import jsonify
-from Utils.query_library import *
-from Models.api_response_model import *
 from collections.abc import Iterable
+from flask import jsonify
+from Models.api_response_model import *
+from Utils.query_library import *
 
 
 # The Service for graph json controller
