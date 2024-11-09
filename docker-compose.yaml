@@ -3,10 +3,10 @@ version: '3.8'
 services:
   angular:
     build:
-      context: ./ekg-webapp
-    container_name: ekg_webapp
+      context: ./soup-app
+    container_name: soup
     ports:
-      - "4200:4200"
+      - "4200:80"  # Expose port 4200 on the host to port 80 in the container (where Nginx is serving)
     depends_on:
       - flask
     networks:
@@ -14,30 +14,28 @@ services:
 
   flask:
     build:
-      context: ./ekg_server
-    container_name: ekg_server
+      context: ./soup-server
+    container_name: engine
     ports:
-      - "8080:8080"
+      - "8080:8080"  # Expose Flask API on port 8080
     networks:
       - app-network
     environment:
       - MEMGRAPH_HOST=memgraph
-      - MEMGRAPH_PORT=7687  
+      - MEMGRAPH_PORT=7687
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
 
   memgraph:
-    image: memgraph/memgraph-platform
-    container_name: memgraph-platform
+    image: memgraph/memgraph-platform 
+    container_name: memgraph
     ports:
-      - "7687:7687"
-      - "7444:7444"
-      - "3000:3000"
+      - "7687:7687"  # Expose Memgraph Bolt protocol port
+      - "7444:7444"  # Expose Memgraph HTTP protocol port
+      - "3000:3000"  # Expose Memgraph's web interface port
     networks:
       - app-network
 
-
-
 networks:
   app-network:
-    driver: bridge
+    driver: bridge  # Use a bridge network for communication between services
