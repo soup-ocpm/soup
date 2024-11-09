@@ -1,0 +1,290 @@
+"""
+------------------------------------------------------------------------
+File : docker_service.py
+Description: Service for Generic graph controller
+Date creation: 20-07-2024
+Project : soup-server
+Author: Alessio Giacché
+Copyright: Copyright (c) 2024 Alessio Giacché <ale.giacc.dev@gmail.com>
+License : MIT
+------------------------------------------------------------------------
+"""
+
+# Import
+import math
+import json
+
+from flask import jsonify
+from collections.abc import *
+from neo4j.time import DateTime
+from Controllers.graph_config import memgraph_datetime_to_string
+from Services.Graph.op_graph_service import OperationGraphService
+from Services.AggregateGraph.op_class_graph_service import OperationClassGraphService
+from Models.api_response_model import ApiResponse
+from Models.dataset_process_info_model import DatasetProcessInformation
+from Models.docker_file_manager_model import DockerFileManager
+from Models.file_manager_model import FileManager
+from Utils.causal_query_lib import reveal_causal_rels
+from Utils.query_library import *
+
+
+# The Service for generic graph controller
+class GenericGraphService:
+
+    @staticmethod
+    def create_complete_graphs(container_id, database_connector, dataset_name):
+        process_info = DatasetProcessInformation()
+
+        try:
+            # The current time
+            process_info.init_time = datetime.now().strftime('%Y-%m-%dT%H:%M:%S.%f')[:-3]
+
+            # 1. Get the dataset files (from the Docker container)
+            main_csv_path, entity_csv_path, config_json_path = DockerFileManager.get_dataset_file_path(container_id,
+                                                                                                       dataset_name)
+
+            if not main_csv_path or not entity_csv_path or not config_json_path:
+                return 'Unable to load the Dataset files'
+
+            # 2. Read the config file for get the configuration
+            result, exec_config_file = DockerFileManager.read_configuration_json_file(container_id, dataset_name)
+
+            if result != 'success':
+                return result
+
+            json_content = json.loads(exec_config_file)
+
+            dataset_name = json_content["dataset_name"]
+            dataset_description = json_content["dataset_description"]
+            standard_columns = json_content["standard_columns"]
+            filtered_columns = json_content["filtered_columns"]
+            values_columns = json_content["values_columns"]
+            fixed_columns = json_content["fixed_columns"]
+            variable_columns = json_content["variable_columns"]
+            causality_graph_columns = json_content["causality"]
+            # class_nodes = json_content["class_nodes"] Todo: implement
+            graph_columns = json_content["graph_columns"]
+
+            try:
+                database_connector.connect()
+
+                # 3. Execute the event nodes query and save the time
+                cypher_properties = []
+                for key in values_columns:
+                    if key not in standard_columns:
+                        if key not in ['event_id', 'timestamp', 'activity_name']:
+                            cypher_properties.append(f"{key}: coalesce(row.{key}, '')")
+
+                process_info.init_event_time = datetime.now().strftime('%Y-%m-%dT%H:%M:%S.%f')[:-3]
+                query = load_event_node_query(main_csv_path, 'event_id', 'timestamp', 'activity_name',
+                                              cypher_properties)
+                database_connector.run_query_memgraph(query)
+                process_info.finish_event_time = datetime.now().strftime('%Y-%m-%dT%H:%M:%S.%f')[:-3]
+
+                # 4. Execute the entity nodes query
+                process_info.init_entity_time = datetime.now().strftime('%Y-%m-%dT%H:%M:%S.%f')[:-3]
+                query = load_entity_node_query(entity_csv_path)
+                database_connector.run_query_memgraph(query)
+                process_info.finish_entity_time = datetime.now().strftime('%Y-%m-%dT%H:%M:%S.%f')[:-3]
+
+                # 5. Create entities index to optimize :CORR creation
+                database_connector.run_query_memgraph(create_entity_index())
+
+                # 6. Create :CORR relationships
+                process_info.init_corr_time = datetime.now().strftime('%Y-%m-%dT%H:%M:%S.%f')[:-3]
+
+                for key in filtered_columns:
+                    if key not in ['event_id', 'timestamp', 'activity_name']:
+                        if key not in standard_columns:
+                            relation_query_corr = create_corr_relation_query(key)
+                            database_connector.run_query_memgraph(relation_query_corr)
+
+                process_info.finish_corr_time = datetime.now().strftime('%Y-%m-%dT%H:%M:%S.%f')[:-3]
+
+                # 7. Causality check
+                process_info.init_df_time = datetime.now().strftime('%Y-%m-%dT%H:%M:%S.%f')[:-3]
+
+                if len(causality_graph_columns) > 0:
+                    # 7.1. Create :CAUS relationships
+                    queries = reveal_causal_rels(causality_graph_columns[0], causality_graph_columns[1])
+                    for query in queries:
+                        database_connector.run_query_memgraph(query)
+                    for key in filtered_columns:
+                        if key not in ['event_id', 'timestamp', 'activity_name', causality_graph_columns[0]]:
+                            relation_query_df = create_df_relation_query(key)
+                            database_connector.run_query_memgraph(relation_query_df)
+                else:
+                    # 7.2. Create :DF relationships
+                    for key in filtered_columns:
+                        if key not in ['event_id', 'timestamp', 'activity_name']:
+                            relation_query_df = create_df_relation_query(key)
+                            database_connector.run_query_memgraph(relation_query_df)
+
+                process_info.finish_df_time = datetime.now().strftime('%Y-%m-%dT%H:%M:%S.%f')[:-3]
+                process_info.finish_time = datetime.now().strftime('%Y-%m-%dT%H:%M:%S.%f')[:-3]
+
+                # if class_nodes > 0:
+                # Todo: check if there exist class graph. In case create it here
+
+            except Exception as e:
+                return f'Error: {e}'
+
+            # Finally get the information and save the new json
+            event_nodes = OperationGraphService.get_count_event_nodes_s(database_connector)
+            entity_nodes = OperationGraphService.get_count_entity_nodes_s(database_connector)
+            corr_rel = OperationGraphService.get_count_corr_relationships_s(database_connector)
+            df_rel = OperationGraphService.get_count_df_relationships_s(database_connector)
+
+            # Finally update the Dataset node with new information
+            class_nodes = OperationClassGraphService.get_count_class_nodes_s(database_connector)
+            obs_rel = OperationClassGraphService.get_count_obs_relationships_s(database_connector)
+            dfc_rel = OperationClassGraphService.get_count_dfc_relationships_s(database_connector)
+
+            new_json_configuration = FileManager.create_json_file(dataset_name, dataset_description, standard_columns,
+                                                                  filtered_columns, values_columns, fixed_columns,
+                                                                  variable_columns, graph_columns,
+                                                                  causality_graph_columns,
+                                                                  event_nodes, entity_nodes, corr_rel, df_rel,
+                                                                  None, None, None,
+                                                                  process_info.to_dict())
+
+            if new_json_configuration is None:
+                return 'Error while creating the json file configuration'
+
+            result, new_json_config_path = FileManager.copy_json_file(new_json_configuration, dataset_name)
+            if result != 'success' or new_json_config_path is None:
+                return 'Error while copy the json file on the Engine directory'
+
+            result, new_json_config_docker_file_path = DockerFileManager.copy_file_to_container(container_id,
+                                                                                                dataset_name,
+                                                                                                new_json_config_path,
+                                                                                                False, True)
+            if result != 'success' or new_json_config_path is None:
+                return result
+
+            result = FileManager.delete_json_file(dataset_name)
+
+            if result != 'success':
+                return result
+
+            return 'success'
+
+        except Exception as e:
+            return f'Error: {e}'
+
+    # Get complete graph (standard or class)
+    @staticmethod
+    def get_graph_s(database_connector, standard_graph, limit):
+        apiResponse = ApiResponse(None, None, None)
+
+        try:
+            database_connector.connect()
+            query_result = get_complete_standard_graph_query()
+
+            if standard_graph == "1":
+                if not limit:
+                    query_result = get_complete_standard_graph_query()
+                else:
+                    query_result = get_limit_standard_graph_query(limit)
+            else:
+                if not limit:
+                    query_result = get_complete_class_graph_query()
+                else:
+                    query_result = get_limit_class_graph_query(limit)
+
+            result = database_connector.run_query_memgraph(query_result)
+
+            if not isinstance(result, Iterable) or len(result) == 0:
+                apiResponse.http_status_code = 404
+                apiResponse.response_data = None
+                apiResponse.message = "Not found"
+                return jsonify(apiResponse.to_dict()), 404
+
+            graph_data = []
+
+            for record in result:
+                # Node source
+                source = record['source']
+                source['id'] = record['source_id']
+
+                # Relationship
+                edge = record['edge']
+                edge['id'] = record['edge_id']
+
+                # Node target
+                target = record['target']
+                target['id'] = record['target_id']
+
+                # Correct the info
+                for key, value in source.items():
+                    if isinstance(value, (int, float)) and math.isnan(value):
+                        source[key] = None
+                    elif isinstance(value, DateTime):
+                        source[key] = memgraph_datetime_to_string(value)
+
+                for key, value in target.items():
+                    if isinstance(value, (int, float)) and math.isnan(value):
+                        target[key] = None
+                    elif isinstance(value, DateTime):
+                        target[key] = memgraph_datetime_to_string(value)
+
+                graph_data.append({
+                    'node_source': source,
+                    'edge': edge,
+                    'node_target': target
+                })
+
+            if not graph_data:
+                apiResponse.http_status_code = 404
+                apiResponse.response_data = None
+                apiResponse.message = "Not found"
+                return jsonify(apiResponse.to_dict()), 404
+
+            apiResponse.http_status_code = 200
+            apiResponse.response_data = graph_data
+            apiResponse.message = "Retrieve Graph."
+
+            return jsonify(apiResponse.to_dict()), 200
+
+        except Exception as e:
+            apiResponse.http_status_code = 500
+            apiResponse.response_data = None
+            apiResponse.message = f'Internal Server Error : {str(e)}'
+            return jsonify(apiResponse.to_dict()), 500
+
+        finally:
+            database_connector.close()
+
+    # Delete all inside the database
+    @staticmethod
+    def delete_all_graph_s(database_connector):
+        apiResponse = ApiResponse(None, None, None)
+
+        try:
+            database_connector.connect()
+
+            query = delete_all_data_query()
+            database_connector.run_query_memgraph(query)
+
+            verification_query = get_count_data_query()
+            result_node = database_connector.run_query_memgraph(verification_query)
+
+            if result_node and result_node[0]['count'] == 0:
+                apiResponse.http_status_code = 200
+                apiResponse.message = 'Graph deleted successfully !'
+                apiResponse.response_data = None
+                return jsonify(apiResponse.to_dict()), 200
+            else:
+                apiResponse.http_status_code = 404
+                apiResponse.message = 'Data was not deleted!'
+                apiResponse.response_data = None
+                return jsonify(apiResponse.to_dict()), 404
+
+        except Exception as e:
+            apiResponse.http_status_code = 500
+            apiResponse.message = f"Internal Server Error : {str(e)}"
+            apiResponse.response_data = None
+            return jsonify(apiResponse.to_dict()), 500
+
+        finally:
+            database_connector.close()
