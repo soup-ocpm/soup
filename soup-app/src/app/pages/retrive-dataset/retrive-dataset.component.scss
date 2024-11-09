@@ -1,0 +1,160 @@
+// ================================
+// Region: Master layout
+// ================================
+.master {
+  height: 90vh;
+  padding-left: 50px;
+  padding-right: 50px;
+  font-family: 'Times New Roman', Times, serif;
+
+  h4 {
+    color: #666;
+  }
+}
+
+.header {
+  width: 100%;
+  margin-top: 15px;
+}
+
+.search-dataset {
+  width: 30%;
+}
+
+// ================================
+// Region: Dataset grid
+// ================================
+.dataset-grid {
+  width: 100%;
+  margin-top: 15px;
+  display: grid;
+  grid-template-columns: repeat(3, 2fr);
+  gap: 10px;
+}
+
+.no-dataset {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+
+  p {
+    font-size: 18px;
+    text-align: center;
+    color: black;
+  }
+
+  img {
+    width: 400px;
+    height: 400px;
+  }
+}
+
+app-s-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.form-control:focus {
+  border-color: none;
+  box-shadow: none;
+  outline: none;
+}
+
+// ================================
+// Region: Sidebar layout
+// ================================
+.sidebar {
+  height: calc(100% - 114px);
+  width: 600px;
+  position: fixed;
+  z-index: 1000;
+  top: 56px;
+  right: -600px;
+  background-color: #f9f9f9;
+  overflow-x: hidden;
+  transition: right 0.3s;
+  padding: 20px;
+  box-shadow: -2px 0 5px rgba(0, 0, 0, 0.3);
+}
+
+.sidebar-header {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.sidebar-header i {
+  color: #666;
+  cursor: pointer;
+}
+
+.form-label {
+  margin-bottom: 0.2rem;
+  color: #666;
+}
+
+.show {
+  right: 0;
+}
+
+.hidden {
+  display: none;
+}
+
+.master-footer {
+  display: flex;
+  position: absolute;
+  bottom: 10px;
+  left: 10px;
+}
+
+.master-footer app-s-button {
+  margin-right: 5px;
+}
+
+.master-footer app-s-button:last-child {
+  margin-right: 0;
+}
+
+// ================================
+// Region: Loading status
+// ================================
+.loading-datasets {
+  width: 100%;
+  height: 90vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  h4 {
+    color: #666;
+    font-family: 'Times New Roman', Times, serif;
+    margin-top: 6px;
+    margin-left: 15px;
+  }
+}
+
+// ================================
+// Region: Process creation
+// ================================
+.process-div {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+
+  h3 {
+    font-size: 28px;
+    text-align: center;
+    font-family: Georgia, 'Times New Roman', Times, serif;
+  }
+}
+
+.progress-bar {
+  width: 100%;
+  height: 40px;
+  background-color: red;
+}

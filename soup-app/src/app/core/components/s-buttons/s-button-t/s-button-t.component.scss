@@ -1,0 +1,11 @@
+.text-button {
+  background: none;
+  border: none;
+  color: var(--text-color, #007bff);
+  padding: 0;
+  font-size: 16px;
+}
+
+.text-button.disabled {
+  opacity: 0.3;
+}

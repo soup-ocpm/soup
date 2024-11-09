@@ -1,0 +1,27 @@
+// ================================
+// Region: Master footer layout
+// ================================
+.master-footer {
+  height: 55px;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background-color: #f1f1f1;
+  padding: 10px;
+  text-align: center;
+  justify-content: center;
+}
+
+.inside {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 40px;
+  font-family: 'Times New Roman', Times, serif;
+  color: #666;
+
+  span {
+    margin-left: 10px;
+  }
+}

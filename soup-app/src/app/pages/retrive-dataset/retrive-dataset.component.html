@@ -1,0 +1,147 @@
+<!--The progress bar-->
+<app-s-progressbar *ngIf="isCreatingDataset"></app-s-progressbar>
+
+<div
+  class="master"
+  *ngIf="!this.isLoadingDatasets && !this.isLoadingContainer && !this.isCreatingDataset">
+  <div *ngIf="!isLoadingContainer && isShowContainers && dockerContainers.length > 0 && this.currentContainer == null">
+    <app-container-list-card
+      [dockerContainers]="this.dockerContainers"
+      (exportContainer)="this.handleSelectedContainer($event)"></app-container-list-card>
+  </div>
+  <!--All Dataset-->
+  <div *ngIf="this.haveDatasets && !this.isShowContainers">
+    <div class="header">
+      <h4>All Dataset</h4>
+      <app-s-divider></app-s-divider>
+    </div>
+
+    <div class="search-dataset">
+      <input
+        class="form-control form-control-sm"
+        style="margin-top: 10px"
+        type="text"
+        placeholder="Search dataset"
+        [(ngModel)]="searchTerm" />
+    </div>
+
+    <div class="dataset-grid">
+      <ng-container *ngFor="let item of this.filteredDatasets()">
+        <app-dataset-tile
+          [dataset]="item"
+          [containerId]="this.currentContainer!.id"
+          (selectedDataset)="this.onSelectedDataset($event)"
+          (manageDataset)="this.onManageDataset($event)"></app-dataset-tile>
+      </ng-container>
+    </div>
+  </div>
+
+  <!--No dataset-->
+  <div
+    class="no-dataset"
+    *ngIf="!this.haveDatasets && !this.isShowContainers">
+    <img src="/images/graph2.svg" />
+    <p>
+      You do not have any Datasets
+      <br />
+      within your Memgraph database
+    </p>
+    <app-s-button
+      [text]="'New Dataset'"
+      (buttonClick)="this.newDataset()"></app-s-button>
+  </div>
+
+  <!-- Sidebar -->
+  <div
+    class="sidebar"
+    [ngClass]="{ show: isOpenSidebar }">
+    <div *ngIf="this.currentDataset != null">
+      <div class="sidebar-header">
+        <h4>Manage Dataset</h4>
+        <i
+          class="bi bi-x-lg"
+          (click)="this.toggleSidebar()"></i>
+      </div>
+
+      <form>
+        <div
+          class="mb-2"
+          style="margin-top: 20px">
+          <label
+            for="datasetName"
+            class="form-label">
+            Name
+          </label>
+          <input
+            disabled="true   "
+            class="form-control form-control-sm"
+            id="datasetName"
+            type="text"
+            name="datasetName"
+            [(ngModel)]="currentDataset!.name"
+            (ngModelChange)="this.checkForModelChange()" />
+        </div>
+
+        <div
+          class="mb-2"
+          style="margin-top: 20px">
+          <label
+            for="datasetDescription"
+            class="form-label">
+            Description
+          </label>
+          <textarea
+            class="form-control"
+            id="datasetDescription"
+            style="max-height: 150px"
+            name="datasetDescription"
+            rows="3"
+            [(ngModel)]="currentDataset!.description"
+            (ngModelChange)="this.checkForModelChange()"></textarea>
+        </div>
+
+        <div class="master-footer">
+          <app-s-button
+            *ngIf="this.modelChange && !this.isLoadingUpdate"
+            [text]="'Save'"
+            (buttonClick)="this.onSaveUpdate()"></app-s-button>
+
+          <app-s-spinner-one *ngIf="this.isLoadingUpdate"></app-s-spinner-one>
+
+          <app-s-button
+            *ngIf="this.modelChange && !this.isLoadingUpdate"
+            [disabled]="this.isLoadingUpdate"
+            [text]="'Restore'"
+            [color]="'#6c757d'"
+            (buttonClick)="this.restoreModel()"></app-s-button>
+
+          <app-s-button
+            [text]="'Delete'"
+            *ngIf="!this.isLoadingUpdate"
+            [disabled]="this.isLoadingUpdate && !this.isLoadingUpdate"
+            [color]="'#FF0000'"
+            (buttonClick)="this.openModalDelete()"></app-s-button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!--Loading status-->
+<div
+  class="loading-datasets"
+  *ngIf="this.isLoadingDatasets || this.isLoadingContainer">
+  <app-s-spinner-one></app-s-spinner-one>
+  <h4>{{ this.isLoadingDatasets ? 'Loading datasets...' : 'Loading containers...' }}</h4>
+</div>
+
+<!--Loading content-->
+<div *ngIf="this.isCreatingDataset">
+  <div class="process-div">
+    <h3>
+      Building the EKG
+      <br />
+      This operation may take a few minutes...
+    </h3>
+  </div>
+</div>

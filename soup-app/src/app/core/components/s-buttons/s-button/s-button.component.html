@@ -1,0 +1,13 @@
+<button
+  [ngStyle]="{
+    'background-color': color,
+    'max-height': this.height,
+    'min-height': this.height,
+    cursor: this.cursor,
+    disabled: this.disabled
+  }"
+  (click)="onClick()"
+  class="custom-button"
+  [disabled]="this.disabled">
+  {{ this.text }}
+</button>

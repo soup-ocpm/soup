@@ -1,0 +1,161 @@
+// SCSS MASTER LAYOUT
+.master {
+  width: 100%;
+  height: 90vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  font-family: Georgia, 'Times New Roman', Times, serif;
+}
+
+.dataset-name {
+  display: flex;
+  position: absolute;
+  top: 30px;
+  left: 30px;
+  font-family: 'Times New Roman', Times, serif;
+  color: #666;
+}
+
+// SCSS FOR THE GRID
+.master-grid {
+  display: grid;
+  align-items: center;
+  justify-content: center;
+  grid-template-columns: auto auto;
+  grid-template-rows: repeat(2, auto);
+  gap: 20px;
+}
+
+// SCSS FOR THE SIDEBAR
+.sidebar {
+  height: calc(100% - 114px);
+  width: 400px;
+  position: fixed;
+  z-index: 1000;
+  top: 56px;
+  right: -600px;
+  background-color: #f9f9f9;
+  overflow-x: hidden;
+  transition: right 0.3s;
+  padding: 20px;
+  box-shadow: -2px 0 5px rgba(0, 0, 0, 0.3);
+  font-family: Georgia, 'Times New Roman', Times, serif;
+
+  p,
+  i {
+    color: #666;
+  }
+
+  h5 {
+    color: #555;
+  }
+}
+
+.sidebar-header {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.sidebar-header i {
+  cursor: pointer;
+}
+
+.double-flex {
+  display: flex;
+
+  i {
+    margin-top: 2px;
+    margin-left: 15px;
+    color: #c99807;
+  }
+}
+
+.underline-h {
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.move {
+  width: 430px;
+  cursor: not-allowed;
+  background-color: rgba(0, 0, 0, 0.186);
+}
+
+.show {
+  right: 0;
+}
+
+.hidden {
+  display: none;
+}
+
+// SCSS FOR SECOND SIDEBAR CONTENT
+.list-group-item {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 10px;
+  background-color: #e5e5e5;
+  border-radius: 5px;
+  padding-right: 5px;
+  padding-left: 5px;
+
+  .group {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    mat-icon {
+      color: #c4a805;
+    }
+
+    mat-slide-toggle {
+      margin-left: 10px;
+      transform: scale(0.6);
+    }
+  }
+}
+
+.master-footer {
+  display: flex;
+  position: absolute;
+  bottom: 10px;
+  left: 10px;
+}
+
+.master-footer app-s-button {
+  margin-right: 5px;
+}
+
+.master-footer app-s-button:last-child {
+  margin-right: 0;
+}
+
+.warning {
+  p {
+    color: #ff0000;
+  }
+}
+
+// SCSS FOR PROCESSING
+.process-div {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+
+  h3 {
+    font-size: 28px;
+    text-align: center;
+    font-family: Georgia, 'Times New Roman', Times, serif;
+  }
+}
+
+.progress-bar {
+  width: 100%;
+  height: 40px;
+  background-color: red;
+}

@@ -1,0 +1,22 @@
+{
+    "editor.wordWrapColumn": 140,
+    "editor.rulers": [140],
+    "editor.cursorSmoothCaretAnimation": "on",
+    "editor.fontSize": 13,
+    "editor.formatOnSave": true,
+    "editor.codeActionsOnSave": {
+      "source.fixAll.eslint": "explicit",
+      "source.organizeImports": "explicit",
+      "source.removeUnusedImports": "explicit"
+    },
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "debug.console.fontSize": 13,
+    "debug.console.acceptSuggestionOnEnter": "on",
+    "terminal.integrated.fontSize": 13,
+    "markdown.preview.fontSize": 13,
+    "eslint.format.enable": true,
+    "html.format.enable": true,
+    "html.format.wrapAttributes": "preserve",
+    "typescript.format.enable": false
+}
+  

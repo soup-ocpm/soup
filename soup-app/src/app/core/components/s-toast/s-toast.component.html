@@ -1,0 +1,9 @@
+<div
+  class="toast"
+  [ngClass]="{
+    success: this.toastLevel === 1,
+    warning: toastLevel === 2,
+    error: toastLevel === 3
+  }">
+  <span>{{ message }}</span>
+</div>

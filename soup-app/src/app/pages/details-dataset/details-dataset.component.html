@@ -1,0 +1,188 @@
+<!--The progress bar-->
+<app-s-progressbar *ngIf="this.isLoading"></app-s-progressbar>
+
+<div class="master">
+  <!--Detail cards grid-->
+
+  <div class="dataset-name">
+    <h4>{{ this.currentDataset?.name }} dataset</h4>
+  </div>
+  <div
+    class="master-grid"
+    *ngIf="!this.isLoading">
+    <div *ngFor="let detailTile of this.detailGraphDataList">
+      <app-detail-tile [detailModel]="detailTile"></app-detail-tile>
+    </div>
+  </div>
+
+  <!-- Sidebar -->
+  <div
+    class="sidebar"
+    [ngClass]="{ show: this.isOpenSidebar, move: this.isOpenSecondSidebar }">
+    <div class="sidebar-header">
+      <h4>Graph Operation</h4>
+      <!--<i class="bi bi-x-lg" (click)="this.isOpenSidebar = false"></i>-->
+    </div>
+    <p>A ist of operations avaible for this section</p>
+
+    <!--Manage datasets-->
+    <div class="double-flex">
+      <h5
+        class="underline-h"
+        [ngStyle]="{ cursor: this.isOpenSecondSidebar ? 'not-allowed' : 'pointer' }"
+        (click)="this.manageDatasets()">
+        Manage Datasets
+      </h5>
+    </div>
+    <p>Go to the Datasets manager page</p>
+
+    <div style="margin-top: 35px"></div>
+
+    <!--View the standard graph-->
+    <div class="double-flex">
+      <h5
+        class="underline-h"
+        [ngStyle]="{ cursor: this.isOpenSecondSidebar ? 'not-allowed' : 'pointer' }"
+        (click)="this.goToGraphVisualization(true)">
+        View the Graph
+      </h5>
+    </div>
+    <p>View the complete graph. Maximum of 200 nodes and relationships displayed.</p>
+
+    <div style="margin-top: 35px"></div>
+
+    <!--View the class graph-->
+    <div *ngIf="this.currentDataset!.classNodes > 0">
+      <div class="double-flex">
+        <h5
+          class="underline-h"
+          [ngStyle]="{ cursor: this.isOpenSecondSidebar ? 'not-allowed' : 'pointer' }"
+          (click)="this.goToGraphVisualization(false)">
+          View the Class Graph
+        </h5>
+      </div>
+      <p>View the complete aggregate graph. Maximum of 200 nodes and relationships displayed.</p>
+
+      <div style="margin-top: 35px"></div>
+    </div>
+
+    <!--Group by class-->
+    <div class="double-flex">
+      <h5
+        class="underline-h"
+        [ngStyle]="{ cursor: this.isOpenSecondSidebar ? 'not-allowed' : 'pointer' }"
+        (click)="this.openSecondSidebar()">
+        Group by class
+      </h5>
+    </div>
+    <p>Group nodes into chosen classes</p>
+
+    <div style="margin-top: 35px"></div>
+
+    <div class="double-flex">
+      <h5>Export JSON</h5>
+    </div>
+    <p>Export the complete graph in a JSON file</p>
+    <app-s-button
+      [text]="'Export'"
+      [height]="'27px'"
+      [cursor]="this.isOpenSecondSidebar ? 'not-allowed' : 'pointer'"
+      (buttonClick)="this.exportJson()"></app-s-button>
+
+    <div style="margin-top: 35px"></div>
+
+    <div class="double-flex">
+      <h5>Delete graph</h5>
+    </div>
+    <p>Delete the graph within the database</p>
+    <app-s-button
+      [text]="'Delete'"
+      [height]="'27px'"
+      [color]="'#FF0000'"
+      [cursor]="this.isOpenSecondSidebar ? 'not-allowed' : 'pointer'"
+      (buttonClick)="this.handleDeleteGraph()"></app-s-button>
+
+    <div style="margin-top: 35px"></div>
+  </div>
+
+  <!--Second sidebar-->
+  <div
+    class="sidebar"
+    [ngClass]="{ show: this.isOpenSecondSidebar }">
+    <div class="sidebar-header">
+      <h4>Group by class</h4>
+      <i
+        class="bi bi-x-lg"
+        (click)="this.toggleSecondSidebar()"></i>
+    </div>
+    <p style="margin-top: 15px">
+      This operation allows to group nodes into classes. The default aggregation considers the Activity property. Moreover, here you can
+      select the desired entities that will be also taken into account when creating Class nodes.
+    </p>
+
+    <app-s-divider></app-s-divider>
+
+    <li
+      *ngFor="let entity of this.entityList"
+      class="list-group-item">
+      <span style="margin-top: 5px">{{ entity.name }}</span>
+
+      <div class="group">
+        <mat-icon
+          *ngIf="entity.numberOfNanNodes > 0"
+          [matTooltip]="getEntityWarningLabel(entity)">
+          warning
+        </mat-icon>
+        <mat-slide-toggle
+          style="margin-top: 3px"
+          [(ngModel)]="entity.isSelected"
+          (change)="selectionEntity(entity)"
+          color="primary"></mat-slide-toggle>
+      </div>
+    </li>
+
+    <div style="margin-top: 13px"></div>
+    <app-s-divider></app-s-divider>
+
+    <div *ngIf="this.currentDataset!.classNodes > 0">
+      <p style="color: #ff0000; margin-top: 10px">Warning</p>
+      <p>
+        Aggregate class graph is already present inside the Memgraph Database. This operation will remove the present graph to make new
+        aggregation
+      </p>
+    </div>
+
+    <div class="master-footer">
+      <app-s-button
+        *ngIf="this.selectedEntities.length > 0"
+        [text]="'Build'"
+        (buttonClick)="this.buildClassGraph()"></app-s-button>
+      <app-s-button
+        *ngIf="this.selectedEntities.length > 0"
+        [text]="'Restore'"
+        [color]="'#6c757d'"
+        (buttonClick)="this.resetSelection()"></app-s-button>
+    </div>
+  </div>
+</div>
+
+<!--Loading content-->
+<div *ngIf="isLoading">
+  <div class="process-div">
+    <h3>
+      Building the Class EKG
+      <br />
+      This operation may take a few minutes...
+    </h3>
+    <div
+      class="progress-terminal"
+      *ngIf="this.progressData['total_nodes'] != null && this.progressData['total_relationships'] != null">
+      <p>Created {{ progressData['event_nodes'] }} event nodes</p>
+      <p>Created {{ progressData['entity_nodes'] }} entity nodes</p>
+      <p>Created {{ progressData['corr_relationships'] }} :CORR relationships</p>
+      <p>Created {{ progressData['df_relationships'] }} :DF relationships</p>
+      <p style="font-weight: bold">Total : {{ progressData['total_nodes'] }} nodes</p>
+      <p style="font-weight: bold">Total : {{ progressData['total_relationships'] }} relationships</p>
+    </div>
+  </div>
+</div>

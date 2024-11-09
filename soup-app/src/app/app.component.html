@@ -1,0 +1,22 @@
+<!--Navigation bar-->
+<app-navbar></app-navbar>
+
+<!--Content-->
+<div
+  class="content"
+  [@routeAnimation]="this.prepareRoute(o)"
+  (@routeAnimation.done)="this.onAnimationDone()">
+  <router-outlet #o="outlet"></router-outlet>
+</div>
+
+<!--Toast-->
+<app-s-toast></app-s-toast>
+
+<!--Generic modal-->
+<app-s-generic-modal></app-s-generic-modal>
+
+<!--Input modal-->
+<app-s-input-modal></app-s-input-modal>
+
+<!--Footer-->
+<app-footer></app-footer>

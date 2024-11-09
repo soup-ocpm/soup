@@ -1,0 +1,7 @@
+<button
+  [disabled]="this.disabled"
+  class="text-button"
+  [ngStyle]="{ color: this.color, cursor: this.cursor }"
+  (click)="this.onClick()">
+  {{ this.text }}
+</button>

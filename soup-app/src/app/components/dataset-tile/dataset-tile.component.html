@@ -1,0 +1,88 @@
+<div class="dataset-card">
+  <!--Card header-->
+  <div class="header">
+    <h3
+      class="dataset-name"
+      (click)="this.openDataset()">
+      {{ this.dataset?.name }}
+    </h3>
+    <i
+      class="bi bi-three-dots-vertical"
+      style="cursor: pointer"
+      [matMenuTriggerFor]="menu"></i>
+
+    <!--Menu-->
+    <mat-menu #menu="matMenu">
+      <button
+        mat-menu-item
+        (click)="this.openDataset()">
+        <i class="bi bi-box-arrow-in-up-right"></i>
+        <span style="margin-left: 5px; font-family: 'Times New Roman', Times, serif">Open</span>
+      </button>
+      <button
+        mat-menu-item
+        (click)="this.onManageDataset()">
+        <i class="bi bi-gear"></i>
+        <span style="margin-left: 5px; font-family: 'Times New Roman', Times, serif">Settings</span>
+      </button>
+    </mat-menu>
+  </div>
+
+  <div class="flex">
+    <div class="dataset-info">
+      <p class="info-title">Standard Graph</p>
+      <p>
+        <strong>Event nodes:</strong>
+        {{ this.dataset?.eventNodes }}
+      </p>
+      <p>
+        <strong>Entity nodes:</strong>
+        {{ this.dataset?.entityNodes }}
+      </p>
+      <p>
+        <strong>Corr relationships:</strong>
+        {{ this.dataset?.corrRel }}
+      </p>
+      <p>
+        <strong>Df relationships:</strong>
+        {{ this.dataset?.dfRel }}
+      </p>
+
+      <div style="margin-top: 20px">
+        <p>
+          <strong>Date created:</strong>
+          {{ this.dataset?.dateCreated }}
+        </p>
+        <p>
+          <strong>Date modified:</strong>
+          {{ this.dataset?.dateModified }}
+        </p>
+      </div>
+    </div>
+
+    <div class="dataset-info">
+      <p class="info-title">Class Graph</p>
+      <div *ngIf="this.dataset!.classNodes > 0">
+        <p>
+          <strong>Class nodes:</strong>
+          {{ this.dataset?.classNodes }}
+        </p>
+        <p>
+          <strong>OBS relationships:</strong>
+          {{ this.dataset?.obsRel }}
+        </p>
+        <p>
+          <strong>DF_C relationships:</strong>
+          {{ this.dataset?.dfcRel }}
+        </p>
+      </div>
+      <div *ngIf="!(this.dataset!.classNodes > 0)">
+        <p>
+          This Dataset not have the Class
+          <br />
+          graph
+        </p>
+      </div>
+    </div>
+  </div>
+</div>

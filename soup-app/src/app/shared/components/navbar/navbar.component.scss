@@ -1,0 +1,30 @@
+// ================================
+// Region: Master navbar layour
+// ================================
+.master {
+  height: 55px;
+  left: 0;
+  right: 0;
+  display: flex;
+  padding: 10px;
+  position: fixed;
+  background-color: #f1f1f1;
+  z-index: 1000;
+}
+
+.link {
+  display: flex;
+}
+
+.link p {
+  margin-top: 5px;
+  margin-left: 25px;
+  font-size: 17px;
+  cursor: pointer;
+  font-family: 'Times New Roman', Times, serif;
+  color: #666;
+}
+
+.link p:hover {
+  color: #ffac1c;
+}

@@ -1,0 +1,93 @@
+<div
+  class="overlay"
+  *ngIf="this.isVisible"></div>
+<div
+  class="card"
+  *ngIf="this.isVisible"
+  [ngClass]="{ show: this.isVisible }">
+  <div class="header">
+    <h4 class="card-title">{{ this.title }}</h4>
+    <i
+      class="bi bi-x-lg"
+      (click)="isVisible = false"></i>
+  </div>
+  <p style="color: #666; margin-top: 15px">{{ this.message }}</p>
+
+  <div class="mb-1">
+    <label
+      for="datasetName"
+      class="form-label">
+      Name
+    </label>
+    <input
+      class="form-control form-control-sm"
+      id="datasetName"
+      type="text"
+      [(ngModel)]="this.datasetName"
+      (input)="this.onInputChange()"
+      [ngClass]="{ 'input-error': this.hasError }" />
+    <span>
+      <p
+        *ngIf="hasError"
+        style="color: red; margin-top: 5px">
+        {{ this.errorMessage }}
+      </p>
+    </span>
+  </div>
+
+  <div class="mb-1">
+    <label
+      for="datasetDescription"
+      class="form-label">
+      Description
+    </label>
+    <textarea
+      class="form-control form-control-sm"
+      id="datasetDescription"
+      type="text"
+      style="max-height: 100px"
+      [(ngModel)]="this.datasetDescription"
+      (input)="this.onInputChange()"></textarea>
+  </div>
+
+  <div class="process-execution">
+    <div class="mb-1">
+      <label
+        for="saveProcessExecution"
+        class="form-label">
+        Save process and query execution time for this Dataset for in-depth
+        <br />
+        information
+      </label>
+      <mat-slide-toggle
+        id="saveProcessExecution"
+        [(ngModel)]="saveProcessExecution"
+        color="primary"
+        class="small-slide-toggle"></mat-slide-toggle>
+    </div>
+  </div>
+
+  <div
+    *ngIf="!this.doubleButton"
+    style="margin-top: 20px">
+    <app-s-button-t
+      [text]="this.primaryButtonText"
+      [color]="this.primaryButtonColor"
+      (buttonClick)="onClickPrimaryButton()"></app-s-button-t>
+  </div>
+
+  <div
+    class="footer"
+    *ngIf="this.doubleButton"
+    style="margin-top: 20px">
+    <app-s-button-t
+      [text]="primaryButtonText"
+      [color]="this.primaryButtonColor"
+      (buttonClick)="onClickPrimaryButton()"></app-s-button-t>
+    <app-s-button-t
+      [text]="secondaryButtonText"
+      [color]="this.secondaryButtonColor"
+      style="margin-left: 25px"
+      (buttonClick)="onClickSecondaryButton()"></app-s-button-t>
+  </div>
+</div>

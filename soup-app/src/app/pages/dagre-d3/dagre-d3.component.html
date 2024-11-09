@@ -1,0 +1,88 @@
+<div class="master">
+  <!--Graph visualization-->
+  <div
+    class="master-graph"
+    [ngClass]="{ small: this.isOpenMenuSidebar, 'small-two': this.isOpenSearchSidebar }">
+    <div id="myGraphContainer">
+      <svg #graphSvg></svg>
+    </div>
+  </div>
+
+  <!--Right Action buttons-->
+  <div class="right-actions">
+    <i
+      matTooltip="Menu"
+      class="bi bi-card-list"
+      style="margin-right: 7px"
+      (click)="this.handleMenuOperations()"></i>
+    <i
+      matTooltip="Search"
+      class="bi bi-search"
+      style="margin-top: 10px; margin-right: 7px"
+      (click)="this.handleSearchData()"></i>
+  </div>
+
+  <!--Left Action buttons-->
+  <div
+    class="left-actions"
+    *ngIf="!this.isOpenMenuSidebar && !this.isOpenSearchSidebar">
+    <i
+      matTooltip="Leave"
+      class="bi bi-arrow-left-square"
+      (click)="this.leavePage()"></i>
+  </div>
+
+  <!--Menu Sidebar-->
+  <div
+    class="sidebar"
+    [ngClass]="{ show: this.isOpenMenuSidebar }">
+    <div class="sidebar-header">
+      <h4>Manage Dataset</h4>
+      <i
+        class="bi bi-x-lg"
+        (click)="this.isOpenMenuSidebar = false"></i>
+    </div>
+  </div>
+
+  <!--Search Sidebar-->
+  <div
+    class="sidebar"
+    [ngClass]="{ show: this.isOpenSearchSidebar }"
+    [ngStyle]="{ width: '600px' }">
+    <div class="sidebar-header">
+      <h4>Search Data</h4>
+      <i
+        class="bi bi-x-lg"
+        (click)="this.closeSearchSidebar()"></i>
+    </div>
+    <p>Search node inside your graph</p>
+
+    <div class="search-dataset">
+      <input
+        class="form-control form-control-sm"
+        style="margin-top: 10px"
+        type="text"
+        placeholder="Receive Order..."
+        [(ngModel)]="searchTerm" />
+    </div>
+
+    <div style="height: 20px"></div>
+    <app-s-divider></app-s-divider>
+    <div style="height: 20px"></div>
+
+    <div class="master-search">
+      <div
+        class="search-term"
+        *ngFor="let item of this.filteredNodes()">
+        <p>
+          <strong>Activity Name:</strong>
+          {{ item['ActivityName'] }}
+        </p>
+        <p style="margin-left: 10px">
+          <strong>Event id:</strong>
+          {{ item['EventID'] }}
+        </p>
+      </div>
+    </div>
+  </div>
+</div>
