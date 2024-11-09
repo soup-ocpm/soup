@@ -20,7 +20,7 @@ from Services.generic_graph_service import GenericGraphService
 op_graph_controller_bp = Blueprint('op_graph_controller_bp', __name__)
 
 # Database information
-database_connector = get_db_connector(debug=True)
+database_connector = get_db_connector(debug=False)
 
 
 @op_graph_controller_bp.route('/api/v2/graph/nodes/event', methods=['GET'])

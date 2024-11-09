@@ -20,7 +20,7 @@ from Models.api_response_model import ApiResponse
 generic_graph_controller_bp = Blueprint('generic_graph_controller_bp', __name__)
 
 # Database information
-database_connector = get_db_connector(debug=True)
+database_connector = get_db_connector(debug=False)
 
 
 @generic_graph_controller_bp.route('/api/v2/complete-graph/build', methods=['POST'])

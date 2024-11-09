@@ -19,7 +19,7 @@ from Services.dataset_service import DatasetService
 dataset_controller_bp = Blueprint('dataset_controller_bp', __name__)
 
 # Database information
-database_connector = get_db_connector(debug=True)
+database_connector = get_db_connector(debug=False)
 
 
 @dataset_controller_bp.route('/api/v2/datasets/single', methods=['GET'])

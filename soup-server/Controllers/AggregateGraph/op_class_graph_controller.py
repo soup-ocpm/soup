@@ -19,7 +19,7 @@ from Services.AggregateGraph.op_class_graph_service import *
 op_class_graph_controller_bp = Blueprint('op_class_graph_controller_bp', __name__)
 
 # Database information
-database_connector = get_db_connector(debug=True)
+database_connector = get_db_connector(debug=False)
 
 
 @op_class_graph_controller_bp.route('/api/v2/graph/class/nodes', methods=['GET'])

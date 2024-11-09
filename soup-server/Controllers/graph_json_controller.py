@@ -20,7 +20,7 @@ from Services.Graph.op_graph_service import OperationGraphService
 graph_json_controller_bp = Blueprint('graph_json_controller_bp', __name__)
 
 # Database information
-database_connector = get_db_connector(debug=True)
+database_connector = get_db_connector(debug=False)
 
 
 # Standard Graph JSON
