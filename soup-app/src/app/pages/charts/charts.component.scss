@@ -1,3 +1,6 @@
+// ================================
+// Region: Main content
+// ================================
 .master {
   width: 100%;
   height: 90vh;
@@ -6,14 +9,18 @@
   justify-content: center;
 }
 
-// PIE CHART
+// ================================
+// Region: Pie chart
+// ================================
 .master-pie {
   width: 400px;
   height: 400px;
   margin-bottom: 250px;
 }
 
-// BAR CHART
+// ================================
+// Region: Bar chart
+// ================================
 .master-bar {
   margin-top: 50px;
   margin-left: 100px;
@@ -21,7 +28,9 @@
   height: 600px;
 }
 
-// LINE CHART
+// ================================
+// Region: Line chart
+// ================================
 .master-line {
   margin-top: 50px;
   margin-left: 100px;

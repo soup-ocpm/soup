@@ -54,6 +54,13 @@ export class LocalDataService {
   }
 
   /**
+   * Remove the current dataset
+   */
+  public removeCurrentDataset(): void {
+    this.currentDataset = undefined;
+  }
+
+  /**
    * Parse the item to Dataset
    * @param containerId the container id
    * @param item the item

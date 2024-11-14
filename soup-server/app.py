@@ -11,6 +11,7 @@ License : MIT
 """
 
 # Import
+import os
 from flask import Flask, jsonify
 from flask_cors import CORS
 from flask_socketio import SocketIO
@@ -47,6 +48,8 @@ app.config['socketio'] = socketio
 # Add application CORS
 CORS(app)
 
+# Configure SOuP Docker folder and volume
+docker_soup_path = '/soup'
 
 # Welcome API
 @app.route('/api/v2/welcome', methods=['GET'])

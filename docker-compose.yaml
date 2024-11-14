@@ -35,7 +35,13 @@ services:
       - "3000:3000"  # Expose Memgraph's web interface port
     networks:
       - app-network
+    volumes:
+      - soup-volume:/soup
 
+volumes:
+  soup-volume:  # Define persistent volume to /soup memgraph folder
+    driver: local
+    
 networks:
   app-network:
     driver: bridge  # Use a bridge network for communication between services

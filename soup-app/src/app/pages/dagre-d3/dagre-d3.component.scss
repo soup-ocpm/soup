@@ -1,4 +1,6 @@
-// SCSS FOR MASTER
+// ================================
+// Region: Main content
+// ================================
 .master {
   width: 100%;
   height: 90vh;
@@ -31,7 +33,9 @@ i:hover {
   color: #ffac1c;
 }
 
-// SCSS FOR THE GRAPH
+// ================================
+// Region: Graph
+// ================================
 .master-graph {
   width: 94%;
   height: 85vh;
@@ -55,7 +59,9 @@ svg {
   height: 85vh;
 }
 
-// SCSS FOR THE SIDEBARS
+// ================================
+// Region: Sidebars
+// ================================
 .sidebar {
   height: calc(100% - 114px);
   width: 500px;
@@ -106,8 +112,9 @@ svg {
   margin-right: 0;
 }
 
-// SCSS FOR THE SEARCH SIDEBAR
-
+// ================================
+// Region: Search Sidebar
+// ================================
 .master-search {
   height: 65vh;
 }

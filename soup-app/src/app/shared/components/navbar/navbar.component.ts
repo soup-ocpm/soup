@@ -1,6 +1,8 @@
 import { Component } from '@angular/core';
 import { Router } from '@angular/router';
 
+import { environment } from '../../../../environments/environment';
+
 @Component({
   selector: 'app-navbar',
   standalone: true,
@@ -9,9 +11,6 @@ import { Router } from '@angular/router';
   styleUrl: './navbar.component.scss'
 })
 export class NavbarComponent {
-  // The proslab unicam link
-  public prosLabLink = 'https://pros.unicam.it/soup/';
-
   /**
    * Constructor for NavbarComponent component
    * @param router the Router
@@ -25,6 +24,6 @@ export class NavbarComponent {
 
   // Go to Help SOuP page
   public handleGoHelp() {
-    window.open(this.prosLabLink, '_blank');
+    window.open(environment.prosLabUrl, '_blank');
   }
 }

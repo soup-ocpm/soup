@@ -4,7 +4,8 @@
 
 export const environment = {
   production: false,
-  baseUrl: 'http://127.0.0.1:8080/api/v2'
+  baseUrl: 'http://127.0.0.1:8080/api/v2',
+  prosLabUrl: 'https://pros.unicam.it/soup/'
 };
 
 /*

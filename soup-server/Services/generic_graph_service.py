@@ -52,18 +52,20 @@ class GenericGraphService:
             if result != 'success':
                 return result
 
-            json_content = json.loads(exec_config_file)
+            # Check if it is already a dictionary
+            if not isinstance(exec_config_file, dict):
+                exec_config_file = json.loads(exec_config_file)
 
-            dataset_name = json_content["dataset_name"]
-            dataset_description = json_content["dataset_description"]
-            standard_columns = json_content["standard_columns"]
-            filtered_columns = json_content["filtered_columns"]
-            values_columns = json_content["values_columns"]
-            fixed_columns = json_content["fixed_columns"]
-            variable_columns = json_content["variable_columns"]
-            causality_graph_columns = json_content["causality"]
-            # class_nodes = json_content["class_nodes"] Todo: implement
-            graph_columns = json_content["graph_columns"]
+            dataset_name = exec_config_file["dataset_name"]
+            dataset_description = exec_config_file["dataset_description"]
+            standard_columns = exec_config_file["standard_columns"]
+            filtered_columns = exec_config_file["filtered_columns"]
+            values_columns = exec_config_file["values_columns"]
+            fixed_columns = exec_config_file["fixed_columns"]
+            variable_columns = exec_config_file["variable_columns"]
+            causality_graph_columns = exec_config_file["causality"]
+            # class_nodes = exec_config_file["class_nodes"] Todo: implement
+            graph_columns = exec_config_file["graph_columns"]
 
             try:
                 database_connector.connect()

@@ -50,6 +50,12 @@ def get_json_graph_class_nodes():
     return GraphJSONService.get_class_graph_nodes_json(database_connector)
 
 
+@graph_json_controller_bp.route('/api/v2/json/class-graph/class-obs-links', methods=['GET'])
+def get_json_graph_obs_rel():
+    # Todo implement
+    return GraphJSONService.get_class_graph_obs_links_json(database_connector)
+
+
 @graph_json_controller_bp.route('/api/v2/json/class-graph/class-df-links', methods=['GET'])
 def get_json_graph_df_c_rel():
     return GraphJSONService.get_class_graph_df_links_json(database_connector)
