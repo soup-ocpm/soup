@@ -24,7 +24,7 @@ export class StandardGraphService {
    * @param fixed the fixed value column
    * @param variable the variable value column
    * @param container the docker container
-   * @returns Observable of Http request
+   * @returns Observable of ApiResponse object
    */
   public createGraph(
     formData: FormData,
@@ -58,7 +58,7 @@ export class StandardGraphService {
 
   /**
    * Get event nodes
-   * @returns Observable of Http request
+   * @returns Observable of ApiResponse object
    */
   public getEventNodes(): Observable<ApiResponse<any>> {
     return this.apiService.get(`${environment.baseUrl}/graph/nodes/event`);
@@ -66,7 +66,7 @@ export class StandardGraphService {
 
   /**
    * Get event nodes count
-   * @returns Observable of Http request
+   * @returns Observable of ApiResponse object
    */
   public getCountEventNodes(): Observable<ApiResponse<any>> {
     return this.apiService.get(`${environment.baseUrl}/graph/nodes/event/count`);
@@ -74,7 +74,7 @@ export class StandardGraphService {
 
   /**
    * Get entity nodes
-   * @returns Observable of Http request
+   * @returns Observable of ApiResponse object
    */
   public getEntityNodes(): Observable<ApiResponse<any>> {
     return this.apiService.get(`${environment.baseUrl}/graph/nodes/entity`);
@@ -82,7 +82,7 @@ export class StandardGraphService {
 
   /**
    * Get entity nodes count
-   * @returns Observable of Http request
+   * @returns Observable of ApiResponse object
    */
   public getCountEntityNodes(): Observable<ApiResponse<any>> {
     return this.apiService.get(`${environment.baseUrl}/graph/nodes/entity/count`);
@@ -90,7 +90,7 @@ export class StandardGraphService {
 
   /**
    * Get :CORR rel
-   * @returns Observable of Http request
+   * @returns Observable of ApiResponse object
    */
   public getCorrRelationships(): Observable<ApiResponse<any>> {
     return this.apiService.get(`${environment.baseUrl}/graph/relationships/corr`);
@@ -98,7 +98,7 @@ export class StandardGraphService {
 
   /**
    * Get :CORR rel count
-   * @returns Observable of Http request
+   * @returns Observable of ApiResponse object
    */
   public getCountCorrRelationships(): Observable<ApiResponse<any>> {
     return this.apiService.get(`${environment.baseUrl}/graph/relationships/corr/count`);
@@ -106,7 +106,7 @@ export class StandardGraphService {
 
   /**
    * Get :DF rel
-   * @returns Observable of Http request
+   * @returns Observable of ApiResponse object
    */
   public getDfRelationships(): Observable<ApiResponse<any>> {
     return this.apiService.get(`${environment.baseUrl}/graph/relationships/df`);
@@ -114,7 +114,7 @@ export class StandardGraphService {
 
   /**
    * Get count :DF rel count
-   * @returns Observable of Http request
+   * @returns Observable of ApiResponse object
    */
   public getCountDfRelationships(): Observable<ApiResponse<any>> {
     return this.apiService.get(`${environment.baseUrl}/graph/relationships/df/count`);
@@ -122,7 +122,7 @@ export class StandardGraphService {
 
   /**
    * Delete the standard graph by the Database
-   * @returns Observable of Http request
+   * @returns Observable of ApiResponse object
    */
   public deleteGraph(): Observable<ApiResponse<any>> {
     return this.apiService.delete(`${environment.baseUrl}/graph`);
@@ -130,7 +130,7 @@ export class StandardGraphService {
 
   /**
    * Get the entity keys
-   * @returns Observable of Http request
+   * @returns Observable of ApiResponse object
    */
   public getEntityKey(): Observable<ApiResponse<any>> {
     return this.apiService.get(`${environment.baseUrl}/graph/entities_key`);
@@ -138,7 +138,7 @@ export class StandardGraphService {
 
   /**
    * Get the null entity
-   * @returns Observable of Http request
+   * @returns Observable of ApiResponse object
    */
   public getNullEntities(): Observable<ApiResponse<any>> {
     return this.apiService.get(`${environment.baseUrl}/graph/null-entities`);

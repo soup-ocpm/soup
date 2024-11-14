@@ -19,7 +19,7 @@ export class ClassGraphService {
    * Create class graph
    * @param formData the FormData data
    * @param filteredColumn the filtered column
-   * @returns Observable of Http request
+   * @returns Observable of ApiResponse object
    */
   public createClassGraph(formData: FormData, filteredColumn: string[], datasetName: string): Observable<ApiResponse<any>> {
     filteredColumn.push('ActivityName');
@@ -39,7 +39,7 @@ export class ClassGraphService {
 
   /**
    * Get class nodes count
-   * @returns Observable of Http request
+   * @returns Observable of ApiResponse object
    */
   public getCountClassNodes(): Observable<ApiResponse<any>> {
     return this.apiService.get(`${environment.baseUrl}/graph/class/nodes/count`);
@@ -47,7 +47,7 @@ export class ClassGraphService {
 
   /**
    * Get :OBS relationhips
-   * @returns Observable of Http request
+   * @returns Observable of ApiResponse object
    */
   public getObsRelationships(): Observable<ApiResponse<any>> {
     return this.apiService.get(`${environment.baseUrl}/graph/class/obs`);
@@ -55,7 +55,7 @@ export class ClassGraphService {
 
   /**
    * Get :OBS relationships count
-   * @returns Observable of Http request
+   * @returns Observable of ApiResponse object
    */
   public getCountObsRelationships(): Observable<ApiResponse<any>> {
     return this.apiService.get(`${environment.baseUrl}/graph/class/obs/count`);
@@ -63,7 +63,7 @@ export class ClassGraphService {
 
   /**
    * Get :DF_C relationships
-   * @returns Observable of Http request
+   * @returns Observable of ApiResponse object
    */
   public getDfcRelationships(): Observable<ApiResponse<any>> {
     return this.apiService.get(`${environment.baseUrl}/graph/class/dfc`);
@@ -71,7 +71,7 @@ export class ClassGraphService {
 
   /**
    * Get :DF_C relationships count
-   * @returns Observable of Http request
+   * @returns Observable of ApiResponse object
    */
   public getCountDfcRelationships(): Observable<ApiResponse<any>> {
     return this.apiService.get(`${environment.baseUrl}/graph/class/dfc/count`);
@@ -79,7 +79,7 @@ export class ClassGraphService {
 
   /**
    * Delete the class graph
-   * @returns Observable of Http request
+   * @returns Observable of ApiResponse object
    */
   public deleteGraph(): Observable<ApiResponse<any>> {
     return this.apiService.delete(`${environment.baseUrl}/graph/class`);

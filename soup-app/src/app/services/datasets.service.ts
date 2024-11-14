@@ -20,7 +20,7 @@ export class DatasetService {
    * Retrieve specific Dataset information
    * @param containerId the container id
    * @param datasetName the dataset name
-   * @returns an Observable of Http request
+   * @returns an Observable of ApiResponse object
    */
   public getDataset(containerId: string, datasetName: string): Observable<ApiResponse<any>> {
     const params = new HttpParams().set('container_id', containerId).set('dataset_name', datasetName);
@@ -31,7 +31,7 @@ export class DatasetService {
   /**
    * Get all dataset
    * @param containerId the container id
-   * @returns Observable of Http request
+   * @returns Observable of ApiResponse object
    */
   public getAllDataset(containerId: string): Observable<ApiResponse<any>> {
     const params = new HttpParams().set('container_id', containerId);
@@ -44,7 +44,7 @@ export class DatasetService {
    * @params containerId the container id
    * @param datasetName the dataset name
    * @param datasetDescription the dataset new description
-   * @returns Observable of Http request
+   * @returns Observable of ApiResponse object
    */
   public updateDatasetDescription(containerId: string, datasetName: string, datasetDescription: string): Observable<ApiResponse<any>> {
     const jsonRequest = {
@@ -53,14 +53,14 @@ export class DatasetService {
       dataset_description: datasetDescription
     };
 
-    return this.apiService.post(`${environment.baseUrl}/datasets/single`, jsonRequest);
+    return this.apiService.put(`${environment.baseUrl}/datasets/single`, jsonRequest);
   }
 
   /**
    * Get specific dataset
    * @params containerId the container id
    * @param datasetName the dataset name
-   * @returns Observable of Http request
+   * @returns Observable of ApiResponse object
    */
   public deleteDataset(containerId: string, datasetName: string): Observable<ApiResponse<any>> {
     const params = new HttpParams().set('container_id', containerId).set('dataset_name', datasetName);
@@ -72,7 +72,7 @@ export class DatasetService {
    * Check unique dataset name
    * @param containerId the container id
    * @param datasetName the dataset name
-   * @returns Observable of Http request
+   * @returns Observable of ApiResponse object
    */
   public checkUniqueDataset(containerId: string, datasetName: string): Observable<ApiResponse<any>> {
     const jsonRequest = {
