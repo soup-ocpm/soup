@@ -3,6 +3,7 @@ import { Component, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 
+import { environment } from '../../../environments/environment';
 import { ContainerListCardComponent } from '../../components/container-list-card/container-list-card.component';
 import { DatasetTileComponent } from '../../components/dataset-tile/dataset-tile.component';
 import { SButtonComponent } from '../../core/components/s-buttons/s-button/s-button.component';
@@ -200,6 +201,7 @@ export class RetriveDatasetComponent implements OnInit {
           } else {
             this.isLoadingDatasets = false;
             this.haveDatasets = false;
+            this.isShowContainers = false;
           }
         },
         error: (errorData: ApiResponse<any>) => {
@@ -314,19 +316,21 @@ export class RetriveDatasetComponent implements OnInit {
           .updateDatasetDescription(this.currentContainer!.id, this.currentDataset!.name, this.currentDataset!.description)
           .subscribe({
             next: (response) => {
+              console.log(response);
               if (response.statusCode == 200 && response.responseData != null) {
-                this.toast.show('Dataset update successfully', ToastLevel.Error, 2000);
+                this.toast.show('Dataset update successfully', ToastLevel.Success, 2000);
                 this.getAllDatasets();
-                this.isLoadingUpdate = false;
                 this.toggleSidebar();
               } else {
                 this.toast.show('Unable to update Dataset. Please retry', ToastLevel.Error, 3000);
                 this.toggleSidebar();
               }
+
+              this.isLoadingUpdate = false;
             },
             error: () => {
+              this.isLoadingUpdate = false;
               this.toast.show('Unable to update Dataset. Please retry', ToastLevel.Error, 3000);
-              this.toggleSidebar();
             },
             complete: () => {}
           });
@@ -405,5 +409,10 @@ export class RetriveDatasetComponent implements OnInit {
   public toggleSidebar(): void {
     this.isOpenSidebar = false;
     this.currentDataset = undefined;
+  }
+
+  // Go to Help SOuP page
+  public handleGoHelp() {
+    window.open(environment.prosLabUrl, '_blank');
   }
 }

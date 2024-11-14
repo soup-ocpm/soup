@@ -1,134 +1,141 @@
-// SCSS FOR MASTER
+// ================================
+// Region: Main content
+// ================================
 .master {
-    width: 100%;
-    height: 90vh;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+  width: 100%;
+  height: 90vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .right-actions {
-    position: absolute;
-    top: 65px;
-    right: 15px;
-    display: flex;
-    flex-direction: column;
-    align-items: flex-end;
+  position: absolute;
+  top: 65px;
+  right: 15px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
 }
 
 .left-actions {
-    position: absolute;
-    top: 65px;
-    left: 15px;
+  position: absolute;
+  top: 65px;
+  left: 15px;
 }
 
 i {
-    font-size: 20px;
-    cursor: pointer;
+  font-size: 20px;
+  cursor: pointer;
 }
 
 i:hover {
-    color: #FFAC1C;
+  color: #ffac1c;
 }
 
-// SCSS FOR THE GRAPH
+// ================================
+// Region: Graph
+// ================================
 .master-graph {
-    width: 94%;
-    height: 85vh;
-    margin-bottom: 20px;
-    margin-right: 10px;
-    background-color: rgb(233, 233, 233);
+  width: 94%;
+  height: 85vh;
+  margin-bottom: 20px;
+  margin-right: 10px;
+  background-color: rgb(233, 233, 233);
 }
 
 .master-graph.small {
-    width: 72%;
-    margin-right: 500px;
+  width: 72%;
+  margin-right: 500px;
 }
 
 .master-graph.small-two {
-    width: 67%;
-    margin-right: 600px;
+  width: 67%;
+  margin-right: 600px;
 }
 
-// SCSS FOR THE SIDEBARS
+// ================================
+// Region: Second sidebar
+// ================================
 .sidebar {
-    height: calc(100% - 114px);
-    width: 500px;
-    position: fixed;
-    z-index: 1000;
-    top: 56px;
-    right: -600px;
-    background-color: #f9f9f9;
-    overflow-x: hidden;
-    transition: right 0.3s;
-    padding: 20px;
-    box-shadow: -2px 0 5px rgba(0, 0, 0, 0.3);
-    font-family: 'Times New Roman', Times, serif;
+  height: calc(100% - 114px);
+  width: 500px;
+  position: fixed;
+  z-index: 1000;
+  top: 56px;
+  right: -600px;
+  background-color: #f9f9f9;
+  overflow-x: hidden;
+  transition: right 0.3s;
+  padding: 20px;
+  box-shadow: -2px 0 5px rgba(0, 0, 0, 0.3);
+  font-family: 'Times New Roman', Times, serif;
 }
 
 .sidebar-header {
-    width: 100%;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 
 .sidebar-header i {
-    color: #666;
-    cursor: pointer;
+  color: #666;
+  cursor: pointer;
 }
 
 .show {
-    right: 0;
+  right: 0;
 }
 
 .hidden {
-    display: none;
+  display: none;
 }
 
 .master-footer {
-    display: flex;
-    position: absolute;
-    bottom: 10px;
-    left: 10px;
+  display: flex;
+  position: absolute;
+  bottom: 10px;
+  left: 10px;
 }
 
 .master-footer app-s-button {
-    margin-right: 5px;
+  margin-right: 5px;
 }
 
 .master-footer app-s-button:last-child {
-    margin-right: 0;
+  margin-right: 0;
 }
 
-// SCSS FOR THE SEARCH SIDEBAR
-
+// ================================
+// Region: Search sidebar
+// ================================
 .master-search {
-    height: 65vh;
+  height: 65vh;
 }
 
 .search-term {
-    height: 35px;
-    margin-top: 3px;
-    border-radius: 5px;
-    border: 0.1px solid rgba(0, 0, 0, 0.212);
-    display: flex;
-    justify-content: space-between;
-    padding-left: 10px;
-    padding-right: 10px;
-    cursor: pointer;
-    background-color: #f1f1f1d7;
+  height: 35px;
+  margin-top: 3px;
+  border-radius: 5px;
+  border: 0.1px solid rgba(0, 0, 0, 0.212);
+  display: flex;
+  justify-content: space-between;
+  padding-left: 10px;
+  padding-right: 10px;
+  cursor: pointer;
+  background-color: #f1f1f1d7;
 
-    p {
-        margin-top: 4px;
-    }
+  p {
+    margin-top: 4px;
+  }
 
-    strong {
-        color: #FFAC1C;
-    }
+  strong {
+    color: #ffac1c;
+  }
 }
 
 .search-term:hover {
-    background-color: white;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1)
+  background-color: white;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }

@@ -51,6 +51,26 @@
       (buttonClick)="this.newDataset()"></app-s-button>
   </div>
 
+  <!--No Containers-->
+  <div
+    class="no-dataset"
+    style="margin-top: 200px"
+    *ngIf="this.dockerContainers.length == 0 && !this.isLoadingContainer && !this.isLoadingDatasets">
+    <img
+      class="container-img"
+      src="/images/containers.png" />
+    <p>
+      You do not have any Docker Container
+      <br />
+      Please follow the SOuP guide
+    </p>
+
+    <app-s-button
+      [text]="'Help'"
+      [color]="'#696969'"
+      (buttonClick)="this.handleGoHelp()"></app-s-button>
+  </div>
+
   <!-- Sidebar -->
   <div
     class="sidebar"

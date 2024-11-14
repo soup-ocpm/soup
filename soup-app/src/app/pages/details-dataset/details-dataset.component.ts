@@ -16,6 +16,7 @@ import { Dataset } from '../../models/dataset.model';
 import { DetailGraphData } from '../../models/detail_graph_data.model';
 import { ClassGraphService } from '../../services/class_graph.service';
 import { DatasetService } from '../../services/datasets.service';
+import { JSONDataService } from '../../services/json_data.service';
 import { StandardGraphService } from '../../services/standard_graph.service';
 import { MaterialModule } from '../../shared/modules/materlal.module';
 import { LocalDataService } from '../../shared/services/support.service';
@@ -30,6 +31,23 @@ class EntityObject {
 
   // Is selected or not
   isSelected = false;
+}
+
+class JsonObject {
+  // Name
+  name = '';
+
+  isSelected = false;
+
+  /**
+   * Initialize a new instance of JsonObject
+   * @param name the name
+   * @param isSelected if it is selected
+   */
+  constructor(name: string, isSelected: boolean) {
+    this.name = name;
+    this.isSelected = isSelected;
+  }
 }
 
 @Component({
@@ -61,14 +79,23 @@ export class DetailsDatasetComponent implements OnInit {
   // List of selected entities
   public selectedEntities: string[] = [];
 
+  // The json object list
+  public jsonList: JsonObject[] = [];
+
+  // List of the selected json content
+  public selectedJson: string[] = [];
+
   // The progress data
   public progressData: any;
 
   // If the sidebar is open or not
   public isOpenSidebar = true;
 
-  // If the sidebar is open or not
+  // If the sidebar for aggregation is open or not
   public isOpenSecondSidebar = false;
+
+  // If the sidebar of JSON is open or not
+  public isOpenThirdSidebar = false;
 
   // If the dataset have the class graph
   public haveClassGraph = false;
@@ -77,13 +104,16 @@ export class DetailsDatasetComponent implements OnInit {
   public isLoading = false;
 
   /**
-   * Constructor for DetailsDatasetComponent components
+   * Constructor for DetailsDatasetComponent component
    * @param router the Router
-   * @param activatedRoute the ActivatedRoute
    * @param toast the NotificationService service
    * @param modalService the ModalService service
-   * @param supportService the SupportService service
+   * @param activatedRoute the ActivatedRoute
+   * @param supportService the LocalDataService service
    * @param datasetService the DatasetService service
+   * @param logService the LoggerService service
+   * @param jsonDataService the JSONDataService service
+   * @param classGraphService the ClassGraphService service
    * @param standardGraphService the StandardGraphService service
    */
   constructor(
@@ -94,6 +124,7 @@ export class DetailsDatasetComponent implements OnInit {
     private supportService: LocalDataService,
     private datasetService: DatasetService,
     private logService: LoggerService,
+    private jsonDataService: JSONDataService,
     private classGraphService: ClassGraphService,
     private standardGraphService: StandardGraphService
   ) {}
@@ -106,6 +137,8 @@ export class DetailsDatasetComponent implements OnInit {
     if (this.currentDataset != null && this.currentDataset.name == datasetName) {
       this.loadDatasetDetails();
       this.retrieveEntityKey();
+      this.populateJsonContent();
+      this.getJSONContent();
       this.haveClassGraph = this.currentDataset.classNodes > 0;
     } else {
       this.toast.show('Unable to retrieve Dataset. Retry', ToastLevel.Error, 3000);
@@ -247,7 +280,7 @@ export class DetailsDatasetComponent implements OnInit {
   public updateDatasetInfo(): void {
     const containerId = this.currentDataset!.containerId;
 
-    this.datasetService.getDataset('', this.currentDataset!.name).subscribe({
+    this.datasetService.getDataset(containerId, this.currentDataset!.name).subscribe({
       next: (response) => {
         if (response.statusCode == 200 && response.responseData != null) {
           const updateDataset = response.responseData;
@@ -275,23 +308,8 @@ export class DetailsDatasetComponent implements OnInit {
   }
 
   /**
-   * Open the second sidebar
    */
-  public openSecondSidebar(): void {
-    if (this.isOpenSecondSidebar) {
-      return;
-    }
-    this.isOpenSecondSidebar = true;
-  }
-
-  /**
-   * Export the complete EKG
-   */
-  public exportJson(): void {
-    if (this.isOpenSecondSidebar) {
-      return;
-    }
-  }
+  public getJSONContent(): void {}
 
   /**
    * Handle the click for delete EKG
@@ -302,7 +320,7 @@ export class DetailsDatasetComponent implements OnInit {
     }
     this.modalService.showGenericModal(
       'Delete Dataset?',
-      'With this operation you will eliminate the standard graph, and the class graph if present. The Dataset will be completely removed from your Database.',
+      'The Dataset will be completely removed,',
       true,
       'Delete',
       '#FF0000',
@@ -324,6 +342,7 @@ export class DetailsDatasetComponent implements OnInit {
         next: (response) => {
           if (response.statusCode == 200) {
             this.toast.show('Dataset deleted successfully', ToastLevel.Success, 3000);
+            this.supportService.removeCurrentDataset();
             this.router.navigate(['/welcome']);
           }
         },
@@ -341,8 +360,19 @@ export class DetailsDatasetComponent implements OnInit {
    * Return to the Manage Dataset page
    */
   public manageDatasets(): void {
+    this.supportService.removeCurrentDataset();
     this.router.navigate(['/datasets']);
   }
+
+  /**
+   * Get the entity tooltip label
+   * @param entity the entity
+   * @returns the label
+   */
+  public getEntityWarningLabel(entity: any) {
+    return `${entity.numberOfNanNodes} nodes have NaN value.`;
+  }
+
   /**
    * Method that allow to get the toggle entities for
    * build the Class Graph.
@@ -368,6 +398,55 @@ export class DetailsDatasetComponent implements OnInit {
   }
 
   /**
+   * Method that allow to get the toggle json object for
+   * donwload the json content.
+   * @param entity the selected entity
+   */
+  public selectionJson(entity: any): void {
+    if (entity.isSelected) {
+      this.selectedJson.push(entity.name);
+    } else {
+      this.selectedJson = this.selectedJson.filter((item) => item !== entity.name);
+    }
+  }
+
+  /**
+   * Reset the entity choice
+   */
+  public resetJsonSelection(): void {
+    this.selectedJson = [];
+
+    this.jsonList.forEach((object) => {
+      object.isSelected = false;
+    });
+  }
+
+  /**
+   * Download JSON content
+   */
+  public downloadJsonSelected(): void {}
+
+  /**
+   * Open the second sidebar
+   */
+  public openSecondSidebar(): void {
+    if (this.isOpenSecondSidebar) {
+      return;
+    }
+    this.isOpenSecondSidebar = true;
+  }
+
+  /**
+   * Open the third sidebar
+   */
+  public openThirdSidebar(): void {
+    if (this.isOpenThirdSidebar) {
+      return;
+    }
+    this.isOpenThirdSidebar = true;
+  }
+
+  /**
    * Close the second sidebar
    */
   public toggleSecondSidebar(): void {
@@ -376,15 +455,16 @@ export class DetailsDatasetComponent implements OnInit {
   }
 
   /**
-   * Get the entity tooltip label
-   * @param entity the entity
-   * @returns the label
+   * Close the second sidebar
    */
-  public getEntityWarningLabel(entity: any) {
-    return `${entity.numberOfNanNodes} nodes have NaN value.`;
+  public toggleThirdSidebar(): void {
+    this.isOpenThirdSidebar = false;
+    this.resetJsonSelection();
   }
 
-  // Load the dataset details
+  /**
+   * Load Dataset tile cards content
+   */
   private loadDatasetDetails(): void {
     const entityTile = new DetailGraphData();
     entityTile.title = 'Event nodes';
@@ -418,5 +498,15 @@ export class DetailsDatasetComponent implements OnInit {
     this.detailGraphDataList.push(eventTile);
     this.detailGraphDataList.push(corrTile);
     this.detailGraphDataList.push(dfTile);
+  }
+
+  /**
+   * Add the json object
+   */
+  private populateJsonContent(): void {
+    this.jsonList.push(new JsonObject('Event nodes', false));
+    this.jsonList.push(new JsonObject('Entity nodes', false));
+    this.jsonList.push(new JsonObject(':CORR links', false));
+    this.jsonList.push(new JsonObject(':DF links', false));
   }
 }

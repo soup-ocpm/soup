@@ -15,10 +15,10 @@
     </div>
   </div>
 
-  <!-- Sidebar -->
+  <!-- Generic Sidebar -->
   <div
     class="sidebar"
-    [ngClass]="{ show: this.isOpenSidebar, move: this.isOpenSecondSidebar }">
+    [ngClass]="{ show: this.isOpenSidebar, move: this.isOpenSecondSidebar || this.isOpenThirdSidebar }">
     <div class="sidebar-header">
       <h4>Graph Operation</h4>
       <!--<i class="bi bi-x-lg" (click)="this.isOpenSidebar = false"></i>-->
@@ -70,7 +70,7 @@
     <div class="double-flex">
       <h5
         class="underline-h"
-        [ngStyle]="{ cursor: this.isOpenSecondSidebar ? 'not-allowed' : 'pointer' }"
+        [ngStyle]="{ cursor: this.isOpenSecondSidebar || this.isOpenThirdSidebar ? 'not-allowed' : 'pointer' }"
         (click)="this.openSecondSidebar()">
         Group by class
       </h5>
@@ -81,13 +81,20 @@
 
     <div class="double-flex">
       <h5>Export JSON</h5>
+      <mat-icon
+        *ngIf="this.currentDataset!.totalNodes > 1000"
+        [matTooltip]="'It may take some time based on the Data'">
+        warning
+      </mat-icon>
     </div>
+
     <p>Export the complete graph in a JSON file</p>
+
     <app-s-button
       [text]="'Export'"
       [height]="'27px'"
-      [cursor]="this.isOpenSecondSidebar ? 'not-allowed' : 'pointer'"
-      (buttonClick)="this.exportJson()"></app-s-button>
+      [cursor]="this.isOpenSecondSidebar || this.isOpenThirdSidebar ? 'not-allowed' : 'pointer'"
+      (buttonClick)="this.openThirdSidebar()"></app-s-button>
 
     <div style="margin-top: 35px"></div>
 
@@ -99,13 +106,13 @@
       [text]="'Delete'"
       [height]="'27px'"
       [color]="'#FF0000'"
-      [cursor]="this.isOpenSecondSidebar ? 'not-allowed' : 'pointer'"
+      [cursor]="this.isOpenSecondSidebar || this.isOpenThirdSidebar ? 'not-allowed' : 'pointer'"
       (buttonClick)="this.handleDeleteGraph()"></app-s-button>
 
     <div style="margin-top: 35px"></div>
   </div>
 
-  <!--Second sidebar-->
+  <!--Aggregate Sidebar-->
   <div
     class="sidebar"
     [ngClass]="{ show: this.isOpenSecondSidebar }">
@@ -162,6 +169,50 @@
         [text]="'Restore'"
         [color]="'#6c757d'"
         (buttonClick)="this.resetSelection()"></app-s-button>
+    </div>
+  </div>
+
+  <!--Json Sidebar-->
+  <div
+    class="sidebar"
+    [ngClass]="{ show: this.isOpenThirdSidebar }">
+    <div class="sidebar-header">
+      <h4>Export JSON</h4>
+      <i
+        class="bi bi-x-lg"
+        (click)="this.toggleThirdSidebar()"></i>
+    </div>
+    <p style="margin-top: 15px">This operation allows to download specific JSON of your Dataset.</p>
+
+    <app-s-divider></app-s-divider>
+
+    <li
+      *ngFor="let object of this.jsonList"
+      class="list-group-item">
+      <span style="margin-top: 5px">{{ object.name }}</span>
+
+      <div class="group">
+        <mat-slide-toggle
+          style="margin-top: 3px"
+          [(ngModel)]="object.isSelected"
+          (change)="selectionJson(object)"
+          color="primary"></mat-slide-toggle>
+      </div>
+    </li>
+
+    <div style="margin-top: 13px"></div>
+    <app-s-divider></app-s-divider>
+
+    <div class="master-footer">
+      <app-s-button
+        *ngIf="this.selectedJson.length > 0"
+        [text]="'Download'"
+        (buttonClick)="this.downloadJsonSelected()"></app-s-button>
+      <app-s-button
+        *ngIf="this.selectedJson.length > 0"
+        [text]="'Restore'"
+        [color]="'#6c757d'"
+        (buttonClick)="this.resetJsonSelection()"></app-s-button>
     </div>
   </div>
 </div>
