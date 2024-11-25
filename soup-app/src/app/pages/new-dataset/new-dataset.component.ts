@@ -59,6 +59,9 @@ export class NewDatasetComponent {
   // Data for the table (based on the .csv)
   public dataSource: any[] = [];
 
+  // All the csv columns
+  public allColumns: string[] = [];
+
   // All the .csv file entities
   public allFileEntitiesSelected: Entity[] = [];
 
@@ -193,12 +196,13 @@ export class NewDatasetComponent {
           this.parser.parse(csvData, {
             complete: (result): void => {
               const allColumn: string[] = result.meta.fields;
+              this.allColumns = allColumn;
+
               if (allColumn.length > 0) {
                 // Preparazione delle colonne della tabella
                 this.displayedColumns = allColumn;
                 this.allFileEntitiesSelected = allColumn.map((columnName) => ({ name: columnName, selected: false }));
                 this.allFileValuesSelected = allColumn.map((columnName) => ({ name: columnName, selected: false }));
-
                 this.dataSource = result.data.slice(0, 1000);
 
                 this.isShowUpload = false;
@@ -578,6 +582,7 @@ export class NewDatasetComponent {
           datasetDescription,
           saveProcessExecution,
           this.creationMethod,
+          this.allColumns,
           standardColumn,
           allFilteredColumn,
           allValuesColumn,
@@ -591,6 +596,9 @@ export class NewDatasetComponent {
               this.removeStandardProperties();
               this.supportService.setFilteredColumn(this.filteredColumn);
               this.getDataset(datasetName);
+            } else if (response.statusCode == 400) {
+              this.toast.show('Error while creatin the Graph. Retry', ToastLevel.Error, 3000);
+              this.isLoading = false;
             }
           },
           error: () => {

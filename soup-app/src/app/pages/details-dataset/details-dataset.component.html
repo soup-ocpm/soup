@@ -2,238 +2,394 @@
 <app-s-progressbar *ngIf="this.isLoading"></app-s-progressbar>
 
 <div class="master">
-  <!--Detail cards grid-->
+  <!--Main content-->
+  <div *ngIf="!this.isLoading">
+    <!--Data-->
+    <div class="dataset-content">
+      <div class="dataset-name">
+        <h4>{{ this.currentDataset?.name }} dataset</h4>
+      </div>
 
-  <div class="dataset-name">
-    <h4>{{ this.currentDataset?.name }} dataset</h4>
-  </div>
-  <div
-    class="master-grid"
-    *ngIf="!this.isLoading">
-    <div *ngFor="let detailTile of this.detailGraphDataList">
-      <app-detail-tile [detailModel]="detailTile"></app-detail-tile>
+      <div class="content">
+        <div class="info">
+          <div class="info-title">
+            <h5>Data information</h5>
+          </div>
+          <p>
+            Generated
+            <span class="bold">{{ this.currentDataset?.eventNodes }}</span>
+            event nodes
+          </p>
+          <p>
+            Generated
+            <span class="bold">{{ this.currentDataset?.entityNodes }}</span>
+            entity nodes
+          </p>
+          <p>
+            Generated
+            <span class="bold">{{ this.currentDataset?.corrRel }}</span>
+            :CORR links
+          </p>
+          <p>
+            Generated
+            <span class="bold">{{ this.currentDataset?.dfRel }}</span>
+            :DF links
+          </p>
+        </div>
+
+        <div class="graphs">
+          <div class="master-pie">
+            <div style="display: block">
+              <canvas #dataPieChart></canvas>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!--Process info-->
+      <div
+        class="content"
+        style="margin-top: 100px">
+        <div class="info">
+          <div class="info-title">
+            <h5>Process Execution info</h5>
+          </div>
+          <p>
+            Total execution time:
+            <span class="bold-two">{{ this.currentDataset?.processInfo?.durationNormalExecution }}</span>
+            seconds
+          </p>
+          <p>
+            Event nodes execution time:
+            <span class="bold-two">{{ this.currentDataset?.processInfo?.durationEventExecution }}</span>
+            seconds
+          </p>
+          <p>
+            Entity nodes execution time
+            <span class="bold-two">{{ this.currentDataset?.processInfo?.durationEntityExecution }}</span>
+            seconds
+          </p>
+          <p>
+            :CORR links execution time:
+            <span class="bold-two">{{ this.currentDataset?.processInfo?.durationCorrExecution }}</span>
+            seconds
+          </p>
+          <p>
+            :DF links execution time:
+            <span class="bold-two">{{ this.currentDataset?.processInfo?.durationDfExecution }}</span>
+            seconds
+          </p>
+        </div>
+
+        <div class="graphs">
+          <!--Pie chart-->
+          <div class="master-pie">
+            <div style="display: block">
+              <canvas #processPieChart></canvas>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!--Aggregate Charts-->
+      <div *ngIf="this.currentDataset!.classNodes > 0">
+        <!--Aggregate data-->
+        <div
+          class="content"
+          style="margin-top: 100px">
+          <div class="info">
+            <div class="info-title">
+              <h5>Aggregate Graph information</h5>
+            </div>
+            <p>
+              Generated
+              <span class="bold">{{ this.currentDataset?.classNodes }}</span>
+              class nodes
+            </p>
+            <p>
+              Generated
+              <span class="bold">{{ this.currentDataset?.obsRel }}</span>
+              :OBS links
+            </p>
+            <p>
+              Generated
+              <span class="bold">{{ this.currentDataset?.dfcRel }}</span>
+              :DFC links
+            </p>
+          </div>
+
+          <div class="graphs">
+            <div class="master-pie">
+              <div style="display: block">
+                <canvas #aggregateDataPieChart></canvas>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!--Aggregate process info-->
+        <div
+          class="content"
+          style="margin-top: 100px">
+          <div class="info">
+            <div class="info-title">
+              <h5>Aggregate Graph process Eexecution info</h5>
+            </div>
+            <p>
+              Total execution time:
+              <span class="bold-two">{{ this.currentDataset?.processInfo?.durationClassExecution }}</span>
+              seconds
+            </p>
+            <p>
+              Class nodes execution time:
+              <span class="bold-two">{{ this.currentDataset?.processInfo?.durationClassNodeExecution }}</span>
+              seconds
+            </p>
+            <p>
+              :OBS links execution time:
+              <span class="bold-two">{{ this.currentDataset?.processInfo?.durationObsExecution }}</span>
+              seconds
+            </p>
+            <p>
+              :DF_C links execution time:
+              <span class="bold-two">{{ this.currentDataset?.processInfo?.durationDfCExecution }}</span>
+              seconds
+            </p>
+          </div>
+
+          <div class="graphs">
+            <!--Pie chart-->
+            <div class="master-pie">
+              <div style="display: block">
+                <canvas #aggregateProcessPieChart></canvas>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
-  </div>
 
-  <!-- Generic Sidebar -->
-  <div
-    class="sidebar"
-    [ngClass]="{ show: this.isOpenSidebar, move: this.isOpenSecondSidebar || this.isOpenThirdSidebar }">
-    <div class="sidebar-header">
-      <h4>Graph Operation</h4>
-      <!--<i class="bi bi-x-lg" (click)="this.isOpenSidebar = false"></i>-->
-    </div>
-    <p>A ist of operations avaible for this section</p>
+    <!-- Generic Sidebar -->
+    <div
+      class="sidebar"
+      [ngClass]="{ show: this.isOpenSidebar, move: this.isOpenSecondSidebar || this.isOpenThirdSidebar }">
+      <div class="sidebar-header">
+        <h4>Graph Operation</h4>
+        <!--<i class="bi bi-x-lg" (click)="this.isOpenSidebar = false"></i>-->
+      </div>
+      <p>A ist of operations avaible for this section</p>
 
-    <!--Manage datasets-->
-    <div class="double-flex">
-      <h5
-        class="underline-h"
-        [ngStyle]="{ cursor: this.isOpenSecondSidebar ? 'not-allowed' : 'pointer' }"
-        (click)="this.manageDatasets()">
-        Manage Datasets
-      </h5>
-    </div>
-    <p>Go to the Datasets manager page</p>
+      <!--Manage datasets-->
+      <!-- <div class="double-flex">
+        <h5
+          class="underline-h"
+          [ngStyle]="{ cursor: this.isOpenSecondSidebar ? 'not-allowed' : 'pointer' }"
+          (click)="this.manageDatasets()">
+          Manage Datasets
+        </h5>
+      </div>
+      <p>Go to the Datasets manager page</p>
 
-    <div style="margin-top: 35px"></div>
+      <div style="margin-top: 35px"></div> -->
 
-    <!--View the standard graph-->
-    <div class="double-flex">
-      <h5
-        class="underline-h"
-        [ngStyle]="{ cursor: this.isOpenSecondSidebar ? 'not-allowed' : 'pointer' }"
-        (click)="this.goToGraphVisualization(true)">
-        View the Graph
-      </h5>
-    </div>
-    <p>View the complete graph. Maximum of 200 nodes and relationships displayed.</p>
-
-    <div style="margin-top: 35px"></div>
-
-    <!--View the class graph-->
-    <div *ngIf="this.currentDataset!.classNodes > 0">
+      <!--View the standard graph-->
       <div class="double-flex">
         <h5
           class="underline-h"
           [ngStyle]="{ cursor: this.isOpenSecondSidebar ? 'not-allowed' : 'pointer' }"
-          (click)="this.goToGraphVisualization(false)">
-          View the Class Graph
+          (click)="this.goToGraphVisualization(true)">
+          Graph Visualization
         </h5>
       </div>
-      <p>View the complete aggregate graph. Maximum of 200 nodes and relationships displayed.</p>
+      <p>View the complete graph. Maximum of 200 nodes and relationships displayed</p>
+
+      <div style="margin-top: 35px"></div>
+
+      <!--View the class graph-->
+      <div *ngIf="this.currentDataset!.classNodes > 0">
+        <div class="double-flex">
+          <h5
+            class="underline-h"
+            [ngStyle]="{ cursor: this.isOpenSecondSidebar ? 'not-allowed' : 'pointer' }"
+            (click)="this.goToGraphVisualization(false)">
+            View the Class Graph
+          </h5>
+        </div>
+        <p>View the complete aggregate graph. Maximum of 200 nodes and relationships displayed</p>
+
+        <div style="margin-top: 35px"></div>
+      </div>
+
+      <!--Group by class-->
+      <div class="double-flex">
+        <h5
+          class="underline-h"
+          [ngStyle]="{ cursor: this.isOpenSecondSidebar || this.isOpenThirdSidebar ? 'not-allowed' : 'pointer' }"
+          (click)="this.openSecondSidebar()">
+          Aggregate Graph
+        </h5>
+      </div>
+      <p>Aggregate graph by group nodes into chosen classes</p>
+
+      <div style="margin-top: 35px"></div>
+
+      <div class="double-flex">
+        <h5>Export JSON</h5>
+        <mat-icon
+          *ngIf="this.currentDataset!.totalNodes > 1000"
+          [matTooltip]="'It may take some time based on the Data'">
+          warning
+        </mat-icon>
+      </div>
+
+      <p>Export the complete graph in a JSON file</p>
+
+      <app-s-button
+        [text]="'Export'"
+        [height]="'27px'"
+        [cursor]="this.isOpenSecondSidebar || this.isOpenThirdSidebar ? 'not-allowed' : 'pointer'"
+        (buttonClick)="this.openThirdSidebar()"></app-s-button>
+
+      <div style="margin-top: 35px"></div>
+
+      <div class="double-flex">
+        <h5>Delete Dataset</h5>
+      </div>
+      <p>This operation is not reversible</p>
+      <app-s-button
+        [text]="'Delete'"
+        [height]="'27px'"
+        [color]="'#FF0000'"
+        [cursor]="this.isOpenSecondSidebar || this.isOpenThirdSidebar ? 'not-allowed' : 'pointer'"
+        (buttonClick)="this.handleDeleteGraph()"></app-s-button>
 
       <div style="margin-top: 35px"></div>
     </div>
 
-    <!--Group by class-->
-    <div class="double-flex">
-      <h5
-        class="underline-h"
-        [ngStyle]="{ cursor: this.isOpenSecondSidebar || this.isOpenThirdSidebar ? 'not-allowed' : 'pointer' }"
-        (click)="this.openSecondSidebar()">
-        Group by class
-      </h5>
-    </div>
-    <p>Group nodes into chosen classes</p>
-
-    <div style="margin-top: 35px"></div>
-
-    <div class="double-flex">
-      <h5>Export JSON</h5>
-      <mat-icon
-        *ngIf="this.currentDataset!.totalNodes > 1000"
-        [matTooltip]="'It may take some time based on the Data'">
-        warning
-      </mat-icon>
-    </div>
-
-    <p>Export the complete graph in a JSON file</p>
-
-    <app-s-button
-      [text]="'Export'"
-      [height]="'27px'"
-      [cursor]="this.isOpenSecondSidebar || this.isOpenThirdSidebar ? 'not-allowed' : 'pointer'"
-      (buttonClick)="this.openThirdSidebar()"></app-s-button>
-
-    <div style="margin-top: 35px"></div>
-
-    <div class="double-flex">
-      <h5>Delete graph</h5>
-    </div>
-    <p>Delete the graph within the database</p>
-    <app-s-button
-      [text]="'Delete'"
-      [height]="'27px'"
-      [color]="'#FF0000'"
-      [cursor]="this.isOpenSecondSidebar || this.isOpenThirdSidebar ? 'not-allowed' : 'pointer'"
-      (buttonClick)="this.handleDeleteGraph()"></app-s-button>
-
-    <div style="margin-top: 35px"></div>
-  </div>
-
-  <!--Aggregate Sidebar-->
-  <div
-    class="sidebar"
-    [ngClass]="{ show: this.isOpenSecondSidebar }">
-    <div class="sidebar-header">
-      <h4>Group by class</h4>
-      <i
-        class="bi bi-x-lg"
-        (click)="this.toggleSecondSidebar()"></i>
-    </div>
-    <p style="margin-top: 15px">
-      This operation allows to group nodes into classes. The default aggregation considers the Activity property. Moreover, here you can
-      select the desired entities that will be also taken into account when creating Class nodes.
-    </p>
-
-    <app-s-divider></app-s-divider>
-
-    <li
-      *ngFor="let entity of this.entityList"
-      class="list-group-item">
-      <span style="margin-top: 5px">{{ entity.name }}</span>
-
-      <div class="group">
-        <mat-icon
-          *ngIf="entity.numberOfNanNodes > 0"
-          [matTooltip]="getEntityWarningLabel(entity)">
-          warning
-        </mat-icon>
-        <mat-slide-toggle
-          style="margin-top: 3px"
-          [(ngModel)]="entity.isSelected"
-          (change)="selectionEntity(entity)"
-          color="primary"></mat-slide-toggle>
-      </div>
-    </li>
-
-    <div style="margin-top: 13px"></div>
-    <app-s-divider></app-s-divider>
-
-    <div *ngIf="this.currentDataset!.classNodes > 0">
-      <p style="color: #ff0000; margin-top: 10px">Warning</p>
-      <p>
-        Aggregate class graph is already present inside the Memgraph Database. This operation will remove the present graph to make new
-        aggregation
-      </p>
-    </div>
-
-    <div class="master-footer">
-      <app-s-button
-        *ngIf="this.selectedEntities.length > 0"
-        [text]="'Build'"
-        (buttonClick)="this.buildClassGraph()"></app-s-button>
-      <app-s-button
-        *ngIf="this.selectedEntities.length > 0"
-        [text]="'Restore'"
-        [color]="'#6c757d'"
-        (buttonClick)="this.resetSelection()"></app-s-button>
-    </div>
-  </div>
-
-  <!--Json Sidebar-->
-  <div
-    class="sidebar"
-    [ngClass]="{ show: this.isOpenThirdSidebar }">
-    <div class="sidebar-header">
-      <h4>Export JSON</h4>
-      <i
-        class="bi bi-x-lg"
-        (click)="this.toggleThirdSidebar()"></i>
-    </div>
-    <p style="margin-top: 15px">This operation allows to download specific JSON of your Dataset.</p>
-
-    <app-s-divider></app-s-divider>
-
-    <li
-      *ngFor="let object of this.jsonList"
-      class="list-group-item">
-      <span style="margin-top: 5px">{{ object.name }}</span>
-
-      <div class="group">
-        <mat-slide-toggle
-          style="margin-top: 3px"
-          [(ngModel)]="object.isSelected"
-          (change)="selectionJson(object)"
-          color="primary"></mat-slide-toggle>
-      </div>
-    </li>
-
-    <div style="margin-top: 13px"></div>
-    <app-s-divider></app-s-divider>
-
-    <div class="master-footer">
-      <app-s-button
-        *ngIf="this.selectedJson.length > 0"
-        [text]="'Download'"
-        (buttonClick)="this.downloadJsonSelected()"></app-s-button>
-      <app-s-button
-        *ngIf="this.selectedJson.length > 0"
-        [text]="'Restore'"
-        [color]="'#6c757d'"
-        (buttonClick)="this.resetJsonSelection()"></app-s-button>
-    </div>
-  </div>
-</div>
-
-<!--Loading content-->
-<div *ngIf="isLoading">
-  <div class="process-div">
-    <h3>
-      Building the Class EKG
-      <br />
-      This operation may take a few minutes...
-    </h3>
+    <!--Aggregate Sidebar-->
     <div
-      class="progress-terminal"
-      *ngIf="this.progressData['total_nodes'] != null && this.progressData['total_relationships'] != null">
-      <p>Created {{ progressData['event_nodes'] }} event nodes</p>
-      <p>Created {{ progressData['entity_nodes'] }} entity nodes</p>
-      <p>Created {{ progressData['corr_relationships'] }} :CORR relationships</p>
-      <p>Created {{ progressData['df_relationships'] }} :DF relationships</p>
-      <p style="font-weight: bold">Total : {{ progressData['total_nodes'] }} nodes</p>
-      <p style="font-weight: bold">Total : {{ progressData['total_relationships'] }} relationships</p>
+      class="sidebar"
+      [ngClass]="{ show: this.isOpenSecondSidebar }">
+      <div class="sidebar-header">
+        <h4>Group by class</h4>
+        <i
+          class="bi bi-x-lg"
+          (click)="this.toggleSecondSidebar()"></i>
+      </div>
+      <p style="margin-top: 15px">
+        This operation allows to group nodes into classes. The default aggregation considers the Activity property. Moreover, here you can
+        select the desired entities that will be also taken into account when creating Class nodes
+      </p>
+
+      <app-s-divider></app-s-divider>
+
+      <li
+        *ngFor="let entity of this.entityList"
+        class="list-group-item">
+        <span style="margin-top: 5px">{{ entity.name }}</span>
+
+        <div class="group">
+          <mat-icon
+            *ngIf="entity.numberOfNanNodes > 0"
+            [matTooltip]="getEntityWarningLabel(entity)">
+            warning
+          </mat-icon>
+          <mat-slide-toggle
+            style="margin-top: 3px"
+            [(ngModel)]="entity.isSelected"
+            (change)="selectionEntity(entity)"
+            color="primary"></mat-slide-toggle>
+        </div>
+      </li>
+
+      <div style="margin-top: 13px"></div>
+      <app-s-divider></app-s-divider>
+
+      <div *ngIf="this.currentDataset!.classNodes > 0">
+        <p style="color: #ff0000; margin-top: 10px">Warning</p>
+        <p>
+          Aggregate class graph is already present inside the Memgraph Database. This operation will remove the present graph to make new
+          aggregation
+        </p>
+      </div>
+
+      <div class="master-footer">
+        <app-s-button
+          *ngIf="this.selectedEntities.length > 0"
+          [text]="'Build'"
+          (buttonClick)="this.buildClassGraph()"></app-s-button>
+        <app-s-button
+          *ngIf="this.selectedEntities.length > 0"
+          [text]="'Restore'"
+          [color]="'#6c757d'"
+          (buttonClick)="this.resetSelection()"></app-s-button>
+      </div>
+    </div>
+
+    <!--Json Sidebar-->
+    <div
+      class="sidebar"
+      [ngClass]="{ show: this.isOpenThirdSidebar }">
+      <div class="sidebar-header">
+        <h4>Export JSON</h4>
+        <i
+          class="bi bi-x-lg"
+          (click)="this.toggleThirdSidebar()"></i>
+      </div>
+      <p style="margin-top: 15px">This operation allows to download specific JSON of your Dataset.</p>
+
+      <app-s-divider></app-s-divider>
+
+      <li
+        *ngFor="let object of this.jsonList"
+        class="list-group-item">
+        <span style="margin-top: 5px">{{ object.name }}</span>
+
+        <div class="group">
+          <mat-slide-toggle
+            style="margin-top: 3px"
+            [(ngModel)]="object.isSelected"
+            (change)="selectionJson(object)"
+            color="primary"></mat-slide-toggle>
+        </div>
+      </li>
+
+      <div style="margin-top: 13px"></div>
+      <app-s-divider></app-s-divider>
+
+      <div class="master-footer">
+        <app-s-button
+          *ngIf="this.selectedJson.length > 0 && !this.isLoadingJsonDownload"
+          [text]="'Download'"
+          (buttonClick)="this.downloadJsonSelected()"></app-s-button>
+        <app-s-spinner-one *ngIf="this.isLoadingJsonDownload"></app-s-spinner-one>
+        <app-s-button
+          *ngIf="this.selectedJson.length > 0"
+          [text]="'Restore'"
+          [color]="'#6c757d'"
+          (buttonClick)="this.resetJsonSelection()"></app-s-button>
+      </div>
+    </div>
+  </div>
+
+  <!--Loading content-->
+  <div *ngIf="isLoading">
+    <div class="process-div">
+      <h3>
+        Building the Class EKG
+        <br />
+        This operation may take a few minutes...
+      </h3>
+      <!-- <div
+        class="progress-terminal"
+        *ngIf="this.progressData['total_nodes'] != null && this.progressData['total_relationships'] != null">
+        <p>Created {{ progressData['event_nodes'] }} event nodes</p>
+        <p>Created {{ progressData['entity_nodes'] }} entity nodes</p>
+        <p>Created {{ progressData['corr_relationships'] }} :CORR relationships</p>
+        <p>Created {{ progressData['df_relationships'] }} :DF relationships</p>
+        <p style="font-weight: bold">Total : {{ progressData['total_nodes'] }} nodes</p>
+        <p style="font-weight: bold">Total : {{ progressData['total_relationships'] }} relationships</p>
+      </div> -->
     </div>
   </div>
 </div>

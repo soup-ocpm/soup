@@ -61,28 +61,15 @@
     </div>
 
     <div class="dataset-info">
-      <p class="info-title">Class Graph</p>
-      <div *ngIf="this.dataset!.classNodes > 0">
-        <p>
-          <strong>Class nodes:</strong>
-          {{ this.dataset?.classNodes }}
-        </p>
-        <p>
-          <strong>OBS relationships:</strong>
-          {{ this.dataset?.obsRel }}
-        </p>
-        <p>
-          <strong>DF_C relationships:</strong>
-          {{ this.dataset?.dfcRel }}
-        </p>
-      </div>
-      <div *ngIf="!(this.dataset!.classNodes > 0)">
-        <p>
-          This Dataset not have the Class
-          <br />
-          graph
-        </p>
-      </div>
+      <p class="info-title">Total data</p>
+      <p>
+        <strong>Total nodes:</strong>
+        {{ this.dataset?.totalNodes }}
+      </p>
+      <p>
+        <strong>Total relationships:</strong>
+        {{ this.dataset?.totalRelationships }}
+      </p>
     </div>
   </div>
 </div>

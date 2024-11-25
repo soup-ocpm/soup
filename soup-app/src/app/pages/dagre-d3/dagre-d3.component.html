@@ -73,7 +73,8 @@
     <div class="master-search">
       <div
         class="search-term"
-        *ngFor="let item of this.filteredNodes()">
+        *ngFor="let item of this.filteredNodes()"
+        (click)="selectClassNodeSearched(item)">
         <p>
           <strong>Activity Name:</strong>
           {{ item['ActivityName'] }}

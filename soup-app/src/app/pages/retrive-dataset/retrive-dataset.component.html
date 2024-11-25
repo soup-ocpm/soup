@@ -39,7 +39,7 @@
   <!--No dataset-->
   <div
     class="no-dataset"
-    *ngIf="!this.haveDatasets && !this.isShowContainers">
+    *ngIf="!this.haveDatasets && !this.isShowContainers && this.dockerContainers.length > 0">
     <img src="/images/graph2.svg" />
     <p>
       You do not have any Datasets
@@ -119,30 +119,51 @@
             [(ngModel)]="currentDataset!.description"
             (ngModelChange)="this.checkForModelChange()"></textarea>
         </div>
-
-        <div class="master-footer">
-          <app-s-button
-            *ngIf="this.modelChange && !this.isLoadingUpdate"
-            [text]="'Save'"
-            (buttonClick)="this.onSaveUpdate()"></app-s-button>
-
-          <app-s-spinner-one *ngIf="this.isLoadingUpdate"></app-s-spinner-one>
-
-          <app-s-button
-            *ngIf="this.modelChange && !this.isLoadingUpdate"
-            [disabled]="this.isLoadingUpdate"
-            [text]="'Restore'"
-            [color]="'#6c757d'"
-            (buttonClick)="this.restoreModel()"></app-s-button>
-
-          <app-s-button
-            [text]="'Delete'"
-            *ngIf="!this.isLoadingUpdate"
-            [disabled]="this.isLoadingUpdate && !this.isLoadingUpdate"
-            [color]="'#FF0000'"
-            (buttonClick)="this.openModalDelete()"></app-s-button>
-        </div>
       </form>
+
+      <!--Columns-->
+      <div class="dataset-columns">
+        <div class="value-columns">
+          <p style="font-weight: bold">Dataset csv columns</p>
+          @for (column of this.currentDataset!.allColumns; track $index) {
+            <div class="column">
+              {{ column }}
+            </div>
+          }
+        </div>
+        <div class="filtered-columns">
+          <p style="font-weight: bold">Filtered columns</p>
+          @for (column of this.currentDataset!.filteredColumns; track $index) {
+            <div class="column">
+              {{ column }}
+            </div>
+          }
+        </div>
+      </div>
+
+      <!--Buttons-->
+      <div class="master-footer">
+        <app-s-button
+          *ngIf="this.modelChange && !this.isLoadingUpdate"
+          [text]="'Save'"
+          (buttonClick)="this.onSaveUpdate()"></app-s-button>
+
+        <app-s-spinner-one *ngIf="this.isLoadingUpdate"></app-s-spinner-one>
+
+        <app-s-button
+          *ngIf="this.modelChange && !this.isLoadingUpdate"
+          [disabled]="this.isLoadingUpdate"
+          [text]="'Restore'"
+          [color]="'#6c757d'"
+          (buttonClick)="this.restoreModel()"></app-s-button>
+
+        <app-s-button
+          [text]="'Delete'"
+          *ngIf="!this.isLoadingUpdate"
+          [disabled]="this.isLoadingUpdate && !this.isLoadingUpdate"
+          [color]="'#FF0000'"
+          (buttonClick)="this.openModalDelete()"></app-s-button>
+      </div>
     </div>
   </div>
 </div>

@@ -11,25 +11,100 @@
   font-family: Georgia, 'Times New Roman', Times, serif;
 }
 
-.dataset-name {
-  display: flex;
-  position: absolute;
-  top: 30px;
-  left: 30px;
-  font-family: 'Times New Roman', Times, serif;
-  color: #666;
+// ================================
+// Region: Layout body content
+// ================================
+.dataset-content {
+  margin-right: 430px;
+  width: 1450px;
+  height: 86vh;
+  background-color: #e9e9e9; /* Colore di sfondo più chiaro */
+  padding: 30px;
+  box-shadow: 0px 10px 30px rgba(0, 0, 0, 0.1); /* Ombra per profondità */
+  overflow: auto;
 }
 
-// ================================
-// Region: Grid
-// ================================
-.master-grid {
-  display: grid;
-  align-items: center;
+.dataset-name {
+  margin-bottom: 20px;
+  font-family: 'Times New Roman', Times, serif;
+  color: #333;
+  font-size: 24px;
+  text-align: center;
+}
+
+.content {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 30px;
+  flex-wrap: wrap;
+}
+
+.info {
+  background-color: #ffffff;
+  padding: 20px;
+  border-radius: 10px;
+  box-shadow: 0px 4px 20px rgba(0, 0, 0, 0.1);
+  width: 45%;
+  min-width: 300px;
+  height: 280px;
+}
+
+.info-title h5 {
+  font-size: 18px;
+  margin-bottom: 10px;
+  color: #333;
+  font-weight: bold;
+}
+
+.info p {
+  font-size: 16px;
+  margin: 8px 0;
+  color: #555;
+}
+
+.bold {
+  font-weight: bold;
+  color: #ffac1c;
+}
+
+.bold-two {
+  font-weight: bold;
+  color: green;
+}
+
+.graphs {
+  width: 45%;
+  min-width: 280px;
+  display: flex;
   justify-content: center;
-  grid-template-columns: auto auto;
-  grid-template-rows: repeat(2, auto);
-  gap: 20px;
+  align-items: center;
+}
+
+.master-pie canvas {
+  width: 100%;
+  height: 100%;
+  max-width: 300px;
+  max-height: 280px;
+  border-radius: 10px;
+  box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+}
+
+/* Aggiungere media queries per adattabilità */
+@media (max-width: 768px) {
+  .content {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .info,
+  .graphs {
+    width: 80%;
+  }
+
+  .dataset-name {
+    font-size: 20px;
+  }
 }
 
 // ================================
@@ -37,7 +112,7 @@
 // ================================
 .sidebar {
   height: calc(100% - 114px);
-  width: 400px;
+  width: 420px;
   position: fixed;
   z-index: 1000;
   top: 56px;
@@ -142,7 +217,8 @@
   left: 10px;
 }
 
-.master-footer app-s-button {
+.master-footer app-s-button,
+app-s-spinner-one {
   margin-right: 5px;
 }
 

@@ -155,7 +155,6 @@ export class DagreD3Component implements OnInit {
     this.genericGraphService.getGraph(200, standardGraph).subscribe({
       next: (response) => {
         if (response.statusCode == 200 && response.responseData != null) {
-          console.log(response.responseData);
           this.injectData(response.responseData);
         } else {
           this.isLoading = false;
@@ -266,7 +265,7 @@ export class DagreD3Component implements OnInit {
       this.g.nodes().forEach((v: any): void => {
         const node = this.g.node(v);
         node.rx = node.ry = 5;
-        node.style = 'fill: #fff; stroke: #000; stroke-width: 2px';
+        node.style = 'fill: #fff; stroke: #000; stroke-width: 2px; cursor: pointer';
       });
 
       this.edges.forEach((edge: any): void => {
@@ -388,7 +387,6 @@ export class DagreD3Component implements OnInit {
     }
 
     const node = this.g.node(nodeId);
-    console.log(node);
 
     this.nodes.forEach((currentNode: any) => {
       if (currentNode['EventID'] == node['EventID']) {

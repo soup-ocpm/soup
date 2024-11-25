@@ -32,30 +32,42 @@ export class Dataset {
   // The DF_C relationships
   public dfcRel = 0;
 
-  // The standard graph details for the view
-  public standardGraphDetails: any;
-
-  // The class graph details for the view
-  public classGraphDetails: any;
-
   // The number of node
   public totalNodes = 0;
 
   // The number of relationships
   public totalRelationships = 0;
 
+  // The standard and principal csv columns (event, timestamp and activity)
+  public standardColumns: string[] = [];
+
+  // The filtered columns
+  public filteredColumns: string[] = [];
+
+  // The values columns
+  public valuesColumns: string[] = [];
+
+  // All columns
+  public allColumns: string[] = [];
+
   // The process info object
   public processInfo: DatasetProcessInfo = new DatasetProcessInfo();
-
-  // If the user want to view the full data or not
-  public viewInfo = false;
 
   // The container id
   public containerId = '';
 
   // The creation date
-  public dateCreated: Date = new Date();
+  public dateCreated = '';
 
   // The update date
-  public dateModified: Date = new Date();
+  public dateModified = '';
+
+  // If the user want to view the full data or not
+  public viewInfo = false;
+
+  // The standard graph details for the view
+  public standardGraphDetails: any;
+
+  // The class graph details for the view
+  public classGraphDetails: any;
 }

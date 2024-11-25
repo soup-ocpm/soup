@@ -316,11 +316,24 @@ export class RetriveDatasetComponent implements OnInit {
           .updateDatasetDescription(this.currentContainer!.id, this.currentDataset!.name, this.currentDataset!.description)
           .subscribe({
             next: (response) => {
-              console.log(response);
               if (response.statusCode == 200 && response.responseData != null) {
+                this.isOpenSidebar = false;
+                this.isLoadingDatasets = true;
+                const updatedDataset = this.supportService.parseItemToDataset(this.currentDataset!.containerId, response.responseData);
+
+                if (updatedDataset != null) {
+                  this.currentDataset!.description = updatedDataset.description;
+                  this.currentDataset!.dateModified = updatedDataset.dateModified;
+
+                  this.allDataset.forEach((item: Dataset) => {
+                    if (item.name == updatedDataset.name && item.dateCreated == updatedDataset.dateCreated) {
+                      item.description = updatedDataset.description;
+                      item.dateCreated = updatedDataset.dateCreated;
+                      this.isLoadingDatasets = false;
+                    }
+                  });
+                }
                 this.toast.show('Dataset update successfully', ToastLevel.Success, 2000);
-                this.getAllDatasets();
-                this.toggleSidebar();
               } else {
                 this.toast.show('Unable to update Dataset. Please retry', ToastLevel.Error, 3000);
                 this.toggleSidebar();
@@ -334,7 +347,7 @@ export class RetriveDatasetComponent implements OnInit {
             },
             complete: () => {}
           });
-      }, 2000);
+      }, 1000);
     }
   }
 

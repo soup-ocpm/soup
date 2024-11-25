@@ -41,11 +41,6 @@ export const routes: Routes = [
     data: { animatation: 'DagreD3Page' }
   },
   {
-    path: 'charts',
-    loadComponent: () => import('./pages/charts/charts.component').then((c) => c.ChartsComponent),
-    data: { animatation: 'DagreD3Page' }
-  },
-  {
     path: '**',
     redirectTo: 'welcome'
   }

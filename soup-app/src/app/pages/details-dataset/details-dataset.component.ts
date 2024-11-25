@@ -1,13 +1,17 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit } from '@angular/core';
+import { AfterViewInit, Component, ElementRef, OnInit, ViewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
+import { Chart, registerables } from 'chart.js';
+import saveAs from 'file-saver';
+import { concatMap, from, map, Observable, toArray } from 'rxjs';
 
-import { DetailTileComponent } from '../../components/detail-tile/detail-tile.component';
 import { SButtonComponent } from '../../core/components/s-buttons/s-button/s-button.component';
 import { SDividerComponent } from '../../core/components/s-divider/s-divider.component';
 import { SProgressbarComponent } from '../../core/components/s-progressbar/s-progressbar.component';
+import { SSpinnerOneComponent } from '../../core/components/s-spinners/s-spinner-one/s-spinner-one.component';
 import { ToastLevel } from '../../core/enums/toast_type.enum';
+import { ApiResponse } from '../../core/models/api_response.model';
 import { LoggerService } from '../../core/services/logger.service';
 import { ModalService } from '../../core/services/modal.service';
 import { NotificationService } from '../../core/services/toast.service';
@@ -31,16 +35,28 @@ class EntityObject {
 
   // Is selected or not
   isSelected = false;
+
+  /**
+   * Initialize a new instance of EntityObject model
+   * @param name the name
+   * @param numberOfNanNodes number of NaN nodes
+   */
+  constructor(name: string, numberOfNanNodes: number) {
+    this.name = name;
+    this.numberOfNanNodes = numberOfNanNodes;
+  }
 }
 
+// Json object structure
 class JsonObject {
   // Name
   name = '';
 
+  // If the object is selected
   isSelected = false;
 
   /**
-   * Initialize a new instance of JsonObject
+   * Initialize a new instance of JsonObject model
    * @param name the name
    * @param isSelected if it is selected
    */
@@ -59,14 +75,14 @@ class JsonObject {
     MaterialModule,
     // Component import
     SButtonComponent,
-    DetailTileComponent,
     SProgressbarComponent,
-    SDividerComponent
+    SDividerComponent,
+    SSpinnerOneComponent
   ],
   templateUrl: './details-dataset.component.html',
   styleUrl: './details-dataset.component.scss'
 })
-export class DetailsDatasetComponent implements OnInit {
+export class DetailsDatasetComponent implements OnInit, AfterViewInit {
   // The dataset name
   public currentDataset: Dataset | undefined;
 
@@ -85,8 +101,17 @@ export class DetailsDatasetComponent implements OnInit {
   // List of the selected json content
   public selectedJson: string[] = [];
 
-  // The progress data
-  public progressData: any;
+  // Data pie chart for standard graph
+  private dataPieChartInstance: any;
+
+  // Process pie chart for standard graph
+  private processPieChartInstance: any;
+
+  // Aggregate data pie chart for class graph
+  private aggregateDataPieChartInstance: any;
+
+  // Aggregate process pie chart for class graph
+  private aggregateProcessPieChartInstance: any;
 
   // If the sidebar is open or not
   public isOpenSidebar = true;
@@ -97,11 +122,23 @@ export class DetailsDatasetComponent implements OnInit {
   // If the sidebar of JSON is open or not
   public isOpenThirdSidebar = false;
 
-  // If the dataset have the class graph
-  public haveClassGraph = false;
-
   // If the progress bar is show or not
   public isLoading = false;
+
+  // If the user attend download the json
+  public isLoadingJsonDownload = false;
+
+  // Pie chart for dataset data
+  @ViewChild('dataPieChart', { static: false }) dataPieChart: ElementRef | undefined;
+
+  // Pie chart for process execution
+  @ViewChild('processPieChart', { static: false }) processPieChart: ElementRef | undefined;
+
+  // Pie chart for dataset data
+  @ViewChild('aggregateDataPieChart', { static: false }) aggregateDataPieChart: ElementRef | undefined;
+
+  // Pie chart for process execution
+  @ViewChild('aggregateProcessPieChart', { static: false }) aggregateProcessPieChart: ElementRef | undefined;
 
   /**
    * Constructor for DetailsDatasetComponent component
@@ -127,7 +164,9 @@ export class DetailsDatasetComponent implements OnInit {
     private jsonDataService: JSONDataService,
     private classGraphService: ClassGraphService,
     private standardGraphService: StandardGraphService
-  ) {}
+  ) {
+    Chart.register(...registerables);
+  }
 
   // NgOnInit implementation
   public ngOnInit(): void {
@@ -138,8 +177,8 @@ export class DetailsDatasetComponent implements OnInit {
       this.loadDatasetDetails();
       this.retrieveEntityKey();
       this.populateJsonContent();
-      this.getJSONContent();
-      this.haveClassGraph = this.currentDataset.classNodes > 0;
+      this.createDataPieChart();
+      this.createProcessPieChart();
     } else {
       this.toast.show('Unable to retrieve Dataset. Retry', ToastLevel.Error, 3000);
       this.router.navigate(['/welcome']);
@@ -147,69 +186,9 @@ export class DetailsDatasetComponent implements OnInit {
     }
   }
 
-  /**
-   * Retrieve entities from the Dataset
-   */
-  private retrieveEntityKey(): void {
-    this.standardGraphService.getEntityKey().subscribe({
-      next: (response) => {
-        if (response.statusCode == 200 && response.responseData != null) {
-          const data = response.responseData;
-          data.forEach((item: any) => {
-            const entity = new EntityObject();
-            entity.name = item;
-            entity.numberOfNanNodes = 0;
-
-            this.entityList.push(entity);
-          });
-
-          this.retrieveNaNEntity();
-        } else {
-          this.toast.show('Unable to load the entities key of the Dataset', ToastLevel.Error, 3000);
-        }
-      },
-      error: (errorData) => {
-        const apiResponse: any = errorData;
-        this.logService.error(apiResponse);
-        this.toast.show('Unable to load the entities key of the Dataset', ToastLevel.Error, 3000);
-      },
-      complete: () => {}
-    });
-  }
-
-  /**
-   * Retrieve NaN entity from the Dataset
-   */
-  private retrieveNaNEntity(): void {
-    const nullEntities: string[] = [];
-
-    this.standardGraphService.getNullEntities().subscribe({
-      next: (response) => {
-        if (response.statusCode == 200 && response.responseData != null) {
-          const data = response.responseData;
-
-          data.forEach((item: any) => {
-            nullEntities.push(item);
-          });
-
-          this.entityList.forEach((entity: EntityObject) => {
-            nullEntities.forEach((item: any) => {
-              if (item.property_name == entity.name) {
-                entity.numberOfNanNodes = item.count_nodes;
-              }
-            });
-          });
-        } else {
-          this.toast.show('Unable to load the entities key of the Dataset', ToastLevel.Error, 3000);
-        }
-      },
-      error: (errorData) => {
-        const apiResponse: any = errorData;
-        this.logService.error(apiResponse);
-        this.toast.show('Unable to load the entities key of the Dataset', ToastLevel.Error, 3000);
-      },
-      complete: () => {}
-    });
+  // NgAfterViewInit implementation
+  public ngAfterViewInit(): void {
+    this.createCharts();
   }
 
   /**
@@ -228,10 +207,23 @@ export class DetailsDatasetComponent implements OnInit {
   }
 
   /**
-   * Delete and build the new aggregate EKG
+   * Delete the previous class graph
    */
-  public deleteBuildClassGraph(): void {
-    // Todo: implement
+  public deletePreviousClassGraph(): void {
+    this.classGraphService.deleteGraph().subscribe({
+      next: (responseData) => {
+        if (responseData.statusCode == 200 && responseData.responseData != null) {
+          this.buildClassGraph();
+        } else {
+          this.toast.show('Unable to create the aggregate graph. Check the info and retry.', ToastLevel.Error, 3000);
+        }
+      },
+      error: (errorData) => {
+        this.logService.error(errorData);
+        this.toast.show('Unable to create the aggregate graph. Check the info and retry.', ToastLevel.Error, 3000);
+      },
+      complete: () => {}
+    });
   }
 
   /**
@@ -249,9 +241,16 @@ export class DetailsDatasetComponent implements OnInit {
     try {
       this.classGraphService.createClassGraph(formData, this.selectedEntities, this.currentDataset!.name).subscribe({
         next: (response) => {
-          if (response.statusCode === 201) {
-            this.toast.show('Class graph created successfully.', ToastLevel.Success, 3000);
-            this.updateDatasetInfo();
+          if (response.statusCode === 201 && response.responseData != null) {
+            this.currentDataset = this.supportService.updateDatasetInfo(response.responseData);
+            this.isLoading = false;
+            this.isOpenSidebar = true;
+            this.isOpenSecondSidebar = false;
+            this.resetSelection();
+
+            setTimeout(() => {
+              this.createCharts();
+            }, 300);
           } else {
             this.isOpenSecondSidebar = true;
             this.isOpenSidebar = true;
@@ -275,43 +274,6 @@ export class DetailsDatasetComponent implements OnInit {
   }
 
   /**
-   * Retrieve the updated dataset
-   */
-  public updateDatasetInfo(): void {
-    const containerId = this.currentDataset!.containerId;
-
-    this.datasetService.getDataset(containerId, this.currentDataset!.name).subscribe({
-      next: (response) => {
-        if (response.statusCode == 200 && response.responseData != null) {
-          const updateDataset = response.responseData;
-          this.currentDataset = this.supportService.parseItemToDataset(containerId, updateDataset);
-          this.isLoading = false;
-          this.isOpenSidebar = true;
-          this.isOpenSecondSidebar = false;
-        } else {
-          this.isOpenSecondSidebar = true;
-          this.isOpenSidebar = true;
-          this.isLoading = false;
-          this.toast.show('Error while get the Dataset', ToastLevel.Error, 3000);
-        }
-      },
-      error: (errorData) => {
-        const apiResponse: any = errorData;
-        this.logService.error(apiResponse);
-        this.isOpenSecondSidebar = true;
-        this.isOpenSidebar = true;
-        this.isLoading = false;
-        this.toast.show('Error while get the Dataset', ToastLevel.Error, 3000);
-      },
-      complete: () => {}
-    });
-  }
-
-  /**
-   */
-  public getJSONContent(): void {}
-
-  /**
    * Handle the click for delete EKG
    */
   public handleDeleteGraph(): void {
@@ -320,7 +282,7 @@ export class DetailsDatasetComponent implements OnInit {
     }
     this.modalService.showGenericModal(
       'Delete Dataset?',
-      'The Dataset will be completely removed,',
+      'The Dataset will be completely removed.',
       true,
       'Delete',
       '#FF0000',
@@ -424,7 +386,55 @@ export class DetailsDatasetComponent implements OnInit {
   /**
    * Download JSON content
    */
-  public downloadJsonSelected(): void {}
+  public downloadJsonSelected(): void {
+    const requests: { name: string; observable: Observable<ApiResponse<any>> }[] = [];
+
+    this.isLoadingJsonDownload = true;
+
+    this.selectedJson.forEach((selection) => {
+      switch (selection) {
+        case 'Event nodes':
+          requests.push({ name: 'Event nodes', observable: this.jsonDataService.eventNodeJSON() });
+          break;
+        case 'Entity nodes':
+          requests.push({ name: 'Entity nodes', observable: this.jsonDataService.entityNodeJSON() });
+          break;
+        case ':CORR links':
+          requests.push({ name: ':CORR links', observable: this.jsonDataService.corrLinkJSON() });
+          break;
+        case ':DF links':
+          requests.push({ name: ':DF links', observable: this.jsonDataService.dfLinkJSON() });
+          break;
+      }
+    });
+
+    if (requests.length === 0) {
+      return;
+    }
+
+    from(requests)
+      .pipe(
+        concatMap((request) => request.observable.pipe(map((response) => ({ name: request.name, data: response.responseData })))),
+        toArray()
+      )
+      .subscribe({
+        next: (results) => {
+          results.forEach((result) => {
+            const filename = `${result.name}-data.json`;
+            const blob = new Blob([JSON.stringify(result.data, null, 2)], { type: 'application/json' });
+            saveAs(blob, filename);
+          });
+
+          this.isLoadingJsonDownload = false;
+          this.toggleThirdSidebar();
+          this.resetJsonSelection();
+          this.toast.show('Json files downloaded successfully', ToastLevel.Success, 3000);
+        },
+        error: (err) => {
+          console.error('Error during download:', err);
+        }
+      });
+  }
 
   /**
    * Open the second sidebar
@@ -460,6 +470,266 @@ export class DetailsDatasetComponent implements OnInit {
   public toggleThirdSidebar(): void {
     this.isOpenThirdSidebar = false;
     this.resetJsonSelection();
+  }
+
+  /**
+   * Retrieve entities from the Dataset
+   */
+  private retrieveEntityKey(): void {
+    this.standardGraphService.getEntityKey().subscribe({
+      next: (response) => {
+        if (response.statusCode == 200 && response.responseData != null) {
+          const data = response.responseData;
+          data.forEach((item: any) => {
+            this.entityList.push(new EntityObject(item, 0));
+          });
+
+          this.retrieveNaNEntity();
+        } else {
+          this.toast.show('Unable to load the entities key of the Dataset', ToastLevel.Error, 3000);
+        }
+      },
+      error: (errorData) => {
+        const apiResponse: any = errorData;
+        this.logService.error(apiResponse);
+        this.toast.show('Unable to load the entities key of the Dataset', ToastLevel.Error, 3000);
+      },
+      complete: () => {}
+    });
+  }
+
+  /**
+   * Retrieve NaN entity from the Dataset
+   */
+  private retrieveNaNEntity(): void {
+    const nullEntities: string[] = [];
+
+    this.standardGraphService.getNullEntities().subscribe({
+      next: (response) => {
+        if (response.statusCode == 200 && response.responseData != null) {
+          const data = response.responseData;
+
+          data.forEach((item: any) => {
+            nullEntities.push(item);
+          });
+
+          this.entityList.forEach((entity: EntityObject) => {
+            nullEntities.forEach((item: any) => {
+              if (item.property_name == entity.name) {
+                entity.numberOfNanNodes = item.count_nodes;
+              }
+            });
+          });
+        } else {
+          this.toast.show('Unable to load the entities key of the Dataset', ToastLevel.Error, 3000);
+        }
+      },
+      error: (errorData) => {
+        const apiResponse: any = errorData;
+        this.logService.error(apiResponse);
+        this.toast.show('Unable to load the entities key of the Dataset', ToastLevel.Error, 3000);
+      },
+      complete: () => {}
+    });
+  }
+
+  /**
+   * Create all charts
+   */
+  private createCharts(): void {
+    if (this.currentDataset) {
+      this.createDataPieChart();
+      this.createProcessPieChart();
+
+      if (this.currentDataset.classNodes > 0) {
+        this.createAggregateDataPieChart();
+        this.createAggregateProcessPieChart();
+      }
+    }
+  }
+
+  /**
+   * Build the pie chart for dataset data
+   */
+  private createDataPieChart(): void {
+    if (!this.dataPieChart) return;
+
+    const ctx = (this.dataPieChart?.nativeElement as HTMLCanvasElement).getContext('2d');
+    if (ctx) {
+      this.destroyChart(this.dataPieChartInstance);
+
+      this.dataPieChartInstance = new Chart(ctx, {
+        type: 'pie',
+        data: {
+          labels: ['Event', 'Entity', ':CORR', ':DF'],
+          datasets: [
+            {
+              label: 'number',
+              data: [
+                this.currentDataset!.eventNodes,
+                this.currentDataset!.entityNodes,
+                this.currentDataset!.corrRel,
+                this.currentDataset!.dfRel
+              ],
+              backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF'],
+              borderColor: '#fff',
+              borderWidth: 2
+            }
+          ]
+        },
+        options: {
+          responsive: false,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              position: 'top'
+            },
+            title: {
+              display: true,
+              text: 'Data'
+            }
+          }
+        }
+      });
+    }
+  }
+
+  /**
+   * Build the pie chart for dataset process executions
+   */
+  private createProcessPieChart(): void {
+    if (!this.processPieChart) return;
+
+    const ctx = (this.processPieChart?.nativeElement as HTMLCanvasElement).getContext('2d');
+    if (ctx) {
+      this.destroyChart(this.processPieChartInstance);
+
+      this.processPieChartInstance = new Chart(ctx, {
+        type: 'pie',
+        data: {
+          labels: ['Total', 'Event queries', 'Entity queries', ':Corr queries', ':DF queries'], // Etichette
+          datasets: [
+            {
+              label: 'seconds',
+              data: [
+                this.currentDataset!.processInfo.durationNormalExecution,
+                this.currentDataset!.processInfo.durationEventExecution,
+                this.currentDataset!.processInfo.durationEntityExecution,
+                this.currentDataset!.processInfo.durationCorrExecution,
+                this.currentDataset!.processInfo.durationDfExecution
+              ],
+              backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF'],
+              borderColor: '#fff',
+              borderWidth: 2
+            }
+          ]
+        },
+        options: {
+          responsive: false,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              position: 'top'
+            },
+            title: {
+              display: true,
+              text: 'Process query execution time'
+            }
+          }
+        }
+      });
+    }
+  }
+
+  /**
+   * Build the pie chart for dataset data
+   */
+  private createAggregateDataPieChart(): void {
+    const ctx = (this.aggregateDataPieChart?.nativeElement as HTMLCanvasElement).getContext('2d');
+    if (ctx) {
+      this.destroyChart(this.aggregateDataPieChartInstance);
+
+      this.aggregateDataPieChartInstance = new Chart(ctx, {
+        type: 'pie',
+        data: {
+          labels: ['Class Nodes', ':OBS', ':DFC'],
+          datasets: [
+            {
+              label: 'number',
+              data: [this.currentDataset!.classNodes, this.currentDataset!.obsRel, this.currentDataset!.dfcRel],
+              backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF'],
+              borderColor: '#fff',
+              borderWidth: 2
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          plugins: {
+            legend: {
+              position: 'top'
+            },
+            title: {
+              display: true,
+              text: 'Aggregate data'
+            }
+          }
+        }
+      });
+    }
+  }
+
+  /**
+   * Build the pie chart for dataset process executions
+   */
+  private createAggregateProcessPieChart(): void {
+    const ctx = (this.aggregateProcessPieChart?.nativeElement as HTMLCanvasElement).getContext('2d');
+    if (ctx) {
+      this.destroyChart(this.aggregateProcessPieChartInstance);
+
+      this.aggregateProcessPieChartInstance = new Chart(ctx, {
+        type: 'pie',
+        data: {
+          labels: ['Total', 'Class queries', ':OBS queries', ':DFC queries'], // Etichette
+          datasets: [
+            {
+              label: 'seconds',
+              data: [
+                this.currentDataset!.processInfo.durationClassExecution,
+                this.currentDataset!.processInfo.durationObsExecution,
+                this.currentDataset!.processInfo.durationDfCExecution
+              ],
+              backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF'],
+              borderColor: '#fff',
+              borderWidth: 2
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          plugins: {
+            legend: {
+              position: 'top'
+            },
+            title: {
+              display: true,
+              text: 'Process query execution time'
+            }
+          }
+        }
+      });
+    }
+  }
+
+  /**
+   * Destroy the chart instance
+   * @param chart the chart
+   */
+  private destroyChart(chart: Chart | null): void {
+    if (chart) {
+      console.log('Destroying chart:', chart);
+      chart.destroy();
+    }
   }
 
   /**
