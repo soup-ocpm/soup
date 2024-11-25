@@ -13,10 +13,10 @@ License : MIT
 
 # Api Response model class
 class ApiResponse:
-    def __init__(self, http_status_code, response_data, message):
-        self.http_status_code = http_status_code
-        self.response_data = response_data
-        self.message = message
+    def __init__(self):
+        self.http_status_code = None
+        self.response_data = None
+        self.message = None
 
     def to_dict(self):
         return {

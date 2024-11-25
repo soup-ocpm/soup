@@ -19,7 +19,6 @@ from collections.abc import *
 from neo4j.time import DateTime
 from Controllers.graph_config import memgraph_datetime_to_string
 from Services.Graph.op_graph_service import OperationGraphService
-from Services.AggregateGraph.op_class_graph_service import OperationClassGraphService
 from Models.api_response_model import ApiResponse
 from Models.dataset_process_info_model import DatasetProcessInformation
 from Models.docker_file_manager_model import DockerFileManager
@@ -58,14 +57,15 @@ class GenericGraphService:
 
             dataset_name = exec_config_file["dataset_name"]
             dataset_description = exec_config_file["dataset_description"]
+            all_columns = exec_config_file["all_columns"]
             standard_columns = exec_config_file["standard_columns"]
             filtered_columns = exec_config_file["filtered_columns"]
             values_columns = exec_config_file["values_columns"]
             fixed_columns = exec_config_file["fixed_columns"]
             variable_columns = exec_config_file["variable_columns"]
             causality_graph_columns = exec_config_file["causality"]
-            # class_nodes = exec_config_file["class_nodes"] Todo: implement
-            graph_columns = exec_config_file["graph_columns"]
+            date_created = exec_config_file['date_created']
+            date_modified = exec_config_file['date_modified']
 
             try:
                 database_connector.connect()
@@ -125,9 +125,6 @@ class GenericGraphService:
                 process_info.finish_df_time = datetime.now().strftime('%Y-%m-%dT%H:%M:%S.%f')[:-3]
                 process_info.finish_time = datetime.now().strftime('%Y-%m-%dT%H:%M:%S.%f')[:-3]
 
-                # if class_nodes > 0:
-                # Todo: check if there exist class graph. In case create it here
-
             except Exception as e:
                 return f'Error: {e}'
 
@@ -137,17 +134,15 @@ class GenericGraphService:
             corr_rel = OperationGraphService.get_count_corr_relationships_s(database_connector)
             df_rel = OperationGraphService.get_count_df_relationships_s(database_connector)
 
-            # Finally update the Dataset node with new information
-            class_nodes = OperationClassGraphService.get_count_class_nodes_s(database_connector)
-            obs_rel = OperationClassGraphService.get_count_obs_relationships_s(database_connector)
-            dfc_rel = OperationClassGraphService.get_count_dfc_relationships_s(database_connector)
+            if date_created is None or date_created is 0:
+                date_created = datetime.now().strftime('%Y-%m-%dT%H:%M:%S.%f')[:-3]
+                date_modified = datetime.now().strftime('%Y-%m-%dT%H:%M:%S.%f')[:-3]
 
-            new_json_configuration = FileManager.create_json_file(dataset_name, dataset_description, standard_columns,
-                                                                  filtered_columns, values_columns, fixed_columns,
-                                                                  variable_columns, graph_columns,
-                                                                  causality_graph_columns,
-                                                                  event_nodes, entity_nodes, corr_rel, df_rel,
-                                                                  None, None, None,
+            new_json_configuration = FileManager.create_json_file(dataset_name, dataset_description, all_columns,
+                                                                  standard_columns, filtered_columns, values_columns,
+                                                                  fixed_columns, variable_columns,
+                                                                  causality_graph_columns, event_nodes, entity_nodes,
+                                                                  corr_rel, df_rel, date_created, date_modified,
                                                                   process_info.to_dict())
 
             if new_json_configuration is None:
@@ -177,11 +172,10 @@ class GenericGraphService:
     # Get complete graph (standard or class)
     @staticmethod
     def get_graph_s(database_connector, standard_graph, limit):
-        apiResponse = ApiResponse(None, None, None)
+        response = ApiResponse()
 
         try:
             database_connector.connect()
-            query_result = get_complete_standard_graph_query()
 
             if standard_graph == "1":
                 if not limit:
@@ -197,10 +191,10 @@ class GenericGraphService:
             result = database_connector.run_query_memgraph(query_result)
 
             if not isinstance(result, Iterable) or len(result) == 0:
-                apiResponse.http_status_code = 404
-                apiResponse.response_data = None
-                apiResponse.message = "Not found"
-                return jsonify(apiResponse.to_dict()), 404
+                response.http_status_code = 404
+                response.response_data = None
+                response.message = "Not found"
+                return jsonify(response.to_dict()), 404
 
             graph_data = []
 
@@ -237,30 +231,30 @@ class GenericGraphService:
                 })
 
             if not graph_data:
-                apiResponse.http_status_code = 404
-                apiResponse.response_data = None
-                apiResponse.message = "Not found"
-                return jsonify(apiResponse.to_dict()), 404
+                response.http_status_code = 404
+                response.response_data = None
+                response.message = "Not found"
+                return jsonify(response.to_dict()), 404
 
-            apiResponse.http_status_code = 200
-            apiResponse.response_data = graph_data
-            apiResponse.message = "Retrieve Graph."
+            response.http_status_code = 200
+            response.response_data = graph_data
+            response.message = "Retrieve Graph."
 
-            return jsonify(apiResponse.to_dict()), 200
+            return jsonify(response.to_dict()), 200
 
         except Exception as e:
-            apiResponse.http_status_code = 500
-            apiResponse.response_data = None
-            apiResponse.message = f'Internal Server Error : {str(e)}'
-            return jsonify(apiResponse.to_dict()), 500
+            response.http_status_code = 500
+            response.response_data = None
+            response.message = f'Internal Server Error : {str(e)}'
+            return jsonify(response.to_dict()), 500
 
         finally:
             database_connector.close()
 
     # Delete all inside the database
     @staticmethod
-    def delete_all_graph_s(database_connector):
-        apiResponse = ApiResponse(None, None, None)
+    def delete_memgraph_graph_s(database_connector):
+        response = ApiResponse()
 
         try:
             database_connector.connect()
@@ -272,21 +266,21 @@ class GenericGraphService:
             result_node = database_connector.run_query_memgraph(verification_query)
 
             if result_node and result_node[0]['count'] == 0:
-                apiResponse.http_status_code = 200
-                apiResponse.message = 'Graph deleted successfully !'
-                apiResponse.response_data = None
-                return jsonify(apiResponse.to_dict()), 200
+                response.http_status_code = 200
+                response.message = 'Graph deleted successfully !'
+                response.response_data = None
+                return jsonify(response.to_dict()), 200
             else:
-                apiResponse.http_status_code = 404
-                apiResponse.message = 'Data was not deleted!'
-                apiResponse.response_data = None
-                return jsonify(apiResponse.to_dict()), 404
+                response.http_status_code = 404
+                response.message = 'Data was not deleted!'
+                response.response_data = None
+                return jsonify(response.to_dict()), 404
 
         except Exception as e:
-            apiResponse.http_status_code = 500
-            apiResponse.message = f"Internal Server Error : {str(e)}"
-            apiResponse.response_data = None
-            return jsonify(apiResponse.to_dict()), 500
+            response.http_status_code = 500
+            response.message = f"Internal Server Error : {str(e)}"
+            response.response_data = None
+            return jsonify(response.to_dict()), 500
 
         finally:
             database_connector.close()

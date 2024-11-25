@@ -11,7 +11,6 @@ License : MIT
 """
 
 # Import
-import os
 from flask import Flask, jsonify
 from flask_cors import CORS
 from flask_socketio import SocketIO

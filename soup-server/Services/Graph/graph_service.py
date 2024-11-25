@@ -25,11 +25,11 @@ from Models.api_response_model import ApiResponse
 class GraphService:
 
     @staticmethod
-    def create_new_dataset(file, copy_file, dataset_name, dataset_description, standard_column,
+    def create_new_dataset(file, copy_file, dataset_name, dataset_description, all_columns, standard_column,
                            filtered_column, values_column, fixed_column, variable_column, container_id,
                            database_connector):
 
-        apiResponse = ApiResponse(None, None, None)
+        response = ApiResponse()
 
         causality = None
         if not (fixed_column is None and values_column is None):
@@ -41,43 +41,43 @@ class GraphService:
             df = pd.read_csv(io.StringIO(file_data))
 
             # 1. Process the csv file on Docker Container
-            result = process_new_dataset_files(container_id, file, df, dataset_name, dataset_description,
+            result = process_new_dataset_files(container_id, file, df, dataset_name, dataset_description, all_columns,
                                                standard_column, filtered_column, values_column, fixed_column,
                                                variable_column, causality)
 
             if result != 'success':
-                apiResponse.http_status_code = 500
-                apiResponse.message = result
-                apiResponse.response_data = []
-                return jsonify(apiResponse.to_dict()), 500
+                response.http_status_code = 500
+                response.message = result
+                response.response_data = []
+                return jsonify(response.to_dict()), 500
 
             build_result = GenericGraphService.create_complete_graphs(container_id, database_connector, dataset_name)
 
             if build_result != 'success':
                 folder_path = f'/soup/{dataset_name}'
                 DockerFileManager.remove_container_file_folder(container_id, folder_path)
-                apiResponse.http_status_code = 400
-                apiResponse.message = 'Error while create the graph'
-                apiResponse.response_data = build_result
-                return jsonify(apiResponse.to_dict()), 400
+                response.http_status_code = 400
+                response.message = 'Error while create the graph'
+                response.response_data = build_result
+                return jsonify(response.to_dict()), 400
 
             # 5. Finally success
-            apiResponse.http_status_code = 201
-            apiResponse.message = 'Create graph successfully'
-            apiResponse.response_data = build_result
-            return jsonify(apiResponse.to_dict()), 201
+            response.http_status_code = 201
+            response.message = 'Create graph successfully'
+            response.response_data = build_result
+            return jsonify(response.to_dict()), 201
 
         except Exception as e:
-            apiResponse.http_status_code = 500
-            apiResponse.message = f'Internal Server Error: {str(e)}.'
-            apiResponse.response_data = None
-            return jsonify(apiResponse.to_dict()), 500
+            response.http_status_code = 500
+            response.message = f'Internal Server Error: {str(e)}.'
+            response.response_data = None
+            return jsonify(response.to_dict()), 500
         finally:
             database_connector.close()
 
 
 # 1. Process the file new Dataset file
-def process_new_dataset_files(container_id, file, df, dataset_name, dataset_description, standard_columns,
+def process_new_dataset_files(container_id, file, df, dataset_name, dataset_description, all_columns, standard_columns,
                               filtered_columns, values_columns, fixed_columns, variable_columns, causality):
     try:
         # 1. Original csv file processes
@@ -121,7 +121,7 @@ def process_new_dataset_files(container_id, file, df, dataset_name, dataset_desc
             return result
 
         # 3. Configuration json file processes
-        json_result = FileManager.create_json_file(dataset_name, dataset_description, standard_columns,
+        json_result = FileManager.create_json_file(dataset_name, dataset_description, all_columns, standard_columns,
                                                    filtered_columns, values_columns, fixed_columns,
                                                    variable_columns, causality if causality else 0)
         if json_result is None:

@@ -25,7 +25,7 @@ class OperationGraphService:
 
     @staticmethod
     def get_event_nodes_s(database_connector):
-        apiResponse = ApiResponse(None, None, None)
+        response = ApiResponse()
 
         try:
             database_connector.connect()
@@ -34,10 +34,10 @@ class OperationGraphService:
             result = database_connector.run_query_memgraph(query)
 
             if not isinstance(result, Iterable):
-                apiResponse.http_status_code = 404
-                apiResponse.response_data = None
-                apiResponse.message = "Not found"
-                return jsonify(apiResponse.to_dict()), 404
+                response.http_status_code = 404
+                response.response_data = None
+                response.message = "Not found"
+                return jsonify(response.to_dict()), 404
 
             graph_data = []
 
@@ -56,23 +56,23 @@ class OperationGraphService:
                 graph_data.append(event_node)
 
             if len(graph_data) == 0:
-                apiResponse.http_status_code = 202
-                apiResponse.message = 'No content'
-                apiResponse.response_data = graph_data
+                response.http_status_code = 202
+                response.message = 'No content'
+                response.response_data = graph_data
 
-                return jsonify(apiResponse.to_dict()), 202
+                return jsonify(response.to_dict()), 202
 
-            apiResponse.http_status_code = 200
-            apiResponse.message = 'Event nodes retrieve successfully'
-            apiResponse.response_data = graph_data
+            response.http_status_code = 200
+            response.message = 'Event nodes retrieve successfully'
+            response.response_data = graph_data
 
-            return jsonify(apiResponse.to_dict()), 200
+            return jsonify(response.to_dict()), 200
 
         except Exception as e:
-            apiResponse.http_status_code = 500
-            apiResponse.response_data = None
-            apiResponse.message = f'Internal Server Error : {str(e)}'
-            return jsonify(apiResponse.to_dict()), 500
+            response.http_status_code = 500
+            response.response_data = None
+            response.message = f'Internal Server Error : {str(e)}'
+            return jsonify(response.to_dict()), 500
 
         finally:
             database_connector.close()
@@ -95,7 +95,7 @@ class OperationGraphService:
     # Get entity nodes
     @staticmethod
     def get_entity_nodes_s(database_connector):
-        apiResponse = ApiResponse(None, None, None)
+        response = ApiResponse()
 
         try:
             database_connector.connect()
@@ -104,10 +104,10 @@ class OperationGraphService:
             result = database_connector.run_query_memgraph(query)
 
             if not isinstance(result, Iterable):
-                apiResponse.http_status_code = 404
-                apiResponse.response_data = None
-                apiResponse.message = "Not found"
-                return jsonify(apiResponse.to_dict()), 404
+                response.http_status_code = 404
+                response.response_data = None
+                response.message = "Not found"
+                return jsonify(response.to_dict()), 404
 
             graph_data = []
 
@@ -126,23 +126,23 @@ class OperationGraphService:
                 graph_data.append(entity_node)
 
             if len(graph_data) == 0:
-                apiResponse.http_status_code = 202
-                apiResponse.message = 'No content'
-                apiResponse.response_data = graph_data
+                response.http_status_code = 202
+                response.message = 'No content'
+                response.response_data = graph_data
 
-                return jsonify(apiResponse.to_dict()), 202
+                return jsonify(response.to_dict()), 202
 
-            apiResponse.http_status_code = 200
-            apiResponse.message = 'Entity nodes retrieve successfully'
-            apiResponse.response_data = graph_data
+            response.http_status_code = 200
+            response.message = 'Entity nodes retrieve successfully'
+            response.response_data = graph_data
 
-            return jsonify(apiResponse.to_dict()), 200
+            return jsonify(response.to_dict()), 200
 
         except Exception as e:
-            apiResponse.http_status_code = 500
-            apiResponse.response_data = None
-            apiResponse.message = f'Internal Server Error : {str(e)}'
-            return jsonify(apiResponse.to_dict()), 500
+            response.http_status_code = 500
+            response.response_data = None
+            response.message = f'Internal Server Error : {str(e)}'
+            return jsonify(response.to_dict()), 500
 
         finally:
             database_connector.close()
@@ -165,7 +165,7 @@ class OperationGraphService:
     # Get :CORR relationships
     @staticmethod
     def get_corr_relationships_s(database_connector):
-        apiResponse = ApiResponse(None, None, None)
+        response = ApiResponse()
 
         try:
             database_connector.connect()
@@ -174,10 +174,10 @@ class OperationGraphService:
             result = database_connector.run_query_memgraph(query)
 
             if not isinstance(result, Iterable):
-                apiResponse.http_status_code = 404
-                apiResponse.response_data = None
-                apiResponse.message = "Not found"
-                return jsonify(apiResponse.to_dict()), 404
+                response.http_status_code = 404
+                response.response_data = None
+                response.message = "Not found"
+                return jsonify(response.to_dict()), 404
 
             correlation_data = []
             correlation_count = 0
@@ -220,23 +220,23 @@ class OperationGraphService:
             }
 
             if len(graph_data) == 0:
-                apiResponse.http_status_code = 202
-                apiResponse.message = 'No content'
-                apiResponse.response_data = graph_data
+                response.http_status_code = 202
+                response.message = 'No content'
+                response.response_data = graph_data
 
-                return jsonify(apiResponse.to_dict()), 202
+                return jsonify(response.to_dict()), 202
 
-            apiResponse.http_status_code = 200
-            apiResponse.response_data = graph_data
-            apiResponse.message = 'Retrieve :corr relationships'
+            response.http_status_code = 200
+            response.response_data = graph_data
+            response.message = 'Retrieve :corr relationships'
 
-            return jsonify(apiResponse.to_dict()), 200
+            return jsonify(response.to_dict()), 200
 
         except Exception as e:
-            apiResponse.http_status_code = 500
-            apiResponse.response_data = None
-            apiResponse.message = f'Internal Server Error : {str(e)}'
-            return jsonify(apiResponse.to_dict()), 500
+            response.http_status_code = 500
+            response.response_data = None
+            response.message = f'Internal Server Error : {str(e)}'
+            return jsonify(response.to_dict()), 500
 
         finally:
             database_connector.close()
@@ -259,7 +259,7 @@ class OperationGraphService:
     # Get :DF relationships
     @staticmethod
     def get_df_relationships_s(database_connector):
-        apiResponse = ApiResponse(None, None, None)
+        response = ApiResponse()
 
         try:
             database_connector.connect()
@@ -268,10 +268,10 @@ class OperationGraphService:
             result = database_connector.run_query_memgraph(query)
 
             if not isinstance(result, Iterable):
-                apiResponse.http_status_code = 404
-                apiResponse.response_data = None
-                apiResponse.message = "Not found"
-                return jsonify(apiResponse.to_dict()), 404
+                response.http_status_code = 404
+                response.response_data = None
+                response.message = "Not found"
+                return jsonify(response.to_dict()), 404
 
             df_data = []
             df_count = 0
@@ -312,23 +312,23 @@ class OperationGraphService:
             }
 
             if len(graph_data) == 0:
-                apiResponse.http_status_code = 202
-                apiResponse.message = 'No content'
-                apiResponse.response_data = graph_data
+                response.http_status_code = 202
+                response.message = 'No content'
+                response.response_data = graph_data
 
-                return jsonify(apiResponse.to_dict()), 202
+                return jsonify(response.to_dict()), 202
 
-            apiResponse.http_status_code = 200
-            apiResponse.response_data = graph_data
-            apiResponse.message = 'Retrieve :df relationships'
+            response.http_status_code = 200
+            response.response_data = graph_data
+            response.message = 'Retrieve :df relationships'
 
-            return jsonify(apiResponse.to_dict()), 200
+            return jsonify(response.to_dict()), 200
 
         except Exception as e:
-            apiResponse.http_status_code = 500
-            apiResponse.response_data = None
-            apiResponse.message = f'Internal Server Error : {str(e)}'
-            return jsonify(apiResponse.to_dict()), 500
+            response.http_status_code = 500
+            response.response_data = None
+            response.message = f'Internal Server Error : {str(e)}'
+            return jsonify(response.to_dict()), 500
 
         finally:
             database_connector.close()
@@ -351,7 +351,7 @@ class OperationGraphService:
     # Get complete graph details
     @staticmethod
     def get_graph_details_s(database_connector, limit):
-        apiResponse = ApiResponse(None, None, None)
+        response = ApiResponse()
 
         try:
             database_connector.connect()
@@ -364,10 +364,10 @@ class OperationGraphService:
             result = database_connector.run_query_memgraph(query)
 
             if not isinstance(result, Iterable):
-                apiResponse.http_status_code = 404
-                apiResponse.response_data = None
-                apiResponse.message = "Not found"
-                return jsonify(apiResponse.to_dict()), 404
+                response.http_status_code = 404
+                response.response_data = None
+                response.message = "Not found"
+                return jsonify(response.to_dict()), 404
 
             event_nodes = []
             entity_nodes = []
@@ -399,10 +399,10 @@ class OperationGraphService:
             result = database_connector.run_query_memgraph(query)
 
             if not isinstance(result, Iterable):
-                apiResponse.http_status_code = 404
-                apiResponse.response_data = None
-                apiResponse.message = "Not found"
-                return jsonify(apiResponse.to_dict()), 404
+                response.http_status_code = 404
+                response.response_data = None
+                response.message = "Not found"
+                return jsonify(response.to_dict()), 404
 
             correlation_data = []
             correlation_count = 0
@@ -437,10 +437,10 @@ class OperationGraphService:
             result = database_connector.run_query_memgraph(query)
 
             if not isinstance(result, Iterable):
-                apiResponse.http_status_code = 404
-                apiResponse.response_data = None
-                apiResponse.message = "Not found"
-                return jsonify(apiResponse.to_dict()), 404
+                response.http_status_code = 404
+                response.response_data = None
+                response.message = "Not found"
+                return jsonify(response.to_dict()), 404
 
             df_data = []
             df_count = 0
@@ -487,22 +487,22 @@ class OperationGraphService:
             if graph_data['entity_count'] == 0 and graph_data['event_count'] == 0 and graph_data[
                 'correlation_count'] == 0 \
                     and graph_data['df_count'] == 0:
-                apiResponse.http_status_code = 202
-                apiResponse.message = 'No content'
-                apiResponse.response_data = None
+                response.http_status_code = 202
+                response.message = 'No content'
+                response.response_data = None
 
-                return jsonify(apiResponse.to_dict()), 202
+                return jsonify(response.to_dict()), 202
 
-            apiResponse.http_status_code = 200
-            apiResponse.response_data = graph_data
-            apiResponse.message = "Retrieve Graph."
-            return jsonify(apiResponse.to_dict()), 200
+            response.http_status_code = 200
+            response.response_data = graph_data
+            response.message = "Retrieve Graph."
+            return jsonify(response.to_dict()), 200
 
         except Exception as e:
-            apiResponse.http_status_code = 500
-            apiResponse.response_data = None
-            apiResponse.message = f'Internal Server Error : {str(e)}'
-            return jsonify(apiResponse.to_dict()), 500
+            response.http_status_code = 500
+            response.response_data = None
+            response.message = f'Internal Server Error : {str(e)}'
+            return jsonify(response.to_dict()), 500
 
         finally:
             database_connector.close()
@@ -510,7 +510,7 @@ class OperationGraphService:
     # Get the entity key
     @staticmethod
     def get_entities_key_s(database_connector):
-        apiResponse = ApiResponse(None, None, None)
+        response = ApiResponse()
 
         try:
             database_connector.connect()
@@ -519,10 +519,10 @@ class OperationGraphService:
             result = database_connector.run_query_memgraph(query)
 
             if not isinstance(result, Iterable):
-                apiResponse.http_status_code = 404
-                apiResponse.response_data = None
-                apiResponse.message = "Not found"
-                return jsonify(apiResponse.to_dict()), 404
+                response.http_status_code = 404
+                response.response_data = None
+                response.message = "Not found"
+                return jsonify(response.to_dict()), 404
 
             entities_type = []
 
@@ -530,16 +530,16 @@ class OperationGraphService:
                 e_type = record['entityType']
                 entities_type.append(e_type)
 
-            apiResponse.http_status_code = 200
-            apiResponse.response_data = entities_type
-            apiResponse.message = "Retrieve distinct entities."
-            return jsonify(apiResponse.to_dict()), 200
+            response.http_status_code = 200
+            response.response_data = entities_type
+            response.message = "Retrieve distinct entities."
+            return jsonify(response.to_dict()), 200
 
         except Exception as e:
-            apiResponse.http_status_code = 500
-            apiResponse.message = f"Internal Server Error : {str(e)}"
-            apiResponse.response_data = None
-            return jsonify(apiResponse.to_dict()), 500
+            response.http_status_code = 500
+            response.message = f"Internal Server Error : {str(e)}"
+            response.response_data = None
+            return jsonify(response.to_dict()), 500
 
         finally:
             database_connector.close()
@@ -547,7 +547,7 @@ class OperationGraphService:
     # Get the null entity
     @staticmethod
     def get_null_entities_s(database_connector):
-        apiResponse = ApiResponse(None, None, None)
+        response = ApiResponse()
 
         try:
             database_connector.connect()
@@ -556,10 +556,10 @@ class OperationGraphService:
             result = database_connector.run_query_memgraph(query)
 
             if not isinstance(result, Iterable):
-                apiResponse.http_status_code = 404
-                apiResponse.response_data = None
-                apiResponse.message = "Not found"
-                return jsonify(apiResponse.to_dict()), 404
+                response.http_status_code = 404
+                response.response_data = None
+                response.message = "Not found"
+                return jsonify(response.to_dict()), 404
 
             null_node_entities = []
 
@@ -572,16 +572,16 @@ class OperationGraphService:
                     'count_nodes': node_count
                 })
 
-            apiResponse.http_status_code = 200
-            apiResponse.response_data = null_node_entities
-            apiResponse.message = "Retrieve null values for node."
-            return jsonify(apiResponse.to_dict()), 200
+            response.http_status_code = 200
+            response.response_data = null_node_entities
+            response.message = "Retrieve null values for node."
+            return jsonify(response.to_dict()), 200
 
         except Exception as e:
-            apiResponse.http_status_code = 500
-            apiResponse.message = f"Internal Server Error : {str(e)}"
-            apiResponse.response_data = None
-            return jsonify(apiResponse.to_dict()), 500
+            response.http_status_code = 500
+            response.message = f"Internal Server Error : {str(e)}"
+            response.response_data = None
+            return jsonify(response.to_dict()), 500
 
         finally:
             database_connector.close()
@@ -589,7 +589,7 @@ class OperationGraphService:
     # Delete the complete graph
     @staticmethod
     def delete_graph_s(database_connector):
-        apiResponse = ApiResponse(None, None, None)
+        response = ApiResponse()
 
         try:
             database_connector.connect()
@@ -612,21 +612,21 @@ class OperationGraphService:
             result_event = database_connector.run_query_memgraph(verification_query)
 
             if result_entity and result_event and result_entity[0]['count'] == 0 and result_event[0]['count'] == 0:
-                apiResponse.http_status_code = 200
-                apiResponse.message = 'Standard Graph deleted successfully !'
-                apiResponse.response_data = None
-                return jsonify(apiResponse.to_dict()), 200
+                response.http_status_code = 200
+                response.message = 'Standard Graph deleted successfully !'
+                response.response_data = None
+                return jsonify(response.to_dict()), 200
             else:
-                apiResponse.http_status_code = 404
-                apiResponse.message = 'Data was not deleted!'
-                apiResponse.response_data = None
-                return jsonify(apiResponse.to_dict()), 404
+                response.http_status_code = 404
+                response.message = 'Data was not deleted!'
+                response.response_data = None
+                return jsonify(response.to_dict()), 404
 
         except Exception as e:
-            apiResponse.http_status_code = 500
-            apiResponse.message = f"Internal Server Error : {str(e)}"
-            apiResponse.response_data = None
-            return jsonify(apiResponse.to_dict()), 500
+            response.http_status_code = 500
+            response.message = f"Internal Server Error : {str(e)}"
+            response.response_data = None
+            return jsonify(response.to_dict()), 500
 
         finally:
             database_connector.close()

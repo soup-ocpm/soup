@@ -67,7 +67,7 @@ class OperationClassGraphService:
     # Delete Class Graph
     @staticmethod
     def delete_class_graph_s(database_connector):
-        apiResponse = ApiResponse(None, None, None)
+        response = ApiResponse()
 
         try:
             database_connector.connect()
@@ -79,21 +79,21 @@ class OperationClassGraphService:
             result = database_connector.run_query_memgraph(verification_query)
 
             if result and result[0]['count'] == 0:
-                apiResponse.http_status_code = 200
-                apiResponse.message = 'Class Graph deleted successfully !'
-                apiResponse.response_data = None
-                return jsonify(apiResponse.to_dict()), 200
+                response.http_status_code = 200
+                response.message = 'Class Graph deleted successfully !'
+                response.response_data = None
+                return jsonify(response.to_dict()), 200
             else:
-                apiResponse.http_status_code = 404
-                apiResponse.message = 'Data was not deleted!'
-                apiResponse.response_data = None
-                return jsonify(apiResponse.to_dict()), 404
+                response.http_status_code = 404
+                response.message = 'Data was not deleted!'
+                response.response_data = None
+                return jsonify(response.to_dict()), 404
 
         except Exception as e:
-            apiResponse.http_status_code = 500
-            apiResponse.message = f"Internal Server Error : {str(e)}"
-            apiResponse.response_data = None
-            return jsonify(apiResponse.to_dict()), 500
+            response.http_status_code = 500
+            response.message = f"Internal Server Error : {str(e)}"
+            response.response_data = None
+            return jsonify(response.to_dict()), 500
 
         finally:
             database_connector.close()

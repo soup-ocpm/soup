@@ -32,24 +32,24 @@ def get_class_nodes():
 
 @op_class_graph_controller_bp.route('/api/v2/graph/class/nodes/count', methods=['GET'])
 def get_class_nodes_count():
-    apiResponse = ApiResponse(None, None, None)
+    response = ApiResponse()
 
     try:
         database_connector.connect()
 
         class_nodes_count = OperationClassGraphService.get_count_class_nodes_s(database_connector)
 
-        apiResponse.http_status_code = 200
-        apiResponse.response_data = class_nodes_count
-        apiResponse.message = 'Retrieve class nodes count'
+        response.http_status_code = 200
+        response.response_data = class_nodes_count
+        response.message = 'Retrieve class nodes count'
 
-        return jsonify(apiResponse.to_dict()), 200
+        return jsonify(response.to_dict()), 200
 
     except Exception as e:
-        apiResponse.http_status_code = 500
-        apiResponse.response_data = None
-        apiResponse.message = f'Internal Server Error : {str(e)}'
-        return jsonify(apiResponse.to_dict()), 500
+        response.http_status_code = 500
+        response.response_data = None
+        response.message = f'Internal Server Error : {str(e)}'
+        return jsonify(response.to_dict()), 500
 
     finally:
         database_connector.close()
@@ -63,24 +63,24 @@ def get_obs_relationships():
 
 @op_class_graph_controller_bp.route('/api/v2/graph/class/obs/count', methods=['GET'])
 def get_obs_relationships_count():
-    apiResponse = ApiResponse(None, None, None)
+    response = ApiResponse()
 
     try:
         database_connector.connect()
 
         obs_relationships_count = OperationClassGraphService.get_count_obs_relationships_s(database_connector)
 
-        apiResponse.http_status_code = 200
-        apiResponse.response_data = obs_relationships_count
-        apiResponse.message = 'Retrieve :OBS relationship count'
+        response.http_status_code = 200
+        response.response_data = obs_relationships_count
+        response.message = 'Retrieve :OBS relationship count'
 
-        return jsonify(apiResponse.to_dict()), 200
+        return jsonify(response.to_dict()), 200
 
     except Exception as e:
-        apiResponse.http_status_code = 500
-        apiResponse.response_data = None
-        apiResponse.message = f'Internal Server Error : {str(e)}'
-        return jsonify(apiResponse.to_dict()), 500
+        response.http_status_code = 500
+        response.response_data = None
+        response.message = f'Internal Server Error : {str(e)}'
+        return jsonify(response.to_dict()), 500
 
     finally:
         database_connector.close()
@@ -94,24 +94,24 @@ def get_dfc_relationships():
 
 @op_class_graph_controller_bp.route('/api/v2/graph/class/dfc/count', methods=['GET'])
 def get_dfc_relationships_count():
-    apiResponse = ApiResponse(None, None, None)
+    response = ApiResponse()
 
     try:
         database_connector.connect()
 
         dfc_relationships_count = OperationClassGraphService.get_count_dfc_relationships_s(database_connector)
 
-        apiResponse.http_status_code = 200
-        apiResponse.response_data = dfc_relationships_count
-        apiResponse.message = 'Retrieve :DF_C relationship count'
+        response.http_status_code = 200
+        response.response_data = dfc_relationships_count
+        response.message = 'Retrieve :DF_C relationship count'
 
-        return jsonify(apiResponse.to_dict()), 200
+        return jsonify(response.to_dict()), 200
 
     except Exception as e:
-        apiResponse.http_status_code = 500
-        apiResponse.response_data = None
-        apiResponse.message = f'Internal Server Error : {str(e)}'
-        return jsonify(apiResponse.to_dict()), 500
+        response.http_status_code = 500
+        response.response_data = None
+        response.message = f'Internal Server Error : {str(e)}'
+        return jsonify(response.to_dict()), 500
 
     finally:
         database_connector.close()

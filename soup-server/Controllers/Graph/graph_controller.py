@@ -27,22 +27,22 @@ database_connector = get_db_connector(debug=False)
 
 @graph_controller_bp.route('/api/v2/graph', methods=['POST'])
 def create_graph():
-    apiResponse = ApiResponse(None, None, None)
+    response = ApiResponse()
 
     # Check the file
     if request.files['file'] is None:
-        apiResponse.http_status_code = 400
-        apiResponse.message = "Bad request"
-        apiResponse.response_data = None
-        return jsonify(apiResponse.to_dict()), 400
+        response.http_status_code = 400
+        response.message = "Bad request"
+        response.response_data = None
+        return jsonify(response.to_dict()), 400
 
     file = request.files['file']
 
     if not file or not file.filename.endswith(".csv"):
-        apiResponse.http_status_code = 400
-        apiResponse.message = "Bad request"
-        apiResponse.response_data = None
-        return jsonify(apiResponse.to_dict()), 400
+        response.http_status_code = 400
+        response.message = "Bad request"
+        response.response_data = None
+        return jsonify(response.to_dict()), 400
 
     copy_file = request.files['copy_file']
 
@@ -52,6 +52,10 @@ def create_graph():
 
     # Container
     container_id = request.form.get('container_id')
+
+    # All columns
+    all_columns_json = request.form.get('all_columns')
+    all_columns = json.loads(all_columns_json)
 
     # Standard column
     standard_column_json = request.form.get('standardColumn')
@@ -68,6 +72,6 @@ def create_graph():
     fixed_column = request.form.get('fixed').replace('"', '')
     variable_column = request.form.get('variable').replace('"', '')
 
-    return GraphService.create_new_dataset(file, copy_file, dataset_name, dataset_description,
+    return GraphService.create_new_dataset(file, copy_file, dataset_name, dataset_description, all_columns,
                                            standard_column, filtered_column, values_column, fixed_column,
                                            variable_column, container_id, database_connector)

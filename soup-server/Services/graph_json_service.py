@@ -23,7 +23,7 @@ from Utils.query_library import *
 class GraphJSONService:
     @staticmethod
     def get_class_graph_nodes_json(database_connector):
-        apiResponse = ApiResponse(None, None, None)
+        response = ApiResponse()
 
         try:
             database_connector.connect()
@@ -32,10 +32,10 @@ class GraphJSONService:
             result = database_connector.run_query_memgraph(query)
 
             if not isinstance(result, Iterable):
-                apiResponse.http_status_code = 404
-                apiResponse.response_data = None
-                apiResponse.message = "Not found"
-                return jsonify(apiResponse.to_dict()), 404
+                response.http_status_code = 404
+                response.response_data = None
+                response.message = "Not found"
+                return jsonify(response.to_dict()), 404
 
             graph_data = []
 
@@ -49,35 +49,35 @@ class GraphJSONService:
                 graph_data.append(event_node)
 
             if len(graph_data) == 0:
-                apiResponse.http_status_code = 202
-                apiResponse.message = 'No content'
-                apiResponse.response_data = graph_data
+                response.http_status_code = 202
+                response.message = 'No content'
+                response.response_data = graph_data
 
-                return jsonify(apiResponse.to_dict()), 202
+                return jsonify(response.to_dict()), 202
 
-            apiResponse.http_status_code = 200
-            apiResponse.message = 'Event nodes retrieve successfully'
-            apiResponse.response_data = graph_data
+            response.http_status_code = 200
+            response.message = 'Event nodes retrieve successfully'
+            response.response_data = graph_data
 
-            return jsonify(apiResponse.to_dict()), 200
+            return jsonify(response.to_dict()), 200
 
         except Exception as e:
-            apiResponse.http_status_code = 500
-            apiResponse.response_data = None
-            apiResponse.message = f'Internal Server Error : {str(e)}'
-            return jsonify(apiResponse.to_dict()), 500
+            response.http_status_code = 500
+            response.response_data = None
+            response.message = f'Internal Server Error : {str(e)}'
+            return jsonify(response.to_dict()), 500
 
         finally:
             database_connector.close()
 
     @staticmethod
-    def get_class_graph_obs_links_json(database_connector):
+    def get_class_graph_obs_links_json():
         # Todo implement
         return None
 
     @staticmethod
     def get_class_graph_df_links_json(database_connector):
-        apiResponse = ApiResponse(None, None, None)
+        response = ApiResponse()
 
         try:
             database_connector.connect()
@@ -86,10 +86,10 @@ class GraphJSONService:
             result = database_connector.run_query_memgraph(query)
 
             if not isinstance(result, Iterable):
-                apiResponse.http_status_code = 404
-                apiResponse.response_data = None
-                apiResponse.message = "Not found"
-                return jsonify(apiResponse.to_dict()), 404
+                response.http_status_code = 404
+                response.response_data = None
+                response.message = "Not found"
+                return jsonify(response.to_dict()), 404
 
             df_data = []
             df_count = 0
@@ -124,23 +124,23 @@ class GraphJSONService:
             }
 
             if len(graph_data) == 0:
-                apiResponse.http_status_code = 202
-                apiResponse.message = 'No content'
-                apiResponse.response_data = graph_data
+                response.http_status_code = 202
+                response.message = 'No content'
+                response.response_data = graph_data
 
-                return jsonify(apiResponse.to_dict()), 202
+                return jsonify(response.to_dict()), 202
 
-            apiResponse.http_status_code = 200
-            apiResponse.response_data = graph_data
-            apiResponse.message = 'Retrieve :DF_C relationships'
+            response.http_status_code = 200
+            response.response_data = graph_data
+            response.message = 'Retrieve :DF_C relationships'
 
-            return jsonify(apiResponse.to_dict()), 200
+            return jsonify(response.to_dict()), 200
 
         except Exception as e:
-            apiResponse.http_status_code = 500
-            apiResponse.response_data = None
-            apiResponse.message = f'Internal Server Error : {str(e)}'
-            return jsonify(apiResponse.to_dict()), 500
+            response.http_status_code = 500
+            response.response_data = None
+            response.message = f'Internal Server Error : {str(e)}'
+            return jsonify(response.to_dict()), 500
 
         finally:
             database_connector.close()

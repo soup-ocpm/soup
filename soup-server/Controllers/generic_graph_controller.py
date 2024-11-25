@@ -29,27 +29,27 @@ def create_dataset_graphs():
     container_id = data.get('container_id')
     dataset_name = data.get('dataset_name')
 
-    apiResponse = ApiResponse(None, None, None)
+    response = ApiResponse()
 
     try:
         result = GenericGraphService.create_complete_graphs(container_id, database_connector, dataset_name)
 
         if result != 'success':
-            apiResponse.http_status_code = 404
-            apiResponse.response_data = result
-            apiResponse.message = 'Unable to create the Dataset graphs'
-            return jsonify(apiResponse.to_dict()), 404
+            response.http_status_code = 404
+            response.response_data = result
+            response.message = 'Unable to create the Dataset graphs'
+            return jsonify(response.to_dict()), 404
 
-        apiResponse.http_status_code = 200
-        apiResponse.response_data = result
-        apiResponse.message = 'Successfully created the Dataset graphs'
-        return jsonify(apiResponse.to_dict()), 200
+        response.http_status_code = 200
+        response.response_data = result
+        response.message = 'Successfully created the Dataset graphs'
+        return jsonify(response.to_dict()), 200
 
     except Exception as e:
-        apiResponse.http_status_code = 500
-        apiResponse.response_data = None
-        apiResponse.message = f'Internal Server Error : {str(e)}'
-        return jsonify(apiResponse.to_dict()), 500
+        response.http_status_code = 500
+        response.response_data = None
+        response.message = f'Internal Server Error : {str(e)}'
+        return jsonify(response.to_dict()), 500
 
 
 @generic_graph_controller_bp.route('/api/v2/complete-graph', methods=['POST'])
@@ -64,4 +64,4 @@ def get_complete_graph():
 
 @generic_graph_controller_bp.route('/api/v2/complete-graph', methods=['DELETE'])
 def remove_memgraph_data():
-    return GenericGraphService.delete_all_graph_s(database_connector)
+    return GenericGraphService.delete_memgraph_graph_s(database_connector)

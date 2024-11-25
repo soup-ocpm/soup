@@ -13,10 +13,12 @@ License : MIT
 # Import
 import os
 import datetime
+import subprocess
 
 from Models.memgraph_connector_model import MemgraphConnector
 
 
+# Get the database connector configuration
 def get_db_connector(debug=True):
     if not debug:
         memgraph_host = os.getenv("MEMGRAPH_HOST", "memgraph")
@@ -31,14 +33,29 @@ def get_db_connector(debug=True):
     return database_connector
 
 
+# Get the docker container id by the name
+def get_container_id(container_name="memgraph"):
+    try:
+        result = subprocess.run(
+            ["docker", "inspect", "--format", "{{.Id}}", container_name],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            check=True
+        )
+        container_id = result.stdout.decode('utf-8').strip()
+        return container_id
+    except subprocess.CalledProcessError as e:
+        print(f"Error while retrieving docker container id: {e}")
+        return None
+
+
+# Convert string to datetime
 def string_to_datetime(timestamp_str):
     return datetime.datetime.fromisoformat(timestamp_str)
 
 
+# Convert string or Neo4j datetime to datetime object library
 def neo_datetime_conversion(time):
-    """
-    From string or Neo4j datetime to Python datetime.
-    """
     if isinstance(time, str):
         time = string_to_datetime(time)
 
@@ -51,17 +68,20 @@ def neo_datetime_conversion(time):
         raise ValueError("Timestamp format is not valid")
 
 
+# Serialize datetime
 def serialize_datetime(obj):
     if isinstance(obj, datetime.datetime):
         return obj.isoformat()
     raise TypeError("Type not serializable")
 
 
+# Datetime object to json
 def datetime_to_json(time):
     timestamp = neo_datetime_conversion(time)
     return serialize_datetime(timestamp)
 
 
+# Convert memgraph datetime to string
 def memgraph_datetime_to_string(memgraph_datetime):
     datetime_str = (f"{memgraph_datetime.year:04d}-{memgraph_datetime.month:02d}-{memgraph_datetime.day:02d}T"
                     f"{memgraph_datetime.hour:02d}:{memgraph_datetime.minute:02d}:{memgraph_datetime.second:02d}")

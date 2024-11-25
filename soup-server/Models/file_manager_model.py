@@ -126,25 +126,23 @@ class FileManager:
             return f"Error while deleting the file: {e}"
 
     @staticmethod
-    def create_json_file(dataset_name, dataset_description, standard_columns, filtered_columns,
-                         values_columns=None, fixed=None, variable=None, graph_columns=None,
-                         causality=None, event_nodes=None, entity_nodes=None, corr_rel=None,
-                         df_rel=None, class_nodes=None, obs_rel=None, df_c_rel=None, process_info=None):
+    def create_json_file(dataset_name, dataset_description, all_columns, standard_columns, filtered_columns,
+                         values_columns=None, fixed=None, variable=None, causality=None, event_nodes=None,
+                         entity_nodes=None, corr_rel=None, df_rel=None, date_created=None, date_modified=None,
+                         process_info=None):
 
         # Dictionary
         optional_fields = {
             "values_columns": values_columns or [],
             "fixed_columns": fixed or [],
             "variable_columns": variable or [],
-            "graph_columns": graph_columns or [],
             "causality": causality or [],
             "event_nodes": event_nodes or 0,
             "entity_nodes": entity_nodes or 0,
             "corr_rel": corr_rel or 0,
             "df_rel": df_rel or 0,
-            "class_nodes": class_nodes or 0,
-            "obs_rel": obs_rel or 0,
-            "df_c_rel": df_c_rel or 0,
+            "date_created": date_created or 0,
+            "date_modified": date_modified or 0,
             "process_info": process_info or 0
         }
 
@@ -152,6 +150,7 @@ class FileManager:
         json_data = {
             "dataset_name": dataset_name,
             "dataset_description": dataset_description,
+            "all_columns": all_columns,
             "standard_columns": standard_columns,
             "filtered_columns": filtered_columns,
             **optional_fields
@@ -162,7 +161,7 @@ class FileManager:
 
     @staticmethod
     def update_json_file(existing_json_data, dataset_name=None, standard_columns=None, filtered_columns=None,
-                         values_columns=None, fixed=None, variable=None, filtered_graph_columns=None):
+                         values_columns=None, fixed=None, variable=None):
         # 1. Load the JSON data
         json_data = json.loads(existing_json_data)
 
@@ -179,8 +178,6 @@ class FileManager:
             json_data["fixed_column"] = fixed
         if variable is not None:
             json_data["variable_column"] = variable
-        if filtered_graph_columns is not None:
-            json_data["filtered_graph_columns"] = filtered_graph_columns
 
         # 3. Return the update json
         updated_json_string = json.dumps(json_data, indent=4)
@@ -194,24 +191,28 @@ class FileManager:
 
             # 2. Extract
             dataset_name = json_data.get("dataset_name", "")
+            all_columns = json_data.get("all_columns", [])
             standard_columns = json_data.get("standard_column", [])
             filtered_columns = json_data.get("filtered_column", [])
             values_columns = json_data.get("values_column", [])
             fixed_columns = json_data.get("fixed_column", [])
             variable_columns = json_data.get("variable_column", [])
             causality_graph_columns = json_data.get("causality", [])
-            filtered_graph_columns = json_data.get("filtered_graph_columns", [])
+            date_created = json_data.get("date_created", 0)
+            date_modified = json_data.get("date_modified", 0)
 
             # 3. Return the content
             return {
                 "dataset_name": dataset_name,
+                "all_columns": all_columns,
                 "standard_columns": standard_columns,
                 "filtered_columns": filtered_columns,
                 "values_columns": values_columns,
                 "fixed_columns": fixed_columns,
                 "variable_columns": variable_columns,
                 "causality": causality_graph_columns,
-                "filtered_graph_columns": filtered_graph_columns
+                "date_created": date_created,
+                "date_modified": date_modified,
             }
 
         except json.JSONDecodeError as e:

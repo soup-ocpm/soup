@@ -22,7 +22,7 @@ class DockerService:
 
     @staticmethod
     def get_docker_containers_s():
-        apiResponse = ApiResponse(None, None, None)
+        response = ApiResponse()
 
         try:
             client = docker.from_env()
@@ -42,27 +42,27 @@ class DockerService:
                 "all_containers": all_containers_info
             }
 
-            apiResponse.http_status_code = 200
-            apiResponse.response_data = response_data
-            apiResponse.message = 'Success'
-            return jsonify(apiResponse.to_dict()), 200
+            response.http_status_code = 200
+            response.response_data = response_data
+            response.message = 'Success'
+            return jsonify(response.to_dict()), 200
 
         except Exception as e:
             error = e.args[0]
             if "Error while fetching server API version" in error:
-                apiResponse.http_status_code = 400
-                apiResponse.response_data = None
-                apiResponse.message = "Docker Engine is exited."
-                return jsonify(apiResponse.to_dict()), 400
+                response.http_status_code = 400
+                response.response_data = None
+                response.message = "Docker Engine is exited."
+                return jsonify(response.to_dict()), 400
             else:
-                apiResponse.http_status_code = 500
-                apiResponse.response_data = None
-                apiResponse.message = f"An unexpected error occurred: {str(e)}"
-                return jsonify(apiResponse.to_dict()), 500
+                response.http_status_code = 500
+                response.response_data = None
+                response.message = f"An unexpected error occurred: {str(e)}"
+                return jsonify(response.to_dict()), 500
 
     @staticmethod
     def get_active_docker_containers_s():
-        apiResponse = ApiResponse(None, None, None)
+        response = ApiResponse()
 
         try:
             client = docker.from_env()
@@ -77,20 +77,20 @@ class DockerService:
                 "active_containers": active_containers
             }
 
-            apiResponse.http_status_code = 200
-            apiResponse.response_data = response_data
-            apiResponse.message = 'Success'
-            return jsonify(apiResponse.to_dict()), 200
+            response.http_status_code = 200
+            response.response_data = response_data
+            response.message = 'Success'
+            return jsonify(response.to_dict()), 200
 
         except Exception as e:
-            apiResponse.http_status_code = 500
-            apiResponse.response_data = None
-            apiResponse.message = f'Internal Server Error : {str(e)}'
-            return jsonify(apiResponse.to_dict()), 500
+            response.http_status_code = 500
+            response.response_data = None
+            response.message = f'Internal Server Error : {str(e)}'
+            return jsonify(response.to_dict()), 500
 
     @staticmethod
     def get_stopped_docker_containers_s():
-        apiResponse = ApiResponse(None, None, None)
+        response = ApiResponse()
 
         try:
             client = docker.from_env()
@@ -105,20 +105,20 @@ class DockerService:
                 "stopped_containers": stopped_containers
             }
 
-            apiResponse.http_status_code = 200
-            apiResponse.response_data = response_data
-            apiResponse.message = 'Success'
-            return jsonify(apiResponse.to_dict()), 200
+            response.http_status_code = 200
+            response.response_data = response_data
+            response.message = 'Success'
+            return jsonify(response.to_dict()), 200
 
         except Exception as e:
-            apiResponse.http_status_code = 500
-            apiResponse.response_data = None
-            apiResponse.message = f'Internal Server Error : {str(e)}'
-            return jsonify(apiResponse.to_dict()), 500
+            response.http_status_code = 500
+            response.response_data = None
+            response.message = f'Internal Server Error : {str(e)}'
+            return jsonify(response.to_dict()), 500
 
     @staticmethod
     def start_container_s(container_id):
-        apiResponse = ApiResponse(None, None, None)
+        response = ApiResponse()
 
         try:
             client = docker.from_env()
@@ -132,20 +132,20 @@ class DockerService:
                 "image": container.image.tags[0] if container.image.tags else "unknown"
             }
 
-            apiResponse.http_status_code = 200
-            apiResponse.response_data = response_data
-            apiResponse.message = 'Container started successfully'
-            return jsonify(apiResponse.to_dict()), 200
+            response.http_status_code = 200
+            response.response_data = response_data
+            response.message = 'Container started successfully'
+            return jsonify(response.to_dict()), 200
 
         except Exception as e:
-            apiResponse.http_status_code = 500
-            apiResponse.response_data = None
-            apiResponse.message = f'Failed to start container: {str(e)}'
-            return jsonify(apiResponse.to_dict()), 500
+            response.http_status_code = 500
+            response.response_data = None
+            response.message = f'Failed to start container: {str(e)}'
+            return jsonify(response.to_dict()), 500
 
     @staticmethod
     def stop_container_s(container_id):
-        apiResponse = ApiResponse(None, None, None)
+        response = ApiResponse()
 
         try:
             client = docker.from_env()
@@ -159,20 +159,20 @@ class DockerService:
                 "image": container.image.tags[0] if container.image.tags else "unknown"
             }
 
-            apiResponse.http_status_code = 200
-            apiResponse.response_data = response_data
-            apiResponse.message = 'Container stopped successfully'
-            return jsonify(apiResponse.to_dict()), 200
+            response.http_status_code = 200
+            response.response_data = response_data
+            response.message = 'Container stopped successfully'
+            return jsonify(response.to_dict()), 200
 
         except Exception as e:
-            apiResponse.http_status_code = 500
-            apiResponse.response_data = None
-            apiResponse.message = f'Failed to stop container: {str(e)}'
-            return jsonify(apiResponse.to_dict()), 500
+            response.http_status_code = 500
+            response.response_data = None
+            response.message = f'Failed to stop container: {str(e)}'
+            return jsonify(response.to_dict()), 500
 
     @staticmethod
     def get_directory_content_s(container_id, path):
-        apiResponse = ApiResponse(None, None, None)
+        response = ApiResponse()
 
         try:
             client = docker.from_env()
@@ -197,10 +197,10 @@ class DockerService:
             file_names = output_files.decode().strip().split('\n') if output_files else []
 
             if not any(folder_names) and not any(file_names):
-                apiResponse.http_status_code = 202
-                apiResponse.response_data = None
-                apiResponse.message = 'No Content'
-                return jsonify(apiResponse.to_dict()), 202
+                response.http_status_code = 202
+                response.response_data = None
+                response.message = 'No Content'
+                return jsonify(response.to_dict()), 202
 
             response_data = {
                 "container_id": container_id,
@@ -209,13 +209,13 @@ class DockerService:
                 "files": file_names if any(file_names) else []
             }
 
-            apiResponse.http_status_code = 200
-            apiResponse.response_data = response_data
-            apiResponse.message = 'Success'
-            return jsonify(apiResponse.to_dict()), 200
+            response.http_status_code = 200
+            response.response_data = response_data
+            response.message = 'Success'
+            return jsonify(response.to_dict()), 200
 
         except Exception as e:
-            apiResponse.http_status_code = 500
-            apiResponse.response_data = None
-            apiResponse.message = f'Internal Server Error : {str(e)}'
-            return jsonify(apiResponse.to_dict()), 500
+            response.http_status_code = 500
+            response.response_data = None
+            response.message = f'Internal Server Error : {str(e)}'
+            return jsonify(response.to_dict()), 500
