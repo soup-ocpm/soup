@@ -61,9 +61,7 @@ class GenericGraphService:
             standard_columns = exec_config_file["standard_columns"]
             filtered_columns = exec_config_file["filtered_columns"]
             values_columns = exec_config_file["values_columns"]
-            fixed_columns = exec_config_file["fixed_columns"]
-            variable_columns = exec_config_file["variable_columns"]
-            causality_graph_columns = exec_config_file["causality"]
+            trigger_target_rows = exec_config_file["trigger_target_rows"]
             date_created = exec_config_file['date_created']
             date_modified = exec_config_file['date_modified']
 
@@ -78,7 +76,7 @@ class GenericGraphService:
                             cypher_properties.append(f"{key}: coalesce(row.{key}, '')")
 
                 process_info.init_event_time = datetime.now().strftime('%Y-%m-%dT%H:%M:%S.%f')[:-3]
-                query = load_event_node_query(main_csv_path, 'event_id', 'timestamp', 'activity_name',
+                query = load_event_node_query(main_csv_path, standard_columns[0], standard_columns[1], standard_columns[2],
                                               cypher_properties)
                 database_connector.run_query_memgraph(query)
                 process_info.finish_event_time = datetime.now().strftime('%Y-%m-%dT%H:%M:%S.%f')[:-3]
@@ -103,18 +101,22 @@ class GenericGraphService:
 
                 process_info.finish_corr_time = datetime.now().strftime('%Y-%m-%dT%H:%M:%S.%f')[:-3]
 
-                # 7. Causality check
                 process_info.init_df_time = datetime.now().strftime('%Y-%m-%dT%H:%M:%S.%f')[:-3]
 
-                if len(causality_graph_columns) > 0:
-                    # 7.1. Create :CAUS relationships
-                    queries = reveal_causal_rels(causality_graph_columns[0], causality_graph_columns[1])
-                    for query in queries:
-                        database_connector.run_query_memgraph(query)
-                    for key in filtered_columns:
-                        if key not in ['event_id', 'timestamp', 'activity_name', causality_graph_columns[0]]:
-                            relation_query_df = create_df_relation_query(key)
-                            database_connector.run_query_memgraph(relation_query_df)
+                # 7. Trigger and Target check
+                if len(trigger_target_rows) > 0:
+                    for pair in trigger_target_rows:
+                        trigger = pair['trigger']
+                        target = pair['target']
+
+                        queries = reveal_causal_rels(trigger, target)
+                        for query in queries:
+                            database_connector.run_query_memgraph(query)
+
+                        for key in filtered_columns:
+                            if key not in ['event_id', 'timestamp', 'activity_name', trigger, target]:
+                                relation_query_df = create_df_relation_query(key)
+                                database_connector.run_query_memgraph(relation_query_df)
                 else:
                     # 7.2. Create :DF relationships
                     for key in filtered_columns:
@@ -140,8 +142,7 @@ class GenericGraphService:
 
             new_json_configuration = FileManager.create_json_file(dataset_name, dataset_description, all_columns,
                                                                   standard_columns, filtered_columns, values_columns,
-                                                                  fixed_columns, variable_columns,
-                                                                  causality_graph_columns, event_nodes, entity_nodes,
+                                                                  trigger_target_rows, event_nodes, entity_nodes,
                                                                   corr_rel, df_rel, date_created, date_modified,
                                                                   process_info.to_dict())
 

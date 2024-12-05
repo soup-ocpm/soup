@@ -12,6 +12,7 @@ License : MIT
 
 # Import
 import docker
+import subprocess
 
 from flask import jsonify
 from Models.api_response_model import ApiResponse
@@ -219,3 +220,19 @@ class DockerService:
             response.response_data = None
             response.message = f'Internal Server Error : {str(e)}'
             return jsonify(response.to_dict()), 500
+
+    @staticmethod
+    # Get the docker container id by the name
+    def get_container_id(container_name="memgraph"):
+        try:
+            result = subprocess.run(
+                ["docker", "inspect", "--format", "{{.Id}}", container_name],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                check=True
+            )
+            container_id = result.stdout.decode('utf-8').strip()
+            return container_id
+        except subprocess.CalledProcessError as e:
+            print(f"Error while retrieving docker container id: {e}")
+            return None

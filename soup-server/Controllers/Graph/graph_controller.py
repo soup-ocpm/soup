@@ -21,7 +21,7 @@ from Models.api_response_model import ApiResponse
 # Init the bp
 graph_controller_bp = Blueprint('graph_bp', __name__)
 
-# Database information
+# Engine database setup
 database_connector = get_db_connector(debug=False)
 
 
@@ -50,9 +50,6 @@ def create_graph():
     dataset_name = request.form.get('dataset_name')
     dataset_description = request.form.get('dataset_description')
 
-    # Container
-    container_id = request.form.get('container_id')
-
     # All columns
     all_columns_json = request.form.get('all_columns')
     all_columns = json.loads(all_columns_json)
@@ -69,9 +66,20 @@ def create_graph():
     values_column = json.loads(values_column_json)
 
     # Column section
-    fixed_column = request.form.get('fixed').replace('"', '')
-    variable_column = request.form.get('variable').replace('"', '')
+    # fixed_column = request.form.get('fixed').replace('"', '')
+    # variable_column = request.form.get('variable').replace('"', '')
+
+    # Extract Trigger and Target if exists
+    trigger_target_rows = []
+    index = 0
+
+    if 'trigger_0' in request.form and 'target_0' in request.form:
+        while f'trigger_{index}' in request.form and f'target_{index}' in request.form:
+            trigger = request.form.get(f'trigger_{index}')
+            target = request.form.get(f'target_{index}')
+            trigger_target_rows.append({'trigger': trigger, 'target': target})
+            index += 1
 
     return GraphService.create_new_dataset(file, copy_file, dataset_name, dataset_description, all_columns,
-                                           standard_column, filtered_column, values_column, fixed_column,
-                                           variable_column, container_id, database_connector)
+                                           standard_column, filtered_column, values_column, trigger_target_rows,
+                                           database_connector)

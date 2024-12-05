@@ -38,7 +38,7 @@ def find_causal_node(trigger, target, node_type):
             OPTIONAL MATCH (e)-[:CORR]->(b:Entity {{Type: "{target}"}})
             WITH a, b, e
             ORDER BY e.Timestamp
-            WITH a, b, COLLECT(e) AS event_list, MIN(e.Timestamp) AS min_timestamp
+            WITH a, b, COLLECT(e) AS event_list, MIN(toString(e.Timestamp)) AS min_timestamp
             ORDER BY min_timestamp
 
             WITH a.Value as a, collect([b.Value, event_list]) as b_list

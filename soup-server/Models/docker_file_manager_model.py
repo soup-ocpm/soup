@@ -22,6 +22,7 @@ from typing import Optional
 
 # Docker File Manager model class (csv file, json and other)
 class DockerFileManager:
+
     @staticmethod
     def copy_file_to_container(container_id, dataset_name, file_path, is_entity=False, is_json=False):
         # 1. Check the file
@@ -100,6 +101,7 @@ class DockerFileManager:
 
     @staticmethod
     def read_configuration_json_file(container_id, dataset_name):
+        # Json file path
         json_file_path = f'/soup/{dataset_name}/{dataset_name}_config.json'
 
         try:

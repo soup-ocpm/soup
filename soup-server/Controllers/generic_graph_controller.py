@@ -14,24 +14,32 @@ License : MIT
 from flask import Blueprint, request, jsonify
 from Controllers.graph_config import get_db_connector
 from Services.generic_graph_service import GenericGraphService
+from Services.docker_service import DockerService
 from Models.api_response_model import ApiResponse
 
 # Init the bp
 generic_graph_controller_bp = Blueprint('generic_graph_controller_bp', __name__)
 
-# Database information
+# Engine database setup
 database_connector = get_db_connector(debug=False)
 
 
 @generic_graph_controller_bp.route('/api/v2/complete-graph/build', methods=['POST'])
 def create_dataset_graphs():
     data = request.get_json()
-    container_id = data.get('container_id')
     dataset_name = data.get('dataset_name')
 
     response = ApiResponse()
 
     try:
+        container_id = DockerService.get_container_id('soup-database')
+
+        if not container_id or container_id == '':
+            response.http_status_code = 404
+            response.response_data = None
+            response.message = 'Container not found'
+            return jsonify(response.to_dict()), 404
+
         result = GenericGraphService.create_complete_graphs(container_id, database_connector, dataset_name)
 
         if result != 'success':

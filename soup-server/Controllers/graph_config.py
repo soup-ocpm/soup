@@ -13,7 +13,6 @@ License : MIT
 # Import
 import os
 import datetime
-import subprocess
 
 from Models.memgraph_connector_model import MemgraphConnector
 
@@ -31,22 +30,6 @@ def get_db_connector(debug=True):
         auth_mem = ("", "")
         database_connector = MemgraphConnector(uri_mem, auth_mem)
     return database_connector
-
-
-# Get the docker container id by the name
-def get_container_id(container_name="memgraph"):
-    try:
-        result = subprocess.run(
-            ["docker", "inspect", "--format", "{{.Id}}", container_name],
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            check=True
-        )
-        container_id = result.stdout.decode('utf-8').strip()
-        return container_id
-    except subprocess.CalledProcessError as e:
-        print(f"Error while retrieving docker container id: {e}")
-        return None
 
 
 # Convert string to datetime

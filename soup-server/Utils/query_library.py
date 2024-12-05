@@ -311,6 +311,26 @@ def set_class_weight():
             """
 
 
+# ----------Utils query for Filters graph----------
+
+
+def timestamp_filter_query(start_timestamp, end_timestamp):
+    return (f"MATCH (e:Event) "
+            f"WHERE e.Timestamp >= localDateTime({start_timestamp}) AND e.Timestamp <= localDateTime({end_timestamp})"
+            f"RETURN e")
+
+
+def performance_filter_name_query(start_activity_name, end_activity_name, duration):
+    return (f"MATCH (start: Event {{ActivityName: '{start_activity_name}'}}) "
+            f"MATCH (end: Event {{ActivityName: '{end_activity_name}'}}) "
+            f"WHERE localDateTime(start.Timestamp) < localDateTime(end.Timestamp) "
+            f"WITH start, end, duration.between(localDateTime(start.Timestamp), localDateTime(end.Timestamp)) "
+            f"AS duration "
+            f"WHERE duration.seconds > {duration} "
+            f"MERGE (start)-[r:HAS_DURATION {{duration_seconds: duration.seconds}}]->(end) "
+            f"RETURN start, r, end")
+
+
 # ----------Utils query for graph----------
 
 def get_count_data_query():

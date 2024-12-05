@@ -15,6 +15,7 @@ import io
 import pandas as pd
 
 from flask import jsonify
+from Services.docker_service import DockerService
 from Services.generic_graph_service import GenericGraphService
 from Models.file_manager_model import FileManager
 from Models.docker_file_manager_model import DockerFileManager
@@ -26,24 +27,27 @@ class GraphService:
 
     @staticmethod
     def create_new_dataset(file, copy_file, dataset_name, dataset_description, all_columns, standard_column,
-                           filtered_column, values_column, fixed_column, variable_column, container_id,
-                           database_connector):
+                           filtered_column, values_column, trigger_target_rows, database_connector):
 
         response = ApiResponse()
-
-        causality = None
-        if not (fixed_column is None and values_column is None):
-            causality = (fixed_column, variable_column)
 
         try:
 
             file_data = copy_file.read().decode('utf-8')
             df = pd.read_csv(io.StringIO(file_data))
 
+            # 0. Retrieve the container id by the name
+            container_id = DockerService.get_container_id('soup-database')
+
+            if container_id is None or container_id == '':
+                response.http_status_code = 400
+                response.message = 'Container not found'
+                response.response_data = []
+                return jsonify(response.to_dict()), 400
+
             # 1. Process the csv file on Docker Container
             result = process_new_dataset_files(container_id, file, df, dataset_name, dataset_description, all_columns,
-                                               standard_column, filtered_column, values_column, fixed_column,
-                                               variable_column, causality)
+                                               standard_column, filtered_column, values_column, trigger_target_rows)
 
             if result != 'success':
                 response.http_status_code = 500
@@ -78,7 +82,7 @@ class GraphService:
 
 # 1. Process the file new Dataset file
 def process_new_dataset_files(container_id, file, df, dataset_name, dataset_description, all_columns, standard_columns,
-                              filtered_columns, values_columns, fixed_columns, variable_columns, causality):
+                              filtered_columns, values_columns, trigger_target_rows):
     try:
         # 1. Original csv file processes
         result, new_file_path = FileManager.copy_csv_file(file, dataset_name, False)
@@ -86,7 +90,8 @@ def process_new_dataset_files(container_id, file, df, dataset_name, dataset_desc
             return 'Error while copy the file on the Engine'
 
         result, new_docker_file_path = DockerFileManager.copy_file_to_container(container_id, dataset_name,
-                                                                                new_file_path, False, False)
+                                                                                new_file_path, False,
+                                                                                False)
         if result != 'success' or new_docker_file_path is None:
             return 'Error while copy the original csv file on the Docker Container'
 
@@ -110,7 +115,8 @@ def process_new_dataset_files(container_id, file, df, dataset_name, dataset_desc
             return 'Error while copy the entity node csv on the Engine'
 
         result, new_entity_docker_file_path = DockerFileManager.copy_file_to_container(container_id, dataset_name,
-                                                                                       new_entity_file_path, True)
+                                                                                       new_entity_file_path, True,
+                                                                                       False)
 
         if result != 'success' or new_entity_docker_file_path is None:
             return result
@@ -122,8 +128,7 @@ def process_new_dataset_files(container_id, file, df, dataset_name, dataset_desc
 
         # 3. Configuration json file processes
         json_result = FileManager.create_json_file(dataset_name, dataset_description, all_columns, standard_columns,
-                                                   filtered_columns, values_columns, fixed_columns,
-                                                   variable_columns, causality if causality else 0)
+                                                   filtered_columns, values_columns, trigger_target_rows)
         if json_result is None:
             return 'Error while creating the json file configuration'
 
@@ -131,8 +136,7 @@ def process_new_dataset_files(container_id, file, df, dataset_name, dataset_desc
         if result != 'success' or new_json_config_path is None:
             return 'Error while copy the json file on the Engine directory'
 
-        result, new_json_config_docker_file_path = DockerFileManager.copy_file_to_container(container_id,
-                                                                                            dataset_name,
+        result, new_json_config_docker_file_path = DockerFileManager.copy_file_to_container(container_id, dataset_name,
                                                                                             new_json_config_path,
                                                                                             False, True)
         if result != 'success' or new_json_config_docker_file_path is None:

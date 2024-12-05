@@ -15,18 +15,29 @@ import json
 
 from flask import jsonify
 from datetime import datetime
+from Services.docker_service import DockerService
 from Models.api_response_model import ApiResponse
 from Models.docker_file_manager_model import DockerFileManager
 from Models.file_manager_model import FileManager
+
 
 # The Service for dataset
 class DatasetService:
 
     @staticmethod
-    def get_dataset_info_s(container_id, dataset_name):
+    def get_dataset_info_s(dataset_name):
         response = ApiResponse()
 
         try:
+            # Retrieve the container id by the name
+            container_id = DockerService.get_container_id('soup-database')
+
+            if container_id is None or container_id == '':
+                response.http_status_code = 400
+                response.message = 'Container not found'
+                response.response_data = None
+                return jsonify(response.to_dict()), 400
+
             result, exec_config_file = DockerFileManager.read_configuration_json_file(container_id, dataset_name)
 
             if result != 'success':
@@ -50,10 +61,19 @@ class DatasetService:
             return jsonify(response.to_dict()), 500
 
     @staticmethod
-    def get_all_dataset_info_s(container_id):
+    def get_all_dataset_info_s():
         response = ApiResponse()
 
         try:
+            # Retrieve the container id by the name
+            container_id = DockerService.get_container_id('soup-database')
+
+            if container_id is None or container_id == '':
+                response.http_status_code = 400
+                response.message = 'Container not found'
+                response.response_data = None
+                return jsonify(response.to_dict()), 400
+
             # 1. Get all datasets folder name
             result, container_folders = DockerFileManager.get_dataset_folders(container_id)
 
@@ -61,6 +81,7 @@ class DatasetService:
                 response.http_status_code = 400
                 response.message = 'Internal Server Error. Error while retrieve the Datasets'
                 response.response_data = result
+                return jsonify(response.to_dict()), 400
 
             datasets_data = []
 
@@ -92,10 +113,19 @@ class DatasetService:
             return jsonify(response.to_dict()), 500
 
     @staticmethod
-    def update_dataset_info_s(container_id, dataset_name, dataset_description):
+    def update_dataset_info_s(dataset_name, dataset_description):
         response = ApiResponse()
 
         try:
+            # Retrieve the container id by the name
+            container_id = DockerService.get_container_id('soup-database')
+
+            if container_id is None or container_id == '':
+                response.http_status_code = 400
+                response.message = 'Container not found'
+                response.response_data = None
+                return jsonify(response.to_dict()), 400
+
             result, exec_config_file = DockerFileManager.read_configuration_json_file(container_id, dataset_name)
 
             if result != 'success':
@@ -118,11 +148,10 @@ class DatasetService:
                 response.response_data = result
                 return jsonify(response.to_dict()), 500
 
-            result, new_json_config_docker_file_path = DockerFileManager.copy_file_to_container(
-                container_id,
-                dataset_name,
-                new_json_config_path,
-                False, True)
+            result, new_json_config_docker_file_path = DockerFileManager.copy_file_to_container(container_id,
+                                                                                                dataset_name,
+                                                                                                new_json_config_path,
+                                                                                                False, True)
 
             if result != 'success' or new_json_config_docker_file_path is None:
                 response.http_status_code = 500
@@ -145,10 +174,19 @@ class DatasetService:
             return jsonify(response.to_dict()), 500
 
     @staticmethod
-    def delete_dataset_s(container_id, dataset_name):
+    def delete_dataset_s(dataset_name):
         response = ApiResponse()
 
         try:
+            # Retrieve the container id by the name
+            container_id = DockerService.get_container_id('soup-database')
+
+            if container_id is None or container_id == '':
+                response.http_status_code = 400
+                response.message = 'Container not found'
+                response.response_data = None
+                return jsonify(response.to_dict()), 400
+
             # 1. Delete the folder
             folder_path = f'/soup/{dataset_name}'
             result = DockerFileManager.remove_container_file_folder(container_id, folder_path)
@@ -179,10 +217,19 @@ class DatasetService:
             return jsonify(response.to_dict()), 500
 
     @staticmethod
-    def check_unique_dataset_name_s(container_id, dataset_name):
+    def check_unique_dataset_name_s(dataset_name):
         response = ApiResponse()
 
         try:
+            # Retrieve the container id by the name
+            container_id = DockerService.get_container_id('soup-database')
+
+            if container_id is None or container_id == '':
+                response.http_status_code = 400
+                response.message = 'Container not found'
+                response.response_data = None
+                return jsonify(response.to_dict()), 400
+
             result, container_folders = DockerFileManager.get_dataset_folders(container_id)
 
             if dataset_name in container_folders:

@@ -28,7 +28,7 @@ services:
 
   memgraph:
     image: memgraph/memgraph-platform 
-    container_name: memgraph
+    container_name: soup-database
     ports:
       - "7687:7687"  # Expose Memgraph Bolt protocol port
       - "7444:7444"  # Expose Memgraph HTTP protocol port

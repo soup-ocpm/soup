@@ -127,16 +127,14 @@ class FileManager:
 
     @staticmethod
     def create_json_file(dataset_name, dataset_description, all_columns, standard_columns, filtered_columns,
-                         values_columns=None, fixed=None, variable=None, causality=None, event_nodes=None,
+                         values_columns=None, trigger_target_rows=None, event_nodes=None,
                          entity_nodes=None, corr_rel=None, df_rel=None, date_created=None, date_modified=None,
                          process_info=None):
 
         # Dictionary
         optional_fields = {
             "values_columns": values_columns or [],
-            "fixed_columns": fixed or [],
-            "variable_columns": variable or [],
-            "causality": causality or [],
+            "trigger_target_rows": trigger_target_rows or [],
             "event_nodes": event_nodes or 0,
             "entity_nodes": entity_nodes or 0,
             "corr_rel": corr_rel or 0,
@@ -161,7 +159,7 @@ class FileManager:
 
     @staticmethod
     def update_json_file(existing_json_data, dataset_name=None, standard_columns=None, filtered_columns=None,
-                         values_columns=None, fixed=None, variable=None):
+                         values_columns=None, trigger_target_rows=None):
         # 1. Load the JSON data
         json_data = json.loads(existing_json_data)
 
@@ -174,10 +172,8 @@ class FileManager:
             json_data["filtered_column"] = filtered_columns
         if values_columns is not None:
             json_data["values_column"] = values_columns
-        if fixed is not None:
-            json_data["fixed_column"] = fixed
-        if variable is not None:
-            json_data["variable_column"] = variable
+        if trigger_target_rows is not None:
+            json_data["trigger_target_rows"] = trigger_target_rows
 
         # 3. Return the update json
         updated_json_string = json.dumps(json_data, indent=4)
@@ -195,8 +191,7 @@ class FileManager:
             standard_columns = json_data.get("standard_column", [])
             filtered_columns = json_data.get("filtered_column", [])
             values_columns = json_data.get("values_column", [])
-            fixed_columns = json_data.get("fixed_column", [])
-            variable_columns = json_data.get("variable_column", [])
+            trigger_target_rows = json_data.get("trigger_target_rows", [])
             causality_graph_columns = json_data.get("causality", [])
             date_created = json_data.get("date_created", 0)
             date_modified = json_data.get("date_modified", 0)
@@ -208,8 +203,7 @@ class FileManager:
                 "standard_columns": standard_columns,
                 "filtered_columns": filtered_columns,
                 "values_columns": values_columns,
-                "fixed_columns": fixed_columns,
-                "variable_columns": variable_columns,
+                "trigger_target_rows": trigger_target_rows,
                 "causality": causality_graph_columns,
                 "date_created": date_created,
                 "date_modified": date_modified,

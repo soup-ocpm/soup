@@ -12,9 +12,8 @@ License : MIT
 
 # Import
 from flask import Blueprint, request, jsonify
-from Controllers.graph_config import get_container_id
-from Models.api_response_model import ApiResponse
 from Services.docker_service import DockerService
+from Models.api_response_model import ApiResponse
 
 # Init the bp
 docker_controller_bp = Blueprint('docker_controller_bp', __name__)
@@ -41,7 +40,7 @@ def get_docker_container_id():
     response = ApiResponse()
 
     try:
-        container_id = get_container_id(container_name)
+        container_id = DockerService.get_container_id(container_name)
 
         if container_id is None or container_id == '':
             response.http_status_code = 400

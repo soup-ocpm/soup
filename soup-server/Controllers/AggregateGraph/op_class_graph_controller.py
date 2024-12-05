@@ -18,7 +18,7 @@ from Services.AggregateGraph.op_class_graph_service import *
 # Init the bp
 op_class_graph_controller_bp = Blueprint('op_class_graph_controller_bp', __name__)
 
-# Database information
+# Engine database setup setup
 database_connector = get_db_connector(debug=False)
 
 

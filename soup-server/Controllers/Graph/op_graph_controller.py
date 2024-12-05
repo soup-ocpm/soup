@@ -19,7 +19,7 @@ from Services.generic_graph_service import GenericGraphService
 # Init the bp
 op_graph_controller_bp = Blueprint('op_graph_controller_bp', __name__)
 
-# Database information
+# Engine database setup
 database_connector = get_db_connector(debug=False)
 
 

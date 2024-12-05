@@ -71,7 +71,7 @@ class GraphJSONService:
             database_connector.close()
 
     @staticmethod
-    def get_class_graph_obs_links_json():
+    def get_class_graph_obs_links_json(database_connector):
         # Todo implement
         return None
 
