@@ -4,7 +4,6 @@ import { Observable } from 'rxjs';
 import { environment } from '../../environments/environment';
 import { ApiResponse } from '../core/models/api_response.model';
 import { ApiService } from '../core/services/api_response.service';
-import { Container } from '../models/docker_container.model';
 
 @Injectable({
   providedIn: 'root'
@@ -35,10 +34,7 @@ export class StandardGraphService {
     allColumns: string[],
     standardColumn: string[],
     filteredColumn: string[],
-    valuesColumn: string[],
-    fixed: string,
-    variable: string,
-    container: Container
+    valuesColumn: string[]
   ): Observable<ApiResponse<any>> {
     formData.append('dataset_name', datasetName);
     formData.append('dataset_description', datasetDescription);
@@ -48,13 +44,7 @@ export class StandardGraphService {
     formData.append('standardColumn', JSON.stringify(standardColumn));
     formData.append('filteredColumn', JSON.stringify(filteredColumn));
     formData.append('valuesColumn', JSON.stringify(valuesColumn));
-    formData.append('fixed', JSON.stringify(fixed));
-    formData.append('variable', JSON.stringify(variable));
-    if (container && container.id) {
-      formData.append('container_id', container.id);
-    } else {
-      formData.append('container_id', '');
-    }
+
     return this.apiService.post(`${environment.baseUrl}/graph`, formData);
   }
 

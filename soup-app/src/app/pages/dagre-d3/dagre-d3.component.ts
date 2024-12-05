@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, ElementRef, OnInit, ViewChild } from '@angular/core';
+import { AfterViewInit, Component, ElementRef, OnInit, ViewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import * as d3 from 'd3';
@@ -21,7 +21,7 @@ import { LocalDataService } from '../../shared/services/support.service';
   templateUrl: './dagre-d3.component.html',
   styleUrl: './dagre-d3.component.scss'
 })
-export class DagreD3Component implements OnInit {
+export class DagreD3Component implements OnInit, AfterViewInit {
   // The dataset name
   public currentDataset: Dataset | undefined;
 
@@ -55,6 +55,27 @@ export class DagreD3Component implements OnInit {
   // Result about the search or not
   public researched: boolean | undefined;
 
+  // If the user search node or links
+  public isSearchMode = false;
+
+  // The current tab inside the Search sidebar tabber
+  public currentTabIndex = 0;
+
+  // Number for nodes inside the Sidebar
+  public itemsPerPage = 10;
+
+  // Current Sidebar page
+  public currentPage = 1;
+
+  // The displayed nodes inside Sidebar
+  public displayedNodes: any[] = [];
+
+  // The displayed edges inside Sidebar
+  public displayedEdges: any[] = [];
+
+  // Loading nodes for scrollbar
+  public loadingFewData = false;
+
   // Selected researched Node
   public selectedNode: any;
 
@@ -75,6 +96,12 @@ export class DagreD3Component implements OnInit {
 
   // ElementRef container to show SVG of the Graph.
   @ViewChild('graphSvg', { static: true }) graphContainer!: ElementRef;
+
+  // ElementRef container for node list inside the Search sidebar
+  @ViewChild('scrollNodeContainer') scrollNodeContainer!: ElementRef;
+
+  // ElementRef container for edges list inside the Search sidebar
+  @ViewChild('scrollEdgesContainer') scrollEdgesContainer!: ElementRef;
 
   // Color palette for Edges
   private predefinedColors: string[] = [
@@ -144,6 +171,17 @@ export class DagreD3Component implements OnInit {
     }
     this.g = new dagreD3.graphlib.Graph().setGraph({ rankdir: 'LR' });
     this.createGraphVisualization(this.graphContainer, 'myGraphContainer');
+  }
+
+  // NgAfterViewInit implementation
+  public ngAfterViewInit() {
+    this.scrollNodeContainer.nativeElement.addEventListener('scroll', () => {
+      this.onScrollNodes();
+    });
+
+    this.scrollEdgesContainer.nativeElement.addEventListener('scroll', () => {
+      this.onScrollEdges();
+    });
   }
 
   /**
@@ -310,13 +348,16 @@ export class DagreD3Component implements OnInit {
         const nodeId = event.currentTarget.getAttribute('id');
         this.selectNode(nodeId);
       });
+
+      this.displayedNodes = this.nodes.slice(0, this.itemsPerPage);
+      this.displayedEdges = this.edges.slice(0, this.itemsPerPage);
     }
   }
 
   /**
    * This method allow to add unique  Node for EKG
    * @param uniqueNodes the array of nodes
-   * @param node the unique node to add .
+   * @param node the unique node to add.
    */
   private addNode(uniqueNodes: Set<any>, node: any) {
     let nodeExists = false;
@@ -376,6 +417,114 @@ export class DagreD3Component implements OnInit {
   }
 
   /**
+   * If the user is search data
+   */
+  private isSearchingMode(): boolean {
+    return this.searchQuery != '' ? true : false;
+  }
+
+  /**
+   * Scroll the nodes inside the Sidebar
+   */
+  public onScrollNodes(): void {
+    if (this.isSearchingMode() || !this.scrollNodeContainer) {
+      return;
+    }
+
+    const element = this.scrollNodeContainer.nativeElement;
+
+    if (element.scrollTop + element.clientHeight >= element.scrollHeight * 0.9 && !this.loadingFewData) {
+      if (this.currentPage * this.itemsPerPage >= this.nodes.length) {
+        return;
+      }
+
+      this.loadingFewData = true;
+
+      setTimeout(() => {
+        this.currentPage++;
+        const startIndex = (this.currentPage - 1) * this.itemsPerPage;
+        const endIndex = this.currentPage * this.itemsPerPage;
+        const newNodes = this.nodes.slice(startIndex, endIndex);
+
+        this.displayedNodes = [...this.displayedNodes, ...newNodes];
+
+        this.loadingFewData = false;
+      }, 500);
+    }
+  }
+
+  /**
+   * Scroll the edges inside the Sidebar
+   */
+  public onScrollEdges(): void {
+    if (this.isSearchingMode() || !this.scrollEdgesContainer) {
+      return;
+    }
+
+    const element = this.scrollEdgesContainer.nativeElement;
+
+    if (element.scrollTop + element.clientHeight >= element.scrollHeight * 0.9 && !this.loadingFewData) {
+      if (this.currentPage * this.itemsPerPage >= this.edges.length) {
+        return;
+      }
+
+      this.loadingFewData = true;
+
+      setTimeout(() => {
+        this.currentPage++;
+        const startIndex = (this.currentPage - 1) * this.itemsPerPage;
+        const endIndex = this.currentPage * this.itemsPerPage;
+        const newNodes = this.edges.slice(startIndex, endIndex);
+
+        this.displayedEdges = [...this.displayedEdges, ...newNodes];
+
+        this.loadingFewData = false;
+      }, 500);
+    }
+  }
+
+  /**
+   * Filter nodes
+   */
+  public searchData(): void {
+    this.isSearchMode = this.searchTerm.trim() !== '';
+
+    if (this.isSearchMode) {
+      if (this.currentTabIndex == 0) {
+        // Nodes
+        const filteredItems = this.filterNodes();
+        this.displayedNodes = filteredItems ? [...filteredItems] : [];
+      } else {
+        // Edges
+        const filteredItems = this.filterEdges();
+        this.displayedEdges = filteredItems ? [...filteredItems] : [];
+      }
+    } else {
+      if (this.currentTabIndex == 0) {
+        this.resetScrollNodeState();
+      } else {
+        this.resetScrollEdgeState();
+      }
+    }
+  }
+
+  // Metodo per resettare lo stato di scroll
+  private resetScrollNodeState(): void {
+    if (this.scrollNodeContainer) {
+      const element = this.scrollNodeContainer.nativeElement;
+      element.scrollTop = 0; // Imposta la posizione dello scroll all'inizio
+    }
+  }
+
+  // Metodo per resettare lo stato di scroll
+  private resetScrollEdgeState(): void {
+    if (this.scrollEdgesContainer) {
+      const element = this.scrollEdgesContainer.nativeElement;
+      element.scrollTop = 0; // Imposta la posizione dello scroll all'inizio
+    }
+  }
+
+  /**
    * Select specific node
    * @param nodeId the node id
    */
@@ -422,7 +571,7 @@ export class DagreD3Component implements OnInit {
    * Select class node
    * @param searched the searched node
    */
-  public selectClassNodeSearched(searched: any): void {
+  public selectNodeSearched(searched: any): void {
     if (this.selectedNode) {
       return;
     }
@@ -451,6 +600,51 @@ export class DagreD3Component implements OnInit {
         }
       });
     }
+  }
+
+  /**
+   * Select class node
+   * @param searched the searched node
+   */
+  public selecEdgeSearched(searched: any): void {
+    if (this.selectedNode) {
+      return;
+    }
+
+    const node = this.g.node(searched.id);
+
+    if (node) {
+      this.selectedResult = searched;
+
+      this.selectedNode = node;
+      const centerX = node.x;
+      const centerY = node.y;
+
+      node.style = 'fill: #8AC5FF; stroke: #488FEF; stroke-width: 2px';
+
+      const zoomTransform = d3.zoomIdentity.translate(-centerX, -centerY).scale(2);
+      this.svg.call(this.zoom.transform, zoomTransform);
+
+      const render = new dagreD3.render();
+      render(this.svg, this.g);
+
+      this.nodes.forEach((nodeStandard: any) => {
+        if (this.selectedNode.id != null && this.selectedNode.id == nodeStandard.id) {
+          this.propertiesSelectedNode = Object.entries(nodeStandard);
+          this.isShowCardProperties = true;
+        }
+      });
+    }
+  }
+
+  // Metodo che viene chiamato quando la tab cambia
+  public onTabChange(event: any): void {
+    this.currentTabIndex = event.index;
+    this.currentPage = 1;
+    this.isSearchMode = false;
+    this.searchTerm = '';
+    this.displayedNodes = this.nodes.slice(0, this.itemsPerPage);
+    this.displayedEdges = this.edges.slice(0, this.itemsPerPage);
   }
 
   /**
@@ -488,22 +682,45 @@ export class DagreD3Component implements OnInit {
   /**
    * Filter nodes by the search term
    */
-  public filteredNodes(): any {
-    const standardNodeFilters: any[] = [];
+  public filterNodes(): any[] {
+    const standardNodeFiltered = new Set<any>(); // Utilizzo di Set per evitare duplicati
 
     if (!this.searchTerm) {
-      return this.nodes;
+      return this.displayedNodes;
     }
 
     this.nodes.forEach((item: any) => {
       for (const key in item) {
         if (item[key] && item[key].toString().toLowerCase().includes(this.searchTerm.toLowerCase())) {
-          standardNodeFilters.push(item);
+          standardNodeFiltered.add(item); // Aggiunge il nodo al Set
+          break; // Evita di continuare a controllare le altre chiavi una volta trovato un match
         }
       }
     });
 
-    return standardNodeFilters;
+    return Array.from(standardNodeFiltered); // Converte il Set in un array
+  }
+
+  /**
+   * Filter edges by the search term
+   */
+  public filterEdges(): any[] {
+    const standardEdgeFiltered = new Set<any>(); // Utilizzo di Set per evitare duplicati
+
+    if (!this.searchTerm) {
+      return this.displayedEdges;
+    }
+
+    this.edges.forEach((item: any) => {
+      for (const key in item) {
+        if (item[key] && item[key].toString().toLowerCase().includes(this.searchTerm.toLowerCase())) {
+          standardEdgeFiltered.add(item);
+          break;
+        }
+      }
+    });
+
+    return Array.from(standardEdgeFiltered);
   }
 
   /**
@@ -512,6 +729,15 @@ export class DagreD3Component implements OnInit {
   public closeSearchSidebar(): void {
     this.isOpenSearchSidebar = false;
     this.selectedNode = null;
+
+    // Reset paginator
+    this.currentPage = 1;
+    this.displayedNodes = this.nodes.slice(0, this.itemsPerPage);
+    this.displayedEdges = this.edges.slice(0, this.itemsPerPage);
+
+    // Reset scroll state
+    this.resetScrollNodeState();
+    this.resetScrollEdgeState();
   }
 
   /**

@@ -53,9 +53,6 @@ export class Dataset {
   // The process info object
   public processInfo: DatasetProcessInfo = new DatasetProcessInfo();
 
-  // The container id
-  public containerId = '';
-
   // The creation date
   public dateCreated = '';
 

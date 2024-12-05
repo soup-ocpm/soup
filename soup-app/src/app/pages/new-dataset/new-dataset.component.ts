@@ -8,22 +8,39 @@ import { Router } from '@angular/router';
 import { NgxDropzoneModule } from 'ngx-dropzone';
 import { Papa } from 'ngx-papaparse';
 
-import { ContainerListCardComponent } from '../../components/container-list-card/container-list-card.component';
+import { UMLEdge } from '../../components/uml-diagram/models/uml_edge';
+import { UMLNode } from '../../components/uml-diagram/models/uml_node';
+import { UmlDiagramComponent } from '../../components/uml-diagram/uml-diagram.component';
 import { SButtonTComponent } from '../../core/components/s-buttons/s-button-t/s-button-t.component';
 import { SButtonComponent } from '../../core/components/s-buttons/s-button/s-button.component';
 import { SProgressbarComponent } from '../../core/components/s-progressbar/s-progressbar.component';
-import { SSpinnerOneComponent } from '../../core/components/s-spinners/s-spinner-one/s-spinner-one.component';
 import { ToastLevel } from '../../core/enums/toast_type.enum';
 import { LoggerService } from '../../core/services/logger.service';
 import { ModalService } from '../../core/services/modal.service';
 import { NotificationService } from '../../core/services/toast.service';
-import { Container } from '../../models/docker_container.model';
 import { Entity } from '../../models/entity.mode';
 import { DatasetService } from '../../services/datasets.service';
-import { DockerService } from '../../services/docker_container.service';
 import { StandardGraphService } from '../../services/standard_graph.service';
 import { MaterialModule } from '../../shared/modules/materlal.module';
 import { LocalDataService } from '../../shared/services/support.service';
+
+// Multiplicity model
+class Multiplicity {
+  // The column one
+  columnOne = '';
+
+  // The multiplicity
+  multiplicityOne = '';
+
+  // The column two
+  columnTwo = '';
+
+  // The multiplicity
+  multiplicityTwo = '';
+
+  // The global and final multiplicity
+  globalMultiplicity = '';
+}
 
 @Component({
   selector: 'app-new-dataset',
@@ -38,10 +55,10 @@ import { LocalDataService } from '../../shared/services/support.service';
     SButtonComponent,
     SButtonTComponent,
     SProgressbarComponent,
-    SSpinnerOneComponent,
-    ContainerListCardComponent,
+    UmlDiagramComponent,
     // Other
-    NgxDropzoneModule
+    NgxDropzoneModule,
+    UmlDiagramComponent
   ],
   templateUrl: './new-dataset.component.html',
   styleUrl: './new-dataset.component.scss'
@@ -80,26 +97,20 @@ export class NewDatasetComponent {
   // Activity name of the event id entity
   public activityNameColumn = '';
 
-  // The fixed column
-  public fixedColumn = '';
-
-  // The variable column
-  public variableColumn = '';
-
-  // All the docker containers
-  public dockerContainers: Container[] = [];
+  // The trigger and target rows
+  public triggerTargetRows: { trigger: string; target: string }[] = [{ trigger: '', target: '' }];
 
   // The search container
   public searchTerm = '';
 
-  // The selected container
-  public selectedContainer: Container | any;
-
-  // If the user choice the container
-  public haveChoiceContainer = false;
-
   // If the user upload his file
   public haveSelectFile = false;
+
+  // The nodes for the uml
+  public umlNodes: UMLNode[] = [];
+
+  // The edges for the uml
+  public umlEdges: UMLEdge[] = [];
 
   // If the tutorial is show or not
   public isShowTutorial = true;
@@ -116,14 +127,14 @@ export class NewDatasetComponent {
   // If the sidebar is show or not
   public isShowSidebar = false;
 
-  // If the containers are show or not
-  public isShowContainers = false;
+  // If the UML is show or not
+  public isShowUML = false;
+
+  // If the sidebar for uml class diagram is show
+  public isShowUMLSidebar = false;
 
   // If the progress bar is show or not
   public isLoading = false;
-
-  // Loading the container
-  public isLoadingContainer = false;
 
   // The creation methods for graph (standard or LOAD)
   public creationMethod = '2';
@@ -137,7 +148,7 @@ export class NewDatasetComponent {
    * @param parser the Papa parser
    * @param modal the ModalService service
    * @param toast the NotificationService service
-   * @param dockerService the DockerService service
+   * @param logger the LoggerService service
    * @param datasetService the DatasetService service
    * @param supportService the LocalDataService service
    * @param graphService the StandardGraphService service
@@ -148,7 +159,7 @@ export class NewDatasetComponent {
     private modal: ModalService,
     private toast: NotificationService,
     private logger: LoggerService,
-    private dockerService: DockerService,
+    private modalService: ModalService,
     private datasetService: DatasetService,
     private supportService: LocalDataService,
     private graphService: StandardGraphService
@@ -179,6 +190,14 @@ export class NewDatasetComponent {
   }
 
   /**
+   * Convert timestamp format
+   * @param value the value
+   */
+  private convertTimestampFormat(value: string): string {
+    return value.replace(/(\d{2}:\d{2}:\d{2}),(\d{3})/, '$1.$2');
+  }
+
+  /**
    * Parse the csv file
    */
   public parseFileData(): void {
@@ -203,7 +222,17 @@ export class NewDatasetComponent {
                 this.displayedColumns = allColumn;
                 this.allFileEntitiesSelected = allColumn.map((columnName) => ({ name: columnName, selected: false }));
                 this.allFileValuesSelected = allColumn.map((columnName) => ({ name: columnName, selected: false }));
-                this.dataSource = result.data.slice(0, 1000);
+
+                // Trasforma i dati del timestamp
+                this.dataSource = result.data.map((row: any) => {
+                  const modifiedRow = { ...row };
+                  for (const key in modifiedRow) {
+                    if (typeof modifiedRow[key] === 'string') {
+                      modifiedRow[key] = this.convertTimestampFormat(modifiedRow[key]);
+                    }
+                  }
+                  return modifiedRow;
+                });
 
                 this.isShowUpload = false;
                 this.isShowTable = true;
@@ -242,22 +271,6 @@ export class NewDatasetComponent {
   }
 
   /**
-   * Check the selected entity
-   * @param entity the entity
-   */
-  public checkSelectedEntity(entity: string): boolean {
-    return this.allFileEntitiesSelected.some((e: Entity) => e.name === entity && e.selected);
-  }
-
-  /**
-   * Check the selected entity
-   * @param entity the entity
-   */
-  public checkSelectedElement(entity: string): boolean {
-    return this.allFileValuesSelected.some((e: Entity) => e.name === entity && e.selected && !this.checkSelectedEntity(entity));
-  }
-
-  /**
    * Submit the selected entity
    * @param entity the selected entity
    * @param event the event (boolean value)
@@ -287,6 +300,22 @@ export class NewDatasetComponent {
         }
       });
     }
+  }
+
+  /**
+   * Check the selected entity
+   * @param entity the entity
+   */
+  public checkSelectedEntity(entity: string): boolean {
+    return this.allFileEntitiesSelected.some((e: Entity) => e.name === entity && e.selected);
+  }
+
+  /**
+   * Check the selected entity
+   * @param entity the entity
+   */
+  public checkSelectedElement(entity: string): boolean {
+    return this.allFileValuesSelected.some((e: Entity) => e.name === entity && e.selected && !this.checkSelectedEntity(entity));
   }
 
   /**
@@ -343,6 +372,13 @@ export class NewDatasetComponent {
   }
 
   /**
+   * Return the entities trigger
+   */
+  public getAllTriggerEntities(): string[] {
+    return this.umlNodes.filter((node) => node.label).map((node) => node.label);
+  }
+
+  /**
    * Handle the back button on Stepper
    * @param stepper the MatStepper stepper
    */
@@ -359,95 +395,236 @@ export class NewDatasetComponent {
   }
 
   /**
-   * Open the Help dialog
+   * Request to the user if he want to
+   * map the trigger and target information
    */
-  public openHelpDialog(): void {
-    // TODO: implement
+  public requestTriggerAndTarget(): void {
+    this.modalService.showGenericModal(
+      'Trigger and Target?',
+      'Do you want to map information about trigger and target',
+      true,
+      'Yes',
+      '#ffac1c',
+      'No',
+      '#000000',
+      () => this.createUMLDiagram(),
+      () => {
+        this.modalService.hideGenericModal();
+        this.inputDatasetName();
+      }
+    );
   }
 
   /**
-   * Open the second help dialog
+   * Calculate the moltiplicity between two columns
+   * @param column1 the column1
+   * @param column2 the column2
    */
-  public openHelpCreationMethods(): void {
-    // TODO: implement
-  }
+  public calculateMultiplicity(column1: string, column2: string): Multiplicity {
+    const multiplicity = new Multiplicity();
 
-  /**
-   * Retrieve all available docker
-   * containers
-   */
-  public getDockerContainers(): void {
-    this.isLoadingContainer = true;
+    if (!this.dataSource || this.dataSource.length === 0) {
+      multiplicity.columnOne = column1;
+      multiplicity.multiplicityOne = '0';
+      multiplicity.columnTwo = column2;
+      multiplicity.multiplicityTwo = '0';
+      multiplicity.globalMultiplicity = '0';
+      return multiplicity;
+    }
 
-    if (this.dockerContainers.length == 0) {
-      this.dockerService.containers().subscribe({
-        next: (responseData) => {
-          if (responseData.statusCode == 200 && responseData.responseData != null) {
-            const allContainers = responseData.responseData['all_containers'];
-            allContainers.forEach((item: any) => {
-              let status = false;
-              if (item.status == 'running') {
-                status = true;
-              }
-              const container = new Container();
-              container.id = item.id;
-              container.name = item.name;
-              container.image = item.image;
-              container.status = status;
-              this.dockerContainers.push(container);
-            });
+    const mapColumn1ToColumn2: Record<string, Set<string>> = {};
+    const mapColumn2ToColumn1: Record<string, Set<string>> = {};
 
-            if (this.dockerContainers.length > 0) {
-              this.isShowTable = false;
-              this.isShowContainers = true;
-            }
+    // Create the map
+    this.dataSource.forEach((row: any) => {
+      const value1 = row[column1];
+      const value2 = row[column2];
 
-            this.isLoadingContainer = false;
-          } else {
-            this.isLoadingContainer = false;
-            this.toast.show('Unable to load Docker containers. Please start Docker Engine', ToastLevel.Error, 3000);
-          }
-        },
-        error: (errorData) => {
-          const apiResponse: any = errorData;
-          if (apiResponse['statusText'] == 'Unknown Error') {
-            this.toast.show('Unable to load Docker containers. Please start the Engine', ToastLevel.Error, 3000);
-          } else {
-            this.toast.show('Unable to load Docker containers. Please start Docker Engine', ToastLevel.Error, 3000);
-          }
+      if (value1) {
+        if (!mapColumn1ToColumn2[value1]) {
+          mapColumn1ToColumn2[value1] = new Set();
+        }
+        mapColumn1ToColumn2[value1].add(value2);
+      }
 
-          this.isLoadingContainer = false;
-        },
-        complete: () => {}
-      });
+      if (value2) {
+        if (!mapColumn2ToColumn1[value2]) {
+          mapColumn2ToColumn1[value2] = new Set();
+        }
+        mapColumn2ToColumn1[value2].add(value1);
+      }
+    });
+
+    // Determinate the multiplicity
+    const multiplicityOne =
+      Object.keys(mapColumn1ToColumn2).length === 0 ? '0' : Object.values(mapColumn1ToColumn2).some((set) => set.size > 1) ? 'N' : '1';
+
+    const multiplicityTwo =
+      Object.keys(mapColumn2ToColumn1).length === 0 ? '0' : Object.values(mapColumn2ToColumn1).some((set) => set.size > 1) ? 'N' : '1';
+
+    multiplicity.columnOne = column1;
+    multiplicity.multiplicityOne = multiplicityOne;
+    multiplicity.columnTwo = column2;
+    multiplicity.multiplicityTwo = multiplicityTwo;
+
+    if (multiplicityOne === 'N' || multiplicityTwo === 'N') {
+      multiplicity.globalMultiplicity = 'N a N';
+    }
+    if (multiplicityOne === '1' && multiplicityTwo === 'N') {
+      multiplicity.globalMultiplicity = '1 a N';
+    }
+    if (multiplicityOne === 'N' && multiplicityTwo === '1') {
+      multiplicity.globalMultiplicity = 'N a 1';
     } else {
-      this.isShowTable = false;
-      this.isShowContainers = true;
+      multiplicity.globalMultiplicity = '1 a 1';
     }
+
+    return multiplicity;
   }
 
   /**
-   * Handle the choice container
-   * @param container the container
+   * Calculate the moltiplicities between csv columns for trigger and target
    */
-  public onContainerClicked(container: any): void {
-    if (container != null && container.status) {
-      this.selectedContainer = container;
-      this.haveChoiceContainer = true;
+  private calculateAllMultiplicities(): Multiplicity[] {
+    const filteredColumn: string[] = this.getFilteredColumn();
+    const standardColumn: string[] = [this.eventIdColumn, this.timestampColumn, this.activityNameColumn];
+
+    if (!this.dataSource || this.dataSource.length === 0 || !filteredColumn || filteredColumn.length < 2) {
+      return [];
+    }
+
+    // Exclude standard columns
+    const excludedColumns = ['event_id', 'timestamp', 'activity_name', ...standardColumn];
+    const currentColumns = filteredColumn.filter((column) => !excludedColumns.includes(column));
+
+    if (currentColumns.length < 2) {
+      return [];
+    }
+
+    const result: Multiplicity[] = [];
+    const seenPairs = new Set<string>();
+
+    // Iteration
+    for (let i = 0; i < currentColumns.length; i++) {
+      for (let j = i + 1; j < currentColumns.length; j++) {
+        const column1 = currentColumns[i];
+        const column2 = currentColumns[j];
+
+        // Calculate multiplicity for this columns pair
+        const multiplicity = this.calculateMultiplicity(column1, column2);
+
+        const pairKey = this.generateSymmetricKey(column1, column2, multiplicity.globalMultiplicity);
+        if (seenPairs.has(pairKey)) {
+          continue;
+        }
+
+        // Add multiplicity
+        result.push(multiplicity);
+        seenPairs.add(pairKey);
+      }
+    }
+
+    return result;
+  }
+
+  /**
+   * Generate unique key for the symmetric relationships
+   * @param column1 the first column
+   * @param column2 the second column
+   * @param globalMultiplicity global rel
+   */
+  private generateSymmetricKey(column1: string, column2: string, globalMultiplicity: string): string {
+    const sortedColumns = [column1, column2].sort(); // Ordina alfabeticamente le colonne
+    return `${sortedColumns[0]}-${sortedColumns[1]}-${globalMultiplicity}`;
+  }
+
+  /**
+   * Create and display the uml diagram
+   */
+  public createUMLDiagram(): void {
+    const multiplicities = this.calculateAllMultiplicities();
+
+    if (multiplicities.length === 0 || multiplicities == null) {
       this.inputDatasetName();
+    } else {
+      const nodeSet = new Set<string>();
+      const edges: UMLEdge[] = [];
+
+      multiplicities.forEach((multiplicity) => {
+        const nodeOne: UMLNode = {
+          id: multiplicity.columnOne,
+          label: multiplicity.columnOne
+        };
+
+        const nodeTwo: UMLNode = {
+          id: multiplicity.columnTwo,
+          label: multiplicity.columnTwo
+        };
+
+        // CCreate unique string
+        const nodeOneKey = `${nodeOne.id}:${nodeOne.label}`;
+        const nodeTwoKey = `${nodeTwo.id}:${nodeTwo.label}`;
+
+        //  Add node
+        if (!nodeSet.has(nodeOneKey)) {
+          nodeSet.add(nodeOneKey);
+        }
+
+        if (!nodeSet.has(nodeTwoKey)) {
+          nodeSet.add(nodeTwoKey);
+        }
+
+        edges.push({
+          source: multiplicity.columnOne,
+          target: multiplicity.columnTwo,
+          multiplicity: {
+            left: multiplicity.multiplicityOne,
+            right: multiplicity.multiplicityTwo
+          }
+        });
+      });
+
+      const nodes = Array.from(nodeSet).map((key) => {
+        const [id, label] = key.split(':');
+        return { id, label };
+      });
+
+      if (nodes != null && nodes.length > 0 && edges != null && edges.length > 0) {
+        this.umlNodes = nodes;
+        this.umlEdges = edges;
+
+        this.isShowTable = false;
+        this.isShowSidebar = false;
+        this.isShowUML = true;
+        this.isShowUMLSidebar = true;
+      }
     }
   }
 
   /**
-   * Filter the containers based on the input
-   * @returns the filtered containers
+   * Add new trigger and target row
    */
-  public filteredContainers() {
-    if (!this.searchTerm) {
-      return this.dockerContainers;
-    }
+  public addTriggerTargetRow(): void {
+    this.triggerTargetRows.push({ trigger: '', target: '' });
+  }
 
-    return this.dockerContainers.filter((container) => container.name.toLowerCase().includes(this.searchTerm.toLowerCase()));
+  /**
+   * Remove specific trigger and target row
+   */
+  public removeTriggerTargetRow(index: number): void {
+    this.triggerTargetRows.splice(index, 1);
+  }
+
+  /**
+   * Handle the back button
+   */
+  public closeUMLLayout(): void {
+    this.umlNodes = [];
+    this.umlEdges = [];
+    this.isShowUML = false;
+    this.isShowUMLSidebar = false;
+    this.isShowTable = true;
+    this.isShowSidebar = true;
   }
 
   /**
@@ -463,7 +640,6 @@ export class NewDatasetComponent {
       '#FFAC1C',
       'Close',
       '#6c757d',
-      this.selectedContainer.id,
       (datasetName: string, datasetDescription: string, saveProcessExecution: boolean) => {
         return this.retrieveModalData(datasetName, datasetDescription, saveProcessExecution);
       },
@@ -509,15 +685,11 @@ export class NewDatasetComponent {
         if (e.target?.result) {
           const csvData: string = e.target.result.toString();
           const lines = csvData.split('\n');
+
           if (lines.length > 0) {
             const header = lines[0].split(',');
 
-            /*if (timestampIndex === -1) {
-              this.messageService.show('Timestamp column not found in the CSV file.', false, 2000);
-              return;
-            }*/
-
-            // Update columns
+            const timestampIndex = header.findIndex((col) => col === this.timestampColumn);
             for (let i = 0; i < header.length; i++) {
               if (header[i] === this.eventIdColumn) {
                 header[i] = 'event_id';
@@ -528,7 +700,15 @@ export class NewDatasetComponent {
               }
             }
 
-            lines[0] = header.join(',');
+            // Modifica le righe per convertire i timestamp
+            for (let i = 1; i < lines.length; i++) {
+              const row = lines[i].split(',');
+              if (timestampIndex !== -1 && row[timestampIndex]) {
+                row[timestampIndex] = this.convertTimestampFormat(row[timestampIndex]);
+              }
+              lines[i] = row.join(',');
+            }
+
             const modifiedCSV = lines.join('\n');
             const modifiedFile: File = new File([new Blob([modifiedCSV], { type: 'text/csv' })], 'modified_data.csv', { type: 'text/csv' });
 
@@ -538,8 +718,7 @@ export class NewDatasetComponent {
               },
               error: () => {
                 this.toast.show('Temporal error. Check the Engine and Retry', ToastLevel.Error, 3000);
-              },
-              complete: () => {}
+              }
             });
           }
         }
@@ -562,6 +741,7 @@ export class NewDatasetComponent {
     if (!file) {
       return;
     }
+
     const allFilteredColumn: string[] = this.getFilteredColumn();
     const allValuesColumn: string[] = this.getFilteredValuesColumn();
 
@@ -571,9 +751,22 @@ export class NewDatasetComponent {
     formData.append('file', file, 'filtered.csv');
     formData.append('copy_file', file, 'filtered.csv');
 
-    this.isShowContainers = false;
-    this.isLoading = true;
+    // Add trigger and target if exists
+    if (this.triggerTargetRows.length > 0) {
+      this.triggerTargetRows.forEach((item, index) => {
+        formData.append(`trigger_${index}`, item.trigger);
+        formData.append(`target_${index}`, item.target);
+      });
+    }
 
+    const isShowUML = this.isShowUML && this.isShowUMLSidebar;
+
+    if (isShowUML) {
+      this.isShowUML = false;
+      this.isShowUMLSidebar = false;
+    }
+
+    this.isLoading = true;
     try {
       this.graphService
         .createGraph(
@@ -585,10 +778,7 @@ export class NewDatasetComponent {
           this.allColumns,
           standardColumn,
           allFilteredColumn,
-          allValuesColumn,
-          this.fixedColumn,
-          this.variableColumn,
-          this?.selectedContainer
+          allValuesColumn
         )
         .subscribe({
           next: (response) => {
@@ -599,11 +789,21 @@ export class NewDatasetComponent {
             } else if (response.statusCode == 400) {
               this.toast.show('Error while creatin the Graph. Retry', ToastLevel.Error, 3000);
               this.isLoading = false;
+
+              if (isShowUML) {
+                this.isShowUML = true;
+                this.isShowUMLSidebar = true;
+              }
             }
           },
           error: () => {
             this.toast.show('Error while creatin the Graph. Retry', ToastLevel.Error, 3000);
             this.isLoading = false;
+
+            if (isShowUML) {
+              this.isShowUML = true;
+              this.isShowUMLSidebar = true;
+            }
           },
           complete: () => {}
         });
@@ -618,11 +818,11 @@ export class NewDatasetComponent {
    * @param datasetName the dataset name
    */
   public getDataset(datasetName: string): void {
-    this.datasetService.getDataset(this.selectedContainer!.id, datasetName).subscribe({
+    this.datasetService.getDataset(datasetName).subscribe({
       next: (response) => {
         if (response.statusCode == 200 && response.responseData != null) {
           const data = response.responseData;
-          const dataset = this.supportService.parseItemToDataset(this.selectedContainer!.id, data);
+          const dataset = this.supportService.parseItemToDataset(data);
           if (dataset != null) {
             this.isLoading = false;
             this.supportService.setCurrentDataset(dataset);
@@ -693,5 +893,19 @@ export class NewDatasetComponent {
   public toggleFullScreen(): void {
     this.isShowFullScreen = false;
     this.isShowSidebar = !this.isShowSidebar;
+  }
+
+  /**
+   * Open the Help dialog
+   */
+  public openHelpDialog(): void {
+    // TODO: implement
+  }
+
+  /**
+   * Open the second help dialog
+   */
+  public openHelpCreationMethods(): void {
+    // TODO: implement
   }
 }

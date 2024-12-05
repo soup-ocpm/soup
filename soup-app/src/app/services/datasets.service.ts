@@ -22,8 +22,8 @@ export class DatasetService {
    * @param datasetName the dataset name
    * @returns an Observable of ApiResponse object
    */
-  public getDataset(containerId: string, datasetName: string): Observable<ApiResponse<any>> {
-    const params = new HttpParams().set('container_id', containerId).set('dataset_name', datasetName);
+  public getDataset(datasetName: string): Observable<ApiResponse<any>> {
+    const params = new HttpParams().set('dataset_name', datasetName);
 
     return this.apiService.get(`${environment.baseUrl}/datasets/single`, params);
   }
@@ -33,22 +33,18 @@ export class DatasetService {
    * @param containerId the container id
    * @returns Observable of ApiResponse object
    */
-  public getAllDataset(containerId: string): Observable<ApiResponse<any>> {
-    const params = new HttpParams().set('container_id', containerId);
-
-    return this.apiService.get(`${environment.baseUrl}/datasets`, params);
+  public getAllDataset(): Observable<ApiResponse<any>> {
+    return this.apiService.get(`${environment.baseUrl}/datasets`);
   }
 
   /**
    * Update specific dataset information (description)
-   * @params containerId the container id
    * @param datasetName the dataset name
    * @param datasetDescription the dataset new description
    * @returns Observable of ApiResponse object
    */
-  public updateDatasetDescription(containerId: string, datasetName: string, datasetDescription: string): Observable<ApiResponse<any>> {
+  public updateDatasetDescription(datasetName: string, datasetDescription: string): Observable<ApiResponse<any>> {
     const jsonRequest = {
-      container_id: containerId,
       dataset_name: datasetName,
       dataset_description: datasetDescription
     };
@@ -58,25 +54,22 @@ export class DatasetService {
 
   /**
    * Get specific dataset
-   * @params containerId the container id
    * @param datasetName the dataset name
    * @returns Observable of ApiResponse object
    */
-  public deleteDataset(containerId: string, datasetName: string): Observable<ApiResponse<any>> {
-    const params = new HttpParams().set('container_id', containerId).set('dataset_name', datasetName);
+  public deleteDataset(datasetName: string): Observable<ApiResponse<any>> {
+    const params = new HttpParams().set('dataset_name', datasetName);
 
     return this.apiService.delete(`${environment.baseUrl}/datasets/single`, params);
   }
 
   /**
    * Check unique dataset name
-   * @param containerId the container id
    * @param datasetName the dataset name
    * @returns Observable of ApiResponse object
    */
-  public checkUniqueDataset(containerId: string, datasetName: string): Observable<ApiResponse<any>> {
+  public checkUniqueDataset(datasetName: string): Observable<ApiResponse<any>> {
     const jsonRequest = {
-      container_id: containerId,
       dataset_name: datasetName
     };
 

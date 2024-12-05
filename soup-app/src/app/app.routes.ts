@@ -33,12 +33,8 @@ export const routes: Routes = [
   {
     path: 'datasets/:name/graph',
     loadComponent: () => import('./pages/dagre-d3/dagre-d3.component').then((c) => c.DagreD3Component),
-    data: { animatation: 'GraphDatasetPage' }
-  },
-  {
-    path: 'dagre',
-    loadComponent: () => import('./pages/dagre-d3/dagre-d3.component').then((c) => c.DagreD3Component),
-    data: { animatation: 'DagreD3Page' }
+    data: { animatation: 'GraphDatasetPage' },
+    canActivate: [DatasetAuthGuard]
   },
   {
     path: '**',

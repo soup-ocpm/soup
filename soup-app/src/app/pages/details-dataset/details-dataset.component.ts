@@ -117,10 +117,16 @@ export class DetailsDatasetComponent implements OnInit, AfterViewInit {
   public isOpenSidebar = true;
 
   // If the sidebar for aggregation is open or not
-  public isOpenSecondSidebar = false;
+  public isOpenAggregationSidebar = false;
 
   // If the sidebar of JSON is open or not
-  public isOpenThirdSidebar = false;
+  public isOpenJSONSidebar = false;
+
+  // If the sidebar for graph visualization is open or not
+  public isOpenGraphViewSidebar = false;
+
+  // If the sidebar for filters is open or not
+  public isOpenFiltersSidebar = false;
 
   // If the progress bar is show or not
   public isLoading = false;
@@ -197,12 +203,13 @@ export class DetailsDatasetComponent implements OnInit, AfterViewInit {
    * or aggregate EKG
    */
   public goToGraphVisualization(standardGraph: boolean): void {
-    // Todo: implementare
-    if (this.isOpenSecondSidebar) {
-      return;
+    if (standardGraph) {
+      this.supportService.viewStandardGraph = true;
+      this.supportService.viewClassGraph = false;
+    } else {
+      this.supportService.viewStandardGraph = false;
+      this.supportService.viewClassGraph = true;
     }
-
-    this.supportService.viewStandardGraph = standardGraph;
     this.router.navigate(['datasets', this.currentDataset!.name, 'graph']);
   }
 
@@ -231,11 +238,10 @@ export class DetailsDatasetComponent implements OnInit, AfterViewInit {
    */
   public buildClassGraph(): void {
     this.isLoading = true;
-    this.isOpenSecondSidebar = false;
+    this.isOpenAggregationSidebar = false;
     this.isOpenSidebar = false;
 
     const formData: FormData = new FormData();
-    formData.append('container_id', this.currentDataset!.containerId);
     formData.append('dataset_name', this.currentDataset!.name);
 
     try {
@@ -245,14 +251,14 @@ export class DetailsDatasetComponent implements OnInit, AfterViewInit {
             this.currentDataset = this.supportService.updateDatasetInfo(response.responseData);
             this.isLoading = false;
             this.isOpenSidebar = true;
-            this.isOpenSecondSidebar = false;
+            this.isOpenAggregationSidebar = false;
             this.resetSelection();
 
             setTimeout(() => {
               this.createCharts();
             }, 300);
           } else {
-            this.isOpenSecondSidebar = true;
+            this.isOpenAggregationSidebar = true;
             this.isOpenSidebar = true;
             this.isLoading = false;
             this.toast.show('Error while creating Class Graph. Retry', ToastLevel.Error, 3000);
@@ -261,7 +267,7 @@ export class DetailsDatasetComponent implements OnInit, AfterViewInit {
         error: (errorData) => {
           const apiResponse: any = errorData;
           this.logService.error(apiResponse);
-          this.isOpenSecondSidebar = true;
+          this.isOpenAggregationSidebar = true;
           this.isOpenSidebar = true;
           this.isLoading = false;
           this.toast.show('Error while creating Class Graph. Retry', ToastLevel.Error, 3000);
@@ -277,7 +283,7 @@ export class DetailsDatasetComponent implements OnInit, AfterViewInit {
    * Handle the click for delete EKG
    */
   public handleDeleteGraph(): void {
-    if (this.isOpenSecondSidebar) {
+    if (this.isOpenAggregationSidebar) {
       return;
     }
     this.modalService.showGenericModal(
@@ -300,7 +306,7 @@ export class DetailsDatasetComponent implements OnInit, AfterViewInit {
    */
   public deleteDataset(): void {
     if (this.currentDataset != null) {
-      this.datasetService.deleteDataset(this.currentDataset!.containerId, this.currentDataset!.name).subscribe({
+      this.datasetService.deleteDataset(this.currentDataset!.name).subscribe({
         next: (response) => {
           if (response.statusCode == 200) {
             this.toast.show('Dataset deleted successfully', ToastLevel.Success, 3000);
@@ -426,7 +432,7 @@ export class DetailsDatasetComponent implements OnInit, AfterViewInit {
           });
 
           this.isLoadingJsonDownload = false;
-          this.toggleThirdSidebar();
+          this.isOpenJSONSidebar = false;
           this.resetJsonSelection();
           this.toast.show('Json files downloaded successfully', ToastLevel.Success, 3000);
         },
@@ -437,39 +443,25 @@ export class DetailsDatasetComponent implements OnInit, AfterViewInit {
   }
 
   /**
-   * Open the second sidebar
+   * Open or close graph visualization sidebar
+   * when the class graph was created
    */
-  public openSecondSidebar(): void {
-    if (this.isOpenSecondSidebar) {
-      return;
-    }
-    this.isOpenSecondSidebar = true;
+  public handleGraphViewSidebar(): void {
+    this.isOpenGraphViewSidebar = !this.isOpenGraphViewSidebar;
   }
 
   /**
-   * Open the third sidebar
+   * Open or close the aggregation sidebar
    */
-  public openThirdSidebar(): void {
-    if (this.isOpenThirdSidebar) {
-      return;
-    }
-    this.isOpenThirdSidebar = true;
+  public handleAggregationSidebar(): void {
+    this.isOpenAggregationSidebar = !this.isOpenAggregationSidebar;
   }
 
   /**
-   * Close the second sidebar
+   * Open or close the JSON sidebar
    */
-  public toggleSecondSidebar(): void {
-    this.isOpenSecondSidebar = false;
-    this.resetSelection();
-  }
-
-  /**
-   * Close the second sidebar
-   */
-  public toggleThirdSidebar(): void {
-    this.isOpenThirdSidebar = false;
-    this.resetJsonSelection();
+  public handleJSONSidebar(): void {
+    this.isOpenJSONSidebar = !this.isOpenJSONSidebar;
   }
 
   /**
@@ -727,7 +719,6 @@ export class DetailsDatasetComponent implements OnInit, AfterViewInit {
    */
   private destroyChart(chart: Chart | null): void {
     if (chart) {
-      console.log('Destroying chart:', chart);
       chart.destroy();
     }
   }

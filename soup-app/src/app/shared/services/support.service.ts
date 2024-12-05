@@ -13,8 +13,11 @@ export class LocalDataService {
   // The dataset filtered column
   private datasetFilteredColumn: string[] = [];
 
-  // For view the standard graph or class
+  // For view the standard graph
   public viewStandardGraph = false;
+
+  // For view the aggregate graph
+  public viewClassGraph = false;
 
   /**
    * Initialize a new instance of SupportService service
@@ -67,12 +70,11 @@ export class LocalDataService {
    * @returns a Dataset object
    * ** corde orrible **
    */
-  public parseItemToDataset(containerId: string, item: any): Dataset | undefined {
+  public parseItemToDataset(item: any): Dataset | undefined {
     if (item != null) {
       const dataset = new Dataset();
       dataset.name = item['dataset_name'];
       dataset.description = item['dataset_description'];
-      dataset.containerId = containerId;
       dataset.eventNodes = item['event_nodes'];
       dataset.entityNodes = item['entity_nodes'];
       dataset.corrRel = item['corr_rel'];

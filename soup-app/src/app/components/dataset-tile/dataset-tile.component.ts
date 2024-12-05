@@ -16,14 +16,14 @@ export class DatasetTileComponent {
   // The dataset name
   @Input() dataset: Dataset | undefined;
 
-  // The container id
-  @Input() containerId: string | undefined;
-
   // Handle the click to dataset tile
   @Output() selectedDataset = new EventEmitter<Dataset>();
 
   // Output event for dataset details navigation
   @Output() manageDataset = new EventEmitter<Dataset>();
+
+  // Output event for delete dataset
+  @Output() deleteDataset = new EventEmitter<Dataset>();
 
   /**
    * Constructor for DatasetCardComponent component
@@ -59,5 +59,12 @@ export class DatasetTileComponent {
    */
   public onManageDataset(): void {
     this.manageDataset.emit(this.dataset);
+  }
+
+  /**
+   * Delete dataset
+   */
+  public onDeleteDataset(): void {
+    this.deleteDataset.emit(this.dataset);
   }
 }

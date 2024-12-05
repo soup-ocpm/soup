@@ -1,7 +1,7 @@
 <!--The progress bar-->
 <app-s-progressbar *ngIf="isLoading"></app-s-progressbar>
 
-<!--Cards-->
+<!--Master Layout-->
 <div class="master">
   <!--Tutorial Card-->
   <mat-card
@@ -118,7 +118,7 @@
   <!--Upload card-->
   <mat-card
     class="upload-card"
-    *ngIf="isShowUpload && !isShowTutorial">
+    *ngIf="isShowUpload && !isShowTutorial && !this.isLoading">
     <h2 class="text-font">Upload .csv file</h2>
     <p class="text-font-p">Drag your .csv file containing the event log or choose it directly from your computer by clicking on upload</p>
     <ngx-dropzone (change)="this.onSelectFile($event)">
@@ -149,7 +149,7 @@
   <!--Table card-->
   <div
     class="master-table"
-    *ngIf="isShowTable">
+    *ngIf="isShowTable && !this.isLoading">
     <div
       class="master-table-content"
       [ngClass]="{ 'table-full-screen': isShowFullScreen }">
@@ -194,13 +194,13 @@
     </div>
   </div>
 
-  <!--Docker card-->
-  <div
-    *ngIf="!this.isShowUpload && !this.isShowTable && !this.isShowTutorial && !this.isLoading && this.dockerContainers.length > 0"
-    style="margin-right: 180px">
-    <app-container-list-card
-      [dockerContainers]="this.dockerContainers"
-      (exportContainer)="this.onContainerClicked($event)"></app-container-list-card>
+  <!--UML Class diagram-->
+  <div *ngIf="this.isShowUML && this.umlNodes.length > 0 && this.umlEdges.length > 0 && !this.isLoading">
+    <div class="uml-class">
+      <app-uml-diagram
+        [umlClass]="umlNodes"
+        [umlEdges]="umlEdges"></app-uml-diagram>
+    </div>
   </div>
 </div>
 
@@ -277,9 +277,9 @@
           <select
             id="eventSelect"
             class="form-select"
-            (change)="this.onSelectionChange($event, 'event')">
+            [(ngModel)]="eventIdColumn">
             <option
-              *ngFor="let camp of this.getFilteredValuesColumn()"
+              *ngFor="let camp of getFilteredValuesColumn()"
               [value]="camp">
               {{ camp }}
             </option>
@@ -291,9 +291,9 @@
           <select
             id="activitySelect"
             class="form-select"
-            (change)="this.onSelectionChange($event, 'activity')">
+            [(ngModel)]="activityNameColumn">
             <option
-              *ngFor="let camp of this.getFilteredValuesColumn()"
+              *ngFor="let camp of getFilteredValuesColumn()"
               [value]="camp">
               {{ camp }}
             </option>
@@ -305,9 +305,9 @@
           <select
             id="timeSelect"
             class="form-select"
-            (change)="this.onSelectionChange($event, 'time')">
+            [(ngModel)]="timestampColumn">
             <option
-              *ngFor="let camp of this.getFilteredValuesColumn()"
+              *ngFor="let camp of getFilteredValuesColumn()"
               [value]="camp">
               {{ camp }}
             </option>
@@ -342,29 +342,91 @@
       </div>
     </div>-->
 
-    <!-- <div class="map-information">
-        <div class="map-information-tile">
-            <p class="text-font" style="font-size: 17px; margin-left: 7px">Select the graph creation method</p> <span>
-                <mat-icon color="primary" style="margin-left: 5px;" (click)="this.openHelpCreationMethods()"
-                    matTooltip="Help">help_outline
-                </mat-icon></span>
-        </div>
-        <div class="column-selection" style="margin-bottom: 20px;">
-            <mat-radio-group aria-label="Select an option" class="radio-group-creation" [(ngModel)]="creationMethod">
-                <mat-radio-button color="primary" value="1" style="margin-left: 50px;">Standard</mat-radio-button>
-                <mat-radio-button color="primary" value="2" style="margin-right: 50px;">Load CSV</mat-radio-button>
-            </mat-radio-group>
-        </div>
-    </div> -->
-
     <div style="margin-top: 10px"></div>
 
     <app-s-button
-      *ngIf="!this.isLoadingContainer"
       [text]="'Continue'"
-      (click)="this.getDockerContainers()"></app-s-button>
+      (click)="this.requestTriggerAndTarget()"></app-s-button>
+  </div>
+</div>
 
-    <app-s-spinner-one *ngIf="this.isLoadingContainer"></app-s-spinner-one>
+<!--UML Sidebar-->
+<div *ngIf="!isLoading && isShowUMLSidebar">
+  <div
+    class="sidebar scrollable-sidebar"
+    [ngClass]="{ 'show-sidebar': this.isShowUMLSidebar, 'move-right': this.isShowUMLSidebar }">
+    <div style="display: flex; justify-content: space-between">
+      <h2>Map Trigger Information</h2>
+    </div>
+    <p
+      class="text-font"
+      style="font-size: 15px">
+      Here you can select trigger and target values for the Graph (optional).
+    </p>
+
+    <!-- Trigger and Target columns -->
+    <div
+      *ngFor="let row of triggerTargetRows; let i = index"
+      class="column-selection">
+      <div
+        class="map-trigger"
+        style="height: 60px; display: flex; align-items: center; justify-content: space-between">
+        <!-- Select Trigger -->
+        <div class="form-group">
+          <label for="triggerSelect{{ i }}">Trigger</label>
+          <select
+            id="triggerSelect{{ i }}"
+            class="form-select custom-select"
+            [(ngModel)]="row.trigger">
+            <option
+              *ngFor="let camp of getAllTriggerEntities()"
+              [value]="camp">
+              {{ camp }}
+            </option>
+          </select>
+        </div>
+
+        <!-- Select Target -->
+        <div class="form-group">
+          <label for="targetSelect{{ i }}">Target</label>
+          <select
+            id="targetSelect{{ i }}"
+            class="form-select custom-select"
+            [(ngModel)]="row.target">
+            <option
+              *ngFor="let camp of getAllTriggerEntities()"
+              [value]="camp">
+              {{ camp }}
+            </option>
+          </select>
+        </div>
+
+        <!-- Remove or add new trigger-target -->
+        <div style="margin-top: 35px">
+          <i
+            *ngIf="i === triggerTargetRows.length - 1"
+            style="justify-content: right"
+            (click)="this.addTriggerTargetRow()"
+            class="bi bi-plus-square action-icon"></i>
+          <i
+            *ngIf="i !== triggerTargetRows.length - 1"
+            (click)="this.removeTriggerTargetRow(i)"
+            class="bi bi-trash action-icon-delete"></i>
+        </div>
+      </div>
+    </div>
+
+    <!--Build button-->
+    <div class="master-uml-footer">
+      <app-s-button
+        [text]="'Build'"
+        (click)="this.inputDatasetName()"></app-s-button>
+      <app-s-button
+        style="margin-left: 10px"
+        [text]="'Back'"
+        [color]="'#6c757d'"
+        (click)="this.closeUMLLayout()"></app-s-button>
+    </div>
   </div>
 </div>
 

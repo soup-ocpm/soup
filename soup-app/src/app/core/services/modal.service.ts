@@ -77,7 +77,6 @@ export class ModalService {
     primaryButtonColor: string,
     secondaryButtonText: string,
     secondaryButtonColor: string,
-    containerId: string,
     primaryButtonClick: (datasetName: string, datasetDescription: string, saveProcessExecution: boolean) => Promise<any>,
     secondaryButtonClick: (() => void) | null
   ) {
@@ -89,7 +88,6 @@ export class ModalService {
       primaryButtonColor,
       secondaryButtonText,
       secondaryButtonColor,
-      containerId,
       primaryButtonClick,
       secondaryButtonClick
     });

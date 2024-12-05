@@ -21,9 +21,8 @@ export class GenericGraphService {
    * @param datasetName the dataset name
    * @returns Observale of Http request
    */
-  public createDatasetGraphs(containerId: string, datasetName: string): Observable<ApiResponse<any>> {
+  public createDatasetGraphs(datasetName: string): Observable<ApiResponse<any>> {
     const jsonRequest = {
-      container_id: containerId,
       dataset_name: datasetName
     };
 

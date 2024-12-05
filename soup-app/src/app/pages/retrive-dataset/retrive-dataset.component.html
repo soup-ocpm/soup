@@ -1,14 +1,10 @@
 <!--The progress bar-->
 <app-s-progressbar *ngIf="isCreatingDataset"></app-s-progressbar>
 
+<!--Master Layout-->
 <div
   class="master"
-  *ngIf="!this.isLoadingDatasets && !this.isLoadingContainer && !this.isCreatingDataset">
-  <div *ngIf="!isLoadingContainer && isShowContainers && dockerContainers.length > 0 && this.currentContainer == null">
-    <app-container-list-card
-      [dockerContainers]="this.dockerContainers"
-      (exportContainer)="this.handleSelectedContainer($event)"></app-container-list-card>
-  </div>
+  *ngIf="!this.isLoadingDatasets && !this.isCreatingDataset">
   <!--All Dataset-->
   <div *ngIf="this.haveDatasets && !this.isShowContainers">
     <div class="header">
@@ -29,9 +25,9 @@
       <ng-container *ngFor="let item of this.filteredDatasets()">
         <app-dataset-tile
           [dataset]="item"
-          [containerId]="this.currentContainer!.id"
           (selectedDataset)="this.onSelectedDataset($event)"
-          (manageDataset)="this.onManageDataset($event)"></app-dataset-tile>
+          (manageDataset)="this.onManageDataset($event)"
+          (deleteDataset)="this.onDeleteDataset($event)"></app-dataset-tile>
       </ng-container>
     </div>
   </div>
@@ -39,7 +35,7 @@
   <!--No dataset-->
   <div
     class="no-dataset"
-    *ngIf="!this.haveDatasets && !this.isShowContainers && this.dockerContainers.length > 0">
+    *ngIf="!this.haveDatasets && !this.isShowContainers">
     <img src="/images/graph2.svg" />
     <p>
       You do not have any Datasets
@@ -49,26 +45,6 @@
     <app-s-button
       [text]="'New Dataset'"
       (buttonClick)="this.newDataset()"></app-s-button>
-  </div>
-
-  <!--No Containers-->
-  <div
-    class="no-dataset"
-    style="margin-top: 200px"
-    *ngIf="this.dockerContainers.length == 0 && !this.isLoadingContainer && !this.isLoadingDatasets">
-    <img
-      class="container-img"
-      src="/images/containers.png" />
-    <p>
-      You do not have any Docker Container
-      <br />
-      Please follow the SOuP guide
-    </p>
-
-    <app-s-button
-      [text]="'Help'"
-      [color]="'#696969'"
-      (buttonClick)="this.handleGoHelp()"></app-s-button>
   </div>
 
   <!-- Sidebar -->
@@ -171,9 +147,9 @@
 <!--Loading status-->
 <div
   class="loading-datasets"
-  *ngIf="this.isLoadingDatasets || this.isLoadingContainer">
+  *ngIf="this.isLoadingDatasets">
   <app-s-spinner-one></app-s-spinner-one>
-  <h4>{{ this.isLoadingDatasets ? 'Loading datasets...' : 'Loading containers...' }}</h4>
+  <h4>Loading datasets...</h4>
 </div>
 
 <!--Loading content-->

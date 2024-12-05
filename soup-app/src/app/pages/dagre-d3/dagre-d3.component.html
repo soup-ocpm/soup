@@ -55,35 +55,101 @@
         class="bi bi-x-lg"
         (click)="this.closeSearchSidebar()"></i>
     </div>
-    <p>Search node inside your graph</p>
+    <p>Search node or links inside your graph</p>
 
+    <!--Input-->
     <div class="search-dataset">
       <input
         class="form-control form-control-sm"
         style="margin-top: 10px"
         type="text"
         placeholder="Receive Order..."
-        [(ngModel)]="searchTerm" />
+        [(ngModel)]="searchTerm"
+        (input)="this.searchData()" />
     </div>
 
     <div style="height: 20px"></div>
     <app-s-divider></app-s-divider>
-    <div style="height: 20px"></div>
 
-    <div class="master-search">
-      <div
-        class="search-term"
-        *ngFor="let item of this.filteredNodes()"
-        (click)="selectClassNodeSearched(item)">
-        <p>
-          <strong>Activity Name:</strong>
-          {{ item['ActivityName'] }}
-        </p>
-        <p style="margin-left: 10px">
-          <strong>Event id:</strong>
-          {{ item['EventID'] }}
-        </p>
-      </div>
-    </div>
+    <!--Tabber-->
+    <mat-tab-group
+      #tabber
+      (selectedTabChange)="this.onTabChange($event)">
+      <!--Node tab-->
+      <mat-tab
+        label="Nodes"
+        class="tabber">
+        <div
+          class="master-search"
+          (scroll)="onScrollNodes()"
+          style="margin-top: 15px"
+          #scrollNodeContainer>
+          <div
+            class="search-term"
+            *ngFor="let item of displayedNodes"
+            (click)="selectNodeSearched(item)">
+            <div class="item-details">
+              <h5>{{ item['ActivityName'] }}</h5>
+              <p>
+                <strong>Event ID:</strong>
+                {{ item['EventID'] }}
+              </p>
+              <p>
+                <strong>Type:</strong>
+                {{ item['Type'] }}
+              </p>
+            </div>
+            <div class="icon-section">
+              <i class="bi bi-arrow-right-circle"></i>
+            </div>
+          </div>
+
+          <!-- Loading -->
+          <div
+            class="loading-indicator"
+            *ngIf="isLoading">
+            <p>Loading more data...</p>
+          </div>
+        </div>
+      </mat-tab>
+
+      <!--Edges tab-->
+      <mat-tab
+        label="Links"
+        class="tabber">
+        <div
+          class="master-search"
+          (scroll)="onScrollEdges()"
+          style="margin-top: 15px"
+          #scrollEdgesContainer>
+          <div
+            class="search-term"
+            *ngFor="let item of displayedEdges"
+            (click)="selecEdgeSearched(item)">
+            <div class="item-details">
+              <h5>{{ item['label'] }}</h5>
+              <p>
+                <strong>From node:</strong>
+                {{ item.source.id }}
+              </p>
+              <p>
+                <strong>To node:</strong>
+                {{ item.target.id }}
+              </p>
+            </div>
+            <div class="icon-section">
+              <i class="bi bi-arrow-right-circle"></i>
+            </div>
+          </div>
+
+          <!-- Loading-->
+          <div
+            class="loading-indicator"
+            *ngIf="isLoading">
+            <p>Loading more data...</p>
+          </div>
+        </div>
+      </mat-tab>
+    </mat-tab-group>
   </div>
 </div>

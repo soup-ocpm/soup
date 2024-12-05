@@ -130,7 +130,7 @@ export class InputModalComponent implements OnInit {
    * Check the dataset unique name
    */
   private checkUniqueName(): void {
-    this.datasetService.checkUniqueDataset(this.containerId, this.datasetName).subscribe({
+    this.datasetService.checkUniqueDataset(this.datasetName).subscribe({
       next: (response) => {
         if (response.statusCode === 202) {
           this.primaryButtonClick(this.datasetName, this.datasetDescription, this.saveProcessExecution)

@@ -260,82 +260,73 @@ mat-divider {
 }
 
 // ================================
-// Region: Docker Containers
+// Region: Uml layout
 // ================================
-.master-container {
-  width: 900px;
-  height: 700px;
-  margin-right: 300px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background-color: #f1f1f1;
-
-  .title {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 100%;
-    height: 30px;
-    margin: 0;
-    margin-bottom: 40px;
-    color: white;
-    background-color: #ffac1c;
-    border-top-left-radius: 10px;
-    border-top-right-radius: 10px;
-
-    p {
-      margin-top: 13px;
-      font-size: 23px;
-      font-family: 'Times New Roman', Times, serif;
-    }
-  }
-
-  .search-container {
-    margin: 10px 10px;
-
-    input {
-      width: 50%;
-      padding: 5px;
-      font-size: 14px;
-      border: 1px solid #ccc;
-      border-radius: 5px;
-    }
-  }
-
-  mat-tab-group {
-    height: 90%;
-  }
+.uml-class {
+  margin-right: 480px;
 }
 
-.mat-group {
+.uml-header {
+  width: 40%;
+  display: flex;
+  justify-content: space-between;
+  position: absolute;
+  left: 20px;
+  top: 70px;
+}
+
+.map-trigger {
+  display: flex;
+  align-items: center;
   width: 100%;
+  margin-top: 10px;
 }
 
-.labelClass {
-  font-size: 23px;
-  font-family: 'Times New Roman', Times, serif;
+.form-group {
+  margin-right: 20px;
 }
 
-mat-divider {
-  display: flex;
-  align-items: center;
+.custom-select {
+  height: 30px;
+  min-width: 185px;
+  max-width: 185px;
+  padding: 4px 8px;
+  font-size: 0.9rem;
+}
+
+.form-group {
   margin-bottom: 10px;
-  width: 50%;
-  margin-left: 200px;
-  opacity: 0.3;
-}
-
-.container-div {
-  display: flex;
-  align-items: center;
-  overflow: auto;
 }
 
 .button-container {
+  display: flex;
+  align-items: center;
+}
+
+.action-icon {
+  margin-left: 10px;
+  cursor: pointer;
+  font-size: 1.5rem;
+}
+
+.action-icon-delete {
+  margin-left: 10px;
+  cursor: pointer;
+  font-size: 1.5rem;
+}
+.action-icon:hover {
+  color: #ffac1c;
+}
+
+.action-icon-delete:hover {
+  color: red;
+}
+
+.master-uml-footer {
+  display: flex;
   position: absolute;
-  right: 10px;
   bottom: 10px;
+  left: 10px;
 }
 
 // ================================
