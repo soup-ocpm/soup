@@ -1,8 +1,6 @@
 import { Component } from '@angular/core';
 import { Router } from '@angular/router';
 
-import { environment } from '../../../../environments/environment';
-
 @Component({
   selector: 'app-navbar',
   standalone: true,
@@ -17,13 +15,24 @@ export class NavbarComponent {
    */
   constructor(private router: Router) {}
 
-  // Navigate to the home page
-  public handleGoHome() {
+  /**
+   * Navigate to the home page
+   */
+  public goToHome() {
     this.router.navigate(['/welcome']);
   }
 
-  // Go to Help SOuP page
-  public handleGoHelp() {
-    window.open(environment.prosLabUrl, '_blank');
+  /**
+   * Go to new dataset page
+   */
+  public goToNewDataset() {
+    this.router.navigate(['/new-dataset']);
+  }
+
+  /**
+   * Go to manage datasets page
+   */
+  public goToManageDatasets(): void {
+    this.router.navigate(['/datasets']);
   }
 }
