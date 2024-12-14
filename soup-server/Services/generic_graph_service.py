@@ -39,8 +39,9 @@ class GenericGraphService:
             process_info.init_time = datetime.now().strftime('%Y-%m-%dT%H:%M:%S.%f')[:-3]
 
             # 1. Get the dataset files (from the Docker container)
-            main_csv_path, entity_csv_path, config_json_path = DockerFileManager.get_dataset_file_path(container_id,
-                                                                                                       dataset_name)
+            main_csv_path, entity_csv_path, config_json_path, svg_path = DockerFileManager.get_dataset_file_path(
+                container_id,
+                dataset_name)
 
             if not main_csv_path or not entity_csv_path or not config_json_path:
                 return 'Unable to load the Dataset files'
@@ -76,7 +77,8 @@ class GenericGraphService:
                             cypher_properties.append(f"{key}: coalesce(row.{key}, '')")
 
                 process_info.init_event_time = datetime.now().strftime('%Y-%m-%dT%H:%M:%S.%f')[:-3]
-                query = load_event_node_query(main_csv_path, standard_columns[0], standard_columns[1], standard_columns[2],
+                query = load_event_node_query(main_csv_path, standard_columns[0], standard_columns[1],
+                                              standard_columns[2],
                                               cypher_properties)
                 database_connector.run_query_memgraph(query)
                 process_info.finish_event_time = datetime.now().strftime('%Y-%m-%dT%H:%M:%S.%f')[:-3]

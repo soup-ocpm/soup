@@ -17,11 +17,45 @@ from flask import jsonify
 from collections.abc import Iterable
 from Controllers.graph_config import memgraph_datetime_to_string
 from Models.api_response_model import ApiResponse
+from Models.docker_file_manager_model import DockerFileManager
+from Models.file_manager_model import FileManager
+from Services.docker_service import DockerService
 from Utils.query_library import *
 
 
 # The Service for operation graph controller
 class OperationGraphService:
+
+    @staticmethod
+    def download_svg_s(dataset_name, svg_content):
+        response = ApiResponse()
+
+        container_id = DockerService.get_container_id('soup-database')
+
+        if not container_id or container_id == '':
+            response.http_status_code = 404
+            response.response_data = None
+            response.message = 'Container not found'
+            return jsonify(response.to_dict()), 404
+
+        # Create svg
+        result, new_svg_file_path = FileManager.copy_svg_file(dataset_name, svg_content)
+        if result != 'success' or new_svg_file_path is None:
+            return 'Error while copying the entity node svg to the Engine'
+
+        # Copy svg
+        result, new_entity_docker_file_path = DockerFileManager.copy_file_to_container(container_id, dataset_name,
+                                                                                       new_svg_file_path, False,
+                                                                                       False, True)
+
+        # Delete the
+        result = FileManager.delete_svg_file(dataset_name)
+
+        response.http_status_code = 200
+        response.message = 'Event nodes retrieved successfully'
+        response.response_data = result
+
+        return jsonify(response.to_dict()), 200
 
     @staticmethod
     def get_event_nodes_s(database_connector):

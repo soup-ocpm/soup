@@ -311,27 +311,63 @@ def set_class_weight():
             """
 
 
-# ----------Utils query for Filters graph----------
+# ----------Utils query for Filters SOuP Filters----------
 
 
 def timestamp_filter_query(start_timestamp, end_timestamp):
-    return (f"MATCH (e:Event) "
-            f"WHERE e.Timestamp >= localDateTime({start_timestamp}) AND e.Timestamp <= localDateTime({end_timestamp})"
-            f"RETURN e")
+    return (f"MATCH (e1:Event)-[r:DF]->(e2:Event) "
+            f"WHERE e1.Timestamp >= localDateTime({start_timestamp}) AND e1.Timestamp <= localDateTime({end_timestamp}) "
+            f"AND e2.Timestamp >= localDateTime({start_timestamp}) AND e2.Timestamp <= localDateTime({end_timestamp}) "
+            f"RETURN e1 as source, id(e1) as source_id, properties(r) as edge, "
+            f"id(r) as edge_id, e2 as target, id(e2) as target_id ")
 
 
 def performance_filter_name_query(start_activity_name, end_activity_name, duration):
     return (f"MATCH (start: Event {{ActivityName: '{start_activity_name}'}}) "
             f"MATCH (end: Event {{ActivityName: '{end_activity_name}'}}) "
-            f"WHERE localDateTime(start.Timestamp) < localDateTime(end.Timestamp) "
-            f"WITH start, end, duration.between(localDateTime(start.Timestamp), localDateTime(end.Timestamp)) "
+            f"WHERE start.Timestamp < end.Timestamp "
+            f"WITH start, end, duration.between(start.Timestamp, end.Timestamp) "
             f"AS duration "
             f"WHERE duration.seconds > {duration} "
             f"MERGE (start)-[r:HAS_DURATION {{duration_seconds: duration.seconds}}]->(end) "
             f"RETURN start, r, end")
 
 
+def include_activity_filter_query(activities):
+    return (f"MATCH (e1:Event)-[r:DF]->(e2:Event) "
+            f"WHERE e1.ActivityName = '{activities}' AND e2.ActivityName = '{activities}' "
+            f"RETURN e1 as source, id(e1) as source_id, properties(r) as edge, "
+            f"id(r) as edge_id, e2 as target, id(e2) as target_id ")
+
+
+def exclude_activity_filter_query(activities):
+    return (f"MATCH (e1:Event)-[r:DF]->(e2:Event) "
+            f"WHERE NOT (e1.ActivityName = '{activities}' AND e2.ActivityName = '{activities}') "
+            f"RETURN e1 as source, id(e1) as source_id, properties(r) as edge, "
+            f"id(r) as edge_id, e2 as target, id(e2) as target_id ")
+
+
+def frequency_filter_query(frequency):
+    return (f"MATCH (e1:Event) "
+            f"WITH e.ActivityName AS activities, COUNT(e) AS frequency "
+            f"WHERE frequency >= {frequency} "
+            f"RETURN activities, frequency "
+            f"ORDER BY frequency ASC ")
+
+
+def variation_filter_query():
+    query = """
+    MATCH (start:Event)-[:DF*]->(end:Event)
+    WITH start.EventID AS caseId, COLLECT(start.ActivityName) + COLLECT(end.ActivityName) AS activities,
+    duration.between(start.Timestamp, end.Timestamp) AS duration
+    RETURN activities, AVG(duration.seconds) AS avg_duration, COUNT(*) AS frequency
+    ORDER BY avg_duration ASC;
+    """
+    return query
+
+
 # ----------Utils query for graph----------
+
 
 def get_count_data_query():
     return "MATCH (n) RETURN count(n) as count"

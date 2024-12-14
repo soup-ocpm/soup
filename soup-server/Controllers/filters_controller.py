@@ -11,9 +11,8 @@ License : MIT
 """
 
 # Import
-from flask import Blueprint, request, jsonify
+from flask import Blueprint
 from Services.docker_service import DockerService
-from Models.api_response_model import ApiResponse
 
 # Init the bp
 filters_controller_bp = Blueprint('filters_controller_bp', __name__)

@@ -12,6 +12,7 @@ License : MIT
 
 # Import
 import json
+import shutil
 
 from pathlib import Path
 
@@ -26,6 +27,8 @@ class FileManager:
 
     # The folder name for the json files
     json_folder_name = 'FileData/temp_json'
+
+    svg_folder_name = 'FileData/temp_svg'
 
     @staticmethod
     def copy_csv_file(file, file_name, entity_folder):
@@ -95,8 +98,8 @@ class FileManager:
         new_file_path = temp_dir / complete_file_name
 
         try:
-            with open(new_file_path, 'w', encoding='utf-8') as f:
-                json.dump(json_content, f, ensure_ascii=False, indent=4)
+            with open(new_file_path, 'w', encoding='utf-8') as file:
+                json.dump(json_content, file, ensure_ascii=False, indent=4)
 
             if new_file_path.exists() and new_file_path.stat().st_size > 0:
                 return "success", new_file_path
@@ -112,6 +115,49 @@ class FileManager:
         temp_dir = project_dir / FileManager.json_folder_name
 
         complete_file_name = f'{file_name}.json'
+        temp_json_path = temp_dir / complete_file_name
+
+        try:
+            # Check the file and then delete
+            if temp_json_path.exists():
+                temp_json_path.unlink()
+                return "success"
+            else:
+                return "Error while deleting the file"
+
+        except Exception as e:
+            return f"Error while deleting the file: {e}"
+
+    @staticmethod
+    def copy_svg_file(file_name, svg_content):
+        project_dir = Path(__file__).parent.parent
+        folder_name = FileManager.svg_folder_name
+
+        temp_dir = project_dir / folder_name
+
+        if not temp_dir.exists():
+            temp_dir.mkdir(parents=True)
+
+        complete_file_name = f'{file_name}.svg'
+        new_file_path = temp_dir / complete_file_name
+
+        try:
+            with open(new_file_path, 'w') as svg_file:
+                svg_file.write(svg_content)
+            if new_file_path.exists() and new_file_path.stat().st_size > 0:
+                return "success", new_file_path
+            else:
+                return "Error while copying the file", None
+
+        except Exception as e:
+            return f"Error while copying the file: {e}", None
+
+    @staticmethod
+    def delete_svg_file(file_name):
+        project_dir = Path(__file__).parent.parent
+        temp_dir = project_dir / FileManager.svg_folder_name
+
+        complete_file_name = f'{file_name}.svg'
         temp_json_path = temp_dir / complete_file_name
 
         try:
@@ -159,7 +205,7 @@ class FileManager:
 
     @staticmethod
     def update_json_file(existing_json_data, dataset_name=None, standard_columns=None, filtered_columns=None,
-                         values_columns=None, trigger_target_rows=None):
+                         values_columns=None, trigger_target_rows=None, json_file_path=None):
         # 1. Load the JSON data
         json_data = json.loads(existing_json_data)
 
@@ -167,16 +213,23 @@ class FileManager:
         if dataset_name is not None:
             json_data["dataset_name"] = dataset_name
         if standard_columns is not None:
-            json_data["standard_column"] = standard_columns
+            json_data["standard_columns"] = standard_columns
         if filtered_columns is not None:
-            json_data["filtered_column"] = filtered_columns
+            json_data["filtered_columns"] = filtered_columns
         if values_columns is not None:
-            json_data["values_column"] = values_columns
+            json_data["values_columns"] = values_columns
         if trigger_target_rows is not None:
             json_data["trigger_target_rows"] = trigger_target_rows
 
-        # 3. Return the update json
+        # 3. Create the updated JSON string
         updated_json_string = json.dumps(json_data, indent=4)
+
+        # 4. Optionally write the updated JSON string to the file (if json_file_path is provided)
+        if json_file_path:
+            with open(json_file_path, 'w') as json_file:
+                json_file.write(updated_json_string)
+
+        # Return the updated JSON string
         return updated_json_string
 
     @staticmethod

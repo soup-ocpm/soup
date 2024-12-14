@@ -11,7 +11,7 @@ License : MIT
 """
 
 # Import
-from flask import Blueprint
+from flask import Blueprint, request
 from Controllers.graph_config import get_db_connector
 from Services.Graph.op_graph_service import *
 from Services.generic_graph_service import GenericGraphService
@@ -21,6 +21,15 @@ op_graph_controller_bp = Blueprint('op_graph_controller_bp', __name__)
 
 # Engine database setup
 database_connector = get_db_connector(debug=False)
+
+
+@op_graph_controller_bp.route('/api/v2/graph/svg', methods=['POST'])
+def download_svg():
+    data = request.get_json()
+    dataset_name = data.get('dataset_name')
+    svg_content = data.get('svg')
+
+    return OperationGraphService.download_svg_s(dataset_name, svg_content)
 
 
 @op_graph_controller_bp.route('/api/v2/graph/nodes/event', methods=['GET'])

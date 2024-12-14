@@ -49,6 +49,12 @@ class DatasetService:
             if not isinstance(exec_config_file, dict):
                 exec_config_file = json.loads(exec_config_file)
 
+            result, svg_content = DockerFileManager.get_svg_content_from_container(container_id, dataset_name)
+            if result == 'success' and svg_content is not None:
+                exec_config_file['svg_content'] = svg_content
+            else:
+                exec_config_file['svg_content'] = None
+
             response.http_status_code = 200
             response.message = 'Dataset retrieved successfully'
             response.response_data = exec_config_file
@@ -79,7 +85,7 @@ class DatasetService:
 
             if result != 'success':
                 response.http_status_code = 400
-                response.message = 'Internal Server Error. Error while retrieve the Datasets'
+                response.message = 'Internal Server Error. Error while retrieving the Datasets'
                 response.response_data = result
                 return jsonify(response.to_dict()), 400
 
@@ -87,11 +93,21 @@ class DatasetService:
 
             # 2. For each dataset, get the specific information
             for dataset_name in container_folders:
+                # Retrieve configuration file
                 result, exec_config_file = DockerFileManager.read_configuration_json_file(container_id, dataset_name)
+
                 if result == 'success':
                     # Check if it is already a dictionary
                     if not isinstance(exec_config_file, dict):
                         exec_config_file = json.loads(exec_config_file)
+
+                    # 2.1 Get the SVG file content if exists
+                    result, svg_content = DockerFileManager.get_svg_content_from_container(container_id, dataset_name)
+                    if result == 'success' and svg_content is not None:
+                        exec_config_file['svg_content'] = svg_content
+                    else:
+                        exec_config_file['svg_content'] = None
+
                     datasets_data.append(exec_config_file)
 
             # 3. Check the data

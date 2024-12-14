@@ -13,6 +13,7 @@ License : MIT
 # Import
 import io
 import json
+import os
 import tarfile
 import docker
 
@@ -24,7 +25,7 @@ from typing import Optional
 class DockerFileManager:
 
     @staticmethod
-    def copy_file_to_container(container_id, dataset_name, file_path, is_entity=False, is_json=False):
+    def copy_file_to_container(container_id, dataset_name, file_path, is_entity=False, is_json=False, is_svg=False):
         # 1. Check the file
         temp_path = Path(file_path)
         if not temp_path.exists():
@@ -37,6 +38,8 @@ class DockerFileManager:
             file_name = f"{dataset_name}_entity.csv"
         elif is_json:
             file_name = f"{dataset_name}_config.json"
+        elif is_svg:
+            file_name = f"{dataset_name}_config.svg"
 
         try:
             # 3. Get the client Docker env
@@ -151,6 +154,7 @@ class DockerFileManager:
         main_csv_name = f'{dataset_name}.csv'
         entity_csv_name = f'{dataset_name}_entity.csv'
         config_json_name = f'{dataset_name}_config.json'
+        svg_name = f'{dataset_name}_config.svg'
 
         try:
             client = docker.from_env()
@@ -174,11 +178,34 @@ class DockerFileManager:
                 print(f"File {config_json_name} not found in {dataset_folder_path}")
                 return None
 
-            return main_csv_path, entity_csv_path, config_json_path
+            # SVG file
+            svg_file_path = DockerFileManager._find_file(container, dataset_folder_path, svg_name)
+
+            return main_csv_path, entity_csv_path, config_json_path, svg_file_path
 
         except Exception as e:
             print(f"Error: {e}")
             return None
+
+    @staticmethod
+    def get_svg_content_from_container(container_id, dataset_name):
+        try:
+            client = docker.from_env()
+            container = client.containers.get(container_id)
+
+            container_svg_path = f'/soup/{dataset_name}/{dataset_name}_config.svg'
+            result = container.exec_run(f"cat {container_svg_path}")
+
+            svg_content = result.output.decode()
+
+            if 'No such file or directory' in svg_content:
+                return 'success', None
+
+            return 'success', svg_content
+
+        except Exception as e:
+            print(f"Error: {e}")
+            return 'Error', None
 
     @staticmethod
     def get_dataset_folders(container_id):
