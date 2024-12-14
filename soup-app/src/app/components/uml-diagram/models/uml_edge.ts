@@ -1,11 +1,16 @@
+import { UMLMultiplicity } from './uml_multiplicity';
+
 /**
- * Uml edge model class
+ * Uml edge model
  * @version 1.0
  */
 export class UMLEdge {
+  // The node source
   public source = '';
 
+  // The node target
   public target = '';
 
-  public multiplicity: { left: string; right: string } = { left: '', right: '' };
+  // The multiplicity
+  public multiplicity: UMLMultiplicity = new UMLMultiplicity();
 }

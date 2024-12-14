@@ -4,7 +4,7 @@
 <!--Master Layout-->
 <div class="master">
   <!--Tutorial Card-->
-  <mat-card
+  <!-- <mat-card
     class="center-card"
     *ngIf="isShowTutorial && !isShowUpload && !isLoading">
     <mat-card-content>
@@ -12,7 +12,6 @@
         [linear]="true"
         style="margin-top: 25px"
         #stepper>
-        <!--1 Step-->
         <mat-step>
           <ng-template
             matStepLabel
@@ -20,7 +19,7 @@
             style="font-family: 'Times New Roman', Times, serif">
             Step 1
           </ng-template>
-          <p class="title-step">Uploading the .csv file</p>
+          <h4>Upload .csv file</h4>
 
           <p class="inside-text">First, drag the .csv file into drag&drop or choose it directly from your computer.</p>
           <p
@@ -30,7 +29,6 @@
           </p>
           <p class="inside-text">Only one file can be processed at a time.</p>
 
-          <!--Stepper buttons-->
           <div class="step-buttons">
             <app-s-button-t
               (click)="this.toggleTutorial()"
@@ -45,7 +43,6 @@
           </div>
         </mat-step>
 
-        <!--2 Step-->
         <mat-step>
           <ng-template
             matStepLabel
@@ -66,7 +63,6 @@
             Make sure you choose only the entities that are relevant to your analysis, so that you get a meaningful graph.
           </p>
 
-          <!--Stepper buttons-->
           <div
             class="step-buttons"
             style="margin-top: 230px">
@@ -83,7 +79,6 @@
           </div>
         </mat-step>
 
-        <!--3 Step-->
         <mat-step>
           <ng-template
             matStepLabel
@@ -94,8 +89,6 @@
           <p class="inside-text">
             After filtering the data, you will get a graph with nodes, properties, and relationships based on your .csv file data.
           </p>
-
-          <!--Stepper buttons-->
           <div
             class="step-buttons"
             style="margin-top: 230px">
@@ -113,13 +106,13 @@
         </mat-step>
       </mat-stepper>
     </mat-card-content>
-  </mat-card>
+  </mat-card> -->
 
   <!--Upload card-->
   <mat-card
     class="upload-card"
-    *ngIf="isShowUpload && !isShowTutorial && !this.isLoading">
-    <h2 class="text-font">Upload .csv file</h2>
+    *ngIf="this.isShowUpload && !this.isLoading">
+    <h3 class="text-font">Upload .csv file</h3>
     <p class="text-font-p">Drag your .csv file containing the event log or choose it directly from your computer by clicking on upload</p>
     <ngx-dropzone (change)="this.onSelectFile($event)">
       <ngx-dropzone-label>Upload</ngx-dropzone-label>

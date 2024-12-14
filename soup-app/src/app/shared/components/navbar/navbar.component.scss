@@ -1,5 +1,5 @@
 // ================================
-// Region: Master navbar layour
+// Region: Main content
 // ================================
 .master {
   height: 55px;
@@ -26,5 +26,5 @@
 }
 
 .link p:hover {
-  color: #ffac1c;
+  color: var(--primary-color);
 }

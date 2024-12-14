@@ -49,6 +49,19 @@ export class StandardGraphService {
   }
 
   /**
+   * Send the svg to the backend
+   * @param svg the svg
+   */
+  public sendSVG(svg: string, datasetName: string): Observable<ApiResponse<any>> {
+    const body = {
+      dataset_name: datasetName,
+      svg: svg
+    };
+
+    return this.apiService.post(`${environment.baseUrl}/graph/svg`, body);
+  }
+
+  /**
    * Get event nodes
    * @returns Observable of ApiResponse object
    */

@@ -1,0 +1,54 @@
+// ================================
+// Region: Master layout
+// ================================
+.modal-header {
+  border-bottom: 1px solid #dee2e6;
+  padding: 15px 20px;
+}
+
+.modal-title {
+  margin: 0;
+  font-weight: 600;
+}
+
+// ================================
+// Region: Modal body layout
+// ================================
+.modal-body {
+  padding: 20px;
+  font-size: 1rem;
+}
+
+.filter-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.filter-option {
+  cursor: pointer;
+  padding: 6px;
+  margin: 8px 0;
+  width: 100%;
+  background-color: #f8f9fa;
+  border-radius: 5px;
+  transition:
+    background-color 0.3s ease,
+    transform 0.2s ease;
+  border: 1px solid #ddd;
+}
+
+.filter-option:hover {
+  background-color: #e2e6ea;
+  transform: translateX(5px);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+}
+
+.filter-option:active {
+  transform: scale(0.98);
+  background-color: #dae0e5;
+}
+
+.modal-footer {
+  padding: 10px 15px;
+}

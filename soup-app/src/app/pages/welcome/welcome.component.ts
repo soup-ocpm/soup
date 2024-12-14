@@ -3,10 +3,12 @@ import { Component } from '@angular/core';
 import { environment } from '../../../environments/environment';
 import { SButtonComponent } from '../../core/components/s-buttons/s-button/s-button.component';
 
+import { SpBtnComponent } from '@aledevsharp/sp-lib';
+
 @Component({
   selector: 'app-welcome',
   standalone: true,
-  imports: [SButtonComponent],
+  imports: [SButtonComponent, SpBtnComponent],
   templateUrl: './welcome.component.html',
   styleUrl: './welcome.component.scss'
 })

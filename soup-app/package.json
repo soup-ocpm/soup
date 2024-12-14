@@ -11,6 +11,7 @@
   },
   "private": true,
   "dependencies": {
+    "@aledevsharp/sp-lib": "^1.0.2",
     "@angular/animations": "^18.2.0",
     "@angular/cdk": "^18.2.7",
     "@angular/common": "^18.2.0",
@@ -21,6 +22,8 @@
     "@angular/platform-browser": "^18.2.0",
     "@angular/platform-browser-dynamic": "^18.2.0",
     "@angular/router": "^18.2.0",
+    "@ng-bootstrap/ng-bootstrap": "^17.0.1",
+    "@popperjs/core": "^2.11.8",
     "@types/d3": "^7.4.3",
     "@types/d3-selection": "^3.0.10",
     "@types/dagre-d3": "^0.6.6",

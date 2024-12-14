@@ -9,7 +9,7 @@
     <h4 class="card-title">{{ this.title }}</h4>
     <i
       class="bi bi-x-lg"
-      (click)="isVisible = false"></i>
+      (click)="this.isVisible = false"></i>
   </div>
   <p style="color: #666; margin-top: 15px">{{ this.message }}</p>
 
@@ -28,7 +28,7 @@
       [ngClass]="{ 'input-error': this.hasError }" />
     <span>
       <p
-        *ngIf="hasError"
+        *ngIf="this.hasError"
         style="color: red; margin-top: 5px">
         {{ this.errorMessage }}
       </p>
@@ -61,7 +61,7 @@
       </label>
       <mat-slide-toggle
         id="saveProcessExecution"
-        [(ngModel)]="saveProcessExecution"
+        [(ngModel)]="this.saveProcessExecution"
         color="primary"
         class="small-slide-toggle"></mat-slide-toggle>
     </div>
@@ -81,11 +81,11 @@
     *ngIf="this.doubleButton"
     style="margin-top: 20px">
     <app-s-button-t
-      [text]="primaryButtonText"
+      [text]="this.primaryButtonText"
       [color]="this.primaryButtonColor"
       (buttonClick)="onClickPrimaryButton()"></app-s-button-t>
     <app-s-button-t
-      [text]="secondaryButtonText"
+      [text]="this.secondaryButtonText"
       [color]="this.secondaryButtonColor"
       style="margin-left: 25px"
       (buttonClick)="onClickSecondaryButton()"></app-s-button-t>

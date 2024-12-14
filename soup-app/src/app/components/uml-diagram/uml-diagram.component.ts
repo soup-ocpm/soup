@@ -51,7 +51,7 @@ export class UmlDiagramComponent implements OnInit {
       const width: number = container.clientWidth;
       const height: number = container.clientHeight;
 
-      // Creazione del grafo
+      // Create the graph
       this.g = new dagreD3.graphlib.Graph({ multigraph: true, compound: false }).setGraph({
         rankdir: 'LR',
         nodesep: 70,
@@ -59,6 +59,7 @@ export class UmlDiagramComponent implements OnInit {
         ranksep: 100
       });
 
+      // Uml class nodes
       this.umlClass.forEach((node) => {
         this.g.setNode(node.id, {
           labelType: 'string',
@@ -68,31 +69,29 @@ export class UmlDiagramComponent implements OnInit {
         });
       });
 
+      // Uml class edges
       this.umlEdges.forEach((edge) => {
         const color = '#FB8C00';
         this.g.setEdge(edge.source, edge.target, {
           labelType: 'string',
-          label: `${edge.multiplicity.left}      ${edge.multiplicity.right}`,
+          label: `${edge.multiplicity.leftMultiplicity}      ${edge.multiplicity.rightMultiplicity}`,
           style: `stroke: ${color}; stroke-width: 2px; fill: none;`,
           arrowheadStyle: `fill: none;`,
           curve: d3.curveLinear
         });
       });
 
-      // Creazione del render per il grafo
+      // Renderer for graph
       const render = new dagreD3.render();
 
-      // Configurazione SVG
+      // SVG configuration
       const svg = d3
         .select(this.graphContainer.nativeElement)
         .attr('viewBox', `0 0 ${width} ${height}`)
         .attr('preserveAspectRatio', 'xMidYMid meet');
       const svgGroup = svg.append('g');
 
-      // Abilita zoom e pan
       this.initializePanZoom(svg, svgGroup);
-
-      // Render del grafo
       render(svgGroup as any, this.g as any);
     }
   }
@@ -119,6 +118,6 @@ export class UmlDiagramComponent implements OnInit {
     });
 
     this.zoom = zoomBehavior;
-    svg.call(zoomBehavior); // Associa zoom allo svg
+    svg.call(zoomBehavior);
   }
 }

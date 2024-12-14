@@ -18,7 +18,21 @@
 }
 
 .search-dataset {
-  width: 30%;
+  width: 500px;
+}
+
+// ================================
+// Region: Overlay sidebar open
+// ================================
+.overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 95vh;
+  background-color: rgba(0, 0, 0, 0.213);
+  z-index: 999;
+  display: block;
 }
 
 // ================================
@@ -66,7 +80,7 @@ app-s-button {
 // Region: Sidebar layout
 // ================================
 .sidebar {
-  height: calc(100% - 114px);
+  height: calc(100% - 104px);
   width: 600px;
   position: fixed;
   z-index: 1000;
@@ -124,7 +138,9 @@ app-s-button {
 
 .master-footer {
   display: flex;
-  margin-top: 15px;
+  position: absolute;
+  bottom: 10px;
+  left: 10px;
 }
 
 .master-footer app-s-button {
@@ -133,6 +149,21 @@ app-s-button {
 
 .master-footer app-s-button:last-child {
   margin-right: 0;
+}
+
+.double-flex {
+  display: flex;
+  justify-content: space-between;
+  color: #666;
+
+  mat-icon {
+    color: #c4a805;
+  }
+}
+
+.underline-h {
+  text-decoration: underline;
+  cursor: pointer;
 }
 
 // ================================

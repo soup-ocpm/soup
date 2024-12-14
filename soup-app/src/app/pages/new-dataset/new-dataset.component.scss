@@ -117,7 +117,7 @@ mat-stepper {
 }
 
 .action-button:hover {
-  color: #ffac1c;
+  color: var(--primary-color);
 }
 
 .color-entity {
@@ -212,13 +212,13 @@ mat-stepper {
 }
 
 .text-font {
-  color: black;
+  color: var(--secondary-color);
   font-family: 'Times New Roman', Times, serif;
 }
 
 .text-font-p {
   font-size: 17px;
-  color: black;
+  color: var(--secondary-color);
   font-family: 'Times New Roman', Times, serif;
 }
 
@@ -315,7 +315,7 @@ mat-divider {
   font-size: 1.5rem;
 }
 .action-icon:hover {
-  color: #ffac1c;
+  color: var(--primary-color);
 }
 
 .action-icon-delete:hover {

@@ -1,12 +1,12 @@
 <mat-card
   class="docker-tile"
-  (mouseenter)="onMouseEnter()"
-  (mouseleave)="onMouseLeave()">
+  (mouseenter)="this.onMouseEnter()"
+  (mouseleave)="this.onMouseLeave()">
   <mat-progress-bar
     class="progress-bar-my"
     mode="indeterminate"
     style="margin-bottom: 3px"
-    *ngIf="isLoadingButton"></mat-progress-bar>
+    *ngIf="this.isLoading"></mat-progress-bar>
   <div class="tile-row">
     <div class="tile-title">
       <p style="margin-left: 5px">Container name :</p>
@@ -52,7 +52,7 @@
       class="actions"
       style="margin-top: 5px">
       <div
-        *ngIf="this.container?.status && !isLoadingButton"
+        *ngIf="this.container?.status && !this.isLoading"
         style="margin-top: 5px">
         <div class="button-action">
           <app-s-button-t
@@ -63,7 +63,7 @@
         </div>
       </div>
       <div
-        *ngIf="!this.container?.status && !isLoadingButton"
+        *ngIf="!this.container?.status && !this.isLoading"
         style="margin-top: 5px">
         <div class="button-action">
           <app-s-button-t

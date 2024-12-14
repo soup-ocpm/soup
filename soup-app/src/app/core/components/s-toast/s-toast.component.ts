@@ -2,7 +2,7 @@ import { CommonModule } from '@angular/common';
 import { Component, Input, OnInit } from '@angular/core';
 
 import { ToastLevel } from '../../enums/toast_type.enum';
-import { NotificationService } from '../../services/toast.service';
+import { NotificationService } from './toast.service';
 
 @Component({
   selector: 'app-s-toast',
@@ -42,7 +42,9 @@ export class SToastComponent implements OnInit {
     });
   }
 
-  // Show the Toast message
+  /**
+   * Show the toast message
+   */
   public show() {
     const toastElement: Element | null = document.querySelector('.toast');
     if (toastElement) {
@@ -53,7 +55,9 @@ export class SToastComponent implements OnInit {
     }
   }
 
-  // Hide the Toast message
+  /**
+   * Hide toast message
+   */
   public hide() {
     const toastElement: Element | null = document.querySelector('.toast');
     if (toastElement) {

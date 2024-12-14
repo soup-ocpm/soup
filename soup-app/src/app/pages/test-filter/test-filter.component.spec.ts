@@ -1,18 +1,18 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
-import { GraphDatasetComponent } from './graph-dataset.component';
+import { TestFilterComponent } from './test-filter.component';
 
-describe('GraphDatasetComponent', () => {
-  let component: GraphDatasetComponent;
-  let fixture: ComponentFixture<GraphDatasetComponent>;
+describe('TestFilterComponent', () => {
+  let component: TestFilterComponent;
+  let fixture: ComponentFixture<TestFilterComponent>;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [GraphDatasetComponent]
+      imports: [TestFilterComponent]
     })
     .compileComponents();
 
-    fixture = TestBed.createComponent(GraphDatasetComponent);
+    fixture = TestBed.createComponent(TestFilterComponent);
     component = fixture.componentInstance;
     fixture.detectChanges();
   });

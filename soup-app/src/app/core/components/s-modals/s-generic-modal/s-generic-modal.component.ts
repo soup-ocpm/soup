@@ -1,8 +1,8 @@
 import { CommonModule } from '@angular/common';
 import { Component, Input, OnInit, Output } from '@angular/core';
 
-import { ModalService } from '../../../services/modal.service';
 import { SButtonTComponent } from '../../s-buttons/s-button-t/s-button-t.component';
+import { ModalService } from '../modal.service';
 
 @Component({
   selector: 'app-s-generic-modal',
@@ -70,7 +70,9 @@ export class GenericModalComponent implements OnInit {
     });
   }
 
-  // Handle the click to the primary button
+  /**
+   * Click to te primary button
+   */
   public onClickPrimaryButton(): void {
     if (typeof this.primaryButtonClick === 'function') {
       this.primaryButtonClick();
@@ -78,7 +80,9 @@ export class GenericModalComponent implements OnInit {
     this.isVisible = false;
   }
 
-  // Handle the click to the secondary button
+  /**
+   * Click to the secondary button
+   */
   public onClickSecondaryButton(): void {
     if (typeof this.secondaryButtonClick === 'function') {
       this.secondaryButtonClick();

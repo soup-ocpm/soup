@@ -2,9 +2,9 @@ import { CommonModule } from '@angular/common';
 import { Component, EventEmitter, Input, Output } from '@angular/core';
 
 import { SButtonTComponent } from '../../core/components/s-buttons/s-button-t/s-button-t.component';
+import { NotificationService } from '../../core/components/s-toast/toast.service';
 import { ToastLevel } from '../../core/enums/toast_type.enum';
 import { LoggerService } from '../../core/services/logger.service';
-import { NotificationService } from '../../core/services/toast.service';
 import { Container } from '../../models/docker_container.model';
 import { DockerService } from '../../services/docker_container.service';
 import { MaterialModule } from '../../shared/modules/materlal.module';
@@ -32,7 +32,7 @@ export class DockerTileComponent {
   public isHovered = false;
 
   // Loading status
-  public isLoadingButton = false;
+  public isLoading = false;
 
   /**
    * Constructor for DockerTileComponent component
@@ -46,24 +46,32 @@ export class DockerTileComponent {
     private messageService: NotificationService
   ) {}
 
-  // Mouse enter
-  public onMouseEnter() {
+  /**
+   * On mouse enter
+   */
+  public onMouseEnter(): void {
     this.isHovered = true;
   }
 
-  // Mose leave
-  public onMouseLeave() {
+  /**
+   * On mouse leave
+   */
+  public onMouseLeave(): void {
     this.isHovered = false;
   }
 
-  // Choice the container
-  public choiceContainer() {
+  /**
+   * Select the container
+   */
+  public choiceContainer(): void {
     this.containerClick.emit(this.container);
   }
 
-  // Handle the start container
+  /**
+   * Start container
+   */
   public startContainer(): void {
-    this.isLoadingButton = true;
+    this.isLoading = true;
 
     this.dockerService.startContainer(this.container!.id).subscribe({
       next: (response) => {
@@ -74,18 +82,20 @@ export class DockerTileComponent {
       error: (error) => {
         const errorData: any = error;
         this.loggerService.error(errorData);
-        this.isLoadingButton = false;
+        this.isLoading = false;
         this.messageService.show('Unable to start the Docker Container. Retry', ToastLevel.Error, 3000);
       },
       complete: () => {
-        this.isLoadingButton = false;
+        this.isLoading = false;
       }
     });
   }
 
-  // Handle the stop container
+  /**
+   * Stop the container
+   */
   public stopContainer(): void {
-    this.isLoadingButton = true;
+    this.isLoading = true;
 
     this.dockerService.stopContainer(this.container!.id).subscribe({
       next: (response) => {
@@ -99,7 +109,7 @@ export class DockerTileComponent {
         this.messageService.show('Unable to stop the Docker Container. Retry', ToastLevel.Error, 3000);
       },
       complete: () => {
-        this.isLoadingButton = false;
+        this.isLoading = false;
       }
     });
   }

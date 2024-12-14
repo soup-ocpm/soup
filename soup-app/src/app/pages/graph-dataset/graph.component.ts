@@ -4,24 +4,34 @@ import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import * as d3 from 'd3';
 import * as dagreD3 from 'dagre-d3';
+import saveAs from 'file-saver';
+import { concatMap, from, map, Observable, toArray } from 'rxjs';
 
+import { SButtonComponent } from '../../core/components/s-buttons/s-button/s-button.component';
 import { SDividerComponent } from '../../core/components/s-divider/s-divider.component';
+import { ModalService } from '../../core/components/s-modals/modal.service';
+import { SSpinnerOneComponent } from '../../core/components/s-spinners/s-spinner-one/s-spinner-one.component';
+import { NotificationService } from '../../core/components/s-toast/toast.service';
 import { ToastLevel } from '../../core/enums/toast_type.enum';
+import { ApiResponse } from '../../core/models/api_response.model';
 import { LoggerService } from '../../core/services/logger.service';
-import { NotificationService } from '../../core/services/toast.service';
 import { Dataset } from '../../models/dataset.model';
+import { DatasetService } from '../../services/datasets.service';
 import { GenericGraphService } from '../../services/generic_graph.service';
+import { JSONDataService } from '../../services/json_data.service';
+import { StandardGraphService } from '../../services/standard_graph.service';
 import { MaterialModule } from '../../shared/modules/materlal.module';
 import { LocalDataService } from '../../shared/services/support.service';
+import { JsonObject } from '../details-dataset/details-dataset.component';
 
 @Component({
-  selector: 'app-dagre-d3',
+  selector: 'app-graph',
   standalone: true,
-  imports: [CommonModule, MaterialModule, FormsModule, SDividerComponent],
-  templateUrl: './dagre-d3.component.html',
-  styleUrl: './dagre-d3.component.scss'
+  imports: [CommonModule, MaterialModule, FormsModule, SDividerComponent, SButtonComponent, SSpinnerOneComponent],
+  templateUrl: './graph.component.html',
+  styleUrl: './graph.component.scss'
 })
-export class DagreD3Component implements OnInit, AfterViewInit {
+export class GraphComponent implements OnInit, AfterViewInit {
   // The dataset name
   public currentDataset: Dataset | undefined;
 
@@ -46,6 +56,21 @@ export class DagreD3Component implements OnInit, AfterViewInit {
   // All type of relationships
   public allRelationships: { name: string; selected: boolean }[] = [];
 
+  // List of node type (rectangular or circular)
+  public allNodesViewType: string[] = ['Rectangular', 'Circular'];
+
+  // Selected the type of node
+  public nodeViewType = 'Rectangular';
+
+  // The weight scale for relationships weight
+  private weightScale: any;
+
+  // Map for track colors for Edges
+  public relationLabelColors: Map<string, string> = new Map<string, string>();
+
+  // The search
+  public searchTerm = '';
+
   // Search string by User for search nodes or links
   public searchQuery = '';
 
@@ -54,9 +79,6 @@ export class DagreD3Component implements OnInit, AfterViewInit {
 
   // Result about the search or not
   public researched: boolean | undefined;
-
-  // If the user search node or links
-  public isSearchMode = false;
 
   // The current tab inside the Search sidebar tabber
   public currentTabIndex = 0;
@@ -76,8 +98,11 @@ export class DagreD3Component implements OnInit, AfterViewInit {
   // Loading nodes for scrollbar
   public loadingFewData = false;
 
-  // Selected researched Node
+  // Selected the researched node
   public selectedNode: any;
+
+  // Selected the researched edge
+  public selectedEdge: any;
 
   // Selected result for searched Node
   public selectedResult: any;
@@ -85,14 +110,41 @@ export class DagreD3Component implements OnInit, AfterViewInit {
   // Properties of the researched Node
   public propertiesSelectedNode: any = [];
 
+  // If the user search node or links
+  public isSearchMode = false;
+
   // If the card for node properties is show or not
   public isShowCardProperties: boolean | undefined;
 
   // If the user watch the search sidebar
   public isShowSearchSidebar = false;
 
-  // Map for track colors for Edges
-  public relationLabelColors: Map<string, string> = new Map<string, string>();
+  // If the user watch the manage graph sidebar
+  public isShowManageGraphSidebar = false;
+
+  // If the sidebar of JSON is open or not
+  public isOpenJSONSidebar = false;
+
+  // If the user attend download the json
+  public isLoadingJsonDownload = false;
+
+  // If the menu sidebar is open or not
+  public isOpenMenuSidebar = false;
+
+  // If the search sidebar is open or not
+  public isOpenSearchSidebar = false;
+
+  // The loading state
+  public isLoading = false;
+
+  // If the user come to view the standard graph or class
+  public isViewStandardGraph = false;
+
+  // The json object list
+  public jsonList: JsonObject[] = [];
+
+  // List of the selected json content
+  public selectedJson: string[] = [];
 
   // ElementRef container to show SVG of the Graph.
   @ViewChild('graphSvg', { static: true }) graphContainer!: ElementRef;
@@ -122,35 +174,27 @@ export class DagreD3Component implements OnInit, AfterViewInit {
     '#673ab7'
   ];
 
-  // If the user come to view the standard graph or class
-  public isViewStandardGraph = true;
-
-  // The search
-  public searchTerm = '';
-
-  // If the menu sidebar is open or not
-  public isOpenMenuSidebar = false;
-
-  // If the search sidebar is open or not
-  public isOpenSearchSidebar = false;
-
-  // The loading state
-  public isLoading = false;
-
   /**
-   * Constructor for DagreD3Component component
-   * @param router the Router
-   * @param toast the NotificationService service
-   * @param activatedRoute the ActivatedRoute
-   * @param loggerService the LoggerService service
-   * @param genericGraphService the GenericGraphService service
-   * @param supportService the SupportService service
+   * Constructor for
+   * @param router
+   * @param toast
+   * @param activatedRoute
+   * @param modalService
+   * @param datasetService
+   * @param jsonDataService
+   * @param logService
+   * @param genericGraphService
+   * @param supportService
    */
   constructor(
     private router: Router,
     private toast: NotificationService,
     private activatedRoute: ActivatedRoute,
-    private loggerService: LoggerService,
+    private modalService: ModalService,
+    private datasetService: DatasetService,
+    private jsonDataService: JSONDataService,
+    private logService: LoggerService,
+    private standardGraphService: StandardGraphService,
     private genericGraphService: GenericGraphService,
     private supportService: LocalDataService
   ) {}
@@ -169,8 +213,9 @@ export class DagreD3Component implements OnInit, AfterViewInit {
       this.router.navigate(['/welcome']);
       return;
     }
+
+    this.populateJsonContent();
     this.g = new dagreD3.graphlib.Graph().setGraph({ rankdir: 'LR' });
-    this.createGraphVisualization(this.graphContainer, 'myGraphContainer');
   }
 
   // NgAfterViewInit implementation
@@ -202,7 +247,7 @@ export class DagreD3Component implements OnInit, AfterViewInit {
       },
       error: (errorData) => {
         const apiResponse: any = errorData;
-        this.loggerService.error(apiResponse);
+        this.logService.error(apiResponse);
         this.isLoading = false;
         this.toast.show('Unable to retrieve Graph. Retry', ToastLevel.Error, 3000);
         this.router.navigate(['/datasets', this.currentDataset!.name]);
@@ -283,54 +328,70 @@ export class DagreD3Component implements OnInit, AfterViewInit {
       const width: number = container.clientWidth;
       const height: number = container.clientHeight;
 
+      // Create graph
       this.g = new dagreD3.graphlib.Graph({ multigraph: true, compound: true }).setGraph({ rankdir: 'LR', nodesep: 25, multiedgesep: 10 });
 
-      this.nodes.forEach((node: any): void => {
-        const nodeId = node['id'];
-        const nodeName = node['ActivityName'];
-        const nodeProperties: any = {
-          label: nodeName
+      // Add nodes
+      this.nodes.forEach((node: any) => {
+        const nodeProperties = {
+          label: node.ActivityName,
+          Event_Id: node.Event_Id,
+          someProperty: node.someProperty
         };
-
-        for (const prop in node) {
-          if (Object.prototype.hasOwnProperty.call(node, prop)) {
-            nodeProperties[prop] = node[prop];
-          }
-        }
-        this.g.setNode(nodeId, nodeProperties, node['Event_Id']);
+        this.g.setNode(node.id, nodeProperties);
       });
 
+      // Add node styles
       this.g.nodes().forEach((v: any): void => {
         const node = this.g.node(v);
         node.rx = node.ry = 5;
-        node.style = 'fill: #fff; stroke: #000; stroke-width: 2px; cursor: pointer';
+        node.style = 'fill: #fff; stroke: #000; stroke-width: 2px; cursor: pointer'; // Aggiungi cursor: pointer per i nodi
       });
 
+      const uniqueEdgeWeight: Set<any> = new Set<any>();
+
+      this.edges.forEach((edge: any): void => {
+        if (edge != null && edge.weight != null) {
+          uniqueEdgeWeight.add(edge.weight);
+        }
+      });
+
+      const sortedWeightArray = Array.from(uniqueEdgeWeight).sort((a, b) => a - b);
+
+      this.weightScale = d3
+        .scaleLinear()
+        .domain([sortedWeightArray[0], sortedWeightArray[sortedWeightArray.length - 1]])
+        .range([2, 5]);
+
+      // Add edges
       this.edges.forEach((edge: any): void => {
         if (edge.label && edge.source.id && edge.target.id) {
           const color: string = this.relationLabelColors.get(edge.label) || '#3f51b5';
+          const strokeWidth: number = this.weightScale(edge.weight);
+
           this.g.setEdge(
             `${edge.source.id}`,
             `${edge.target.id}`,
             {
               weight: edge.weight,
               label: `${edge.label}` + `: ${edge.weight}`,
-              style: `stroke: ${color}; fill: rgba(219, 219, 219, 0);`,
+              style: `stroke: ${color}; stroke-width: ${strokeWidth}px; fill: rgba(219, 219, 219, 0);`,
               arrowheadStyle: `fill: ${color} ;`,
               curve: d3.curveBasis,
-              labelpos: 'c',
+              labelpos: 'c', // label position to center
               labeloffset: 5,
-              extensible: true
+              extensible: true,
+              labelStyle: 'font-size: 2.3em'
             },
             edge.label
           );
         }
       });
 
-      // Create the render for the SVG
+      // Create renderer for d3
       const render: dagreD3.Render = new dagreD3.render();
 
-      // Set up an SVG group to render the graph
+      // Configure the SVG
       const svg = d3
         .select(graphContainer.nativeElement)
         .attr('viewBox', `0 0 ${width} ${height}`)
@@ -338,16 +399,32 @@ export class DagreD3Component implements OnInit, AfterViewInit {
 
       const svgGroup = svg.append('g');
 
-      // Inizializza lo zoom
+      // Initialize the zoom
       this.initializePanZoom(svg, svgGroup);
 
-      // Render del grafo
+      // Render the graph
       render(svgGroup as any, this.g as any);
 
-      svgGroup.selectAll('g.node').on('click', (event) => {
-        const nodeId = event.currentTarget.getAttribute('id');
-        this.selectNode(nodeId);
-      });
+      // Estrarre il contenuto dell'SVG come stringa
+      const svgContent = svg.node().outerHTML;
+
+      // Invio al backend tramite una POST
+      if (this.currentDataset!.svg === null) {
+        this.publishSVG(svgContent, this.currentDataset!.name);
+      }
+
+      // Add listener for nodes
+      svgGroup
+        .selectAll('g.node')
+        .attr('id', (d: any) => d) // Assegna l'ID al nodo
+        .on('click', (event) => {
+          const nodeId = event.currentTarget.getAttribute('id');
+          if (nodeId) {
+            this.selectNodeSearched(nodeId);
+          } else {
+            console.error('Node ID is null or undefined');
+          }
+        });
 
       this.displayedNodes = this.nodes.slice(0, this.itemsPerPage);
       this.displayedEdges = this.edges.slice(0, this.itemsPerPage);
@@ -417,13 +494,6 @@ export class DagreD3Component implements OnInit, AfterViewInit {
   }
 
   /**
-   * If the user is search data
-   */
-  private isSearchingMode(): boolean {
-    return this.searchQuery != '' ? true : false;
-  }
-
-  /**
    * Scroll the nodes inside the Sidebar
    */
   public onScrollNodes(): void {
@@ -484,6 +554,13 @@ export class DagreD3Component implements OnInit, AfterViewInit {
   }
 
   /**
+   * If the user is search data
+   */
+  private isSearchingMode(): boolean {
+    return this.searchQuery != '' ? true : false;
+  }
+
+  /**
    * Filter nodes
    */
   public searchData(): void {
@@ -508,7 +585,9 @@ export class DagreD3Component implements OnInit, AfterViewInit {
     }
   }
 
-  // Metodo per resettare lo stato di scroll
+  /**
+   * Reset scroll state for nodes
+   */
   private resetScrollNodeState(): void {
     if (this.scrollNodeContainer) {
       const element = this.scrollNodeContainer.nativeElement;
@@ -516,7 +595,9 @@ export class DagreD3Component implements OnInit, AfterViewInit {
     }
   }
 
-  // Metodo per resettare lo stato di scroll
+  /**
+   * Reset scroll state for edges
+   */
   private resetScrollEdgeState(): void {
     if (this.scrollEdgesContainer) {
       const element = this.scrollEdgesContainer.nativeElement;
@@ -525,58 +606,20 @@ export class DagreD3Component implements OnInit, AfterViewInit {
   }
 
   /**
-   * Select specific node
-   * @param nodeId the node id
-   */
-  public selectNode(nodeId: string): void {
-    const nodeElement = d3.select(`g.node[id="${nodeId}"]`).node() as SVGGraphicsElement;
-
-    if (!nodeElement) {
-      return;
-    }
-
-    const node = this.g.node(nodeId);
-
-    this.nodes.forEach((currentNode: any) => {
-      if (currentNode['EventID'] == node['EventID']) {
-        console.log('Sono dentro ');
-      }
-    });
-  }
-
-  /**
-   * Search inside the EKG
-   */
-  public graphSearch(): void {
-    this.searchResults = this.nodes.filter((node: any) => {
-      for (const key in node) {
-        if (node[key] && node[key].toString().toLowerCase().includes(this.searchQuery.toLowerCase())) {
-          return true;
-        }
-      }
-
-      for (const edge of this.edges) {
-        for (const key in edge) {
-          if (edge[key] && edge[key].toString().toLowerCase().includes(this.searchQuery.toLowerCase())) {
-            return true;
-          }
-        }
-      }
-      return false;
-    });
-    this.researched = true;
-  }
-
-  /**
    * Select class node
    * @param searched the searched node
    */
   public selectNodeSearched(searched: any): void {
-    if (this.selectedNode) {
+    if (this.selectedNode && (this.selectedNode.id === searched.id || this.selectedNode.id == searched)) {
+      this.closeNodeSearched();
       return;
     }
 
-    const node = this.g.node(searched.id);
+    let node = this.g.node(searched);
+
+    if (searched.id != null) {
+      node = this.g.node(searched.id);
+    }
 
     if (node) {
       this.selectedResult = searched;
@@ -585,7 +628,7 @@ export class DagreD3Component implements OnInit, AfterViewInit {
       const centerX = node.x;
       const centerY = node.y;
 
-      node.style = 'fill: #8AC5FF; stroke: #488FEF; stroke-width: 2px';
+      node.style = 'fill: #ffac1c;; stroke: #faa614; stroke-width: 2px; cursor:pointer; ';
 
       const zoomTransform = d3.zoomIdentity.translate(-centerX, -centerY).scale(2);
       this.svg.call(this.zoom.transform, zoomTransform);
@@ -603,48 +646,39 @@ export class DagreD3Component implements OnInit, AfterViewInit {
   }
 
   /**
-   * Select class node
-   * @param searched the searched node
+   * Select and highlight an edge
+   * @param edgeId the ID of the edge to be highlighted
    */
-  public selecEdgeSearched(searched: any): void {
-    if (this.selectedNode) {
+  public selectEdgeSearched(edgeId: string): void {
+    if (this.selectedEdge) {
       return;
     }
 
-    const node = this.g.node(searched.id);
+    // Trova l'arco in base all'ID
+    const edge = this.g.edge(edgeId);
 
-    if (node) {
-      this.selectedResult = searched;
+    if (edge) {
+      this.selectedEdge = edge;
 
-      this.selectedNode = node;
-      const centerX = node.x;
-      const centerY = node.y;
+      // Imposta lo stile dell'arco selezionato
+      edge.style = 'stroke: #FF6347; stroke-width: 3px;'; // Cambia il colore e lo spessore dell'arco
 
-      node.style = 'fill: #8AC5FF; stroke: #488FEF; stroke-width: 2px';
+      // Trova i nodi associati a questo arco
+      const sourceNode = this.g.node(edge.source);
+      const targetNode = this.g.node(edge.target);
 
+      // Calcola il centro dell'arco per centrare la visualizzazione
+      const centerX = (sourceNode.x + targetNode.x) / 2;
+      const centerY = (sourceNode.y + targetNode.y) / 2;
+
+      // Zoom sulla parte centrale dell'arco
       const zoomTransform = d3.zoomIdentity.translate(-centerX, -centerY).scale(2);
       this.svg.call(this.zoom.transform, zoomTransform);
 
+      // Rende di nuovo il grafo con il nuovo stato
       const render = new dagreD3.render();
       render(this.svg, this.g);
-
-      this.nodes.forEach((nodeStandard: any) => {
-        if (this.selectedNode.id != null && this.selectedNode.id == nodeStandard.id) {
-          this.propertiesSelectedNode = Object.entries(nodeStandard);
-          this.isShowCardProperties = true;
-        }
-      });
     }
-  }
-
-  // Metodo che viene chiamato quando la tab cambia
-  public onTabChange(event: any): void {
-    this.currentTabIndex = event.index;
-    this.currentPage = 1;
-    this.isSearchMode = false;
-    this.searchTerm = '';
-    this.displayedNodes = this.nodes.slice(0, this.itemsPerPage);
-    this.displayedEdges = this.edges.slice(0, this.itemsPerPage);
   }
 
   /**
@@ -653,13 +687,6 @@ export class DagreD3Component implements OnInit, AfterViewInit {
   public closeCardProperties(): void {
     this.isShowCardProperties = false;
     this.closeNodeSearched();
-  }
-
-  /**
-   * Handle the click for open Sidebar for search nodes
-   */
-  public toggleSidebarSearch(): void {
-    this.isShowSearchSidebar = true;
   }
 
   /**
@@ -680,10 +707,22 @@ export class DagreD3Component implements OnInit, AfterViewInit {
   }
 
   /**
+   * Change the tab
+   */
+  public onTabChange(event: any): void {
+    this.currentTabIndex = event.index;
+    this.currentPage = 1;
+    this.isSearchMode = false;
+    this.searchTerm = '';
+    this.displayedNodes = this.nodes.slice(0, this.itemsPerPage);
+    this.displayedEdges = this.edges.slice(0, this.itemsPerPage);
+  }
+
+  /**
    * Filter nodes by the search term
    */
   public filterNodes(): any[] {
-    const standardNodeFiltered = new Set<any>(); // Utilizzo di Set per evitare duplicati
+    const standardNodeFiltered = new Set<any>();
 
     if (!this.searchTerm) {
       return this.displayedNodes;
@@ -698,14 +737,14 @@ export class DagreD3Component implements OnInit, AfterViewInit {
       }
     });
 
-    return Array.from(standardNodeFiltered); // Converte il Set in un array
+    return Array.from(standardNodeFiltered);
   }
 
   /**
    * Filter edges by the search term
    */
   public filterEdges(): any[] {
-    const standardEdgeFiltered = new Set<any>(); // Utilizzo di Set per evitare duplicati
+    const standardEdgeFiltered = new Set<any>();
 
     if (!this.searchTerm) {
       return this.displayedEdges;
@@ -741,6 +780,166 @@ export class DagreD3Component implements OnInit, AfterViewInit {
   }
 
   /**
+   * Change the node view type
+   * @param event the new type
+   */
+  public onChangeNodeView(event: any): void {
+    this.nodeViewType = event;
+
+    this.g.nodes().forEach((v: any): void => {
+      const node = this.g.node(v);
+      node.rx = node.ry = 5;
+      if (this.nodeViewType == 'Circular') {
+        node.shape = 'circle';
+      } else {
+        node.shape = 'rect';
+      }
+    });
+
+    const render = new dagreD3.render();
+    render(this.svg, this.g);
+  }
+  /**
+   * Change relationships view
+   * @param relationship the relationship
+   * @param event the event
+   */
+  public onChangeRelationshipsView(relationship: { name: string; selected: boolean }, event: any): void {
+    if (event == false) {
+      this.g.edges().forEach((e: any): void => {
+        if (e.name == relationship.name) {
+          this.g.removeEdge(e);
+        }
+      });
+    } else {
+      this.edges.forEach((edge: any): void => {
+        if (edge.label && edge.source.id && edge.target.id && edge.label == relationship.name) {
+          const color: string = this.relationLabelColors.get(edge.label) || '#3f51b5';
+          const strokeWidth: number = this.weightScale(edge.weight);
+
+          this.g.setEdge(
+            `${edge.source.id}`,
+            `${edge.target.id}`,
+            {
+              label: `${edge.label}` + `: ${edge.weight}`,
+              style: `stroke: ${color}; stroke-width: ${strokeWidth}px; fill: rgba(219, 219, 219, 0);`,
+              arrowheadStyle: `fill: ${color} ;`,
+              curve: d3.curveBasis,
+              labelpos: 'c',
+              labeloffset: 5,
+              extensible: true
+            },
+            edge.label
+          );
+        }
+      });
+    }
+
+    const render = new dagreD3.render();
+    render(this.svg, this.g);
+  }
+
+  /**
+   * Method that allow to get the toggle json object for
+   * donwload the json content.
+   * @param entity the selected entity
+   */
+  public selectionJson(entity: any): void {
+    if (entity.isSelected) {
+      this.selectedJson.push(entity.name);
+    } else {
+      this.selectedJson = this.selectedJson.filter((item) => item !== entity.name);
+    }
+  }
+
+  /**
+   * Reset the entity choice
+   */
+  public resetJsonSelection(): void {
+    this.selectedJson = [];
+
+    this.jsonList.forEach((object) => {
+      object.isSelected = false;
+    });
+  }
+
+  /**
+   * Download JSON content
+   */
+  public downloadJsonSelected(): void {
+    const requests: { name: string; observable: Observable<ApiResponse<any>> }[] = [];
+
+    this.isLoadingJsonDownload = true;
+
+    this.selectedJson.forEach((selection) => {
+      switch (selection) {
+        case 'Event nodes':
+          requests.push({ name: 'Event nodes', observable: this.jsonDataService.eventNodeJSON() });
+          break;
+        case 'Entity nodes':
+          requests.push({ name: 'Entity nodes', observable: this.jsonDataService.entityNodeJSON() });
+          break;
+        case ':CORR links':
+          requests.push({ name: ':CORR links', observable: this.jsonDataService.corrLinkJSON() });
+          break;
+        case ':DF links':
+          requests.push({ name: ':DF links', observable: this.jsonDataService.dfLinkJSON() });
+          break;
+      }
+    });
+
+    if (requests.length === 0) {
+      return;
+    }
+
+    from(requests)
+      .pipe(
+        concatMap((request) => request.observable.pipe(map((response) => ({ name: request.name, data: response.responseData })))),
+        toArray()
+      )
+      .subscribe({
+        next: (results) => {
+          results.forEach((result) => {
+            const filename = `${result.name}-data.json`;
+            const blob = new Blob([JSON.stringify(result.data, null, 2)], { type: 'application/json' });
+            saveAs(blob, filename);
+          });
+
+          this.isLoadingJsonDownload = false;
+          this.isOpenJSONSidebar = false;
+          this.resetJsonSelection();
+          this.toast.show('Json files downloaded successfully', ToastLevel.Success, 3000);
+        },
+        error: (err) => {
+          console.error('Error during download:', err);
+        }
+      });
+  }
+
+  /**
+   * Open or close the JSON sidebar
+   */
+  public handleJSONSidebar(): void {
+    this.isOpenJSONSidebar = !this.isOpenJSONSidebar;
+  }
+
+  /**
+   * Export the SVG
+   */
+  public exportSvg(): void {
+    const svgContent = document.querySelector('#myGraphContainer svg');
+    if (svgContent != null) {
+      const svgBlob = new Blob([svgContent.outerHTML], { type: 'image/svg+xml' });
+      saveAs(svgBlob, 'graph.svg');
+    }
+  }
+
+  /**
+   * Open dialog for delete the class graph
+   */
+  public openDialogDelete(): void {}
+
+  /**
    * Leave the graph page
    */
   public leavePage(): void {
@@ -759,5 +958,82 @@ export class DagreD3Component implements OnInit, AfterViewInit {
    */
   public handleSearchData(): void {
     this.isOpenSearchSidebar = true;
+  }
+
+  /**
+   * Handle the click for manage graph sidebar
+   */
+  public handleGraphSidebarManager(): void {
+    this.isShowManageGraphSidebar = true;
+  }
+
+  /**
+   * Handle the click for delete EKG
+   */
+  public handleDeleteGraph(): void {
+    this.modalService.showGenericModal(
+      'Delete Dataset?',
+      'The Dataset will be completely removed.',
+      true,
+      'Delete',
+      '#FF0000',
+      'Cancel',
+      '#000000',
+      () => this.deleteDataset(),
+      () => {
+        this.modalService.hideGenericModal();
+      }
+    );
+  }
+
+  /**
+   * Delete the Dataset (and EKG)
+   */
+  private deleteDataset(): void {
+    if (this.currentDataset != null) {
+      this.datasetService.deleteDataset(this.currentDataset!.name).subscribe({
+        next: (response) => {
+          if (response.statusCode == 200) {
+            this.toast.show('Dataset deleted successfully', ToastLevel.Success, 3000);
+            this.supportService.removeCurrentDataset();
+            this.router.navigate(['/welcome']);
+          }
+        },
+        error: (error) => {
+          const apiResponse: any = error;
+          this.logService.error(apiResponse);
+          this.toast.show('Unable to delete the Dataset. Please retry', ToastLevel.Error, 3000);
+        },
+        complete: () => {}
+      });
+    }
+  }
+
+  /**
+   * Add the json object
+   */
+  private populateJsonContent(): void {
+    if (!this.isViewStandardGraph) {
+      this.jsonList.push(new JsonObject('Class nodes', false));
+      this.jsonList.push(new JsonObject(':OBS links', false));
+      this.jsonList.push(new JsonObject(':DFC links', false));
+    } else {
+      this.jsonList.push(new JsonObject('Event nodes', false));
+      this.jsonList.push(new JsonObject('Entity nodes', false));
+      this.jsonList.push(new JsonObject(':CORR links', false));
+      this.jsonList.push(new JsonObject(':DF links', false));
+    }
+  }
+
+  /**
+   * Send the svg to the engine
+   * @param svg the svg
+   */
+  private publishSVG(svg: string, datasetName: string): void {
+    this.standardGraphService.sendSVG(svg, datasetName).subscribe({
+      next: () => {},
+      error: () => {},
+      complete: () => {}
+    });
   }
 }

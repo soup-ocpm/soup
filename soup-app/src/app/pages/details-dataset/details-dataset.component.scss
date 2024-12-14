@@ -65,7 +65,7 @@
 
 .bold {
   font-weight: bold;
-  color: #ffac1c;
+  color: var(--primary-color);
 }
 
 .bold-two {
@@ -90,7 +90,6 @@
   box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
 }
 
-/* Aggiungere media queries per adattabilità */
 @media (max-width: 768px) {
   .content {
     flex-direction: column;

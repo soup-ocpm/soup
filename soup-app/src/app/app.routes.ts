@@ -1,6 +1,7 @@
 import { Routes } from '@angular/router';
 
 import { DatasetAuthGuard } from './guards/dataset_guard.guard';
+import { GenericAuthGuard } from './guards/generic_guard.guard';
 import { WelcomeComponent } from './pages/welcome/welcome.component';
 
 // Application routes
@@ -17,7 +18,8 @@ export const routes: Routes = [
   {
     path: 'new-dataset',
     loadComponent: () => import('./pages/new-dataset/new-dataset.component').then((c) => c.NewDatasetComponent),
-    data: { animation: 'NewDatasetPage' }
+    data: { animation: 'NewDatasetPage' },
+    canActivate: [GenericAuthGuard]
   },
   {
     path: 'datasets',
@@ -28,13 +30,18 @@ export const routes: Routes = [
     path: 'datasets/:name',
     loadComponent: () => import('./pages/details-dataset/details-dataset.component').then((c) => c.DetailsDatasetComponent),
     data: { animation: 'DetailsDatasetPage' },
-    canActivate: [DatasetAuthGuard]
+    canActivate: [DatasetAuthGuard, GenericAuthGuard]
   },
   {
     path: 'datasets/:name/graph',
-    loadComponent: () => import('./pages/dagre-d3/dagre-d3.component').then((c) => c.DagreD3Component),
+    loadComponent: () => import('./pages/graph-dataset/graph.component').then((c) => c.GraphComponent),
     data: { animatation: 'GraphDatasetPage' },
-    canActivate: [DatasetAuthGuard]
+    canActivate: [DatasetAuthGuard, GenericAuthGuard]
+  },
+  {
+    path: 'test',
+    loadComponent: () => import('./pages/test-filter/test-filter.component').then((c) => c.TestFilterComponent),
+    data: { animatation: 'TestFilterPage' }
   },
   {
     path: '**',

@@ -13,7 +13,7 @@ export class SButtonTComponent {
   @Input() text = '';
 
   // The button color
-  @Input() color = '#FFAC1C';
+  @Input() color = 'var(--primary-color)';
 
   // If the button is disabled or not
   @Input() disabled = false;
@@ -27,8 +27,10 @@ export class SButtonTComponent {
   // Constructor for SButtonTComponent component
   constructor() {}
 
-  // Handle the click button
-  public onClick() {
+  /**
+   * Click button
+   */
+  public onClick(): void {
     this.buttonClick.emit();
   }
 }

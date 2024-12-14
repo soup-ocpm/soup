@@ -4,7 +4,7 @@
 .progress-bar.indeterminate {
   position: relative;
   animation: progress-indeterminate 2s linear infinite;
-  background-color: #ffac1c;
+  background-color: var(--primary-color);
 }
 
 @keyframes progress-indeterminate {

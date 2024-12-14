@@ -5,8 +5,8 @@ import { FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators } 
 import { DatasetService } from '../../../../services/datasets.service';
 import { MaterialModule } from '../../../../shared/modules/materlal.module';
 import { LoggerService } from '../../../services/logger.service';
-import { ModalService } from '../../../services/modal.service';
 import { SButtonTComponent } from '../../s-buttons/s-button-t/s-button-t.component';
+import { ModalService } from '../modal.service';
 
 @Component({
   selector: 'app-s-input-modal',
@@ -111,7 +111,10 @@ export class InputModalComponent implements OnInit {
     });
   }
 
-  // Handle the click to the primary button
+  /**
+   * Click to the primary button
+   * @returns a void promise
+   */
   public async onClickPrimaryButton(): Promise<void> {
     this.hasError = false;
     this.errorMessage = '';
@@ -156,7 +159,9 @@ export class InputModalComponent implements OnInit {
     });
   }
 
-  // Handle the click to the secondary button
+  /**
+   * Click to the secondary button
+   */
   public onClickSecondaryButton(): void {
     if (typeof this.secondaryButtonClick === 'function') {
       this.secondaryButtonClick();

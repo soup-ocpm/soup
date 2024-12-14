@@ -1,0 +1,31 @@
+<div
+  class="sidebar"
+  [ngClass]="{ open: isOpen }"
+  [ngStyle]="{
+    width: config?.width,
+    backgroundColor: config?.backgroundColor,
+    right: isOpen ? '0' : '-' + (config?.width || '600px')
+  }">
+  <div class="sidebar-header">
+    <h4>{{ config?.title }}</h4>
+    <i
+      class="bi bi-x-lg"
+      (click)="closeSidebar()"></i>
+  </div>
+
+  <div class="sidebar-content">
+    <ng-container *ngTemplateOutlet="content"></ng-container>
+  </div>
+
+  <div
+    class="master-footer"
+    *ngIf="config?.footerButtons?.length">
+    <button
+      *ngFor="let button of config!.footerButtons"
+      (click)="button.action()"
+      class="btn btn-sm"
+      [ngStyle]="{ backgroundColor: button.color || '#007bff', color: '#fff' }">
+      {{ button.label }}
+    </button>
+  </div>
+</div>

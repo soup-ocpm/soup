@@ -13,11 +13,11 @@ import { UMLNode } from '../../components/uml-diagram/models/uml_node';
 import { UmlDiagramComponent } from '../../components/uml-diagram/uml-diagram.component';
 import { SButtonTComponent } from '../../core/components/s-buttons/s-button-t/s-button-t.component';
 import { SButtonComponent } from '../../core/components/s-buttons/s-button/s-button.component';
+import { ModalService } from '../../core/components/s-modals/modal.service';
 import { SProgressbarComponent } from '../../core/components/s-progressbar/s-progressbar.component';
+import { NotificationService } from '../../core/components/s-toast/toast.service';
 import { ToastLevel } from '../../core/enums/toast_type.enum';
 import { LoggerService } from '../../core/services/logger.service';
-import { ModalService } from '../../core/services/modal.service';
-import { NotificationService } from '../../core/services/toast.service';
 import { Entity } from '../../models/entity.mode';
 import { DatasetService } from '../../services/datasets.service';
 import { StandardGraphService } from '../../services/standard_graph.service';
@@ -112,11 +112,8 @@ export class NewDatasetComponent {
   // The edges for the uml
   public umlEdges: UMLEdge[] = [];
 
-  // If the tutorial is show or not
-  public isShowTutorial = true;
-
   // If the upload drag&drop is show or not
-  public isShowUpload = false;
+  public isShowUpload = true;
 
   // If the table is show or not
   public isShowTable = false;
@@ -404,7 +401,7 @@ export class NewDatasetComponent {
       'Do you want to map information about trigger and target',
       true,
       'Yes',
-      '#ffac1c',
+      'var(--primary-color)',
       'No',
       '#000000',
       () => this.createUMLDiagram(),
@@ -578,8 +575,8 @@ export class NewDatasetComponent {
           source: multiplicity.columnOne,
           target: multiplicity.columnTwo,
           multiplicity: {
-            left: multiplicity.multiplicityOne,
-            right: multiplicity.multiplicityTwo
+            leftMultiplicity: multiplicity.multiplicityOne,
+            rightMultiplicity: multiplicity.multiplicityTwo
           }
         });
       });
@@ -637,7 +634,7 @@ export class NewDatasetComponent {
       'Please enter the Dataset information',
       true,
       'Build',
-      '#FFAC1C',
+      'var(--primary-color)',
       'Close',
       '#6c757d',
       (datasetName: string, datasetDescription: string, saveProcessExecution: boolean) => {
@@ -857,7 +854,6 @@ export class NewDatasetComponent {
    * Close the tutorial
    */
   public toggleTutorial(): void {
-    this.isShowTutorial = false;
     this.isShowUpload = true;
   }
 

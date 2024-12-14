@@ -8,13 +8,13 @@ import { concatMap, from, map, Observable, toArray } from 'rxjs';
 
 import { SButtonComponent } from '../../core/components/s-buttons/s-button/s-button.component';
 import { SDividerComponent } from '../../core/components/s-divider/s-divider.component';
+import { ModalService } from '../../core/components/s-modals/modal.service';
 import { SProgressbarComponent } from '../../core/components/s-progressbar/s-progressbar.component';
 import { SSpinnerOneComponent } from '../../core/components/s-spinners/s-spinner-one/s-spinner-one.component';
+import { NotificationService } from '../../core/components/s-toast/toast.service';
 import { ToastLevel } from '../../core/enums/toast_type.enum';
 import { ApiResponse } from '../../core/models/api_response.model';
 import { LoggerService } from '../../core/services/logger.service';
-import { ModalService } from '../../core/services/modal.service';
-import { NotificationService } from '../../core/services/toast.service';
 import { GraphDataEnum } from '../../enums/graph_data.enum';
 import { Dataset } from '../../models/dataset.model';
 import { DetailGraphData } from '../../models/detail_graph_data.model';
@@ -48,7 +48,7 @@ class EntityObject {
 }
 
 // Json object structure
-class JsonObject {
+export class JsonObject {
   // Name
   name = '';
 

@@ -1,0 +1,36 @@
+/* Modal header */
+.modal-header {
+  background-color: #f8f9fa;
+  border-bottom: 1px solid #dee2e6;
+  padding: 15px 20px;
+}
+
+.modal-title {
+  margin: 0;
+  font-weight: 600;
+}
+
+/* Modal body */
+.modal-body {
+  padding: 20px;
+}
+
+/* Styling for form fields */
+.form-group {
+  margin-bottom: 15px;
+}
+
+input.form-control {
+  width: 100%;
+}
+
+.input-group-text {
+  background-color: #fff;
+  cursor: pointer;
+}
+
+/* Modal footer */
+.modal-footer {
+  padding: 10px 15px;
+  border-top: 1px solid #dee2e6;
+}

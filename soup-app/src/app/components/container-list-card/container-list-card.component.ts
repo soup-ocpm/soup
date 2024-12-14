@@ -31,7 +31,7 @@ export class ContainerListCardComponent {
   /**
    * Filter the docker containers
    */
-  public filteredContainers() {
+  public filteredContainers(): Container[] {
     if (!this.searchTerm) {
       return this.dockerContainers;
     }

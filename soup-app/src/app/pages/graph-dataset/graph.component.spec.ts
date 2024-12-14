@@ -1,17 +1,17 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
-import { DagreD3Component } from './dagre-d3.component';
+import { GraphComponent } from './graph.component';
 
-describe('DagreD3Component', () => {
-  let component: DagreD3Component;
-  let fixture: ComponentFixture<DagreD3Component>;
+describe('GraphComponent', () => {
+  let component: GraphComponent;
+  let fixture: ComponentFixture<GraphComponent>;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [DagreD3Component]
+      imports: [GraphComponent]
     }).compileComponents();
 
-    fixture = TestBed.createComponent(DagreD3Component);
+    fixture = TestBed.createComponent(GraphComponent);
     component = fixture.componentInstance;
     fixture.detectChanges();
   });

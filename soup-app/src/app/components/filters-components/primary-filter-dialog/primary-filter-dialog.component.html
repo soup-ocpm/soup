@@ -1,0 +1,19 @@
+<div class="modal-header">
+  <h5 class="modal-title">Select Filter</h5>
+</div>
+<div class="modal-body">
+  <p>Select one of the filters:</p>
+  <ul class="filter-list">
+    <li
+      *ngFor="let filter of filters"
+      class="filter-option"
+      (click)="this.onSelectFilter(filter)">
+      {{ filter }}
+    </li>
+  </ul>
+</div>
+<div class="modal-footer">
+  <app-s-button-t
+    [text]="'Close'"
+    (buttonClick)="this.onModalClose()"></app-s-button-t>
+</div>

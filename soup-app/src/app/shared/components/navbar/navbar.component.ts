@@ -18,14 +18,14 @@ export class NavbarComponent {
   /**
    * Navigate to the home page
    */
-  public goToHome() {
+  public goToHome(): void {
     this.router.navigate(['/welcome']);
   }
 
   /**
    * Go to new dataset page
    */
-  public goToNewDataset() {
+  public goToNewDataset(): void {
     this.router.navigate(['/new-dataset']);
   }
 

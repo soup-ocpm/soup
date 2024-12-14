@@ -1,4 +1,5 @@
 import { Injectable } from '@angular/core';
+import { DomSanitizer } from '@angular/platform-browser';
 
 import { Dataset } from '../../models/dataset.model';
 import { DatasetProcessInfo } from '../../models/dataset_process_info.model';
@@ -22,7 +23,7 @@ export class LocalDataService {
   /**
    * Initialize a new instance of SupportService service
    */
-  constructor() {}
+  constructor(private sanitizer: DomSanitizer) {}
 
   /**
    * Get the dataset filtered column
@@ -65,13 +66,13 @@ export class LocalDataService {
 
   /**
    * Parse the item to Dataset
-   * @param containerId the container id
    * @param item the item
    * @returns a Dataset object
-   * ** corde orrible **
+   * ** orrible code depends on the python variables :( **
    */
   public parseItemToDataset(item: any): Dataset | undefined {
     if (item != null) {
+      // Standard properties
       const dataset = new Dataset();
       dataset.name = item['dataset_name'];
       dataset.description = item['dataset_description'];
@@ -83,6 +84,15 @@ export class LocalDataService {
       dataset.classNodes = item['class_nodes'];
       dataset.obsRel = item['obs_rel'];
       dataset.dfcRel = item['df_c_rel'];
+
+      // Svg content
+      if (item['svg_content'] != null) {
+        dataset.svg = this.formatSvg(item['svg_content']);
+        dataset.svg = this.sanitizer.bypassSecurityTrustHtml(dataset.svg);
+      } else {
+        dataset.svg = null;
+      }
+
       dataset.totalNodes = dataset.eventNodes + dataset.entityNodes;
       dataset.totalRelationships = dataset.corrRel + dataset.dfRel;
 
@@ -94,10 +104,9 @@ export class LocalDataService {
       dataset.valuesColumns = item['values_columns'];
       dataset.allColumns = item['all_columns'];
 
+      // Format the execution process time
       const datasetProcess = new DatasetProcessInfo();
       const processData = item['process_info'];
-
-      // Format the execution process time
       datasetProcess.startNormalExecutionTime = this.formatDateTime(processData['init_time']);
       datasetProcess.finishNormalExecutionTime = this.formatDateTime(processData['finish_time']);
       datasetProcess.startEventTimeExecution = this.formatDateTime(processData['init_event_time']);
@@ -117,7 +126,7 @@ export class LocalDataService {
       datasetProcess.startDfCTimeExecution = this.formatDateTime(processData['init_dfc_time']);
       datasetProcess.finishDfCTimeExecution = this.formatDateTime(processData['finish_dfc_time']);
 
-      // Duration
+      // Duration time
       datasetProcess.durationNormalExecution = this.calculateDuration(processData['init_time'], processData['finish_time']);
       datasetProcess.durationClassExecution = this.calculateDuration(processData['init_class_time'], processData['finish_class_time']);
       datasetProcess.durationEventExecution = this.calculateDuration(processData['init_event_time'], processData['finish_event_time']);
@@ -130,9 +139,7 @@ export class LocalDataService {
       );
       datasetProcess.durationObsExecution = this.calculateDuration(processData['init_obs_time'], processData['finish_obs_time']);
       datasetProcess.durationDfCExecution = this.calculateDuration(processData['init_dfc_time'], processData['finish_dfc_time']);
-
       dataset.processInfo = datasetProcess;
-
       return dataset;
     }
     return undefined;
@@ -211,5 +218,12 @@ export class LocalDataService {
     const formattedDate = date.toLocaleDateString('en-US');
     const formattedTime = date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
     return `${formattedDate} ${formattedTime}`;
+  }
+
+  private formatSvg(svgContent: string): string {
+    return svgContent
+      .replace(/[\n\r\t]+/g, ' ')
+      .replace(/  +/g, ' ')
+      .trim();
   }
 }

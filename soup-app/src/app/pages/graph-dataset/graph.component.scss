@@ -1,4 +1,5 @@
 @use '@angular/material' as mat;
+
 // ================================
 // Region: Main content
 // ================================
@@ -31,7 +32,7 @@ i {
 }
 
 i:hover {
-  color: #ffac1c;
+  color: var(--primary-color);
 }
 
 // ================================
@@ -98,6 +99,20 @@ svg {
   display: none;
 }
 
+.double-flex {
+  display: flex;
+  justify-content: space-between;
+
+  mat-icon {
+    color: #c4a805;
+  }
+}
+
+.underline-h {
+  text-decoration: underline;
+  cursor: pointer;
+}
+
 .master-footer {
   display: flex;
   position: absolute;
@@ -148,16 +163,16 @@ svg {
 }
 
 :host ::ng-deep .mat-tab-label.mat-tab-label-active {
-  color: orange; // Cambia il colore del testo per il tab attivo
+  color: orange;
 }
 
 :host ::ng-deep .mat-tab-label.mat-tab-focus-indicator {
-  background-color: orange; // Colore di focus
+  background-color: orange;
 }
 
 :host ::ng-deep .mat-tab-label.mat-tab-label-active:focus,
 :host ::ng-deep .mat-tab-label.mat-tab-label-active:hover {
-  background-color: orange; // Colore di hover e focus sul tab attivo
+  background-color: orange;
 }
 
 .item-details h5 {
@@ -175,4 +190,54 @@ svg {
   padding: 10px;
   font-size: 0.9em;
   color: #555;
+}
+
+// ================================
+// Region: JSON Sidebar
+// ================================
+.list-group-item {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 10px;
+  background-color: #e5e5e5;
+  border-radius: 5px;
+  padding-right: 5px;
+  padding-left: 5px;
+
+  .group {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    mat-icon {
+      color: #c4a805;
+    }
+
+    mat-slide-toggle {
+      margin-left: 10px;
+      transform: scale(0.6);
+    }
+  }
+}
+
+.master-footer {
+  display: flex;
+  position: absolute;
+  bottom: 10px;
+  left: 10px;
+}
+
+.master-footer app-s-button,
+app-s-spinner-one {
+  margin-right: 5px;
+}
+
+.master-footer app-s-button:last-child {
+  margin-right: 0;
+}
+
+.warning {
+  p {
+    color: #ff0000;
+  }
 }

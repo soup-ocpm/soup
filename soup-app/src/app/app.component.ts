@@ -2,12 +2,14 @@ import { animate, group, query, style, transition, trigger } from '@angular/anim
 import { CommonModule } from '@angular/common';
 import { Component, Renderer2 } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
+import { NgbModule } from '@ng-bootstrap/ng-bootstrap';
 
 import { GenericModalComponent } from './core/components/s-modals/s-generic-modal/s-generic-modal.component';
 import { InputModalComponent } from './core/components/s-modals/s-input-modal/s-input-modal.component';
 import { SToastComponent } from './core/components/s-toast/s-toast.component';
 import { FooterComponent } from './shared/components/footer/footer.component';
 import { NavbarComponent } from './shared/components/navbar/navbar.component';
+import { SidebarComponent } from './shared/components/sidebar/sidebar.component';
 
 @Component({
   selector: 'app-root',
@@ -15,12 +17,15 @@ import { NavbarComponent } from './shared/components/navbar/navbar.component';
   imports: [
     CommonModule,
     RouterOutlet,
+    NgbModule,
     // Component import
     NavbarComponent,
     FooterComponent,
     SToastComponent,
     InputModalComponent,
-    GenericModalComponent
+    GenericModalComponent,
+    SidebarComponent
+    // Sp-library import
   ],
   templateUrl: './app.component.html',
   styleUrls: ['./app.component.scss'],

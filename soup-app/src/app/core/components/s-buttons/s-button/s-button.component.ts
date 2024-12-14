@@ -13,10 +13,10 @@ export class SButtonComponent {
   @Input() text = '';
 
   // The button color
-  @Input() color = '#FFAC1C';
+  @Input() color = 'var(--primary-color)';
 
   // The button height
-  @Input() height = '35px';
+  @Input() height = '30px';
 
   // The button cursor
   @Input() cursor = 'pointer';
@@ -30,8 +30,10 @@ export class SButtonComponent {
   // Constructor for SButtonComponent button
   constructor() {}
 
-  // Handle the click button
-  public onClick() {
+  /**
+   * Click button
+   */
+  public onClick(): void {
     this.buttonClick.emit();
   }
 }

@@ -1,0 +1,58 @@
+<div class="modal-header">
+  <h5 class="modal-title">Select Date Range</h5>
+</div>
+<div class="modal-body">
+  <form (ngSubmit)="this.onSubmit()">
+    <div class="form-group">
+      <label for="startDate">Start Date</label>
+      <input
+        type="text"
+        id="startDate"
+        class="form-control"
+        ngbDatepicker
+        #startDate="ngbDatepicker"
+        [(ngModel)]="startDateModel"
+        name="startDate"
+        required />
+      <button
+        class="input-group-text"
+        (click)="startDate.toggle()"
+        type="button">
+        📅
+      </button>
+    </div>
+
+    <div class="form-group">
+      <label for="endDate">End Date</label>
+      <input
+        type="text"
+        id="endDate"
+        class="form-control"
+        ngbDatepicker
+        #endDate="ngbDatepicker"
+        [(ngModel)]="endDateModel"
+        name="endDate"
+        required />
+      <button
+        class="input-group-text"
+        (click)="endDate.toggle()"
+        type="button">
+        📅
+      </button>
+    </div>
+
+    <div class="modal-footer">
+      <button
+        type="button"
+        class="btn btn-secondary"
+        (click)="this.onClose()">
+        Close
+      </button>
+      <button
+        type="submit"
+        class="btn btn-primary">
+        Save
+      </button>
+    </div>
+  </form>
+</div>

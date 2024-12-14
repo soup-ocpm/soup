@@ -8,7 +8,7 @@
     </h3>
     <i
       class="bi bi-three-dots-vertical"
-      style="cursor: pointer"
+      style="cursor: pointer; color: var(--secondary-color)"
       [matMenuTriggerFor]="menu"></i>
 
     <!--Menu-->
@@ -17,13 +17,13 @@
         mat-menu-item
         (click)="this.openDataset()">
         <i class="bi bi-box-arrow-in-up-right"></i>
-        <span style="margin-left: 5px; font-family: 'Times New Roman', Times, serif">Open</span>
+        <span>Open</span>
       </button>
       <button
         mat-menu-item
         (click)="this.onManageDataset()">
         <i class="bi bi-gear"></i>
-        <span style="margin-left: 5px; font-family: 'Times New Roman', Times, serif">Settings</span>
+        <span>Settings</span>
       </button>
       <button
         mat-menu-item
@@ -31,7 +31,7 @@
         <i
           class="bi bi-trash"
           style="color: red"></i>
-        <span style="margin-left: 5px; font-family: 'Times New Roman', Times, serif">Delete</span>
+        <span>Delete</span>
       </button>
     </mat-menu>
   </div>

@@ -67,4 +67,7 @@ export class Dataset {
 
   // The class graph details for the view
   public classGraphDetails: any;
+
+  // The standard svg graph
+  public svg: any;
 }

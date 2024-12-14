@@ -7,13 +7,13 @@ import { environment } from '../../../environments/environment';
 import { DatasetTileComponent } from '../../components/dataset-tile/dataset-tile.component';
 import { SButtonComponent } from '../../core/components/s-buttons/s-button/s-button.component';
 import { SDividerComponent } from '../../core/components/s-divider/s-divider.component';
+import { ModalService } from '../../core/components/s-modals/modal.service';
 import { SProgressbarComponent } from '../../core/components/s-progressbar/s-progressbar.component';
 import { SSpinnerOneComponent } from '../../core/components/s-spinners/s-spinner-one/s-spinner-one.component';
+import { NotificationService } from '../../core/components/s-toast/toast.service';
 import { ToastLevel } from '../../core/enums/toast_type.enum';
 import { ApiResponse } from '../../core/models/api_response.model';
 import { LoggerService } from '../../core/services/logger.service';
-import { ModalService } from '../../core/services/modal.service';
-import { NotificationService } from '../../core/services/toast.service';
 import { Dataset } from '../../models/dataset.model';
 import { DatasetService } from '../../services/datasets.service';
 import { GenericGraphService } from '../../services/generic_graph.service';
@@ -47,11 +47,11 @@ export class RetriveDatasetComponent implements OnInit {
   // The current selected dataset
   public currentDataset: Dataset | undefined;
 
+  // The bak for the current dataset
+  public datasetDescriptionBak = '';
+
   // The model change
   public modelChange = false;
-
-  // The bak for the current dataset
-  public currentDatasetBak = '';
 
   // If the user have dataset
   public haveDatasets = false;
@@ -61,6 +61,9 @@ export class RetriveDatasetComponent implements OnInit {
 
   // If the sidebar is open or not
   public isOpenSidebar = false;
+
+  // If the sidebar for columns is open or not
+  public isOpenColumnsSidebar = false;
 
   // If the datasets is loading
   public isLoadingDatasets = false;
@@ -106,9 +109,10 @@ export class RetriveDatasetComponent implements OnInit {
    * Retrieve all datasets
    */
   public getAllDatasets(): void {
-    if (this.allDataset == null || this.allDataset.length == 0) {
-      this.isLoadingDatasets = true;
+    this.isLoadingDatasets = true;
+    this.allDataset = [];
 
+    try {
       this.datasetService.getAllDataset().subscribe({
         next: (responseData) => {
           if (responseData.statusCode == 200 && responseData.responseData != null) {
@@ -135,10 +139,14 @@ export class RetriveDatasetComponent implements OnInit {
         },
         error: (errorData: ApiResponse<any>) => {
           const apiResponse: any = errorData;
-          if (apiResponse['statusText'] == 'Unknown Error') {
+
+          // Gestione errore di connessione rifiutata
+          if (apiResponse['statusText'] === 'Unknown Error' || errorData.message.includes('ERR_ConnectionRefused')) {
             this.toast.show(`Unable to load Datasets. Please start the Engine`, ToastLevel.Error, 5000);
-          } else if (apiResponse['status'] == 500) {
+          } else if (apiResponse['status'] === 500) {
             this.toast.show(`Internal Server Error. Retry`, ToastLevel.Error, 5000);
+          } else {
+            this.toast.show(`Unexpected error occurred: ${errorData.message}`, ToastLevel.Error, 5000);
           }
 
           this.isLoadingDatasets = false;
@@ -146,7 +154,32 @@ export class RetriveDatasetComponent implements OnInit {
         },
         complete: () => {}
       });
+    } catch {
+      this.isLoadingDatasets = false;
+      this.haveDatasets = false;
+      this.toast.show(`Internal Server Error. Retry`, ToastLevel.Error, 5000);
     }
+  }
+
+  /**
+   * Reload the datasets
+   */
+  public reloadDatasets(): void {
+    this.isLoadingDatasets = true;
+    setTimeout(() => {
+      this.getAllDatasets();
+    }, 1000);
+  }
+
+  /**
+   * Check the validity of the svg file if exist
+   */
+  public checkIfSvgIsValid(svgContent: any): boolean {
+    // Verifica che il contenuto sia una stringa
+    if (typeof svgContent === 'string') {
+      return svgContent.trim().startsWith('<svg');
+    }
+    return true;
   }
 
   /**
@@ -174,14 +207,14 @@ export class RetriveDatasetComponent implements OnInit {
             this.getUpdateDataset(dataset);
           } else {
             this.isCreatingDataset = false;
-            this.toast.show('Error while retrieving the Dataset', ToastLevel.Success, 3000);
+            this.toast.show('Error while retrieving the Dataset', ToastLevel.Error, 3000);
           }
         },
         error: (errorData) => {
           const apiResponse: any = errorData;
           this.loggerService.error(apiResponse);
           this.isCreatingDataset = false;
-          this.toast.show('Error while retrieving the Dataset', ToastLevel.Success, 3000);
+          this.toast.show('Error while retrieving the Dataset', ToastLevel.Error, 3000);
         },
         complete: () => {}
       });
@@ -219,7 +252,7 @@ export class RetriveDatasetComponent implements OnInit {
    */
   public onManageDataset(event: Dataset) {
     this.currentDataset = event;
-    this.currentDatasetBak = JSON.stringify(this.currentDataset);
+    this.datasetDescriptionBak = this.currentDataset.description;
     this.modelChange = false;
     this.isOpenSidebar = true;
   }
@@ -239,7 +272,7 @@ export class RetriveDatasetComponent implements OnInit {
    * otherwise
    */
   public checkForModelChange(): boolean {
-    return (this.modelChange = JSON.stringify(this.currentDataset) !== this.currentDatasetBak);
+    return (this.modelChange = this.currentDataset!.description !== this.datasetDescriptionBak);
   }
 
   /**
@@ -272,7 +305,7 @@ export class RetriveDatasetComponent implements OnInit {
               this.toast.show('Dataset update successfully', ToastLevel.Success, 2000);
             } else {
               this.toast.show('Unable to update Dataset. Please retry', ToastLevel.Error, 3000);
-              this.toggleSidebar();
+              this.handleSidebar();
             }
 
             this.isLoadingUpdate = false;
@@ -291,7 +324,7 @@ export class RetriveDatasetComponent implements OnInit {
    * Restore the model
    */
   public restoreModel(): void {
-    this.currentDataset = JSON.parse(this.currentDatasetBak);
+    this.currentDataset!.description = this.datasetDescriptionBak;
     this.modelChange = false;
   }
 
@@ -334,7 +367,7 @@ export class RetriveDatasetComponent implements OnInit {
             this.haveDatasets = this.allDataset.length > 0;
 
             // Chiudi la sidebar
-            this.toggleSidebar();
+            this.handleSidebar();
             this.toast.show('Dataset deleted successfully', ToastLevel.Success, 3000);
           }
         },
@@ -355,9 +388,16 @@ export class RetriveDatasetComponent implements OnInit {
   /**
    * Close the sidebar
    */
-  public toggleSidebar(): void {
+  public handleSidebar(): void {
     this.isOpenSidebar = false;
     this.currentDataset = undefined;
+  }
+
+  /**
+   * Close column sidebar
+   */
+  public handleColumnSidebar(): void {
+    this.isOpenColumnsSidebar = !this.isOpenColumnsSidebar;
   }
 
   /**

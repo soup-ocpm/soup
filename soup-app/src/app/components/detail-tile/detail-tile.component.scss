@@ -16,7 +16,7 @@
   align-items: center;
   justify-content: center;
   color: white;
-  background-color: #ffac1c;
+  background-color: var(--primary-color);
   border-top-left-radius: 10px;
   border-top-right-radius: 10px;
   font-family: 'Times New Roman', Times, serif;
@@ -60,7 +60,7 @@
 }
 
 .back-button:hover {
-  background-color: #ffac1c;
+  background-color: var(--primary-color);
 }
 
 .flip-card-inner {
