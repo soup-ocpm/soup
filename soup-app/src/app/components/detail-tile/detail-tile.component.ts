@@ -1,7 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, Input } from '@angular/core';
 
-import { SSpinnerOneComponent } from '../../core/components/s-spinners/s-spinner-one/s-spinner-one.component';
+import { SpSpinnerComponent } from '@aledevsharp/sp-lib';
 import { DetailGraphData } from '../../models/detail_graph_data.model';
 
 @Component({
@@ -10,7 +10,7 @@ import { DetailGraphData } from '../../models/detail_graph_data.model';
   imports: [
     CommonModule,
     // Component import
-    SSpinnerOneComponent
+    SpSpinnerComponent
   ],
   templateUrl: './detail-tile.component.html',
   styleUrl: './detail-tile.component.scss'

@@ -12,7 +12,7 @@
   </div>
   <p>From here you can add filters and create a new analysis</p>
 
-  <app-s-divider></app-s-divider>
+  <sp-divider></sp-divider>
 
   <div style="margin-top: 20px"></div>
 
@@ -36,14 +36,14 @@
 
   <!-- Footer con i pulsanti di azione -->
   <div class="master-footer">
-    <app-s-button [text]="'Save'"></app-s-button>
+    <sp-btn [text]="'Save'"></sp-btn>
 
-    <app-s-spinner-one *ngIf="isLoading"></app-s-spinner-one>
+    <sp-spinner *ngIf="this.isLoading"></sp-spinner>
 
-    <app-s-button
+    <sp-btn
       [disabled]="isLoading"
       [text]="'Restore'"
-      [color]="'#6c757d'"></app-s-button>
+      [color]="'#6c757d'"></sp-btn>
   </div>
 </div>
 

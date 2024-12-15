@@ -7,12 +7,9 @@ import * as dagreD3 from 'dagre-d3';
 import saveAs from 'file-saver';
 import { concatMap, from, map, Observable, toArray } from 'rxjs';
 
-import { SButtonComponent } from '../../core/components/s-buttons/s-button/s-button.component';
-import { SDividerComponent } from '../../core/components/s-divider/s-divider.component';
-import { ModalService } from '../../core/components/s-modals/modal.service';
-import { SSpinnerOneComponent } from '../../core/components/s-spinners/s-spinner-one/s-spinner-one.component';
-import { NotificationService } from '../../core/components/s-toast/toast.service';
-import { ToastLevel } from '../../core/enums/toast_type.enum';
+import { SpBtnComponent, SpDividerComponent, SpSpinnerComponent } from '@aledevsharp/sp-lib';
+import { ModalService } from 'src/app/shared/components/s-modals/modal.service';
+import { NotificationService } from 'src/app/shared/components/s-toast/toast.service';
 import { ApiResponse } from '../../core/models/api_response.model';
 import { LoggerService } from '../../core/services/logger.service';
 import { Dataset } from '../../models/dataset.model';
@@ -20,6 +17,7 @@ import { DatasetService } from '../../services/datasets.service';
 import { GenericGraphService } from '../../services/generic_graph.service';
 import { JSONDataService } from '../../services/json_data.service';
 import { StandardGraphService } from '../../services/standard_graph.service';
+import { ToastLevel } from '../../shared/components/s-toast/toast_type.enum';
 import { MaterialModule } from '../../shared/modules/materlal.module';
 import { LocalDataService } from '../../shared/services/support.service';
 import { JsonObject } from '../details-dataset/details-dataset.component';
@@ -27,7 +25,15 @@ import { JsonObject } from '../details-dataset/details-dataset.component';
 @Component({
   selector: 'app-graph',
   standalone: true,
-  imports: [CommonModule, MaterialModule, FormsModule, SDividerComponent, SButtonComponent, SSpinnerOneComponent],
+  imports: [
+    CommonModule,
+    MaterialModule,
+    FormsModule,
+    // Component import
+    SpBtnComponent,
+    SpDividerComponent,
+    SpSpinnerComponent
+  ],
   templateUrl: './graph.component.html',
   styleUrl: './graph.component.scss'
 })

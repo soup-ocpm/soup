@@ -2,10 +2,10 @@ import { Injectable } from '@angular/core';
 import { CanActivate, CanActivateChild, Router } from '@angular/router';
 import { catchError, map, Observable, of } from 'rxjs';
 
-import { NotificationService } from '../core/components/s-toast/toast.service';
-import { ToastLevel } from '../core/enums/toast_type.enum';
 import { EngineService } from '../core/services/engine.service';
 import { LoggerService } from '../core/services/logger.service';
+import { NotificationService } from '../shared/components/s-toast/toast.service';
+import { ToastLevel } from '../shared/components/s-toast/toast_type.enum';
 
 @Injectable({
   providedIn: 'root'

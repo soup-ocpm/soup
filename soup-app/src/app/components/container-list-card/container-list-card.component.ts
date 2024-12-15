@@ -2,14 +2,20 @@ import { CommonModule } from '@angular/common';
 import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
-import { SDividerComponent } from '../../core/components/s-divider/s-divider.component';
+import { SpDividerComponent } from '@aledevsharp/sp-lib';
 import { Container } from '../../models/docker_container.model';
 import { DockerTileComponent } from '../docker-tile/docker-tile.component';
 
 @Component({
   selector: 'app-container-list-card',
   standalone: true,
-  imports: [CommonModule, FormsModule, SDividerComponent, DockerTileComponent],
+  imports: [
+    CommonModule,
+    FormsModule,
+    // Component import
+    SpDividerComponent,
+    DockerTileComponent
+  ],
   templateUrl: './container-list-card.component.html',
   styleUrl: './container-list-card.component.scss'
 })

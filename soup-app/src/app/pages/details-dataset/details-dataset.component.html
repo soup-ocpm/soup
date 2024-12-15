@@ -1,5 +1,5 @@
 <!--The progress bar-->
-<app-s-progressbar *ngIf="this.isLoading"></app-s-progressbar>
+<sp-progressbar *ngIf="this.isLoading"></sp-progressbar>
 
 <div class="master">
   <div *ngIf="!this.isLoading">
@@ -219,11 +219,11 @@
 
       <p>Export the complete graph in a JSON file</p>
 
-      <app-s-button
+      <sp-btn
         [text]="'Export'"
         [height]="'27px'"
         [cursor]="this.isOpenAggregationSidebar || this.isOpenJSONSidebar ? 'not-allowed' : 'pointer'"
-        (buttonClick)="this.handleJSONSidebar()"></app-s-button>
+        (buttonClick)="this.handleJSONSidebar()"></sp-btn>
 
       <div style="margin-top: 35px"></div>
 
@@ -231,12 +231,12 @@
         <h5>Delete Dataset</h5>
       </div>
       <p>This operation is not reversible</p>
-      <app-s-button
+      <sp-btn
         [text]="'Delete'"
         [height]="'27px'"
         [color]="'#FF0000'"
         [cursor]="this.isOpenAggregationSidebar || this.isOpenJSONSidebar ? 'not-allowed' : 'pointer'"
-        (buttonClick)="this.handleDeleteGraph()"></app-s-button>
+        (buttonClick)="this.handleDeleteGraph()"></sp-btn>
 
       <div style="margin-top: 35px"></div>
     </div>
@@ -253,7 +253,7 @@
       </div>
       <p style="margin-top: 15px">This operation allows to view the Graph</p>
 
-      <app-s-divider></app-s-divider>
+      <sp-divider></sp-divider>
 
       <li class="list-group-item">
         <span style="margin-top: 5px">Standard Graph</span>
@@ -293,7 +293,7 @@
         select the desired entities that will be also taken into account when creating Class nodes
       </p>
 
-      <app-s-divider></app-s-divider>
+      <sp-divider></sp-divider>
 
       <li
         *ngFor="let entity of this.entityList"
@@ -315,7 +315,7 @@
       </li>
 
       <div style="margin-top: 13px"></div>
-      <app-s-divider></app-s-divider>
+      <sp-divider></sp-divider>
 
       <div *ngIf="this.currentDataset!.classNodes > 0">
         <p style="color: #ff0000; margin-top: 10px">Warning</p>
@@ -326,15 +326,15 @@
       </div>
 
       <div class="master-footer">
-        <app-s-button
+        <sp-btn
           *ngIf="this.selectedEntities.length > 0"
           [text]="'Build'"
-          (buttonClick)="this.buildClassGraph()"></app-s-button>
-        <app-s-button
+          (buttonClick)="this.buildClassGraph()"></sp-btn>
+        <sp-btn
           *ngIf="this.selectedEntities.length > 0"
           [text]="'Restore'"
           [color]="'#6c757d'"
-          (buttonClick)="this.resetSelection()"></app-s-button>
+          (buttonClick)="this.resetSelection()"></sp-btn>
       </div>
     </div>
 
@@ -350,7 +350,7 @@
       </div>
       <p style="margin-top: 15px">This operation allows to download specific JSON of your Dataset.</p>
 
-      <app-s-divider></app-s-divider>
+      <sp-divider></sp-divider>
 
       <li
         *ngFor="let object of this.jsonList"
@@ -367,19 +367,19 @@
       </li>
 
       <div style="margin-top: 13px"></div>
-      <app-s-divider></app-s-divider>
+      <sp-divider></sp-divider>
 
       <div class="master-footer">
-        <app-s-button
+        <sp-btn
           *ngIf="this.selectedJson.length > 0 && !this.isLoadingJsonDownload"
           [text]="'Download'"
-          (buttonClick)="this.downloadJsonSelected()"></app-s-button>
-        <app-s-spinner-one *ngIf="this.isLoadingJsonDownload"></app-s-spinner-one>
-        <app-s-button
+          (buttonClick)="this.downloadJsonSelected()"></sp-btn>
+        <sp-spinner *ngIf="this.isLoadingJsonDownload"></sp-spinner>
+        <sp-btn
           *ngIf="this.selectedJson.length > 0"
           [text]="'Restore'"
           [color]="'#6c757d'"
-          (buttonClick)="this.resetJsonSelection()"></app-s-button>
+          (buttonClick)="this.resetJsonSelection()"></sp-btn>
       </div>
     </div>
   </div>

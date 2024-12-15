@@ -70,24 +70,24 @@
   <div
     *ngIf="!this.doubleButton"
     style="margin-top: 20px">
-    <app-s-button-t
+    <sp-btn-txt
       [text]="this.primaryButtonText"
       [color]="this.primaryButtonColor"
-      (buttonClick)="onClickPrimaryButton()"></app-s-button-t>
+      (buttonClick)="onClickPrimaryButton()"></sp-btn-txt>
   </div>
 
   <div
     class="footer"
     *ngIf="this.doubleButton"
     style="margin-top: 20px">
-    <app-s-button-t
+    <sp-btn-txt
       [text]="this.primaryButtonText"
       [color]="this.primaryButtonColor"
-      (buttonClick)="onClickPrimaryButton()"></app-s-button-t>
-    <app-s-button-t
+      (buttonClick)="onClickPrimaryButton()"></sp-btn-txt>
+    <sp-btn-txt
       [text]="this.secondaryButtonText"
       [color]="this.secondaryButtonColor"
       style="margin-left: 25px"
-      (buttonClick)="onClickSecondaryButton()"></app-s-button-t>
+      (buttonClick)="onClickSecondaryButton()"></sp-btn-txt>
   </div>
 </div>

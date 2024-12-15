@@ -1,12 +1,12 @@
 import { CommonModule } from '@angular/common';
 import { Component, EventEmitter, Input, Output } from '@angular/core';
 
-import { SButtonTComponent } from '../../core/components/s-buttons/s-button-t/s-button-t.component';
-import { NotificationService } from '../../core/components/s-toast/toast.service';
-import { ToastLevel } from '../../core/enums/toast_type.enum';
+import { SpBtnTxtComponent } from '@aledevsharp/sp-lib';
+import { NotificationService } from 'src/app/shared/components/s-toast/toast.service';
 import { LoggerService } from '../../core/services/logger.service';
 import { Container } from '../../models/docker_container.model';
 import { DockerService } from '../../services/docker_container.service';
+import { ToastLevel } from '../../shared/components/s-toast/toast_type.enum';
 import { MaterialModule } from '../../shared/modules/materlal.module';
 
 @Component({
@@ -16,7 +16,7 @@ import { MaterialModule } from '../../shared/modules/materlal.module';
     CommonModule,
     MaterialModule,
     // Component import
-    SButtonTComponent
+    SpBtnTxtComponent
   ],
   templateUrl: './docker-tile.component.html',
   styleUrl: './docker-tile.component.scss'

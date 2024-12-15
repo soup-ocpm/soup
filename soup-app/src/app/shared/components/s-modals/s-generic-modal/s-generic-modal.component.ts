@@ -1,7 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, Input, OnInit, Output } from '@angular/core';
 
-import { SButtonTComponent } from '../../s-buttons/s-button-t/s-button-t.component';
+import { SpBtnTxtComponent } from '@aledevsharp/sp-lib';
 import { ModalService } from '../modal.service';
 
 @Component({
@@ -10,7 +10,7 @@ import { ModalService } from '../modal.service';
   imports: [
     CommonModule,
     // Components import
-    SButtonTComponent
+    SpBtnTxtComponent
   ],
   templateUrl: './s-generic-modal.component.html',
   styleUrl: './s-generic-modal.component.scss'

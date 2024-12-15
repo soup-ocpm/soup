@@ -1,5 +1,5 @@
 <!--The progress bar-->
-<app-s-progressbar *ngIf="isLoading"></app-s-progressbar>
+<sp-progressbar *ngIf="isLoading"></sp-progressbar>
 
 <!--Master Layout-->
 <div class="master">
@@ -30,16 +30,16 @@
           <p class="inside-text">Only one file can be processed at a time.</p>
 
           <div class="step-buttons">
-            <app-s-button-t
+            <sp-btn-txt
               (click)="this.toggleTutorial()"
               [text]="'Skip'"
               [color]="'#000000'"
-              class="step-button"></app-s-button-t>
-            <app-s-button-t
+              class="step-button"></sp-btn-txt>
+            <sp-btn-txt
               matStepperNext
               [text]="'Continue'"
               class="step-button"
-              (click)="this.goForwardStepper(stepper)"></app-s-button-t>
+              (click)="this.goForwardStepper(stepper)"></sp-btn-txt>
           </div>
         </mat-step>
 
@@ -66,16 +66,16 @@
           <div
             class="step-buttons"
             style="margin-top: 230px">
-            <app-s-button-t
+            <sp-btn-txt
               (click)="this.goBackStepper(stepper)"
               [text]="'Back'"
               [color]="'#000000'"
-              class="step-button"></app-s-button-t>
-            <app-s-button-t
+              class="step-button"></sp-btn-txt>
+            <sp-btn-txt
               matStepperNext
               [text]="'Start'"
               class="step-button"
-              (click)="this.goForwardStepper(stepper)"></app-s-button-t>
+              (click)="this.goForwardStepper(stepper)"></sp-btn-txt>
           </div>
         </mat-step>
 
@@ -92,16 +92,16 @@
           <div
             class="step-buttons"
             style="margin-top: 230px">
-            <app-s-button-t
+            <sp-btn-txt
               (click)="this.goBackStepper(stepper)"
               [text]="'Back'"
               [color]="'#000000'"
-              class="step-button"></app-s-button-t>
-            <app-s-button-t
+              class="step-button"></sp-btn-txt>
+            <sp-btn-txt
               matStepperNext
               [text]="'Start'"
               class="step-button"
-              (click)="this.toggleTutorial()"></app-s-button-t>
+              (click)="this.toggleTutorial()"></sp-btn-txt>
           </div>
         </mat-step>
       </mat-stepper>
@@ -124,18 +124,18 @@
       </ngx-dropzone-preview>
     </ngx-dropzone>
     <div class="upload-buttons">
-      <app-s-button-t
+      <sp-btn-txt
         *ngIf="this.haveSelectFile"
         [disabled]="this.isShowSidebar"
         [color]="'#000000'"
         [text]="'Remove'"
-        (buttonClick)="this.resetFileData()"></app-s-button-t>
+        (buttonClick)="this.resetFileData()"></sp-btn-txt>
 
-      <app-s-button-t
+      <sp-btn-txt
         *ngIf="this.haveSelectFile"
         [disabled]="isShowSidebar"
         [text]="'Done'"
-        (buttonClick)="this.parseFileData()"></app-s-button-t>
+        (buttonClick)="this.parseFileData()"></sp-btn-txt>
     </div>
   </mat-card>
 
@@ -337,9 +337,9 @@
 
     <div style="margin-top: 10px"></div>
 
-    <app-s-button
+    <sp-btn
       [text]="'Continue'"
-      (click)="this.requestTriggerAndTarget()"></app-s-button>
+      (click)="this.requestTriggerAndTarget()"></sp-btn>
   </div>
 </div>
 
@@ -411,14 +411,14 @@
 
     <!--Build button-->
     <div class="master-uml-footer">
-      <app-s-button
+      <sp-btn
         [text]="'Build'"
-        (click)="this.inputDatasetName()"></app-s-button>
-      <app-s-button
+        (click)="this.inputDatasetName()"></sp-btn>
+      <sp-btn
         style="margin-left: 10px"
         [text]="'Back'"
         [color]="'#6c757d'"
-        (click)="this.closeUMLLayout()"></app-s-button>
+        (click)="this.closeUMLLayout()"></sp-btn>
     </div>
   </div>
 </div>

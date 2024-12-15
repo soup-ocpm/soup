@@ -11,7 +11,7 @@
   },
   "private": true,
   "dependencies": {
-    "@aledevsharp/sp-lib": "^1.0.2",
+    "@aledevsharp/sp-lib": "^1.1.0",
     "@angular/animations": "^18.2.0",
     "@angular/cdk": "^18.2.7",
     "@angular/common": "^18.2.0",

@@ -2,13 +2,13 @@ import { CommonModule } from '@angular/common';
 import { Component } from '@angular/core';
 import { NgbActiveModal } from '@ng-bootstrap/ng-bootstrap';
 
-import { SButtonTComponent } from '../../../core/components/s-buttons/s-button-t/s-button-t.component';
+import { SpBtnTxtComponent } from '@aledevsharp/sp-lib';
 import { MaterialModule } from '../../../shared/modules/materlal.module';
 
 @Component({
   selector: 'app-primary-filter-dialog',
   standalone: true,
-  imports: [CommonModule, MaterialModule, SButtonTComponent],
+  imports: [CommonModule, MaterialModule, SpBtnTxtComponent],
   templateUrl: './primary-filter-dialog.component.html',
   styleUrl: './primary-filter-dialog.component.scss'
 })

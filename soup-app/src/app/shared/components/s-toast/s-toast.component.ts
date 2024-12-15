@@ -1,8 +1,8 @@
 import { CommonModule } from '@angular/common';
 import { Component, Input, OnInit } from '@angular/core';
 
-import { ToastLevel } from '../../enums/toast_type.enum';
 import { NotificationService } from './toast.service';
+import { ToastLevel } from './toast_type.enum';
 
 @Component({
   selector: 'app-s-toast',

@@ -3,22 +3,28 @@ import { Component, TemplateRef } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { NgbModal, NgbModule } from '@ng-bootstrap/ng-bootstrap';
 
+import { SpBtnComponent, SpDividerComponent, SpSpinnerComponent } from '@aledevsharp/sp-lib';
 import { ActivityFilterDialogComponent } from '../../components/filters-components/activity-filter-dialog/activity-filter-dialog.component';
 import { FrequenceFilterDialogComponent } from '../../components/filters-components/frequence-filter-dialog/frequence-filter-dialog.component';
 import { PerformanceFilterDialogComponent } from '../../components/filters-components/performance-filter-dialog/performance-filter-dialog.component';
 import { PrimaryFilterDialogComponent } from '../../components/filters-components/primary-filter-dialog/primary-filter-dialog.component';
 import { TimestamFilterDialogComponent } from '../../components/filters-components/timestam-filter-dialog/timestam-filter-dialog.component';
 import { VariationFilterDialogComponent } from '../../components/filters-components/variation-filter-dialog/variation-filter-dialog.component';
-import { SButtonComponent } from '../../core/components/s-buttons/s-button/s-button.component';
-import { SDividerComponent } from '../../core/components/s-divider/s-divider.component';
-import { SSpinnerOneComponent } from '../../core/components/s-spinners/s-spinner-one/s-spinner-one.component';
 import { SidebarService } from '../../shared/components/sidebar/sidebar.service';
 import { MaterialModule } from '../../shared/modules/materlal.module';
-
 @Component({
   selector: 'app-test-filter',
   standalone: true,
-  imports: [CommonModule, FormsModule, MaterialModule, NgbModule, SButtonComponent, SSpinnerOneComponent, SDividerComponent],
+  imports: [
+    CommonModule,
+    FormsModule,
+    MaterialModule,
+    NgbModule,
+    // Component import
+    SpBtnComponent,
+    SpDividerComponent,
+    SpSpinnerComponent
+  ],
   templateUrl: './test-filter.component.html',
   styleUrl: './test-filter.component.scss'
 })

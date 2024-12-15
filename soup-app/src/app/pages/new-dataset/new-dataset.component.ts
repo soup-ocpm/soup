@@ -8,19 +8,17 @@ import { Router } from '@angular/router';
 import { NgxDropzoneModule } from 'ngx-dropzone';
 import { Papa } from 'ngx-papaparse';
 
+import { SpBtnComponent, SpBtnTxtComponent, SpProgressbarComponent } from '@aledevsharp/sp-lib';
+import { ModalService } from 'src/app/shared/components/s-modals/modal.service';
+import { NotificationService } from 'src/app/shared/components/s-toast/toast.service';
 import { UMLEdge } from '../../components/uml-diagram/models/uml_edge';
 import { UMLNode } from '../../components/uml-diagram/models/uml_node';
 import { UmlDiagramComponent } from '../../components/uml-diagram/uml-diagram.component';
-import { SButtonTComponent } from '../../core/components/s-buttons/s-button-t/s-button-t.component';
-import { SButtonComponent } from '../../core/components/s-buttons/s-button/s-button.component';
-import { ModalService } from '../../core/components/s-modals/modal.service';
-import { SProgressbarComponent } from '../../core/components/s-progressbar/s-progressbar.component';
-import { NotificationService } from '../../core/components/s-toast/toast.service';
-import { ToastLevel } from '../../core/enums/toast_type.enum';
 import { LoggerService } from '../../core/services/logger.service';
 import { Entity } from '../../models/entity.mode';
 import { DatasetService } from '../../services/datasets.service';
 import { StandardGraphService } from '../../services/standard_graph.service';
+import { ToastLevel } from '../../shared/components/s-toast/toast_type.enum';
 import { MaterialModule } from '../../shared/modules/materlal.module';
 import { LocalDataService } from '../../shared/services/support.service';
 
@@ -48,15 +46,13 @@ class Multiplicity {
   imports: [
     CommonModule,
     FormsModule,
-    // Application module
     MaterialModule,
     MatRadioModule,
-    // Application component
-    SButtonComponent,
-    SButtonTComponent,
-    SProgressbarComponent,
+    // Component import
+    SpBtnComponent,
+    SpBtnTxtComponent,
+    SpProgressbarComponent,
     UmlDiagramComponent,
-    // Other
     NgxDropzoneModule,
     UmlDiagramComponent
   ],

@@ -1,5 +1,5 @@
 <!--The progress bar-->
-<app-s-progressbar *ngIf="isCreatingDataset"></app-s-progressbar>
+<sp-progressbar *ngIf="isCreatingDataset"></sp-progressbar>
 
 <!--Master Layout-->
 <div
@@ -22,7 +22,7 @@
           onmouseout="this.style.color='var(--secondary-color)'"
           (click)="this.reloadDatasets()"></i>
       </div>
-      <app-s-divider></app-s-divider>
+      <sp-divider></sp-divider>
     </div>
 
     <div class="search-dataset">
@@ -55,9 +55,9 @@
       <br />
       within your Memgraph database
     </p>
-    <app-s-button
+    <sp-btn
       [text]="'New Dataset'"
-      (buttonClick)="this.newDataset()"></app-s-button>
+      (buttonClick)="this.newDataset()"></sp-btn>
   </div>
 
   <!-- Sidebar -->
@@ -135,26 +135,26 @@
 
       <!--Buttons-->
       <div class="master-footer">
-        <app-s-button
+        <sp-btn
           *ngIf="this.modelChange && !this.isLoadingUpdate"
           [text]="'Save'"
-          (buttonClick)="this.onSaveUpdate()"></app-s-button>
+          (buttonClick)="this.onSaveUpdate()"></sp-btn>
 
-        <app-s-spinner-one *ngIf="this.isLoadingUpdate"></app-s-spinner-one>
+        <sp-spinner *ngIf="this.isLoadingUpdate"></sp-spinner>
 
-        <app-s-button
+        <sp-btn
           *ngIf="this.modelChange && !this.isLoadingUpdate"
           [disabled]="this.isLoadingUpdate"
           [text]="'Restore'"
           [color]="'#6c757d'"
-          (buttonClick)="this.restoreModel()"></app-s-button>
+          (buttonClick)="this.restoreModel()"></sp-btn>
 
-        <app-s-button
+        <sp-btn
           [text]="'Delete'"
           *ngIf="!this.isLoadingUpdate"
           [disabled]="this.isLoadingUpdate && !this.isLoadingUpdate"
           [color]="'#FF0000'"
-          (buttonClick)="this.openModalDelete()"></app-s-button>
+          (buttonClick)="this.openModalDelete()"></sp-btn>
       </div>
     </div>
   </div>
@@ -198,7 +198,7 @@
 <div
   class="loading-datasets"
   *ngIf="this.isLoadingDatasets">
-  <app-s-spinner-one></app-s-spinner-one>
+  <sp-spinner></sp-spinner>
   <h4>Loading datasets...</h4>
 </div>
 

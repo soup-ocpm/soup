@@ -4,11 +4,11 @@ import { Component, Renderer2 } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 import { NgbModule } from '@ng-bootstrap/ng-bootstrap';
 
-import { GenericModalComponent } from './core/components/s-modals/s-generic-modal/s-generic-modal.component';
-import { InputModalComponent } from './core/components/s-modals/s-input-modal/s-input-modal.component';
-import { SToastComponent } from './core/components/s-toast/s-toast.component';
 import { FooterComponent } from './shared/components/footer/footer.component';
 import { NavbarComponent } from './shared/components/navbar/navbar.component';
+import { GenericModalComponent } from './shared/components/s-modals/s-generic-modal/s-generic-modal.component';
+import { InputModalComponent } from './shared/components/s-modals/s-input-modal/s-input-modal.component';
+import { SToastComponent } from './shared/components/s-toast/s-toast.component';
 import { SidebarComponent } from './shared/components/sidebar/sidebar.component';
 
 @Component({
@@ -22,10 +22,9 @@ import { SidebarComponent } from './shared/components/sidebar/sidebar.component'
     NavbarComponent,
     FooterComponent,
     SToastComponent,
-    InputModalComponent,
     GenericModalComponent,
-    SidebarComponent
-    // Sp-library import
+    SidebarComponent,
+    InputModalComponent
   ],
   templateUrl: './app.component.html',
   styleUrls: ['./app.component.scss'],

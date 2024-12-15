@@ -72,10 +72,10 @@
     </div>
     <p>Export and save the SVG of the graph</p>
 
-    <app-s-button
+    <sp-btn
       [text]="'Download'"
       [height]="'27px'"
-      (buttonClick)="this.exportSvg()"></app-s-button>
+      (buttonClick)="this.exportSvg()"></sp-btn>
 
     <!--Delete dataset-->
     <div style="margin-top: 35px"></div>
@@ -83,11 +83,11 @@
       <h5>Delete Dataset</h5>
     </div>
     <p>This operation is not reversible</p>
-    <app-s-button
+    <sp-btn
       [text]="'Delete'"
       [height]="'27px'"
       [color]="'#FF0000'"
-      (buttonClick)="this.handleDeleteGraph()"></app-s-button>
+      (buttonClick)="this.handleDeleteGraph()"></sp-btn>
   </div>
 
   <!--Search Sidebar-->
@@ -115,7 +115,7 @@
     </div>
 
     <div style="height: 20px"></div>
-    <app-s-divider></app-s-divider>
+    <sp-divider></sp-divider>
 
     <!--Tabber-->
     <mat-tab-group
@@ -212,7 +212,7 @@
     </div>
     <p style="margin-top: 15px">This operation allows to download specific JSON of your Dataset.</p>
 
-    <app-s-divider></app-s-divider>
+    <sp-divider></sp-divider>
 
     <li
       *ngFor="let object of this.jsonList"
@@ -229,19 +229,19 @@
     </li>
 
     <div style="margin-top: 13px"></div>
-    <app-s-divider></app-s-divider>
+    <sp-divider></sp-divider>
 
     <div class="master-footer">
-      <app-s-button
+      <sp-btn
         *ngIf="this.selectedJson.length > 0 && !this.isLoadingJsonDownload"
         [text]="'Download'"
-        (buttonClick)="this.downloadJsonSelected()"></app-s-button>
-      <app-s-spinner-one *ngIf="this.isLoadingJsonDownload"></app-s-spinner-one>
-      <app-s-button
+        (buttonClick)="this.downloadJsonSelected()"></sp-btn>
+      <sp-spinner *ngIf="this.isLoadingJsonDownload"></sp-spinner>
+      <sp-btn
         *ngIf="this.selectedJson.length > 0"
         [text]="'Restore'"
         [color]="'#6c757d'"
-        (buttonClick)="this.resetJsonSelection()"></app-s-button>
+        (buttonClick)="this.resetJsonSelection()"></sp-btn>
     </div>
   </div>
 

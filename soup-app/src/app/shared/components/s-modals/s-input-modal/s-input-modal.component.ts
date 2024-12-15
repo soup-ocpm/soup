@@ -2,10 +2,10 @@ import { CommonModule } from '@angular/common';
 import { Component, Input, OnInit, Output } from '@angular/core';
 import { FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 
+import { SpBtnTxtComponent } from '@aledevsharp/sp-lib';
+import { LoggerService } from 'src/app/core/services/logger.service';
 import { DatasetService } from '../../../../services/datasets.service';
 import { MaterialModule } from '../../../../shared/modules/materlal.module';
-import { LoggerService } from '../../../services/logger.service';
-import { SButtonTComponent } from '../../s-buttons/s-button-t/s-button-t.component';
 import { ModalService } from '../modal.service';
 
 @Component({
@@ -17,7 +17,7 @@ import { ModalService } from '../modal.service';
     ReactiveFormsModule,
     MaterialModule,
     // Components import
-    SButtonTComponent
+    SpBtnTxtComponent
   ],
   templateUrl: './s-input-modal.component.html',
   styleUrl: './s-input-modal.component.scss'

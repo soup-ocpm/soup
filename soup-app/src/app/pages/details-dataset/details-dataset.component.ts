@@ -1,3 +1,4 @@
+import { SpBtnComponent, SpDividerComponent, SpProgressbarComponent, SpSpinnerComponent } from '@aledevsharp/sp-lib';
 import { CommonModule } from '@angular/common';
 import { AfterViewInit, Component, ElementRef, OnInit, ViewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
@@ -6,13 +7,8 @@ import { Chart, registerables } from 'chart.js';
 import saveAs from 'file-saver';
 import { concatMap, from, map, Observable, toArray } from 'rxjs';
 
-import { SButtonComponent } from '../../core/components/s-buttons/s-button/s-button.component';
-import { SDividerComponent } from '../../core/components/s-divider/s-divider.component';
-import { ModalService } from '../../core/components/s-modals/modal.service';
-import { SProgressbarComponent } from '../../core/components/s-progressbar/s-progressbar.component';
-import { SSpinnerOneComponent } from '../../core/components/s-spinners/s-spinner-one/s-spinner-one.component';
-import { NotificationService } from '../../core/components/s-toast/toast.service';
-import { ToastLevel } from '../../core/enums/toast_type.enum';
+import { ModalService } from 'src/app/shared/components/s-modals/modal.service';
+import { NotificationService } from 'src/app/shared/components/s-toast/toast.service';
 import { ApiResponse } from '../../core/models/api_response.model';
 import { LoggerService } from '../../core/services/logger.service';
 import { GraphDataEnum } from '../../enums/graph_data.enum';
@@ -22,6 +18,7 @@ import { ClassGraphService } from '../../services/class_graph.service';
 import { DatasetService } from '../../services/datasets.service';
 import { JSONDataService } from '../../services/json_data.service';
 import { StandardGraphService } from '../../services/standard_graph.service';
+import { ToastLevel } from '../../shared/components/s-toast/toast_type.enum';
 import { MaterialModule } from '../../shared/modules/materlal.module';
 import { LocalDataService } from '../../shared/services/support.service';
 
@@ -74,10 +71,10 @@ export class JsonObject {
     FormsModule,
     MaterialModule,
     // Component import
-    SButtonComponent,
-    SProgressbarComponent,
-    SDividerComponent,
-    SSpinnerOneComponent
+    SpBtnComponent,
+    SpDividerComponent,
+    SpProgressbarComponent,
+    SpSpinnerComponent
   ],
   templateUrl: './details-dataset.component.html',
   styleUrl: './details-dataset.component.scss'

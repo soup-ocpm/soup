@@ -1,7 +1,6 @@
 import { Injectable } from '@angular/core';
 import { BehaviorSubject, Observable } from 'rxjs';
-
-import { ToastLevel } from '../enums/toast_type.enum';
+import { ToastLevel } from './toast_type.enum';
 
 @Injectable({
   providedIn: 'root'

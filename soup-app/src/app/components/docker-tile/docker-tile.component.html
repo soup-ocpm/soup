@@ -29,10 +29,10 @@
         </p>
       </div>
 
-      <app-s-button-t
+      <sp-btn-txt
         *ngIf="this.container?.status"
         class="choice-button"
-        (buttonClick)="this.choiceContainer()"></app-s-button-t>
+        (buttonClick)="this.choiceContainer()"></sp-btn-txt>
     </div>
   </div>
   <div
@@ -55,20 +55,20 @@
         *ngIf="this.container?.status && !this.isLoading"
         style="margin-top: 5px">
         <div class="button-action">
-          <app-s-button-t
+          <sp-btn-txt
             [text]="'Stop'"
             color="#FF0000"
-            (buttonClick)="this.stopContainer()"></app-s-button-t>
-          <app-s-button-t [text]="'Continue'"></app-s-button-t>
+            (buttonClick)="this.stopContainer()"></sp-btn-txt>
+          <sp-btn-txt [text]="'Continue'"></sp-btn-txt>
         </div>
       </div>
       <div
         *ngIf="!this.container?.status && !this.isLoading"
         style="margin-top: 5px">
         <div class="button-action">
-          <app-s-button-t
+          <sp-btn-txt
             [text]="'Start'"
-            (buttonClick)="this.startContainer()"></app-s-button-t>
+            (buttonClick)="this.startContainer()"></sp-btn-txt>
         </div>
       </div>
     </div>
