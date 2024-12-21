@@ -223,10 +223,10 @@ class DockerService:
 
     @staticmethod
     # Get the docker container id by the name
-    def get_container_id(container_name="memgraph"):
+    def get_container_id(container_name="soup-database"):
         try:
             result = subprocess.run(
-                ["docker", "inspect", "--format", "{{.Id}}", container_name],
+                ["docker", "ps", "--filter", f"name={container_name}", "--format", "{{.ID}}"],
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
                 check=True
