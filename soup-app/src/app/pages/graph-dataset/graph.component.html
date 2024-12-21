@@ -2,7 +2,10 @@
   <!--Graph visualization-->
   <div
     class="master-graph"
-    [ngClass]="{ small: this.isOpenMenuSidebar, 'small-two': this.isOpenSearchSidebar }">
+    [ngClass]="{
+      small: this.sidebarService.isSidebarOpen('master-sidebar'),
+      'small-two': this.sidebarService.isSidebarOpen('search-sidebar')
+    }">
     <div id="myGraphContainer">
       <svg #graphSvg></svg>
     </div>
@@ -14,93 +17,65 @@
       matTooltip="Menu"
       class="bi bi-card-list"
       style="margin-right: 7px"
-      (click)="this.handleMenuOperations()"></i>
+      (click)="this.openMasterSidebar()"></i>
     <i
       matTooltip="Search"
       class="bi bi-search"
       style="margin-top: 10px; margin-right: 7px"
-      (click)="this.handleSearchData()"></i>
+      (click)="this.openSearchSidebar()"></i>
   </div>
 
   <!--Left Action buttons-->
   <div
     class="left-actions"
-    *ngIf="!this.isOpenMenuSidebar && !this.isOpenSearchSidebar">
+    *ngIf="!this.sidebarService.isSidebarOpen('master-sidebar') && !this.sidebarService.isSidebarOpen('search-sidebar')">
     <i
       matTooltip="Leave"
       class="bi bi-arrow-left-square"
       (click)="this.leavePage()"></i>
   </div>
 
-  <!--Menu Sidebar-->
+  <!--Card for selected node-->
   <div
-    class="sidebar"
-    [ngClass]="{ show: this.isOpenMenuSidebar }">
-    <div class="sidebar-header">
-      <h4>Manage Dataset</h4>
-      <i
-        class="bi bi-x-lg"
-        (click)="this.isOpenMenuSidebar = false"></i>
+    *ngIf="this.isShowCardProperties"
+    class="node-properties-card">
+    <h4>Node Properties</h4>
+    <div
+      *ngFor="let property of this.propertiesSelectedNode"
+      class="property-item">
+      <strong>{{ property[0] }}:</strong>
+      <span>{{ property[1] || 'N/A' }}</span>
     </div>
-    <p>A list of operations available for this section</p>
-
-    <div style="margin-top: 35px"></div>
-    <div class="double-flex">
-      <h5
-        class="underline-h"
-        (click)="this.handleGraphSidebarManager()">
-        Manage graph visualization
-      </h5>
-    </div>
-    <p>Change the view of your graph</p>
-
-    <!--Export JSON-->
-    <div style="margin-top: 35px"></div>
-    <div class="double-flex">
-      <h5
-        class="underline-h"
-        (click)="this.handleJSONSidebar()">
-        Export JSON
-      </h5>
-    </div>
-    <p>Export and save the full JSON of the nodes and edges</p>
-
-    <!--Export SVG-->
-    <div style="margin-top: 35px"></div>
-    <div class="double-flex">
-      <h5 (click)="this.handleGraphSidebarManager()">Export SVG</h5>
-    </div>
-    <p>Export and save the SVG of the graph</p>
-
-    <sp-btn
-      [text]="'Download'"
-      [height]="'27px'"
-      (buttonClick)="this.exportSvg()"></sp-btn>
-
-    <!--Delete dataset-->
-    <div style="margin-top: 35px"></div>
-    <div class="double-flex">
-      <h5>Delete Dataset</h5>
-    </div>
-    <p>This operation is not reversible</p>
-    <sp-btn
-      [text]="'Delete'"
-      [height]="'27px'"
-      [color]="'#FF0000'"
-      (buttonClick)="this.handleDeleteGraph()"></sp-btn>
+    <button
+      class="close-btn"
+      (click)="this.closeNodeSearched()">
+      Close
+    </button>
   </div>
 
-  <!--Search Sidebar-->
-  <div
-    class="sidebar"
-    [ngClass]="{ show: this.isOpenSearchSidebar }"
-    [ngStyle]="{ width: '600px' }">
-    <div class="sidebar-header">
-      <h4>Search Data</h4>
-      <i
-        class="bi bi-x-lg"
-        (click)="this.closeSearchSidebar()"></i>
+  <!--List of the sidebar-->
+  <s-sidebar
+    *ngFor="let sidebarId of this.sidebarIds"
+    [sidebarId]="sidebarId"></s-sidebar>
+
+  <!--Menu Sidebar-->
+  <ng-template #masterSidebarTemplate>
+    <p>A list of operations available for this section</p>
+
+    <!-- Operations Section -->
+    <div class="operation-container">
+      <app-side-operation
+        *ngFor="let operation of this.operations"
+        [title]="operation.title"
+        [description]="operation.description"
+        [icon]="operation.icon"
+        [action]="operation.action"
+        (operationSelected)="this.onOperationSelected(operation)"></app-side-operation>
     </div>
+  </ng-template>
+
+  <!--Search Sidebar-->
+  <ng-template #searchSidebarTemplate>
     <p>Search node or links inside your graph</p>
 
     <!--Input-->
@@ -134,20 +109,23 @@
             class="search-term"
             *ngFor="let item of displayedNodes">
             <div class="item-details">
-              <h5>{{ item['ActivityName'] }}</h5>
               <p>
-                <strong>Event ID:</strong>
+                <strong>Activity:</strong>
+                <span style="color: var(--primary-color)">{{ item['ActivityName'] }}</span>
+              </p>
+              <p>
+                <strong>Event id:</strong>
                 {{ item['EventID'] }}
               </p>
               <p>
-                <strong>Type:</strong>
-                {{ item['Type'] }}
+                <strong>Time:</strong>
+                {{ item['Timestamp'] }}
               </p>
             </div>
             <div class="icon-section">
               <i
                 class="bi bi-arrow-right-circle"
-                (click)="selectNodeSearched(item)"></i>
+                (click)="this.selectNodeSearched(item)"></i>
             </div>
           </div>
 
@@ -174,18 +152,15 @@
             *ngFor="let item of displayedEdges"
             (click)="this.selectEdgeSearched(item)">
             <div class="item-details">
-              <h5>{{ item['label'] }}</h5>
+              <h5 style="color: var(--primary-color)">{{ item['label'] }}</h5>
               <p>
-                <strong>From node:</strong>
-                {{ item.source.id }}
+                <strong>From:</strong>
+                {{ getNodeName(item.source.id) }} [{{ item.source.id }}]
               </p>
               <p>
-                <strong>To node:</strong>
-                {{ item.target.id }}
+                <strong>To:</strong>
+                {{ getNodeName(item.target.id) }} [{{ item.target.id }}]
               </p>
-            </div>
-            <div class="icon-section">
-              <i class="bi bi-arrow-right-circle"></i>
             </div>
           </div>
 
@@ -198,18 +173,10 @@
         </div>
       </mat-tab>
     </mat-tab-group>
-  </div>
+  </ng-template>
 
   <!--Json Sidebar-->
-  <div
-    class="sidebar"
-    [ngClass]="{ show: this.isOpenJSONSidebar }">
-    <div class="sidebar-header">
-      <h4>Export JSON</h4>
-      <i
-        class="bi bi-x-lg"
-        (click)="this.handleJSONSidebar()"></i>
-    </div>
+  <ng-template #jsonSidebarTemplate>
     <p style="margin-top: 15px">This operation allows to download specific JSON of your Dataset.</p>
 
     <sp-divider></sp-divider>
@@ -223,38 +190,14 @@
         <mat-slide-toggle
           style="margin-top: 3px"
           [(ngModel)]="object.isSelected"
-          (change)="selectionJson(object)"
+          (change)="this.selectionJson(object)"
           color="primary"></mat-slide-toggle>
       </div>
     </li>
-
-    <div style="margin-top: 13px"></div>
-    <sp-divider></sp-divider>
-
-    <div class="master-footer">
-      <sp-btn
-        *ngIf="this.selectedJson.length > 0 && !this.isLoadingJsonDownload"
-        [text]="'Download'"
-        (buttonClick)="this.downloadJsonSelected()"></sp-btn>
-      <sp-spinner *ngIf="this.isLoadingJsonDownload"></sp-spinner>
-      <sp-btn
-        *ngIf="this.selectedJson.length > 0"
-        [text]="'Restore'"
-        [color]="'#6c757d'"
-        (buttonClick)="this.resetJsonSelection()"></sp-btn>
-    </div>
-  </div>
+  </ng-template>
 
   <!--Manage graph Sidebar-->
-  <div
-    class="sidebar"
-    [ngClass]="{ show: this.isShowManageGraphSidebar }">
-    <div class="sidebar-header">
-      <h4>Manage graph</h4>
-      <i
-        class="bi bi-x-lg"
-        (click)="this.isShowManageGraphSidebar = false"></i>
-    </div>
+  <ng-template #manageGraphSidebarTemplate>
     <p>A list of operations available for this section</p>
 
     <div style="margin-top: 35px">
@@ -298,5 +241,5 @@
         </mat-checkbox>
       </div>
     </div>
-  </div>
+  </ng-template>
 </div>

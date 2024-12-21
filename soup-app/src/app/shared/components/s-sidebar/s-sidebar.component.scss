@@ -4,7 +4,7 @@
 .sidebar {
   position: fixed;
   top: 55px;
-  bottom: 55px;
+  bottom: 53px;
   right: -600px;
   transition: right 0.3s ease;
   width: 600px;
@@ -12,6 +12,7 @@
   box-shadow: 2px 0 5px rgba(0, 0, 0, 0.3);
   overflow-y: auto;
   z-index: 1000;
+  padding: 20px;
 
   &.open {
     right: 0;
@@ -28,7 +29,7 @@
 
   h4 {
     margin: 0;
-    color: #333;
+    color: var(--secondary-color);
   }
 
   i {
@@ -45,9 +46,18 @@
 
 .master-footer {
   display: flex;
-  justify-content: flex-end;
   gap: 10px;
-  margin-top: 20px;
+}
+
+.master-footer.sticky-footer {
+  position: absolute;
+  bottom: 10px;
+  left: 10px;
+  right: 10px;
+}
+
+.sidebar-content {
+  padding-bottom: 80px;
 }
 
 .form-label {

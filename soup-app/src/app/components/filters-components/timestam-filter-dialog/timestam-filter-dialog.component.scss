@@ -1,36 +1,59 @@
-/* Modal header */
+// ================================
+// Region: Main content
+// ================================
 .modal-header {
   background-color: #f8f9fa;
   border-bottom: 1px solid #dee2e6;
-  padding: 15px 20px;
+  height: 50px;
 }
 
-.modal-title {
-  margin: 0;
-  font-weight: 600;
-}
-
-/* Modal body */
 .modal-body {
   padding: 20px;
 }
 
-/* Styling for form fields */
 .form-group {
-  margin-bottom: 15px;
+  margin-bottom: 20px;
+}
+
+.input-container {
+  display: flex;
+  align-items: center;
+  gap: 10px;
 }
 
 input.form-control {
-  width: 100%;
-}
-
-.input-group-text {
+  flex: 1;
+  border-radius: 5px;
   background-color: #fff;
-  cursor: pointer;
+  border: 1px solid #ced4da;
+  padding: 4px 8px;
+  font-size: 1.2rem;
+  line-height: 1.2;
+  height: auto;
 }
 
-/* Modal footer */
+.calendar-btn {
+  background-color: #fff;
+  border: 1px solid #ced4da;
+  border-radius: 5px;
+  padding: 4px 8px;
+  font-size: 1.2rem;
+  line-height: 1.2;
+  height: auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.calendar-btn:hover {
+  background-color: #f1f1f1;
+}
+
 .modal-footer {
-  padding: 10px 15px;
-  border-top: 1px solid #dee2e6;
+  height: 40px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
 }

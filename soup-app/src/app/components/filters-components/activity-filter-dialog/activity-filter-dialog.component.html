@@ -1,1 +1,29 @@
-<p>activity-filter-dialog works!</p>
+<!--Main content-->
+<div class="modal-header">
+  <h4 class="modal-title">{{ this.inputData ? 'Include Activities' : 'Exclude Activities' }}</h4>
+</div>
+<div class="modal-body">
+  <div class="entity-body">
+    <!--Checkbox-->
+    <div *ngFor="let check of this.allFilteredValues">
+      <mat-checkbox
+        class="example-margin"
+        color="primary"
+        [ngModel]="check.selected"
+        (ngModelChange)="this.submitEntity(check, $event)">
+        {{ check.name }}
+      </mat-checkbox>
+    </div>
+  </div>
+
+  <!-- Buttons -->
+  <div class="modal-footer">
+    <sp-btn
+      [text]="'Close'"
+      [color]="'#6c757d'"
+      (buttonClick)="this.onClose()"></sp-btn>
+    <sp-btn
+      [text]="'Save'"
+      (buttonClick)="this.onSubmit()"></sp-btn>
+  </div>
+</div>

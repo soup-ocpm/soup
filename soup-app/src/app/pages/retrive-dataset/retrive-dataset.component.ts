@@ -1,10 +1,12 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, TemplateRef } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 
 import { SpBtnComponent, SpDividerComponent, SpProgressbarComponent, SpSpinnerComponent } from '@aledevsharp/sp-lib';
 import { ModalService } from 'src/app/shared/components/s-modals/modal.service';
+import { SidebarComponent } from 'src/app/shared/components/s-sidebar/s-sidebar.component';
+import { SidebarService } from 'src/app/shared/components/s-sidebar/sidebar.service';
 import { NotificationService } from 'src/app/shared/components/s-toast/toast.service';
 import { environment } from '../../../environments/environment';
 import { DatasetTileComponent } from '../../components/dataset-tile/dataset-tile.component';
@@ -28,8 +30,9 @@ import { LocalDataService } from '../../shared/services/support.service';
     SpDividerComponent,
     SpProgressbarComponent,
     SpSpinnerComponent,
-    SpBtnComponent,
-    DatasetTileComponent
+    DatasetTileComponent,
+    SidebarComponent,
+    SpBtnComponent
   ],
   templateUrl: './retrive-dataset.component.html',
   styleUrl: './retrive-dataset.component.scss'
@@ -53,14 +56,8 @@ export class RetriveDatasetComponent implements OnInit {
   // If the user have dataset
   public haveDatasets = false;
 
-  // If the container is show or not
-  public isShowContainers = false;
-
-  // If the sidebar is open or not
-  public isOpenSidebar = false;
-
-  // If the sidebar for columns is open or not
-  public isOpenColumnsSidebar = false;
+  // List of the sidebar ids
+  public sidebarIds: string[] = [];
 
   // If the datasets is loading
   public isLoadingDatasets = false;
@@ -78,6 +75,7 @@ export class RetriveDatasetComponent implements OnInit {
    * @param modalService the ModalService service
    * @param datasetService the DatasetService service
    * @param genericGraphService the GenericGraphService service
+   * @param sidebarService the SidebarService service
    * @param supportService the LocalDataService service
    * @param loggerService the LoggerService service
    * @param localDataService the LocalDataService service
@@ -88,6 +86,7 @@ export class RetriveDatasetComponent implements OnInit {
     private modalService: ModalService,
     private datasetService: DatasetService,
     private genericGraphService: GenericGraphService,
+    public sidebarService: SidebarService,
     private supportService: LocalDataService,
     private loggerService: LoggerService,
     private localDataService: LocalDataService
@@ -95,8 +94,9 @@ export class RetriveDatasetComponent implements OnInit {
 
   // NgOnInit implementation
   public ngOnInit(): void {
-    this.isLoadingDatasets = true;
+    this.sidebarService.clearAllSidebars();
 
+    this.isLoadingDatasets = true;
     setTimeout(() => {
       this.getAllDatasets();
     }, 1000);
@@ -124,14 +124,12 @@ export class RetriveDatasetComponent implements OnInit {
 
             if (this.allDataset.length > 0) {
               this.haveDatasets = true;
-              this.isShowContainers = false;
             }
 
             this.isLoadingDatasets = false;
           } else {
             this.isLoadingDatasets = false;
             this.haveDatasets = false;
-            this.isShowContainers = false;
           }
         },
         error: (errorData: ApiResponse<any>) => {
@@ -172,7 +170,6 @@ export class RetriveDatasetComponent implements OnInit {
    * Check the validity of the svg file if exist
    */
   public checkIfSvgIsValid(svgContent: any): boolean {
-    // Verifica che il contenuto sia una stringa
     if (typeof svgContent === 'string') {
       return svgContent.trim().startsWith('<svg');
     }
@@ -246,21 +243,32 @@ export class RetriveDatasetComponent implements OnInit {
   /**
    * Manage the dataset
    * @param event the Dataset
+   * @param content the template ref for the sidebar
    */
-  public onManageDataset(event: Dataset) {
+  public onManageDataset(event: Dataset, content: TemplateRef<any>): void {
     this.currentDataset = event;
     this.datasetDescriptionBak = this.currentDataset.description;
     this.modelChange = false;
-    this.isOpenSidebar = true;
-  }
 
-  /**
-   * Delete the Dataset
-   * @param event the Dataset
-   */
-  public onDeleteDataset(event: Dataset) {
-    this.currentDataset = event;
-    this.openModalDelete();
+    const sidebarId: string = 'manage-dataset-sidebar';
+
+    if (!this.sidebarIds.includes(sidebarId)) {
+      this.sidebarIds.push(sidebarId);
+    }
+
+    // Open the sidebar
+    this.sidebarService.open(
+      {
+        width: '600px',
+        backgroundColor: '#f9f9f9',
+        title: this.currentDataset!.name + ' ' + 'Dataset',
+        closeIcon: true,
+        stickyFooter: true,
+        footerButtons: [{ label: 'Delete', action: () => this.deleteDataset(), color: '#ff0000' }]
+      },
+      content,
+      sidebarId
+    );
   }
 
   /**
@@ -268,22 +276,56 @@ export class RetriveDatasetComponent implements OnInit {
    * @returns true if the Dataset is changed, false
    * otherwise
    */
-  public checkForModelChange(): boolean {
-    return (this.modelChange = this.currentDataset!.description !== this.datasetDescriptionBak);
+  public checkForModelChange(): void {
+    const sidebarId = 'manage-dataset-sidebar';
+    const hasChanged = this.currentDataset!.description !== this.datasetDescriptionBak;
+
+    if (hasChanged) {
+      this.modelChange = true;
+
+      // Update the Sidebar configuration
+      this.sidebarService.updateConfig(sidebarId, {
+        footerButtons: [
+          { label: 'Save', action: () => this.onSaveUpdate(), color: 'var(--primary-color)' },
+          { label: 'Restore', action: () => this.restoreModel(), color: '#6c757d' },
+          { label: 'Delete', action: () => this.deleteDataset(), color: '#ff0000' }
+        ]
+      });
+    } else {
+      this.modelChange = false;
+
+      // Reset the sidebar configuration
+      this.sidebarService.updateConfig(sidebarId, {
+        footerButtons: [{ label: 'Delete', action: () => this.deleteDataset(), color: '#ff0000' }]
+      });
+    }
+  }
+
+  /**
+   * Restore the model
+   */
+  public restoreModel(): void {
+    this.currentDataset!.description = this.datasetDescriptionBak;
+    this.modelChange = false;
+
+    // Reset the sidebar configuration
+    this.sidebarService.updateConfig('manage-dataset-sidebar', {
+      footerButtons: [{ label: 'Delete', action: () => this.deleteDataset(), color: '#ff0000' }]
+    });
   }
 
   /**
    * Update the Dataset
    */
   public onSaveUpdate(): void {
-    if (this.currentDataset != null && this.checkForModelChange()) {
+    if (this.currentDataset != null && this.currentDataset!.description !== this.datasetDescriptionBak) {
       this.isLoadingUpdate = true;
 
       setTimeout(() => {
         this.datasetService.updateDatasetDescription(this.currentDataset!.name, this.currentDataset!.description).subscribe({
           next: (response) => {
             if (response.statusCode == 200 && response.responseData != null) {
-              this.isOpenSidebar = false;
+              this.sidebarService.close('manage-dataset-sidebar');
               this.isLoadingDatasets = true;
               const updatedDataset = this.supportService.parseItemToDataset(response.responseData);
 
@@ -302,7 +344,7 @@ export class RetriveDatasetComponent implements OnInit {
               this.toast.show('Dataset update successfully', ToastLevel.Success, 2000);
             } else {
               this.toast.show('Unable to update Dataset. Please retry', ToastLevel.Error, 3000);
-              this.handleSidebar();
+              this.sidebarService.close('manage-dataset-sidebar');
             }
 
             this.isLoadingUpdate = false;
@@ -318,11 +360,38 @@ export class RetriveDatasetComponent implements OnInit {
   }
 
   /**
-   * Restore the model
+   * Delete the Dataset
+   * @param event the Dataset
    */
-  public restoreModel(): void {
-    this.currentDataset!.description = this.datasetDescriptionBak;
-    this.modelChange = false;
+  public onDeleteDataset(event: Dataset) {
+    this.currentDataset = event;
+    this.openModalDelete();
+  }
+
+  /**
+   * Manage column sidebar
+   * @param content the template ref for the sidebar
+   */
+  public onManageColumn(content: TemplateRef<any>): void {
+    const sidebarId: string = 'manage-column-sidebar';
+
+    if (!this.sidebarIds.includes(sidebarId)) {
+      this.sidebarIds.push(sidebarId);
+    }
+
+    // Open the sidebar
+    this.sidebarService.open(
+      {
+        width: '600px',
+        backgroundColor: '#f9f9f9',
+        title: 'CSV Columns',
+        closeIcon: true,
+        stickyFooter: true,
+        footerButtons: []
+      },
+      content,
+      sidebarId
+    );
   }
 
   /**
@@ -364,7 +433,8 @@ export class RetriveDatasetComponent implements OnInit {
             this.haveDatasets = this.allDataset.length > 0;
 
             // Chiudi la sidebar
-            this.handleSidebar();
+            this.sidebarService.close('manage-dataset-sidebar');
+            this.currentDataset = undefined;
             this.toast.show('Dataset deleted successfully', ToastLevel.Success, 3000);
           }
         },
@@ -380,21 +450,6 @@ export class RetriveDatasetComponent implements OnInit {
    */
   public closeModal(): void {
     this.modalService.hideGenericModal();
-  }
-
-  /**
-   * Close the sidebar
-   */
-  public handleSidebar(): void {
-    this.isOpenSidebar = false;
-    this.currentDataset = undefined;
-  }
-
-  /**
-   * Close column sidebar
-   */
-  public handleColumnSidebar(): void {
-    this.isOpenColumnsSidebar = !this.isOpenColumnsSidebar;
   }
 
   /**

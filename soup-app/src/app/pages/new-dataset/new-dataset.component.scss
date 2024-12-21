@@ -141,25 +141,8 @@ mat-stepper {
 }
 
 // ================================
-// Region: Sidebar
+// Region: Sidebar content
 // ================================
-.sidebar {
-  position: fixed;
-  width: 500px;
-  height: 87vh;
-  top: 59px;
-  right: -500px;
-  transition: right 0.5s;
-  background-color: #f6f6f6;
-  z-index: 1000;
-  padding: 10px;
-
-  h2 {
-    font-size: 25px;
-    font-family: 'Times New Roman', Times, serif;
-  }
-}
-
 .entities-list {
   display: flex;
   align-items: center;
@@ -228,10 +211,10 @@ mat-divider {
 }
 
 .map-information {
-  margin-top: 5px;
-  background-color: #eeeeee;
-  padding: 5px;
+  margin-top: 10px;
   border-radius: 5px;
+  padding: 5px;
+  background-color: #f1f1f1;
 }
 
 .map-information-tile {
@@ -248,9 +231,13 @@ mat-divider {
 }
 
 .form-group {
-  margin-top: 20px;
-  padding: 5px;
+  margin-top: 10px;
   font-family: 'Times New Roman', Times, serif;
+  width: 100%;
+
+  label {
+    color: var(--secondary-color);
+  }
 }
 
 .button-sidebar {

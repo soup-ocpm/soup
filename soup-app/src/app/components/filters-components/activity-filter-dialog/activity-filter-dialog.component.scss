@@ -1,0 +1,52 @@
+// ================================
+// Region: Master layout
+// ================================
+.modal-header {
+  background-color: #f8f9fa;
+  border-bottom: 1px solid #dee2e6;
+  height: 50px;
+}
+
+// ================================
+// Region: Modal body layout
+// ================================
+.modal-body {
+  padding: 20px;
+  font-size: 1rem;
+}
+
+// ================================
+// Region: Entity list
+// ================================
+.entity-body {
+  width: 100%;
+  height: 240px;
+  overflow: auto;
+}
+
+.entities-list {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 200px;
+  height: 35px;
+  color: white;
+  background-color: rgb(63, 81, 181);
+  border: 2px solid white;
+  border-radius: 5px;
+  font-family: Georgia, 'Times New Roman', Times, serif;
+  font-size: 14px;
+}
+
+.entities-list.properties {
+  background-color: rgb(225, 91, 61);
+}
+
+.entities-container {
+  display: flex;
+  justify-content: space-between;
+}
+
+.entities-container > div {
+  width: 100%;
+}

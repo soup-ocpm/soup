@@ -1,6 +1,6 @@
 // eslint-disable-next-line simple-import-sort/imports
 import { CommonModule } from '@angular/common';
-import { Component } from '@angular/core';
+import { Component, OnInit, TemplateRef, ViewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MatRadioModule } from '@angular/material/radio';
 import { MatStepper } from '@angular/material/stepper';
@@ -8,8 +8,10 @@ import { Router } from '@angular/router';
 import { NgxDropzoneModule } from 'ngx-dropzone';
 import { Papa } from 'ngx-papaparse';
 
-import { SpBtnComponent, SpBtnTxtComponent, SpProgressbarComponent } from '@aledevsharp/sp-lib';
+import { SpBtnTxtComponent, SpProgressbarComponent } from '@aledevsharp/sp-lib';
 import { ModalService } from 'src/app/shared/components/s-modals/modal.service';
+import { SidebarComponent } from 'src/app/shared/components/s-sidebar/s-sidebar.component';
+import { SidebarService } from 'src/app/shared/components/s-sidebar/sidebar.service';
 import { NotificationService } from 'src/app/shared/components/s-toast/toast.service';
 import { UMLEdge } from '../../components/uml-diagram/models/uml_edge';
 import { UMLNode } from '../../components/uml-diagram/models/uml_node';
@@ -49,7 +51,7 @@ class Multiplicity {
     MaterialModule,
     MatRadioModule,
     // Component import
-    SpBtnComponent,
+    SidebarComponent,
     SpBtnTxtComponent,
     SpProgressbarComponent,
     UmlDiagramComponent,
@@ -59,7 +61,7 @@ class Multiplicity {
   templateUrl: './new-dataset.component.html',
   styleUrl: './new-dataset.component.scss'
 })
-export class NewDatasetComponent {
+export class NewDatasetComponent implements OnInit {
   // List of files
   public files: File[] = [];
 
@@ -117,14 +119,11 @@ export class NewDatasetComponent {
   // If the table is full screen
   public isShowFullScreen = false;
 
-  // If the sidebar is show or not
-  public isShowSidebar = false;
+  // List of the sidebar ids
+  public sidebarIds: string[] = [];
 
   // If the UML is show or not
   public isShowUML = false;
-
-  // If the sidebar for uml class diagram is show
-  public isShowUMLSidebar = false;
 
   // If the progress bar is show or not
   public isLoading = false;
@@ -135,28 +134,42 @@ export class NewDatasetComponent {
   // The progress data
   public progressData: any;
 
+  // View child template ref for master sidebar
+  @ViewChild('masterSidebarTemplate', { read: TemplateRef }) masterSidebarTemplate: TemplateRef<unknown> | undefined;
+
+  // View child template ref for uml sidebar
+  @ViewChild('umlSidebarTemplate', { read: TemplateRef }) umlSidebarTemplate: TemplateRef<unknown> | undefined;
+
   /**
    * Constructor for NewDatasetComponent component
-   * @param router the Router
    * @param parser the Papa parser
+   * @param router the Router
    * @param modal the ModalService service
-   * @param toast the NotificationService service
    * @param logger the LoggerService service
+   * @param modalService the ModalService service
+   * @param toast the NotificationService service
    * @param datasetService the DatasetService service
+   * @param sidebarService the SidebarService service
    * @param supportService the LocalDataService service
    * @param graphService the StandardGraphService service
    */
   constructor(
-    private router: Router,
     private parser: Papa,
+    private router: Router,
     private modal: ModalService,
-    private toast: NotificationService,
     private logger: LoggerService,
     private modalService: ModalService,
+    private toast: NotificationService,
     private datasetService: DatasetService,
+    private sidebarService: SidebarService,
     private supportService: LocalDataService,
     private graphService: StandardGraphService
   ) {}
+
+  // NgOnInit implementation
+  public ngOnInit(): void {
+    this.sidebarService.clearAllSidebars();
+  }
 
   /**
    * Handle the selection file
@@ -229,7 +242,7 @@ export class NewDatasetComponent {
 
                 this.isShowUpload = false;
                 this.isShowTable = true;
-                this.isShowSidebar = true;
+                this.onManageMasterSidebar();
               }
             },
             header: true
@@ -240,6 +253,32 @@ export class NewDatasetComponent {
     } else {
       this.toast.show('Upload the csv file', ToastLevel.Error, 2000);
     }
+  }
+
+  /**
+   * Open the master sidebar
+   * @param content the template ref for the sidebar
+   */
+  public onManageMasterSidebar(): void {
+    const sidebarId: string = 'master-sidebar';
+
+    if (!this.sidebarIds.includes(sidebarId)) {
+      this.sidebarIds.push(sidebarId);
+    }
+
+    // Open the sidebar
+    this.sidebarService.open(
+      {
+        width: '500px',
+        backgroundColor: '#f9f9f9',
+        title: 'Filter Data',
+        closeIcon: false,
+        stickyFooter: false,
+        footerButtons: [{ label: 'Continue', action: () => this.requestTriggerAndTarget(), color: 'var(--primary-color)' }]
+      },
+      this.masterSidebarTemplate,
+      sidebarId
+    );
   }
 
   /**
@@ -554,7 +593,7 @@ export class NewDatasetComponent {
           label: multiplicity.columnTwo
         };
 
-        // CCreate unique string
+        // Create unique string
         const nodeOneKey = `${nodeOne.id}:${nodeOne.label}`;
         const nodeTwoKey = `${nodeTwo.id}:${nodeTwo.label}`;
 
@@ -586,12 +625,42 @@ export class NewDatasetComponent {
         this.umlNodes = nodes;
         this.umlEdges = edges;
 
+        console.log(this.umlNodes);
+        console.log(this.umlEdges);
+
         this.isShowTable = false;
-        this.isShowSidebar = false;
         this.isShowUML = true;
-        this.isShowUMLSidebar = true;
+        this.onManageUMLSidebar();
       }
     }
+  }
+
+  /**
+   * Manage the UML Sidebar
+   */
+  public onManageUMLSidebar(): void {
+    const sidebarId: string = 'master-uml';
+
+    if (!this.sidebarIds.includes(sidebarId)) {
+      this.sidebarIds.push(sidebarId);
+    }
+
+    // Open the sidebar
+    this.sidebarService.open(
+      {
+        width: '500px',
+        backgroundColor: '#f9f9f9',
+        title: 'Map Trigger Information',
+        closeIcon: false,
+        stickyFooter: true,
+        footerButtons: [
+          { label: 'Build', action: () => this.inputDatasetName(), color: 'var(--primary-color)' },
+          { label: 'Close', action: () => this.closeUMLLayout(), color: '#6c757d' }
+        ]
+      },
+      this.umlSidebarTemplate,
+      sidebarId
+    );
   }
 
   /**
@@ -615,9 +684,9 @@ export class NewDatasetComponent {
     this.umlNodes = [];
     this.umlEdges = [];
     this.isShowUML = false;
-    this.isShowUMLSidebar = false;
+    this.sidebarService.close('master-uml');
     this.isShowTable = true;
-    this.isShowSidebar = true;
+    this.onManageMasterSidebar();
   }
 
   /**
@@ -752,11 +821,13 @@ export class NewDatasetComponent {
       });
     }
 
-    const isShowUML = this.isShowUML && this.isShowUMLSidebar;
+    const isShowUML = this.isShowUML;
 
     if (isShowUML) {
       this.isShowUML = false;
-      this.isShowUMLSidebar = false;
+      this.sidebarService.close('master-uml');
+    } else {
+      this.sidebarService.close('master-sidebar');
     }
 
     this.isLoading = true;
@@ -785,7 +856,9 @@ export class NewDatasetComponent {
 
               if (isShowUML) {
                 this.isShowUML = true;
-                this.isShowUMLSidebar = true;
+                this.sidebarService.reOpen('master-uml');
+              } else {
+                this.sidebarService.reOpen('master-sidebar');
               }
             }
           },
@@ -795,7 +868,9 @@ export class NewDatasetComponent {
 
             if (isShowUML) {
               this.isShowUML = true;
-              this.isShowUMLSidebar = true;
+              this.sidebarService.reOpen('master-uml');
+            } else {
+              this.sidebarService.reOpen('master-sidebar');
             }
           },
           complete: () => {}
@@ -857,7 +932,7 @@ export class NewDatasetComponent {
    * Close the Sidebar
    */
   public toggleSidebar(): void {
-    this.isShowSidebar = false;
+    this.sidebarService.close('master-sidebar');
     this.allFileValuesSelected.forEach((e: Entity): void => {
       e.selected = false;
     });
@@ -874,9 +949,7 @@ export class NewDatasetComponent {
    */
   public handleFullScreen(): void {
     this.isShowFullScreen = true;
-    if (this.isShowSidebar) {
-      this.isShowSidebar = false;
-    }
+    this.sidebarService.close('master-sidebar');
   }
 
   /**
@@ -884,7 +957,7 @@ export class NewDatasetComponent {
    */
   public toggleFullScreen(): void {
     this.isShowFullScreen = false;
-    this.isShowSidebar = !this.isShowSidebar;
+    this.onManageMasterSidebar();
   }
 
   /**

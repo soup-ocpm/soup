@@ -6,26 +6,29 @@
     backgroundColor: config?.backgroundColor,
     right: isOpen ? '0' : '-' + (config?.width || '600px')
   }">
+  <!-- Sidebar header -->
   <div class="sidebar-header">
     <h4>{{ config?.title }}</h4>
     <i
+      *ngIf="config?.closeIcon"
       class="bi bi-x-lg"
       (click)="closeSidebar()"></i>
   </div>
 
+  <!-- Sidebar content -->
   <div class="sidebar-content">
     <ng-container *ngTemplateOutlet="content"></ng-container>
   </div>
 
+  <!-- Sidebar footer -->
   <div
     class="master-footer"
+    [ngClass]="{ 'sticky-footer': config?.stickyFooter }"
     *ngIf="config?.footerButtons?.length">
-    <button
-      *ngFor="let button of config!.footerButtons"
-      (click)="button.action()"
-      class="btn btn-sm"
-      [ngStyle]="{ backgroundColor: button.color || '#007bff', color: '#fff' }">
-      {{ button.label }}
-    </button>
+    <sp-btn
+      *ngFor="let button of config?.footerButtons"
+      [text]="button.label"
+      [color]="button.color"
+      (buttonClick)="button.action()"></sp-btn>
   </div>
 </div>

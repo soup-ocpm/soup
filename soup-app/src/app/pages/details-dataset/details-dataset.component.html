@@ -1,6 +1,7 @@
 <!--The progress bar-->
 <sp-progressbar *ngIf="this.isLoading"></sp-progressbar>
 
+<!--Master content-->
 <div class="master">
   <div *ngIf="!this.isLoading">
     <!--Data-->
@@ -167,221 +168,6 @@
         </div>
       </div>
     </div>
-
-    <!-- Generic Sidebar -->
-    <div
-      class="sidebar"
-      [ngClass]="{ show: this.isOpenSidebar, move: this.isOpenAggregationSidebar || this.isOpenJSONSidebar }">
-      <div class="sidebar-header">
-        <h4>Graph Operation</h4>
-        <!--<i class="bi bi-x-lg" (click)="this.isOpenSidebar = false"></i>-->
-      </div>
-      <p>A ist of operations avaible for this section</p>
-
-      <!--View the standard graph-->
-      <div class="double-flex">
-        <h5
-          class="underline-h"
-          [ngStyle]="{ cursor: this.isOpenAggregationSidebar ? 'not-allowed' : 'pointer' }"
-          (click)="
-            this.currentDataset!.classNodes == 0 || this.currentDataset!.classNodes == undefined
-              ? this.goToGraphVisualization(true)
-              : this.handleGraphViewSidebar()
-          ">
-          Graph Visualization
-        </h5>
-      </div>
-      <p>View the complete graph. Maximum of 200 nodes and relationships displayed</p>
-
-      <div style="margin-top: 35px"></div>
-
-      <!--Group by class-->
-      <div class="double-flex">
-        <h5
-          class="underline-h"
-          [ngStyle]="{ cursor: this.isOpenAggregationSidebar || this.isOpenJSONSidebar ? 'not-allowed' : 'pointer' }"
-          (click)="this.handleAggregationSidebar()">
-          Aggregate Graph
-        </h5>
-      </div>
-      <p>Aggregate graph by group nodes into chosen classes</p>
-
-      <div style="margin-top: 35px"></div>
-
-      <div class="double-flex">
-        <h5>Export JSON</h5>
-        <mat-icon
-          *ngIf="this.currentDataset!.totalNodes > 1000"
-          [matTooltip]="'It may take some time based on the Data'">
-          warning
-        </mat-icon>
-      </div>
-
-      <p>Export the complete graph in a JSON file</p>
-
-      <sp-btn
-        [text]="'Export'"
-        [height]="'27px'"
-        [cursor]="this.isOpenAggregationSidebar || this.isOpenJSONSidebar ? 'not-allowed' : 'pointer'"
-        (buttonClick)="this.handleJSONSidebar()"></sp-btn>
-
-      <div style="margin-top: 35px"></div>
-
-      <div class="double-flex">
-        <h5>Delete Dataset</h5>
-      </div>
-      <p>This operation is not reversible</p>
-      <sp-btn
-        [text]="'Delete'"
-        [height]="'27px'"
-        [color]="'#FF0000'"
-        [cursor]="this.isOpenAggregationSidebar || this.isOpenJSONSidebar ? 'not-allowed' : 'pointer'"
-        (buttonClick)="this.handleDeleteGraph()"></sp-btn>
-
-      <div style="margin-top: 35px"></div>
-    </div>
-
-    <!--Graph visualization sidebar-->
-    <div
-      class="sidebar"
-      [ngClass]="{ show: this.isOpenGraphViewSidebar }">
-      <div class="sidebar-header">
-        <h4>Graph Visualization</h4>
-        <i
-          class="bi bi-x-lg"
-          (click)="this.handleGraphViewSidebar()"></i>
-      </div>
-      <p style="margin-top: 15px">This operation allows to view the Graph</p>
-
-      <sp-divider></sp-divider>
-
-      <li class="list-group-item">
-        <span style="margin-top: 5px">Standard Graph</span>
-
-        <div class="group">
-          <i
-            class="bi bi-arrow-right-square-fill"
-            style="color: green; cursor: pointer"
-            (click)="this.goToGraphVisualization(true)"></i>
-        </div>
-      </li>
-
-      <li class="list-group-item">
-        <span style="margin-top: 5px">Aggregate Graph</span>
-
-        <div class="group">
-          <i
-            class="bi bi-arrow-right-square-fill"
-            style="color: green; cursor: pointer"
-            (click)="this.goToGraphVisualization(false)"></i>
-        </div>
-      </li>
-    </div>
-
-    <!--Aggregate Sidebar-->
-    <div
-      class="sidebar"
-      [ngClass]="{ show: this.isOpenAggregationSidebar }">
-      <div class="sidebar-header">
-        <h4>Group by class</h4>
-        <i
-          class="bi bi-x-lg"
-          (click)="this.handleAggregationSidebar()"></i>
-      </div>
-      <p style="margin-top: 15px">
-        This operation allows to group nodes into classes. The default aggregation considers the Activity property. Moreover, here you can
-        select the desired entities that will be also taken into account when creating Class nodes
-      </p>
-
-      <sp-divider></sp-divider>
-
-      <li
-        *ngFor="let entity of this.entityList"
-        class="list-group-item">
-        <span style="margin-top: 5px">{{ entity.name }}</span>
-
-        <div class="group">
-          <mat-icon
-            *ngIf="entity.numberOfNanNodes > 0"
-            [matTooltip]="getEntityWarningLabel(entity)">
-            warning
-          </mat-icon>
-          <mat-slide-toggle
-            style="margin-top: 3px"
-            [(ngModel)]="entity.isSelected"
-            (change)="selectionEntity(entity)"
-            color="primary"></mat-slide-toggle>
-        </div>
-      </li>
-
-      <div style="margin-top: 13px"></div>
-      <sp-divider></sp-divider>
-
-      <div *ngIf="this.currentDataset!.classNodes > 0">
-        <p style="color: #ff0000; margin-top: 10px">Warning</p>
-        <p>
-          Aggregate class graph is already present inside the Memgraph Database. This operation will remove the present graph to make new
-          aggregation
-        </p>
-      </div>
-
-      <div class="master-footer">
-        <sp-btn
-          *ngIf="this.selectedEntities.length > 0"
-          [text]="'Build'"
-          (buttonClick)="this.buildClassGraph()"></sp-btn>
-        <sp-btn
-          *ngIf="this.selectedEntities.length > 0"
-          [text]="'Restore'"
-          [color]="'#6c757d'"
-          (buttonClick)="this.resetSelection()"></sp-btn>
-      </div>
-    </div>
-
-    <!--Json Sidebar-->
-    <div
-      class="sidebar"
-      [ngClass]="{ show: this.isOpenJSONSidebar }">
-      <div class="sidebar-header">
-        <h4>Export JSON</h4>
-        <i
-          class="bi bi-x-lg"
-          (click)="this.handleJSONSidebar()"></i>
-      </div>
-      <p style="margin-top: 15px">This operation allows to download specific JSON of your Dataset.</p>
-
-      <sp-divider></sp-divider>
-
-      <li
-        *ngFor="let object of this.jsonList"
-        class="list-group-item">
-        <span style="margin-top: 5px">{{ object.name }}</span>
-
-        <div class="group">
-          <mat-slide-toggle
-            style="margin-top: 3px"
-            [(ngModel)]="object.isSelected"
-            (change)="selectionJson(object)"
-            color="primary"></mat-slide-toggle>
-        </div>
-      </li>
-
-      <div style="margin-top: 13px"></div>
-      <sp-divider></sp-divider>
-
-      <div class="master-footer">
-        <sp-btn
-          *ngIf="this.selectedJson.length > 0 && !this.isLoadingJsonDownload"
-          [text]="'Download'"
-          (buttonClick)="this.downloadJsonSelected()"></sp-btn>
-        <sp-spinner *ngIf="this.isLoadingJsonDownload"></sp-spinner>
-        <sp-btn
-          *ngIf="this.selectedJson.length > 0"
-          [text]="'Restore'"
-          [color]="'#6c757d'"
-          (buttonClick)="this.resetJsonSelection()"></sp-btn>
-      </div>
-    </div>
   </div>
 
   <!--Loading content-->
@@ -392,16 +178,122 @@
         <br />
         This operation may take a few minutes...
       </h3>
-      <!-- <div
-        class="progress-terminal"
-        *ngIf="this.progressData['total_nodes'] != null && this.progressData['total_relationships'] != null">
-        <p>Created {{ progressData['event_nodes'] }} event nodes</p>
-        <p>Created {{ progressData['entity_nodes'] }} entity nodes</p>
-        <p>Created {{ progressData['corr_relationships'] }} :CORR relationships</p>
-        <p>Created {{ progressData['df_relationships'] }} :DF relationships</p>
-        <p style="font-weight: bold">Total : {{ progressData['total_nodes'] }} nodes</p>
-        <p style="font-weight: bold">Total : {{ progressData['total_relationships'] }} relationships</p>
-      </div> -->
     </div>
   </div>
 </div>
+
+<!--Overlay sidebar open-->
+<div
+  class="overlay"
+  *ngIf="this.sidebarService.isSidebarOpen('new-analysis')"></div>
+
+<!--List of the sidebar-->
+<s-sidebar
+  *ngFor="let sidebarId of this.sidebarIds"
+  [sidebarId]="sidebarId"></s-sidebar>
+
+<!-- Master Sidebar template-->
+<ng-template #masterSidebarTemplate>
+  <p class="sidebar-intro">A list of operations available for this section</p>
+
+  <!-- Operations Section -->
+  <div class="operation-container">
+    <app-side-operation
+      *ngFor="let operation of this.operations"
+      [title]="operation.title"
+      [description]="operation.description"
+      [icon]="operation.icon"
+      [action]="operation.action"
+      (operationSelected)="this.onOperationSelected(operation)"></app-side-operation>
+  </div>
+</ng-template>
+
+<!--Graph visualization Sidebar template-->
+<ng-template #graphVisualizationSidebarTemplate>
+  <p style="margin-top: 15px">This operation allows to view the Graph</p>
+
+  <sp-divider></sp-divider>
+
+  <li class="list-group-item">
+    <span style="margin-top: 5px">Standard Graph</span>
+
+    <div class="group">
+      <i
+        class="bi bi-arrow-right-square-fill"
+        style="color: green; cursor: pointer"
+        (click)="this.goToGraphVisualization(true)"></i>
+    </div>
+  </li>
+
+  <li class="list-group-item">
+    <span style="margin-top: 5px">Aggregate Graph</span>
+
+    <div class="group">
+      <i
+        class="bi bi-arrow-right-square-fill"
+        style="color: green; cursor: pointer"
+        (click)="this.goToGraphVisualization(false)"></i>
+    </div>
+  </li>
+</ng-template>
+
+<!--Aggregate Sidebar template-->
+<ng-template #aggregateSidebarTemplate>
+  <p style="margin-top: 15px">
+    This operation allows to group nodes into classes. The default aggregation considers the Activity property. Moreover, here you can
+    select the desired entities that will be also taken into account when creating Class nodes
+  </p>
+
+  <sp-divider></sp-divider>
+
+  <li
+    *ngFor="let entity of this.entityList"
+    class="list-group-item">
+    <span style="margin-top: 5px">{{ entity.name }}</span>
+
+    <div class="group">
+      <mat-icon
+        *ngIf="entity.numberOfNanNodes > 0"
+        [matTooltip]="getEntityWarningLabel(entity)">
+        warning
+      </mat-icon>
+      <mat-slide-toggle
+        style="margin-top: 3px"
+        [(ngModel)]="entity.isSelected"
+        (change)="selectionEntity(entity)"
+        color="primary"></mat-slide-toggle>
+    </div>
+  </li>
+
+  <div style="margin-top: 13px"></div>
+  <sp-divider></sp-divider>
+
+  <div *ngIf="this.currentDataset!.classNodes > 0">
+    <p style="color: #ff0000; margin-top: 10px">Warning</p>
+    <p>
+      Aggregate class graph is already present inside the Memgraph Database. This operation will remove the present graph to make new
+      aggregation
+    </p>
+  </div>
+</ng-template>
+
+<!--New analysis template-->
+<ng-template #newAnalysisSidebarTemplate>
+  <p>From here you can add filters and create a new analysis</p>
+  <div class="master-filters">
+    <div
+      *ngFor="let tile of this.tiles"
+      class="filter-tile">
+      <strong>{{ tile.type }}</strong>
+      <p>{{ tile.details }}</p>
+    </div>
+    <button
+      class="plus-button"
+      (click)="this.addNewAnalysisTile()">
+      <i class="bi bi-plus-lg"></i>
+    </button>
+  </div>
+</ng-template>
+
+<!--History analysis template-->
+<ng-template #historyanalysis></ng-template>

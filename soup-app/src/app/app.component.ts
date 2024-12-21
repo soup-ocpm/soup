@@ -9,7 +9,6 @@ import { NavbarComponent } from './shared/components/navbar/navbar.component';
 import { GenericModalComponent } from './shared/components/s-modals/s-generic-modal/s-generic-modal.component';
 import { InputModalComponent } from './shared/components/s-modals/s-input-modal/s-input-modal.component';
 import { SToastComponent } from './shared/components/s-toast/s-toast.component';
-import { SidebarComponent } from './shared/components/sidebar/sidebar.component';
 
 @Component({
   selector: 'app-root',
@@ -23,7 +22,6 @@ import { SidebarComponent } from './shared/components/sidebar/sidebar.component'
     FooterComponent,
     SToastComponent,
     GenericModalComponent,
-    SidebarComponent,
     InputModalComponent
   ],
   templateUrl: './app.component.html',

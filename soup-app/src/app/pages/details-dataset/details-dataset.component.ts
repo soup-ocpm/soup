@@ -1,22 +1,28 @@
-import { SpBtnComponent, SpDividerComponent, SpProgressbarComponent, SpSpinnerComponent } from '@aledevsharp/sp-lib';
+import { SpDividerComponent, SpProgressbarComponent } from '@aledevsharp/sp-lib';
 import { CommonModule } from '@angular/common';
-import { AfterViewInit, Component, ElementRef, OnInit, ViewChild } from '@angular/core';
+import { AfterViewInit, Component, ElementRef, OnInit, TemplateRef, ViewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Chart, registerables } from 'chart.js';
-import saveAs from 'file-saver';
-import { concatMap, from, map, Observable, toArray } from 'rxjs';
 
+import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
+import { ActivityFilterDialogComponent } from 'src/app/components/filters-components/activity-filter-dialog/activity-filter-dialog.component';
+import { FrequenceFilterDialogComponent } from 'src/app/components/filters-components/frequence-filter-dialog/frequence-filter-dialog.component';
+import { PerformanceFilterDialogComponent } from 'src/app/components/filters-components/performance-filter-dialog/performance-filter-dialog.component';
+import { PrimaryFilterDialogComponent } from 'src/app/components/filters-components/primary-filter-dialog/primary-filter-dialog.component';
+import { TimestamFilterDialogComponent } from 'src/app/components/filters-components/timestam-filter-dialog/timestam-filter-dialog.component';
+import { VariationFilterDialogComponent } from 'src/app/components/filters-components/variation-filter-dialog/variation-filter-dialog.component';
 import { ModalService } from 'src/app/shared/components/s-modals/modal.service';
+import { SidebarComponent } from 'src/app/shared/components/s-sidebar/s-sidebar.component';
+import { SidebarService } from 'src/app/shared/components/s-sidebar/sidebar.service';
 import { NotificationService } from 'src/app/shared/components/s-toast/toast.service';
-import { ApiResponse } from '../../core/models/api_response.model';
+import { SideOperationComponent } from '../../components/side-operation/side-operation.component';
 import { LoggerService } from '../../core/services/logger.service';
 import { GraphDataEnum } from '../../enums/graph_data.enum';
 import { Dataset } from '../../models/dataset.model';
 import { DetailGraphData } from '../../models/detail_graph_data.model';
 import { ClassGraphService } from '../../services/class_graph.service';
 import { DatasetService } from '../../services/datasets.service';
-import { JSONDataService } from '../../services/json_data.service';
 import { StandardGraphService } from '../../services/standard_graph.service';
 import { ToastLevel } from '../../shared/components/s-toast/toast_type.enum';
 import { MaterialModule } from '../../shared/modules/materlal.module';
@@ -71,10 +77,10 @@ export class JsonObject {
     FormsModule,
     MaterialModule,
     // Component import
-    SpBtnComponent,
     SpDividerComponent,
     SpProgressbarComponent,
-    SpSpinnerComponent
+    SidebarComponent,
+    SideOperationComponent
   ],
   templateUrl: './details-dataset.component.html',
   styleUrl: './details-dataset.component.scss'
@@ -92,12 +98,6 @@ export class DetailsDatasetComponent implements OnInit, AfterViewInit {
   // List of selected entities
   public selectedEntities: string[] = [];
 
-  // The json object list
-  public jsonList: JsonObject[] = [];
-
-  // List of the selected json content
-  public selectedJson: string[] = [];
-
   // Data pie chart for standard graph
   private dataPieChartInstance: any;
 
@@ -110,26 +110,54 @@ export class DetailsDatasetComponent implements OnInit, AfterViewInit {
   // Aggregate process pie chart for class graph
   private aggregateProcessPieChartInstance: any;
 
-  // If the sidebar is open or not
-  public isOpenSidebar = true;
-
-  // If the sidebar for aggregation is open or not
-  public isOpenAggregationSidebar = false;
-
-  // If the sidebar of JSON is open or not
-  public isOpenJSONSidebar = false;
-
-  // If the sidebar for graph visualization is open or not
-  public isOpenGraphViewSidebar = false;
-
-  // If the sidebar for filters is open or not
-  public isOpenFiltersSidebar = false;
+  // List of the sidebar ids
+  public sidebarIds: string[] = [];
 
   // If the progress bar is show or not
   public isLoading = false;
 
-  // If the user attend download the json
-  public isLoadingJsonDownload = false;
+  // List of the filters for the analysis
+  public filters = ['Timestamp', 'Performance', 'Include Activities', 'Exclude Activities', 'Frequence', 'Variation'];
+
+  // List of the tiles
+  public tiles: any[] = [];
+
+  // List of the operations
+  public operations = [
+    {
+      title: 'Graph Visualization',
+      description: 'View the complete graph. Maximum of 200 nodes and relationships displayed',
+      icon: 'analytics',
+      action: () =>
+        this.currentDataset?.classNodes === 0 || this.currentDataset?.classNodes === undefined
+          ? this.goToGraphVisualization(true)
+          : this.openGraphVisualizationSidebar()
+    },
+    {
+      title: 'New Analysis',
+      description: 'Create new analysis for this dataset',
+      icon: 'add_chart',
+      action: () => this.openNewAnalysisSidebar()
+    },
+    // {
+    //   title: 'Manage Analysis',
+    //   description: 'Manage the analysis.',
+    //   icon: 'history',
+    //   action: () => this.openHistoryAnalysisSidebar()
+    // },
+    {
+      title: 'Aggregate Graph',
+      description: 'Aggregate graph by grouping nodes into chosen classes',
+      icon: 'group_work',
+      action: () => this.openAggregateSidebar()
+    },
+    {
+      title: 'Manage Datasets',
+      description: 'View all datasets',
+      icon: 'dashboard',
+      action: () => this.goToDatasetsPage()
+    }
+  ];
 
   // Pie chart for dataset data
   @ViewChild('dataPieChart', { static: false }) dataPieChart: ElementRef | undefined;
@@ -142,6 +170,20 @@ export class DetailsDatasetComponent implements OnInit, AfterViewInit {
 
   // Pie chart for process execution
   @ViewChild('aggregateProcessPieChart', { static: false }) aggregateProcessPieChart: ElementRef | undefined;
+
+  // View child template ref for master sidebar
+  @ViewChild('masterSidebarTemplate', { read: TemplateRef }) masterSidebarTemplate: TemplateRef<unknown> | undefined;
+
+  // View child template ref for master sidebar
+  @ViewChild('graphVisualizationSidebarTemplate', { read: TemplateRef }) graphVisualizationSidebarTemplate:
+    | TemplateRef<unknown>
+    | undefined;
+
+  // View child template ref for master sidebar
+  @ViewChild('newAnalysisSidebarTemplate', { read: TemplateRef }) newAnalysisSidebarTemplate: TemplateRef<unknown> | undefined;
+
+  // View child template ref for master sidebar
+  @ViewChild('aggregateSidebarTemplate', { read: TemplateRef }) aggregateSidebarTemplate: TemplateRef<unknown> | undefined;
 
   /**
    * Constructor for DetailsDatasetComponent component
@@ -160,12 +202,13 @@ export class DetailsDatasetComponent implements OnInit, AfterViewInit {
     private router: Router,
     private toast: NotificationService,
     private modalService: ModalService,
+    private ngbModalService: NgbModal,
     private activatedRoute: ActivatedRoute,
     private supportService: LocalDataService,
     private datasetService: DatasetService,
     private logService: LoggerService,
-    private jsonDataService: JSONDataService,
     private classGraphService: ClassGraphService,
+    public sidebarService: SidebarService,
     private standardGraphService: StandardGraphService
   ) {
     Chart.register(...registerables);
@@ -173,13 +216,14 @@ export class DetailsDatasetComponent implements OnInit, AfterViewInit {
 
   // NgOnInit implementation
   public ngOnInit(): void {
+    this.sidebarService.clearAllSidebars();
+
     const datasetName = this.activatedRoute.snapshot.paramMap.get('name');
     this.currentDataset = this.supportService.getCurrentDataset();
 
     if (this.currentDataset != null && this.currentDataset.name == datasetName) {
       this.loadDatasetDetails();
       this.retrieveEntityKey();
-      this.populateJsonContent();
       this.createDataPieChart();
       this.createProcessPieChart();
     } else {
@@ -192,6 +236,21 @@ export class DetailsDatasetComponent implements OnInit, AfterViewInit {
   // NgAfterViewInit implementation
   public ngAfterViewInit(): void {
     this.createCharts();
+  }
+
+  /**
+   * Handle the operation to the operation card
+   * @param operation the operation
+   */
+  public onOperationSelected(operation: any): void {
+    operation.action();
+  }
+
+  /**
+   * Go to de Datasets page
+   */
+  public goToDatasetsPage(): void {
+    this.router.navigate(['datasets']);
   }
 
   /**
@@ -208,6 +267,238 @@ export class DetailsDatasetComponent implements OnInit, AfterViewInit {
       this.supportService.viewClassGraph = true;
     }
     this.router.navigate(['datasets', this.currentDataset!.name, 'graph']);
+  }
+
+  /**
+   * Open the master sidebar template
+   */
+  public openMasterSidebar(): void {
+    const sidebarId: string = 'master-sidebar';
+
+    if (!this.sidebarIds.includes(sidebarId)) {
+      this.sidebarIds.push(sidebarId);
+    }
+
+    // Open the sidebar
+    this.sidebarService.open(
+      {
+        width: '420px',
+        backgroundColor: '#f9f9f9',
+        title: 'Graph Operations',
+        closeIcon: false,
+        stickyFooter: true,
+        footerButtons: []
+      },
+      this.masterSidebarTemplate,
+      sidebarId
+    );
+  }
+
+  /**
+   * Open the master sidebar template
+   */
+  public openGraphVisualizationSidebar(): void {
+    const sidebarId: string = 'graph-visualization-sidebar';
+
+    if (!this.sidebarIds.includes(sidebarId)) {
+      this.sidebarIds.push(sidebarId);
+    }
+
+    // Open the sidebar
+    this.sidebarService.open(
+      {
+        width: '420px',
+        backgroundColor: '#f9f9f9',
+        title: 'Graph Visualization',
+        closeIcon: true,
+        stickyFooter: true,
+        footerButtons: []
+      },
+      this.graphVisualizationSidebarTemplate,
+      sidebarId
+    );
+  }
+
+  /**
+   * Open the new analysis sidebar
+   */
+  public openNewAnalysisSidebar(): void {
+    const sidebarId: string = 'new-analysis';
+
+    if (!this.sidebarIds.includes(sidebarId)) {
+      this.sidebarIds.push(sidebarId);
+    }
+
+    // Open the sidebar
+    this.sidebarService.open(
+      {
+        width: '600px',
+        backgroundColor: '#fff',
+        title: 'New Analysis',
+        closeIcon: true,
+        stickyFooter: true,
+        footerButtons: []
+      },
+      this.newAnalysisSidebarTemplate,
+      sidebarId
+    );
+  }
+
+  /**
+   * Update the new analysis sidebar
+   * @param addButtons if we want to add the footer buttons
+   */
+  public updateNewAnalysisSidebar(addButtons: boolean): void {
+    const sidebarId: string = 'new-analysis';
+
+    if (addButtons) {
+      this.sidebarService.updateConfig(sidebarId, {
+        footerButtons: [
+          { label: 'Build', action: () => {}, color: 'var(--primary-color)' },
+          { label: 'Restore', action: () => {}, color: '#6c757d' }
+        ]
+      });
+    } else {
+      this.sidebarService.updateConfig(sidebarId, {
+        footerButtons: []
+      });
+    }
+  }
+
+  /**
+   * Add new analysisi
+   */
+  public addNewAnalysisTile(): void {
+    // Open the modal
+    const modalRef = this.ngbModalService.open(PrimaryFilterDialogComponent);
+    modalRef.result
+      .then((selectedFilter) => {
+        if (selectedFilter) {
+          this.openFilterDialog(selectedFilter);
+        }
+      })
+      .catch((error) => console.error('Modal error:', error));
+  }
+
+  /**
+   * Open the filter dialog
+   */
+  public openFilterDialog(filter: string) {
+    let filterModal;
+
+    switch (filter) {
+      case 'Timestamp':
+        filterModal = this.ngbModalService.open(TimestamFilterDialogComponent);
+        break;
+
+      case 'Performance':
+        filterModal = this.ngbModalService.open(PerformanceFilterDialogComponent);
+        break;
+
+      case 'Include Activities':
+        filterModal = this.ngbModalService.open(ActivityFilterDialogComponent);
+        filterModal.componentInstance.inputData = true;
+        break;
+
+      case 'Exclude Activities':
+        filterModal = this.ngbModalService.open(ActivityFilterDialogComponent);
+        filterModal.componentInstance.inputData = false;
+        break;
+
+      case 'Frequence':
+        filterModal = this.ngbModalService.open(FrequenceFilterDialogComponent);
+        break;
+
+      case 'Variation':
+        filterModal = this.ngbModalService.open(VariationFilterDialogComponent);
+        break;
+
+      default:
+        console.error('Filtro non riconosciuto:', filter);
+        return;
+    }
+
+    filterModal.result
+      .then((result) => {
+        if (result) {
+          console.log(result);
+          this.tiles.push({ type: filter, details: result });
+        }
+      })
+      .catch((error) => console.error('Modal error:', error));
+  }
+
+  /**
+   * Open the analysis history
+   */
+  public openHistoryAnalysisSidebar(): void {
+    const sidebarId: string = 'history-analysis';
+
+    if (!this.sidebarIds.includes(sidebarId)) {
+      this.sidebarIds.push(sidebarId);
+    }
+
+    // Open the sidebar
+    this.sidebarService.open(
+      {
+        width: '400px',
+        backgroundColor: '#fff',
+        title: 'History of analysis',
+        closeIcon: true,
+        stickyFooter: true,
+        footerButtons: []
+      },
+      this.newAnalysisSidebarTemplate,
+      sidebarId
+    );
+  }
+
+  /**
+   * Open the master sidebar template
+   */
+  public openAggregateSidebar(): void {
+    const sidebarId: string = 'aggregate-sidebar';
+
+    if (!this.sidebarIds.includes(sidebarId)) {
+      this.sidebarIds.push(sidebarId);
+    }
+
+    // Open the sidebar
+    this.sidebarService.open(
+      {
+        width: '420px',
+        backgroundColor: '#f9f9f9',
+        title: 'Group by class',
+        closeIcon: true,
+        stickyFooter: true,
+        footerButtons: []
+      },
+      this.aggregateSidebarTemplate,
+      sidebarId
+    );
+  }
+
+  /**
+   * Update the aggregation sidebar
+   * @param addButtons if we want to add the footer buttons
+   */
+  public updateAggregateSidebar(addButtons: boolean): void {
+    const sidebarId: string = 'aggregate-sidebar';
+
+    // Update the Sidebar configuration
+
+    if (addButtons) {
+      this.sidebarService.updateConfig(sidebarId, {
+        footerButtons: [
+          { label: 'Build', action: () => this.buildClassGraph(), color: 'var(--primary-color)' },
+          { label: 'Restore', action: () => this.resetSelection(), color: '#6c757d' }
+        ]
+      });
+    } else {
+      this.sidebarService.updateConfig(sidebarId, {
+        footerButtons: []
+      });
+    }
   }
 
   /**
@@ -235,8 +526,8 @@ export class DetailsDatasetComponent implements OnInit, AfterViewInit {
    */
   public buildClassGraph(): void {
     this.isLoading = true;
-    this.isOpenAggregationSidebar = false;
-    this.isOpenSidebar = false;
+    this.sidebarService.close('aggregate-sidebar');
+    this.sidebarService.close('master-sidebar');
 
     const formData: FormData = new FormData();
     formData.append('dataset_name', this.currentDataset!.name);
@@ -247,16 +538,16 @@ export class DetailsDatasetComponent implements OnInit, AfterViewInit {
           if (response.statusCode === 201 && response.responseData != null) {
             this.currentDataset = this.supportService.updateDatasetInfo(response.responseData);
             this.isLoading = false;
-            this.isOpenSidebar = true;
-            this.isOpenAggregationSidebar = false;
+            this.sidebarService.reOpen('master-sidebar');
+            this.sidebarService.close('aggregate-sidebar');
             this.resetSelection();
 
             setTimeout(() => {
               this.createCharts();
             }, 300);
           } else {
-            this.isOpenAggregationSidebar = true;
-            this.isOpenSidebar = true;
+            this.sidebarService.reOpen('master-sidebar');
+            this.sidebarService.reOpen('aggregate-sidebar');
             this.isLoading = false;
             this.toast.show('Error while creating Class Graph. Retry', ToastLevel.Error, 3000);
           }
@@ -264,8 +555,8 @@ export class DetailsDatasetComponent implements OnInit, AfterViewInit {
         error: (errorData) => {
           const apiResponse: any = errorData;
           this.logService.error(apiResponse);
-          this.isOpenAggregationSidebar = true;
-          this.isOpenSidebar = true;
+          this.sidebarService.reOpen('master-sidebar');
+          this.sidebarService.reOpen('aggregate-sidebar');
           this.isLoading = false;
           this.toast.show('Error while creating Class Graph. Retry', ToastLevel.Error, 3000);
         },
@@ -273,51 +564,6 @@ export class DetailsDatasetComponent implements OnInit, AfterViewInit {
       });
     } catch (error) {
       this.toast.show(`Internal Server Error: ${error}`, ToastLevel.Error, 3000);
-    }
-  }
-
-  /**
-   * Handle the click for delete EKG
-   */
-  public handleDeleteGraph(): void {
-    if (this.isOpenAggregationSidebar) {
-      return;
-    }
-    this.modalService.showGenericModal(
-      'Delete Dataset?',
-      'The Dataset will be completely removed.',
-      true,
-      'Delete',
-      '#FF0000',
-      'Cancel',
-      '#000000',
-      () => this.deleteDataset(),
-      () => {
-        this.modalService.hideGenericModal();
-      }
-    );
-  }
-
-  /**
-   * Delete the Dataset (and EKG)
-   */
-  public deleteDataset(): void {
-    if (this.currentDataset != null) {
-      this.datasetService.deleteDataset(this.currentDataset!.name).subscribe({
-        next: (response) => {
-          if (response.statusCode == 200) {
-            this.toast.show('Dataset deleted successfully', ToastLevel.Success, 3000);
-            this.supportService.removeCurrentDataset();
-            this.router.navigate(['/welcome']);
-          }
-        },
-        error: (error) => {
-          const apiResponse: any = error;
-          this.logService.error(apiResponse);
-          this.toast.show('Unable to delete the Dataset. Please retry', ToastLevel.Error, 3000);
-        },
-        complete: () => {}
-      });
     }
   }
 
@@ -349,6 +595,13 @@ export class DetailsDatasetComponent implements OnInit, AfterViewInit {
     } else {
       this.selectedEntities = this.selectedEntities.filter((item) => item !== entity.name);
     }
+
+    // Update the sidebar configuration
+    if (this.selectedEntities.length > 0) {
+      this.updateAggregateSidebar(true);
+    } else {
+      this.updateAggregateSidebar(false);
+    }
   }
 
   /**
@@ -360,105 +613,8 @@ export class DetailsDatasetComponent implements OnInit, AfterViewInit {
     this.entityList.forEach((entity) => {
       entity.isSelected = false;
     });
-  }
 
-  /**
-   * Method that allow to get the toggle json object for
-   * donwload the json content.
-   * @param entity the selected entity
-   */
-  public selectionJson(entity: any): void {
-    if (entity.isSelected) {
-      this.selectedJson.push(entity.name);
-    } else {
-      this.selectedJson = this.selectedJson.filter((item) => item !== entity.name);
-    }
-  }
-
-  /**
-   * Reset the entity choice
-   */
-  public resetJsonSelection(): void {
-    this.selectedJson = [];
-
-    this.jsonList.forEach((object) => {
-      object.isSelected = false;
-    });
-  }
-
-  /**
-   * Download JSON content
-   */
-  public downloadJsonSelected(): void {
-    const requests: { name: string; observable: Observable<ApiResponse<any>> }[] = [];
-
-    this.isLoadingJsonDownload = true;
-
-    this.selectedJson.forEach((selection) => {
-      switch (selection) {
-        case 'Event nodes':
-          requests.push({ name: 'Event nodes', observable: this.jsonDataService.eventNodeJSON() });
-          break;
-        case 'Entity nodes':
-          requests.push({ name: 'Entity nodes', observable: this.jsonDataService.entityNodeJSON() });
-          break;
-        case ':CORR links':
-          requests.push({ name: ':CORR links', observable: this.jsonDataService.corrLinkJSON() });
-          break;
-        case ':DF links':
-          requests.push({ name: ':DF links', observable: this.jsonDataService.dfLinkJSON() });
-          break;
-      }
-    });
-
-    if (requests.length === 0) {
-      return;
-    }
-
-    from(requests)
-      .pipe(
-        concatMap((request) => request.observable.pipe(map((response) => ({ name: request.name, data: response.responseData })))),
-        toArray()
-      )
-      .subscribe({
-        next: (results) => {
-          results.forEach((result) => {
-            const filename = `${result.name}-data.json`;
-            const blob = new Blob([JSON.stringify(result.data, null, 2)], { type: 'application/json' });
-            saveAs(blob, filename);
-          });
-
-          this.isLoadingJsonDownload = false;
-          this.isOpenJSONSidebar = false;
-          this.resetJsonSelection();
-          this.toast.show('Json files downloaded successfully', ToastLevel.Success, 3000);
-        },
-        error: (err) => {
-          console.error('Error during download:', err);
-        }
-      });
-  }
-
-  /**
-   * Open or close graph visualization sidebar
-   * when the class graph was created
-   */
-  public handleGraphViewSidebar(): void {
-    this.isOpenGraphViewSidebar = !this.isOpenGraphViewSidebar;
-  }
-
-  /**
-   * Open or close the aggregation sidebar
-   */
-  public handleAggregationSidebar(): void {
-    this.isOpenAggregationSidebar = !this.isOpenAggregationSidebar;
-  }
-
-  /**
-   * Open or close the JSON sidebar
-   */
-  public handleJSONSidebar(): void {
-    this.isOpenJSONSidebar = !this.isOpenJSONSidebar;
+    this.updateAggregateSidebar(false);
   }
 
   /**
@@ -627,6 +783,8 @@ export class DetailsDatasetComponent implements OnInit, AfterViewInit {
           }
         }
       });
+
+      this.openMasterSidebar();
     }
   }
 
@@ -756,15 +914,5 @@ export class DetailsDatasetComponent implements OnInit, AfterViewInit {
     this.detailGraphDataList.push(eventTile);
     this.detailGraphDataList.push(corrTile);
     this.detailGraphDataList.push(dfTile);
-  }
-
-  /**
-   * Add the json object
-   */
-  private populateJsonContent(): void {
-    this.jsonList.push(new JsonObject('Event nodes', false));
-    this.jsonList.push(new JsonObject('Entity nodes', false));
-    this.jsonList.push(new JsonObject(':CORR links', false));
-    this.jsonList.push(new JsonObject(':DF links', false));
   }
 }

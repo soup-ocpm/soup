@@ -24,7 +24,8 @@ export const routes: Routes = [
   {
     path: 'datasets',
     loadComponent: () => import('./pages/retrive-dataset/retrive-dataset.component').then((c) => c.RetriveDatasetComponent),
-    data: { animation: 'DatasetsPage' }
+    data: { animation: 'DatasetsPage' },
+    canActivate: [GenericAuthGuard]
   },
   {
     path: 'datasets/:name',
@@ -37,11 +38,6 @@ export const routes: Routes = [
     loadComponent: () => import('./pages/graph-dataset/graph.component').then((c) => c.GraphComponent),
     data: { animatation: 'GraphDatasetPage' },
     canActivate: [DatasetAuthGuard, GenericAuthGuard]
-  },
-  {
-    path: 'test',
-    loadComponent: () => import('./pages/test-filter/test-filter.component').then((c) => c.TestFilterComponent),
-    data: { animatation: 'TestFilterPage' }
   },
   {
     path: '**',

@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { AfterViewInit, Component, ElementRef, OnInit, ViewChild } from '@angular/core';
+import { AfterViewInit, Component, ElementRef, OnInit, TemplateRef, ViewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import * as d3 from 'd3';
@@ -7,9 +7,11 @@ import * as dagreD3 from 'dagre-d3';
 import saveAs from 'file-saver';
 import { concatMap, from, map, Observable, toArray } from 'rxjs';
 
-import { SpBtnComponent, SpDividerComponent, SpSpinnerComponent } from '@aledevsharp/sp-lib';
+import { SpDividerComponent } from '@aledevsharp/sp-lib';
 import { ModalService } from 'src/app/shared/components/s-modals/modal.service';
+import { SidebarService } from 'src/app/shared/components/s-sidebar/sidebar.service';
 import { NotificationService } from 'src/app/shared/components/s-toast/toast.service';
+import { SideOperationComponent } from '../../components/side-operation/side-operation.component';
 import { ApiResponse } from '../../core/models/api_response.model';
 import { LoggerService } from '../../core/services/logger.service';
 import { Dataset } from '../../models/dataset.model';
@@ -17,6 +19,7 @@ import { DatasetService } from '../../services/datasets.service';
 import { GenericGraphService } from '../../services/generic_graph.service';
 import { JSONDataService } from '../../services/json_data.service';
 import { StandardGraphService } from '../../services/standard_graph.service';
+import { SidebarComponent } from '../../shared/components/s-sidebar/s-sidebar.component';
 import { ToastLevel } from '../../shared/components/s-toast/toast_type.enum';
 import { MaterialModule } from '../../shared/modules/materlal.module';
 import { LocalDataService } from '../../shared/services/support.service';
@@ -30,9 +33,9 @@ import { JsonObject } from '../details-dataset/details-dataset.component';
     MaterialModule,
     FormsModule,
     // Component import
-    SpBtnComponent,
     SpDividerComponent,
-    SpSpinnerComponent
+    SidebarComponent,
+    SideOperationComponent
   ],
   templateUrl: './graph.component.html',
   styleUrl: './graph.component.scss'
@@ -58,6 +61,9 @@ export class GraphComponent implements OnInit, AfterViewInit {
 
   // All edges of Class Graph.
   public edges: any = [];
+
+  // Map id to name node
+  private nodeNameMap: { [id: string]: string } = {};
 
   // All type of relationships
   public allRelationships: { name: string; selected: boolean }[] = [];
@@ -122,23 +128,11 @@ export class GraphComponent implements OnInit, AfterViewInit {
   // If the card for node properties is show or not
   public isShowCardProperties: boolean | undefined;
 
-  // If the user watch the search sidebar
-  public isShowSearchSidebar = false;
-
-  // If the user watch the manage graph sidebar
-  public isShowManageGraphSidebar = false;
-
-  // If the sidebar of JSON is open or not
-  public isOpenJSONSidebar = false;
+  // List of the sidebar ids
+  public sidebarIds: string[] = [];
 
   // If the user attend download the json
   public isLoadingJsonDownload = false;
-
-  // If the menu sidebar is open or not
-  public isOpenMenuSidebar = false;
-
-  // If the search sidebar is open or not
-  public isOpenSearchSidebar = false;
 
   // The loading state
   public isLoading = false;
@@ -152,6 +146,34 @@ export class GraphComponent implements OnInit, AfterViewInit {
   // List of the selected json content
   public selectedJson: string[] = [];
 
+  // List of the operations
+  public operations = [
+    {
+      title: 'Manage Graph View',
+      description: 'Change the view of your graph',
+      icon: 'view_quilt',
+      action: () => this.openGraphManager()
+    },
+    {
+      title: 'Export JSON',
+      description: 'Export and save the full JSON of the nodes and edges',
+      icon: 'file_download',
+      action: () => this.openJSONSidebar()
+    },
+    {
+      title: 'Export SVG',
+      description: 'Export and save the SVG of the graph',
+      icon: 'picture_as_pdf',
+      action: () => this.exportSvg()
+    },
+    {
+      title: 'Delete Dataset',
+      description: 'This operation is not reversible',
+      icon: 'delete_forever',
+      action: () => this.handleDeleteGraph()
+    }
+  ];
+
   // ElementRef container to show SVG of the Graph.
   @ViewChild('graphSvg', { static: true }) graphContainer!: ElementRef;
 
@@ -160,6 +182,18 @@ export class GraphComponent implements OnInit, AfterViewInit {
 
   // ElementRef container for edges list inside the Search sidebar
   @ViewChild('scrollEdgesContainer') scrollEdgesContainer!: ElementRef;
+
+  // View child template ref for master sidebar
+  @ViewChild('masterSidebarTemplate', { read: TemplateRef }) masterSidebarTemplate: TemplateRef<unknown> | undefined;
+
+  // View child template ref for search sidebar
+  @ViewChild('searchSidebarTemplate', { read: TemplateRef }) searchSidebarTemplate: TemplateRef<unknown> | undefined;
+
+  // View child template ref for json sidebar
+  @ViewChild('jsonSidebarTemplate', { read: TemplateRef }) jsonSidebarTemplate: TemplateRef<unknown> | undefined;
+
+  // View child template ref for manage graph sidebar
+  @ViewChild('manageGraphSidebarTemplate', { read: TemplateRef }) manageGraphSidebarTemplate: TemplateRef<unknown> | undefined;
 
   // Color palette for Edges
   private predefinedColors: string[] = [
@@ -181,16 +215,18 @@ export class GraphComponent implements OnInit, AfterViewInit {
   ];
 
   /**
-   * Constructor for
-   * @param router
-   * @param toast
-   * @param activatedRoute
-   * @param modalService
-   * @param datasetService
-   * @param jsonDataService
-   * @param logService
-   * @param genericGraphService
-   * @param supportService
+   * Constructor for GraphComponent component
+   * @param router the Router
+   * @param toast the NotificationService service
+   * @param activatedRoute the ActivatedRoute
+   * @param modalService the ModalService service
+   * @param datasetService the DatasetService service
+   * @param jsonDataService the JSONDataService service
+   * @param logService the LoggerService service
+   * @param sidebarService the SidebarService service
+   * @param standardGraphService  the StandardGraphService service
+   * @param genericGraphService the GenericGraphService service
+   * @param supportService the LocalDataService service
    */
   constructor(
     private router: Router,
@@ -200,6 +236,7 @@ export class GraphComponent implements OnInit, AfterViewInit {
     private datasetService: DatasetService,
     private jsonDataService: JSONDataService,
     private logService: LoggerService,
+    public sidebarService: SidebarService,
     private standardGraphService: StandardGraphService,
     private genericGraphService: GenericGraphService,
     private supportService: LocalDataService
@@ -207,6 +244,8 @@ export class GraphComponent implements OnInit, AfterViewInit {
 
   // NgOnInit implementation
   public ngOnInit() {
+    this.sidebarService.clearAllSidebars();
+
     const datasetName = this.activatedRoute.snapshot.paramMap.get('name');
     this.currentDataset = this.supportService.getCurrentDataset();
 
@@ -338,20 +377,32 @@ export class GraphComponent implements OnInit, AfterViewInit {
       this.g = new dagreD3.graphlib.Graph({ multigraph: true, compound: true }).setGraph({ rankdir: 'LR', nodesep: 25, multiedgesep: 10 });
 
       // Add nodes
-      this.nodes.forEach((node: any) => {
-        const nodeProperties = {
-          label: node.ActivityName,
-          Event_Id: node.Event_Id,
-          someProperty: node.someProperty
+      this.nodes.forEach((node: any): void => {
+        let nodeId = node.id;
+        let nodeName = node.ActivityName;
+        let nodeProperties: any = {
+          label: nodeName
         };
-        this.g.setNode(node.id, nodeProperties);
+
+        for (const prop in node) {
+          if (node.hasOwnProperty(prop)) {
+            nodeProperties[prop] = node[prop];
+          }
+        }
+        this.g.setNode(nodeId, nodeProperties, node.Event_Id);
       });
 
       // Add node styles
       this.g.nodes().forEach((v: any): void => {
         const node = this.g.node(v);
         node.rx = node.ry = 5;
-        node.style = 'fill: #fff; stroke: #000; stroke-width: 2px; cursor: pointer'; // Aggiungi cursor: pointer per i nodi
+        node.style = 'fill: #fff; stroke: #000; stroke-width: 2px; cursor: pointer';
+        node.labelStyle = 'font-size: 2.3em';
+      });
+
+      // Populate the map
+      this.nodes.forEach((node: any) => {
+        this.nodeNameMap[node.id] = node.ActivityName || `Node ${node.id}`;
       });
 
       const uniqueEdgeWeight: Set<any> = new Set<any>();
@@ -422,7 +473,7 @@ export class GraphComponent implements OnInit, AfterViewInit {
       // Add listener for nodes
       svgGroup
         .selectAll('g.node')
-        .attr('id', (d: any) => d) // Assegna l'ID al nodo
+        .attr('id', (d: any) => d)
         .on('click', (event) => {
           const nodeId = event.currentTarget.getAttribute('id');
           if (nodeId) {
@@ -500,6 +551,135 @@ export class GraphComponent implements OnInit, AfterViewInit {
   }
 
   /**
+   * Open the master sidebar
+   */
+  public openMasterSidebar(): void {
+    const sidebarId: string = 'master-sidebar';
+
+    if (!this.sidebarIds.includes(sidebarId)) {
+      this.sidebarIds.push(sidebarId);
+    }
+
+    // Open the sidebar
+    this.sidebarService.open(
+      {
+        width: '500px',
+        backgroundColor: '#fff',
+        title: 'Manage Graph',
+        closeIcon: true,
+        stickyFooter: true,
+        footerButtons: []
+      },
+      this.masterSidebarTemplate,
+      sidebarId
+    );
+  }
+
+  /**
+   * Handle the operation to the operation card
+   * @param operation the operation
+   */
+  public onOperationSelected(operation: any): void {
+    operation.action();
+  }
+
+  /**
+   * Open the master sidebar
+   */
+  public openSearchSidebar(): void {
+    const sidebarId: string = 'search-sidebar';
+
+    if (!this.sidebarIds.includes(sidebarId)) {
+      this.sidebarIds.push(sidebarId);
+    }
+
+    // Open the sidebar
+    this.sidebarService.open(
+      {
+        width: '600px',
+        backgroundColor: '#fff',
+        title: 'Search Data',
+        closeIcon: true,
+        stickyFooter: true,
+        footerButtons: []
+      },
+      this.searchSidebarTemplate,
+      sidebarId
+    );
+  }
+
+  /**
+   * Open the graph manager sidebar
+   */
+  public openGraphManager(): void {
+    const sidebarId: string = 'manage-graph-sidebar';
+
+    if (!this.sidebarIds.includes(sidebarId)) {
+      this.sidebarIds.push(sidebarId);
+    }
+
+    // Open the sidebar
+    this.sidebarService.open(
+      {
+        width: '500px',
+        backgroundColor: '#fff',
+        title: 'Manage Graph',
+        closeIcon: true,
+        stickyFooter: true,
+        footerButtons: []
+      },
+      this.manageGraphSidebarTemplate,
+      sidebarId
+    );
+  }
+
+  /**
+   * Open the graph manager sidebar
+   */
+  public openJSONSidebar(): void {
+    const sidebarId: string = 'json-sidebar';
+
+    if (!this.sidebarIds.includes(sidebarId)) {
+      this.sidebarIds.push(sidebarId);
+    }
+
+    // Open the sidebar
+    this.sidebarService.open(
+      {
+        width: '500px',
+        backgroundColor: '#fff',
+        title: 'Export JSON',
+        closeIcon: true,
+        stickyFooter: true,
+        footerButtons: []
+      },
+      this.jsonSidebarTemplate,
+      sidebarId
+    );
+  }
+
+  /**
+   * Update the JSON sidebar content
+   * @param addButtons if we want to include the footer buttons
+   */
+  public updateJSONSidebar(addButtons: boolean): void {
+    const sidebarId: string = 'json-sidebar';
+
+    if (addButtons) {
+      this.sidebarService.updateConfig(sidebarId, {
+        footerButtons: [
+          { label: 'Download', action: () => this.downloadJsonSelected(), color: 'var(--primary-color)' },
+          { label: 'Restore', action: () => this.resetJsonSelection(), color: '#6c757d' }
+        ]
+      });
+    } else {
+      this.sidebarService.updateConfig(sidebarId, {
+        footerButtons: []
+      });
+    }
+  }
+
+  /**
    * Scroll the nodes inside the Sidebar
    */
   public onScrollNodes(): void {
@@ -527,6 +707,14 @@ export class GraphComponent implements OnInit, AfterViewInit {
         this.loadingFewData = false;
       }, 500);
     }
+  }
+
+  /**
+   * Get node name from id
+   * @param id the id
+   */
+  public getNodeName(id: string): string {
+    return this.nodeNameMap[id] || `Unknown Node (${id})`;
   }
 
   /**
@@ -648,6 +836,8 @@ export class GraphComponent implements OnInit, AfterViewInit {
           this.isShowCardProperties = true;
         }
       });
+
+      console.log(this.propertiesSelectedNode);
     }
   }
 
@@ -709,6 +899,8 @@ export class GraphComponent implements OnInit, AfterViewInit {
 
       this.selectedNode = null;
       this.selectedResult = null;
+      this.propertiesSelectedNode = null;
+      this.isShowCardProperties = false;
     }
   }
 
@@ -772,7 +964,7 @@ export class GraphComponent implements OnInit, AfterViewInit {
    * Close the search sidebar
    */
   public closeSearchSidebar(): void {
-    this.isOpenSearchSidebar = false;
+    this.sidebarService.close('search-sidebar');
     this.selectedNode = null;
 
     // Reset paginator
@@ -856,6 +1048,12 @@ export class GraphComponent implements OnInit, AfterViewInit {
     } else {
       this.selectedJson = this.selectedJson.filter((item) => item !== entity.name);
     }
+
+    if (this.selectedJson.length > 0) {
+      this.updateJSONSidebar(true);
+    } else {
+      this.updateJSONSidebar(false);
+    }
   }
 
   /**
@@ -867,6 +1065,8 @@ export class GraphComponent implements OnInit, AfterViewInit {
     this.jsonList.forEach((object) => {
       object.isSelected = false;
     });
+
+    this.updateJSONSidebar(false);
   }
 
   /**
@@ -912,7 +1112,7 @@ export class GraphComponent implements OnInit, AfterViewInit {
           });
 
           this.isLoadingJsonDownload = false;
-          this.isOpenJSONSidebar = false;
+          this.sidebarService.close('json-sidebar');
           this.resetJsonSelection();
           this.toast.show('Json files downloaded successfully', ToastLevel.Success, 3000);
         },
@@ -920,13 +1120,6 @@ export class GraphComponent implements OnInit, AfterViewInit {
           console.error('Error during download:', err);
         }
       });
-  }
-
-  /**
-   * Open or close the JSON sidebar
-   */
-  public handleJSONSidebar(): void {
-    this.isOpenJSONSidebar = !this.isOpenJSONSidebar;
   }
 
   /**
@@ -950,27 +1143,6 @@ export class GraphComponent implements OnInit, AfterViewInit {
    */
   public leavePage(): void {
     this.router.navigate(['datasets', this.currentDataset!.name]);
-  }
-
-  /**
-   * handle the click for the menu icon
-   */
-  public handleMenuOperations(): void {
-    this.isOpenMenuSidebar = true;
-  }
-
-  /**
-   * Handle the click for the search icon
-   */
-  public handleSearchData(): void {
-    this.isOpenSearchSidebar = true;
-  }
-
-  /**
-   * Handle the click for manage graph sidebar
-   */
-  public handleGraphSidebarManager(): void {
-    this.isShowManageGraphSidebar = true;
   }
 
   /**

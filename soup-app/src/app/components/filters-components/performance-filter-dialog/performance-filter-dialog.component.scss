@@ -1,0 +1,66 @@
+// ================================
+// Region: Main content
+// ================================
+.modal-header {
+  background-color: #f8f9fa;
+  border-bottom: 1px solid #dee2e6;
+  height: 50px;
+}
+
+.modal-body {
+  padding: 20px;
+}
+
+.form-group {
+  margin-bottom: 20px;
+}
+
+.input-container {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+input.form-control {
+  flex: 1;
+  border-radius: 5px;
+  background-color: #fff;
+  border: 1px solid #ced4da;
+  padding: 4px 8px;
+  font-size: 1.2rem;
+  line-height: 1.2;
+  height: auto;
+}
+
+.calendar-btn {
+  background-color: #fff;
+  border: 1px solid #ced4da;
+  border-radius: 5px;
+  padding: 4px 8px;
+  font-size: 1.2rem;
+  line-height: 1.2;
+  height: auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.calendar-btn:hover {
+  background-color: #f1f1f1;
+}
+
+.modal-footer {
+  height: 40px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+.form-select,
+.form-control {
+  height: 2rem;
+  font-size: 1rem;
+  padding: 0.375rem 0.75rem;
+  line-height: 1.2;
+}
