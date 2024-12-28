@@ -7,6 +7,7 @@ import { Dataset } from 'src/app/models/dataset.model';
 import { Entity } from 'src/app/models/entity.mode';
 import { MaterialModule } from 'src/app/shared/modules/materlal.module';
 import { LocalDataService } from 'src/app/shared/services/support.service';
+import { ActivityFilter } from './activity-filter.model';
 
 @Component({
   selector: 'app-activity-filter-dialog',
@@ -22,6 +23,9 @@ import { LocalDataService } from 'src/app/shared/services/support.service';
   styleUrl: './activity-filter-dialog.component.scss'
 })
 export class ActivityFilterDialogComponent implements OnInit {
+  // The activity model
+  public activityModel: ActivityFilter = new ActivityFilter();
+
   // The input data from external
   public inputData: any;
 
@@ -44,59 +48,12 @@ export class ActivityFilterDialogComponent implements OnInit {
   // NgOnInit implementation
   public ngOnInit(): void {
     this.currentDataset = this.supportDataService!.getCurrentDataset();
-    const entityOne = new Entity();
-    entityOne.name = 'Uno';
-    entityOne.selected = false;
-
-    const entityTwo = new Entity();
-    entityTwo.name = 'Due';
-    entityTwo.selected = false;
-
-    const entityThree = new Entity();
-    entityThree.name = 'Tre';
-    entityThree.selected = false;
-
-    const entityFour = new Entity();
-    entityFour.name = 'Quattro';
-    entityFour.selected = false;
-
-    const entityFive = new Entity();
-    entityFive.name = 'Cinque';
-    entityFive.selected = false;
-
-    const entitySix = new Entity();
-    entitySix.name = 'Sei';
-    entitySix.selected = false;
-
-    const entitySeven = new Entity();
-    entitySeven.name = 'Sette';
-    entitySeven.selected = false;
-
-    const entityEight = new Entity();
-    entityEight.name = 'Otto';
-    entityEight.selected = false;
-
-    const entityNine = new Entity();
-    entityNine.name = 'Nove';
-    entityNine.selected = false;
-
-    const entityTen = new Entity();
-    entityTen.name = 'Dieci';
-    entityTen.selected = false;
-
-    // Aggiungi tutte le entità all'array
-    this.allFilteredValues.push(
-      entityOne,
-      entityTwo,
-      entityThree,
-      entityFour,
-      entityFive,
-      entitySix,
-      entitySeven,
-      entityEight,
-      entityNine,
-      entityTen
-    );
+    this.currentDataset!.allActivities.forEach((item) => {
+      const entity = new Entity();
+      entity.name = item;
+      entity.selected = false;
+      this.allFilteredValues.push(entity);
+    });
   }
 
   /**
@@ -118,20 +75,23 @@ export class ActivityFilterDialogComponent implements OnInit {
   /**
    * Submit the data
    */
-  public onSubmit(): void {}
+  public onSubmit(): void {
+    const selectedActivityNames = this.allFilteredValues.filter((entity) => entity.selected).map((entity) => entity.name);
+
+    if (selectedActivityNames.length === 0) {
+      return;
+    }
+
+    this.activityModel.activities = selectedActivityNames;
+    this.activityModel.include = this.inputData;
+
+    this.activeModal.close({ activities: this.activityModel });
+  }
 
   /**
    * Close the modal without returning any data.
    */
   public onClose(): void {
     this.activeModal.dismiss();
-  }
-
-  /**
-   * Get the current dataset filtered columns
-   * @returns
-   */
-  public getFilteredValuesColumn(): string[] {
-    return ['Ciao', 'Cazzo'];
   }
 }

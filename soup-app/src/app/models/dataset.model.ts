@@ -1,3 +1,4 @@
+import { Analysis } from './analysis.mdel';
 import { DatasetProcessInfo } from './dataset_process_info.model';
 
 /**
@@ -50,8 +51,14 @@ export class Dataset {
   // All columns
   public allColumns: string[] = [];
 
+  // All the different activities
+  public allActivities: string[] = [];
+
   // The process info object
   public processInfo: DatasetProcessInfo = new DatasetProcessInfo();
+
+  // List of the dataset analyses
+  public analyses: Analysis[] = [];
 
   // The creation date
   public dateCreated = '';

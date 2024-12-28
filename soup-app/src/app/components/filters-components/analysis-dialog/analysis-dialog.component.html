@@ -1,0 +1,28 @@
+<mat-dialog-content>
+  <div class="dialog-card">
+    <div class="master-info">
+      <h4 style="color: var(--primary-color)">{{ this.analysis.analysisName }} - {{ this.analysis.datasetName }}</h4>
+
+      <div style="margin-top: 20px">
+        <p>
+          Total filters :
+          <strong>{{ this.getTotalFilter() }}</strong>
+        </p>
+
+        <p class="ellipsis">
+          Filters :
+          <strong>[{{ this.getActiveFiltersString() }}]</strong>
+        </p>
+      </div>
+      <div class="master-content">
+        <h5>Json Configuration</h5>
+      </div>
+      <pre>{{ this.getJSONFormat() | json }}</pre>
+    </div>
+
+    <sp-btn-txt
+      [text]="'Download Configuration'"
+      [cursor]="'pointer'"
+      (buttonClick)="this.downloadJSON()"></sp-btn-txt>
+  </div>
+</mat-dialog-content>

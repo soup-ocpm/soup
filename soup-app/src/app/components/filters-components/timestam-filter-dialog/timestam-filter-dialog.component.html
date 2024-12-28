@@ -1,72 +1,95 @@
 <!--Main content-->
-<div class="modal-header">
-  <h4 class="modal-title">Select Date Range</h4>
-</div>
-<div class="modal-body">
-  <form (ngSubmit)="this.onSubmit()">
-    <!-- Start date -->
-    <div class="form-group">
-      <label
-        for="startDate"
-        style="color: var(--secondary-color); font-size: 15px">
-        Start Date
-      </label>
-      <div class="input-container">
-        <input
-          type="text"
-          id="startDate"
-          class="form-control"
-          ngbDatepicker
-          #startDate="ngbDatepicker"
-          [(ngModel)]="startDateModel"
-          name="startDate"
-          required
-          (dateSelect)="this.onDateSelect('start', $event)" />
-        <button
-          class="calendar-btn"
-          (click)="startDate.toggle()"
-          type="button">
-          📅
-        </button>
+<div class="master">
+  <div class="modal-header">
+    <h4 class="modal-title">Select Date and Time Range</h4>
+  </div>
+  <div class="modal-body">
+    <form (ngSubmit)="this.onSubmit()">
+      <!-- Start date and time -->
+      <div class="form-group">
+        <label
+          for="endDate"
+          style="color: var(--secondary-color); font-size: 15px">
+          Start Date and Time
+        </label>
+        <div class="input-container">
+          <!-- Date Picker -->
+          <div class="input-wrapper">
+            <input
+              type="text"
+              id="startDate"
+              class="form-control"
+              ngbDatepicker
+              #startDate="ngbDatepicker"
+              [(ngModel)]="startDateModel"
+              name="startDate"
+              required
+              (dateSelect)="this.onDateSelect('start', $event)" />
+            <button
+              class="calendar-btn"
+              (click)="startDate.toggle()"
+              type="button">
+              📅
+            </button>
+          </div>
+          <!-- Time Picker -->
+          <ngb-timepicker
+            [(ngModel)]="startTimeModel"
+            name="startTime"
+            [spinners]="true"
+            [seconds]="true"
+            [meridian]="false"
+            required></ngb-timepicker>
+        </div>
       </div>
-    </div>
 
-    <!-- End date -->
-    <div class="form-group">
-      <label
-        for="endDate"
-        style="color: var(--secondary-color); font-size: 15px">
-        End Date
-      </label>
-      <div class="input-container">
-        <input
-          type="text"
-          id="endDate"
-          class="form-control"
-          ngbDatepicker
-          #endDate="ngbDatepicker"
-          [(ngModel)]="endDateModel"
-          name="endDate"
-          required
-          (dateSelect)="this.onDateSelect('end', $event)" />
-        <button
-          class="calendar-btn"
-          (click)="endDate.toggle()"
-          type="button">
-          📅
-        </button>
+      <!-- End date and time -->
+      <div class="form-group">
+        <label
+          for="endDate"
+          style="color: var(--secondary-color); font-size: 15px">
+          End Date and Time
+        </label>
+        <div class="input-container">
+          <div class="input-wrapper">
+            <input
+              type="text"
+              id="endDate"
+              class="form-control"
+              ngbDatepicker
+              #endDate="ngbDatepicker"
+              [(ngModel)]="endDateModel"
+              name="endDate"
+              required
+              (dateSelect)="this.onDateSelect('end', $event)" />
+            <button
+              class="calendar-btn"
+              (click)="endDate.toggle()"
+              type="button">
+              📅
+            </button>
+          </div>
+          <!-- Time Picker -->
+          <ngb-timepicker
+            [(ngModel)]="this.endTimeModel"
+            name="endTime"
+            [spinners]="true"
+            [seconds]="true"
+            [meridian]="false"
+            required></ngb-timepicker>
+        </div>
       </div>
-    </div>
 
-    <!-- Buttons -->
-    <div class="modal-footer">
-      <sp-btn
-        [text]="'Close'"
-        [color]="'#6c757d'"
-        (buttonClick)="this.onClose()"></sp-btn>
-      <sp-btn
-        [text]="'Save'"
-        (buttonClick)="onSubmit()"></sp-btn>
-    </div>
-  </form>
+      <!-- Buttons -->
+      <div class="modal-footer">
+        <sp-btn
+          [text]="'Close'"
+          [color]="'#6c757d'"
+          (buttonClick)="this.onClose()"></sp-btn>
+        <sp-btn
+          [text]="'Save'"
+          (buttonClick)="onSubmit()"></sp-btn>
+      </div>
+    </form>
+  </div>
 </div>

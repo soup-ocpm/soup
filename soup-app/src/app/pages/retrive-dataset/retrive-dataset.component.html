@@ -106,9 +106,12 @@
 
     <div
       *ngIf="this.currentDataset!.svg != null"
-      style="margin-top: 20px">
-      <p class="form-label">Graph preview</p>
-      <div *ngIf="checkIfSvgIsValid(currentDataset?.svg)">
+      style="margin-top: 20px; max-height: 300px; max-width: 100%; overflow: hidden">
+      <p class="form-label">Original graph preview</p>
+      <div
+        *ngIf="checkIfSvgIsValid(currentDataset?.svg)"
+        #svgContainer
+        style="max-height: 300px; max-width: 100%; display: flex; justify-content: center; align-items: center">
         <div [innerHTML]="currentDataset!.svg"></div>
       </div>
     </div>

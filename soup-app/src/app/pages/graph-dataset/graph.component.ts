@@ -265,12 +265,18 @@ export class GraphComponent implements OnInit, AfterViewInit {
 
   // NgAfterViewInit implementation
   public ngAfterViewInit() {
-    this.scrollNodeContainer.nativeElement.addEventListener('scroll', () => {
-      this.onScrollNodes();
-    });
+    setTimeout(() => {
+      if (this.scrollNodeContainer?.nativeElement) {
+        this.scrollNodeContainer.nativeElement.addEventListener('scroll', () => {
+          this.onScrollNodes();
+        });
+      }
 
-    this.scrollEdgesContainer.nativeElement.addEventListener('scroll', () => {
-      this.onScrollEdges();
+      if (this.scrollEdgesContainer?.nativeElement) {
+        this.scrollEdgesContainer.nativeElement.addEventListener('scroll', () => {
+          this.onScrollEdges();
+        });
+      }
     });
   }
 
@@ -445,9 +451,6 @@ export class GraphComponent implements OnInit, AfterViewInit {
         }
       });
 
-      // Create renderer for d3
-      const render: dagreD3.Render = new dagreD3.render();
-
       // Configure the SVG
       const svg = d3
         .select(graphContainer.nativeElement)
@@ -456,17 +459,26 @@ export class GraphComponent implements OnInit, AfterViewInit {
 
       const svgGroup = svg.append('g');
 
-      // Initialize the zoom
-      this.initializePanZoom(svg, svgGroup);
-
       // Render the graph
+      const render: dagreD3.Render = new dagreD3.render();
       render(svgGroup as any, this.g as any);
 
-      // Estrarre il contenuto dell'SVG come stringa
-      const svgContent = svg.node().outerHTML;
+      // Calcola l'offset per centrare il grafo
+      const xCenterOffset = (width - this.g.graph().width) / 2;
+      const yCenterOffset = (height - this.g.graph().height) / 2;
 
-      // Invio al backend tramite una POST
+      // Trasla il gruppo per centrarlo orizzontalmente e verticalmente
+      svgGroup.attr('transform', `translate(${xCenterOffset}, ${yCenterOffset})`);
+
+      // Imposta l'altezza dell'SVG per includere un margine in basso
+      svg.attr('height', this.g.graph().height + 40);
+
+      // Inizializza lo zoom
+      this.initializePanZoom(svg, svgGroup, width, height, xCenterOffset, yCenterOffset);
+
+      // Send the svg to the backend
       if (this.currentDataset!.svg === null) {
+        const svgContent = svg.node().outerHTML;
         this.publishSVG(svgContent, this.currentDataset!.name);
       }
 
@@ -504,6 +516,21 @@ export class GraphComponent implements OnInit, AfterViewInit {
     }
 
     if (!nodeExists) {
+      const timestamp = node['Timestamp'];
+      const date = new Date(timestamp);
+
+      // Format the timestamp
+      const formattedDate = date.toLocaleString('en-US', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: true
+      });
+
+      node['Timestamp'] = formattedDate;
       uniqueNodes.add(node);
     }
   }
@@ -530,24 +557,30 @@ export class GraphComponent implements OnInit, AfterViewInit {
    * @param svg the svg
    * @param svgGroup the svgGroup
    */
-  private initializePanZoom(svg: any, svgGroup: any): void {
+  private initializePanZoom(svg: any, svgGroup: any, width: number, height: number, xCenterOffset: number, yCenterOffset: number): void {
     this.svg = svg;
     if (!svgGroup) {
       console.error('svgGroup is not defined!');
       return;
     }
 
+    // Comportamento di zoom
     const zoomBehavior = d3.zoom().on('zoom', (event) => {
       if (event && event.transform) {
-        this.currentZoomEvent = event;
-        svgGroup.attr('transform', event.transform);
+        // Calcola la nuova traslazione tenendo conto dello zoom
+        const translateX = event.transform.x;
+        const translateY = event.transform.y;
+        const scale = event.transform.k;
+
+        // Applica lo zoom senza modificare la posizione iniziale
+        svgGroup.attr('transform', `translate(${translateX}, ${translateY}) scale(${scale})`);
       } else {
         console.error('Zoom event or transform is undefined');
       }
     });
 
     this.zoom = zoomBehavior;
-    svg.call(zoomBehavior); // Associa zoom allo svg
+    svg.call(zoomBehavior); // Associa lo zoom all'SVG
   }
 
   /**
@@ -817,19 +850,10 @@ export class GraphComponent implements OnInit, AfterViewInit {
 
     if (node) {
       this.selectedResult = searched;
-
       this.selectedNode = node;
-      const centerX = node.x;
-      const centerY = node.y;
-
       node.style = 'fill: #ffac1c;; stroke: #faa614; stroke-width: 2px; cursor:pointer; ';
 
-      const zoomTransform = d3.zoomIdentity.translate(-centerX, -centerY).scale(2);
-      this.svg.call(this.zoom.transform, zoomTransform);
-
-      const render = new dagreD3.render();
-      render(this.svg, this.g);
-
+      // Node properties
       this.nodes.forEach((nodeStandard: any) => {
         if (this.selectedNode.id != null && this.selectedNode.id == nodeStandard.id) {
           this.propertiesSelectedNode = Object.entries(nodeStandard);
@@ -837,7 +861,9 @@ export class GraphComponent implements OnInit, AfterViewInit {
         }
       });
 
-      console.log(this.propertiesSelectedNode);
+      // Renderer
+      const render = new dagreD3.render();
+      render(this.svg, this.g);
     }
   }
 
@@ -892,8 +918,7 @@ export class GraphComponent implements OnInit, AfterViewInit {
     if (this.selectedNode) {
       this.selectedNode.style = 'fill: #fff; stroke: #000; stroke-width: 2px';
 
-      this.svg.call(this.zoom.transform, d3.zoomIdentity);
-
+      // Renderer
       const render = new dagreD3.render();
       render(this.svg, this.g);
 
@@ -997,6 +1022,7 @@ export class GraphComponent implements OnInit, AfterViewInit {
     const render = new dagreD3.render();
     render(this.svg, this.g);
   }
+
   /**
    * Change relationships view
    * @param relationship the relationship
@@ -1090,6 +1116,15 @@ export class GraphComponent implements OnInit, AfterViewInit {
           break;
         case ':DF links':
           requests.push({ name: ':DF links', observable: this.jsonDataService.dfLinkJSON() });
+          break;
+        case 'Class nodes':
+          requests.push({ name: 'Class nodes', observable: this.jsonDataService.classNodeJSON() });
+          break;
+        case ':OBS links':
+          requests.push({ name: ':CORR links', observable: this.jsonDataService.corrLinkJSON() });
+          break;
+        case ':DFC links':
+          requests.push({ name: ':CORR links', observable: this.jsonDataService.corrLinkJSON() });
           break;
       }
     });

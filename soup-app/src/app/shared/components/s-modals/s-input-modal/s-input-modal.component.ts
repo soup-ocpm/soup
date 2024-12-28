@@ -4,6 +4,8 @@ import { FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators } 
 
 import { SpBtnTxtComponent } from '@aledevsharp/sp-lib';
 import { LoggerService } from 'src/app/core/services/logger.service';
+import { AnalysisService } from 'src/app/services/analysis.service';
+import { LocalDataService } from 'src/app/shared/services/support.service';
 import { DatasetService } from '../../../../services/datasets.service';
 import { MaterialModule } from '../../../../shared/modules/materlal.module';
 import { ModalService } from '../modal.service';
@@ -32,6 +34,12 @@ export class InputModalComponent implements OnInit {
   // If the modal is composed by two button actions
   @Input() doubleButton = false;
 
+  // The dataset name
+  @Input() datasetName = '';
+
+  // If the modal is for create dataset or analysis
+  @Input() isForDataset = true;
+
   // The principal button text
   @Input() primaryButtonText = '';
 
@@ -48,7 +56,7 @@ export class InputModalComponent implements OnInit {
   @Input() containerId = '';
 
   // Handle the output
-  @Output() primaryButtonClick!: (datasetName: string, datasetDescription: string, saveProcessExecution: boolean) => Promise<any>;
+  @Output() primaryButtonClick!: (name: string, description: string, saveProcessExecution: boolean) => Promise<any>;
 
   // Handle the second output
   @Output() secondaryButtonClick!: () => void | null;
@@ -57,10 +65,10 @@ export class InputModalComponent implements OnInit {
   public datasetForm!: FormGroup;
 
   // The input value for the name
-  public datasetName = '';
+  public name = '';
 
   // The input value for the description
-  public datasetDescription = '';
+  public description = '';
 
   // Save the process execution query
   public saveProcessExecution = true;
@@ -77,28 +85,35 @@ export class InputModalComponent implements OnInit {
   /**
    * Constructor for DeleteModalComponent component
    * @param formBuilder the FormBuilder
-   * @param loggerService the LoggerService service
    * @param modalService the ModalService service
+   * @param loggerService the LoggerService service
    * @param datasetService the DatasetService service
+   * @param analysisService the AnalysisService service
+   * @param localDataService the LocalDataService service
    */
   constructor(
     private formBuilder: FormBuilder,
-    private loggerService: LoggerService,
     private modalService: ModalService,
-    private datasetService: DatasetService
+    private loggerService: LoggerService,
+    private datasetService: DatasetService,
+    private analysisService: AnalysisService,
+    private localDataService: LocalDataService
   ) {}
 
   // NgOnInit implementation
   public ngOnInit(): void {
     this.datasetForm = this.formBuilder.group({
-      datasetName: ['', [Validators.required, Validators.minLength(3)]]
+      name: ['', [Validators.required, Validators.minLength(3)]]
     });
 
+    // Subscription the modal information
     this.modalService.inputModalState.subscribe((modal) => {
       if (modal) {
         this.title = modal.title;
         this.message = modal.message;
         this.doubleButton = modal.doubleButton;
+        this.datasetName = modal.datasetName;
+        this.isForDataset = modal.isForDataset;
         this.primaryButtonText = modal.primaryButtonText;
         this.primaryButtonColor = modal.primaryButtonColor;
         this.secondaryButtonText = modal.secondaryButtonText;
@@ -120,23 +135,30 @@ export class InputModalComponent implements OnInit {
     this.errorMessage = '';
 
     if (typeof this.primaryButtonClick === 'function') {
-      if (this.datasetName === '' || this.datasetName == null) {
+      if (this.name === '') {
         this.hasError = true;
-        this.errorMessage = 'Please enter a valid value';
+        this.errorMessage = 'Please enter a valid name';
         return;
       }
-      this.checkUniqueName();
+
+      console.log(this.isForDataset);
+      if (this.isForDataset) {
+        console.log('Checking name...');
+        this.checkUniqueDatasetName();
+      } else {
+        this.checkUniqueAnalysisName();
+      }
     }
   }
 
   /**
    * Check the dataset unique name
    */
-  private checkUniqueName(): void {
-    this.datasetService.checkUniqueDataset(this.datasetName).subscribe({
+  private checkUniqueDatasetName(): void {
+    this.datasetService.checkUniqueDataset(this.name).subscribe({
       next: (response) => {
         if (response.statusCode === 202) {
-          this.primaryButtonClick(this.datasetName, this.datasetDescription, this.saveProcessExecution)
+          this.primaryButtonClick(this.name, this.description, this.saveProcessExecution)
             .then(() => {
               this.isVisible = false;
             })
@@ -146,14 +168,40 @@ export class InputModalComponent implements OnInit {
             });
         } else if (response.statusCode == 200) {
           this.hasError = true;
-          this.errorMessage = 'Dataset name already exists. Please retry';
+          this.errorMessage = 'Dataset name already exists. Please enter another name';
         }
       },
       error: (error) => {
         const errorData: any = error;
         this.loggerService.error(errorData);
-        this.hasError = true;
-        this.errorMessage = 'Dataset name already exists. Please retry';
+      },
+      complete: () => {}
+    });
+  }
+
+  /**
+   * Check the analysis unique name
+   */
+  public checkUniqueAnalysisName(): void {
+    this.analysisService.checkUniqueAnalysisName(this.datasetName, this.name).subscribe({
+      next: (response) => {
+        if (response.statusCode === 202) {
+          this.primaryButtonClick(this.name, this.description, this.saveProcessExecution)
+            .then(() => {
+              this.isVisible = false;
+            })
+            .catch((error) => {
+              this.hasError = true;
+              this.errorMessage = error;
+            });
+        } else if (response.statusCode == 200) {
+          this.hasError = true;
+          this.errorMessage = 'Analysis name already exists. Please enter another name';
+        }
+      },
+      error: (error) => {
+        const errorData: any = error;
+        this.loggerService.error(errorData);
       },
       complete: () => {}
     });

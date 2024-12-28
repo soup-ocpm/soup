@@ -15,15 +15,15 @@
 
   <div class="mb-1">
     <label
-      for="datasetName"
+      for="name"
       class="form-label">
-      Name
+      {{ this.isForDataset ? 'Dataset name' : 'Analysis name' }}
     </label>
     <input
       class="form-control form-control-sm"
-      id="datasetName"
+      id="name"
       type="text"
-      [(ngModel)]="this.datasetName"
+      [(ngModel)]="this.name"
       (input)="this.onInputChange()"
       [ngClass]="{ 'input-error': this.hasError }" />
     <span>
@@ -35,22 +35,26 @@
     </span>
   </div>
 
-  <div class="mb-1">
+  <div
+    class="mb-1"
+    style="margin-top: 20px">
     <label
-      for="datasetDescription"
+      for="description"
       class="form-label">
-      Description
+      {{ this.isForDataset ? 'Dataset description (optional)' : 'Aanlysis description (optional)' }}
     </label>
     <textarea
       class="form-control form-control-sm"
-      id="datasetDescription"
+      id="description"
       type="text"
       style="max-height: 100px"
-      [(ngModel)]="this.datasetDescription"
+      [(ngModel)]="this.description"
       (input)="this.onInputChange()"></textarea>
   </div>
 
-  <div class="process-execution">
+  <div
+    class="process-execution"
+    *ngIf="this.isForDataset">
     <div class="mb-1">
       <label
         for="saveProcessExecution"

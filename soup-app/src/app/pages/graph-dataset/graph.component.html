@@ -115,10 +115,10 @@
               </p>
               <p>
                 <strong>Event id:</strong>
-                {{ item['EventID'] }}
+                {{ item['Event_Id'] }}
               </p>
-              <p>
-                <strong>Time:</strong>
+              <p *ngIf="this.isViewStandardGraph">
+                <strong>Timestamp:</strong>
                 {{ item['Timestamp'] }}
               </p>
             </div>

@@ -1,6 +1,10 @@
 // ================================
 // Region: Main content
 // ================================
+.master {
+  width: 700px;
+  background-color: white;
+}
 .modal-header {
   background-color: #f8f9fa;
   border-bottom: 1px solid #dee2e6;
@@ -15,21 +19,33 @@
   margin-bottom: 20px;
 }
 
+ngb-timepicker {
+  flex: 0;
+  min-width: 200px;
+}
+
 .input-container {
   display: flex;
   align-items: center;
   gap: 10px;
+  width: 100%;
+}
+
+.input-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  flex: 1;
 }
 
 input.form-control {
   flex: 1;
+  height: 36px;
   border-radius: 5px;
-  background-color: #fff;
   border: 1px solid #ced4da;
-  padding: 4px 8px;
+  padding: 10px 12px;
   font-size: 1.2rem;
-  line-height: 1.2;
-  height: auto;
+  width: 100%;
 }
 
 .calendar-btn {

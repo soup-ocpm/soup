@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit, TemplateRef } from '@angular/core';
+import { AfterViewChecked, Component, OnInit, TemplateRef, ViewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 
@@ -37,7 +37,7 @@ import { LocalDataService } from '../../shared/services/support.service';
   templateUrl: './retrive-dataset.component.html',
   styleUrl: './retrive-dataset.component.scss'
 })
-export class RetriveDatasetComponent implements OnInit {
+export class RetriveDatasetComponent implements OnInit, AfterViewChecked {
   // All the user datasets
   public allDataset: Dataset[] = [];
 
@@ -240,6 +240,9 @@ export class RetriveDatasetComponent implements OnInit {
       complete: () => {}
     });
   }
+
+  @ViewChild('svgContainer', { static: false }) svgContainer: any; // Usa ViewChild per il riferimento
+
   /**
    * Manage the dataset
    * @param event the Dataset
@@ -269,6 +272,26 @@ export class RetriveDatasetComponent implements OnInit {
       content,
       sidebarId
     );
+
+    setTimeout(() => {
+      this.resizeSvg();
+    }, 0);
+  }
+
+  private resizeSvg(): void {
+    const svgElement = this.svgContainer?.nativeElement.querySelector('svg');
+    if (svgElement) {
+      svgElement.setAttribute('width', '100%'); // Imposta la larghezza al 100% del contenitore
+      svgElement.setAttribute('height', '300px'); // Imposta l'altezza a 300px
+    }
+  }
+
+  // Puoi anche usare ngAfterViewChecked se necessario
+  ngAfterViewChecked() {
+    // Se vuoi essere sicuro che l'SVG sia ridimensionato dopo ogni cambio di vista
+    if (this.svgContainer) {
+      this.resizeSvg();
+    }
   }
 
   /**

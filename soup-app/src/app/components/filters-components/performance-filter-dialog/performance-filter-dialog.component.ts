@@ -5,6 +5,7 @@ import { FormsModule } from '@angular/forms';
 import { NgbActiveModal } from '@ng-bootstrap/ng-bootstrap';
 import { Dataset } from 'src/app/models/dataset.model';
 import { LocalDataService } from 'src/app/shared/services/support.service';
+import { PerformanceFilter } from './performance-filter.model';
 
 @Component({
   selector: 'app-performance-filter-dialog',
@@ -14,6 +15,9 @@ import { LocalDataService } from 'src/app/shared/services/support.service';
   styleUrl: './performance-filter-dialog.component.scss'
 })
 export class PerformanceFilterDialogComponent implements OnInit {
+  // The performance model
+  public performanceModel: PerformanceFilter = new PerformanceFilter();
+
   // Start activity name
   public startActivityModel = '';
 
@@ -46,7 +50,11 @@ export class PerformanceFilterDialogComponent implements OnInit {
    */
   public onSubmit(): void {
     if (this.startActivityModel && this.endActivityName && this.seconds > 0) {
-      this.activeModal.close({ startActivityName: this.startActivityModel, endActivityName: this.endActivityName, seconds: this.seconds });
+      this.performanceModel.startActivity = this.startActivityModel;
+      this.performanceModel.endActivity = this.endActivityName;
+      this.performanceModel.seconds = this.seconds;
+
+      this.activeModal.close({ performance: this.performanceModel });
     }
   }
 
@@ -62,6 +70,6 @@ export class PerformanceFilterDialogComponent implements OnInit {
    * @returns
    */
   public getFilteredValuesColumn(): string[] {
-    return ['Ciao', 'Cazzo'];
+    return this.currentDataset!.filteredColumns;
   }
 }

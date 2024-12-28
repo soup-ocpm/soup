@@ -1,0 +1,40 @@
+{
+  "timestamp": [
+    {
+      "startDate": "2024-12-27T23:00:00.000Z",
+      "endDate": "2024-12-29T22:59:59.000Z"
+    },
+    {
+      "startDate": "2024-12-29T23:00:00.000Z",
+      "endDate": "2024-12-31T22:59:59.000Z"
+    }
+  ],
+  "performance": [
+    {
+      "startActivity": "Activity1",
+      "endActivity": "Activity2",
+      "seconds": 10
+    },
+    {
+      "startActivity": "Activity2",
+      "endActivity": "Activity3",
+      "seconds": 20
+    }
+  ],
+  "includeActivities": [
+    {
+      "activities": ["Activity1"]
+    },
+    {
+      "activities": ["Filter4"]
+    }
+  ],
+  "excludeActivities": [
+    {
+      "activities": ["Activity2"]
+    },
+    {
+      "activities": ["Activity3"]
+    }
+  ]
+}

@@ -1,0 +1,51 @@
+.dialog-card {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  border-radius: 0;
+  overflow: auto;
+}
+
+.master-info {
+  width: 90%;
+  position: absolute;
+  top: 15px;
+  left: 15px;
+  align-items: start;
+  justify-content: start;
+}
+
+.master-content {
+  width: 100%;
+  height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.ellipsis {
+  display: inline-block;
+  max-width: 450px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  vertical-align: middle;
+}
+
+pre {
+  margin-left: 20px;
+  background-color: #f4f4f4;
+  border-radius: 4px;
+  text-align: left;
+  overflow: auto;
+  min-height: 355px;
+  max-height: 355px;
+}
+
+sp-btn-txt {
+  display: flex;
+  position: absolute;
+  bottom: 15px;
+  right: 30px;
+}

@@ -1,7 +1,8 @@
 import { SpBtnComponent } from '@aledevsharp/sp-lib';
 import { Component } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { NgbActiveModal, NgbModule } from '@ng-bootstrap/ng-bootstrap';
+import { NgbActiveModal, NgbDateStruct, NgbModule, NgbTimeStruct } from '@ng-bootstrap/ng-bootstrap';
+import { TimestampFilter } from './timestamp-filter.model';
 
 @Component({
   selector: 'app-timestam-filter-dialog',
@@ -16,11 +17,20 @@ import { NgbActiveModal, NgbModule } from '@ng-bootstrap/ng-bootstrap';
   styleUrl: './timestam-filter-dialog.component.scss'
 })
 export class TimestamFilterDialogComponent {
+  // The timestamp model
+  public timestampModel: TimestampFilter = new TimestampFilter();
+
   // The start date model
   public startDateModel: { year: number; month: number; day: number } | undefined;
 
   // The end date model
   public endDateModel: { year: number; month: number; day: number } | undefined;
+
+  // Start time model
+  public startTimeModel: NgbTimeStruct = { hour: 0, minute: 0, second: 0 };
+
+  // End time model
+  public endTimeModel: NgbTimeStruct = { hour: 23, minute: 59, second: 59 };
 
   /**
    * Constructor for TimestamFilterDialogComponent component
@@ -33,7 +43,7 @@ export class TimestamFilterDialogComponent {
    * @param field The field to update ('start' or 'end').
    * @param event The selected date event.
    */
-  public onDateSelect(field: 'start' | 'end', event: { year: number; month: number; day: number }): void {
+  public onDateSelect(field: 'start' | 'end', event: NgbDateStruct): void {
     if (field === 'start') {
       this.startDateModel = event;
     } else {
@@ -46,13 +56,13 @@ export class TimestamFilterDialogComponent {
    */
   public onSubmit(): void {
     if (this.startDateModel && this.endDateModel) {
-      const startDate = this.convertToDate(this.startDateModel);
-      const endDate = this.convertToDate(this.endDateModel);
+      const startDateTime = this.combineDateAndTime(this.startDateModel, this.startTimeModel);
+      const endDateTime = this.combineDateAndTime(this.endDateModel, this.endTimeModel);
 
-      const formattedStartDate = this.formatDate(startDate);
-      const formattedEndDate = this.formatDate(endDate);
+      this.timestampModel.startDate = startDateTime;
+      this.timestampModel.endDate = endDateTime;
 
-      this.activeModal.close({ startDate: formattedStartDate, endDate: formattedEndDate });
+      this.activeModal.close({ timestamp: this.timestampModel });
     }
   }
 
@@ -67,19 +77,7 @@ export class TimestamFilterDialogComponent {
    * Convert the NgbDateStruct to a JavaScript Date object.
    * @param date The NgbDateStruct object.
    */
-  private convertToDate(date: { year: number; month: number; day: number }): Date {
-    return new Date(date.year, date.month - 1, date.day);
-  }
-
-  /**
-   * Format a date object to a string.
-   * @param date The date object.
-   * @returns A formatted string.
-   */
-  private formatDate(date: Date): string {
-    const year = date.getFullYear();
-    const month = (date.getMonth() + 1).toString().padStart(2, '0');
-    const day = date.getDate().toString().padStart(2, '0');
-    return `${year}-${month}-${day}T00:00:00,000`;
+  private combineDateAndTime(date: NgbDateStruct, time: NgbTimeStruct): Date {
+    return new Date(date.year, date.month - 1, date.day, time.hour, time.minute, time.second);
   }
 }

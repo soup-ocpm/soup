@@ -128,23 +128,86 @@
   flex-direction: column;
   align-items: center;
   width: 100%;
-  gap: 10px;
+  gap: 5px;
+  height: auto;
+  max-height: 60vh;
+  overflow-y: auto;
+}
+
+.bi-info-circle:hover {
+  color: var(--primary-color);
+  cursor: pointer;
 }
 
 .filter-tile {
+  position: relative;
   width: 100%;
-  height: 60px;
+  height: 70px;
+  max-height: 70px;
   display: flex;
-  align-items: center;
-  justify-content: center;
-  background-color: #eaeaea;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: flex-start;
+  background-color: transparent;
+  color: #666;
+  font-size: 14px;
+  font-weight: normal;
+  border: 2px solid #666;
   border-radius: 7px;
-  font-size: 18px;
-  font-weight: bold;
-  color: #333;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+  padding: 5px;
+  transition: all 0.3s;
 }
 
+.filter-tile:hover {
+  background-color: rgba(0, 0, 0, 0.1);
+  border-color: black;
+  color: black;
+}
+
+.filter-tile i {
+  position: absolute;
+  top: 50%;
+  right: 10px;
+  transform: translateY(-50%);
+  font-size: 18px;
+  color: #d9534f;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+.filter-tile:hover i {
+  opacity: 1;
+}
+
+.tile-header {
+  font-size: 12px;
+  font-weight: bold;
+  color: var(--primary-color);
+  align-self: flex-start;
+  margin-bottom: 3px;
+  text-align: left;
+}
+
+.tile-details {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.8rem;
+  color: #333;
+  text-align: left;
+}
+
+.tile-details p {
+  margin: 0 5px;
+}
+
+.tile-details p strong {
+  min-width: 80px;
+  display: inline-block;
+}
+
+// Plus button
 .plus-button {
   width: 100%;
   height: 60px;
@@ -169,6 +232,128 @@
 
 .plus-button i {
   font-size: 32px;
+}
+
+// Upload button
+.master-upload-button {
+  width: 100%;
+  height: 60vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.upload-button {
+  width: 60%;
+  height: 120px; /* Aumento l'altezza per dare spazio al testo */
+  display: flex;
+  flex-direction: column; /* Imposta l'orientamento della flexbox in colonna */
+  align-items: center;
+  justify-content: center;
+  background-color: transparent;
+  color: #666;
+  font-size: 24px;
+  font-weight: bold;
+  border: 2px dashed #666;
+  border-radius: 7px;
+  cursor: pointer;
+  transition: all 0.3s;
+  padding: 10px;
+}
+
+.upload-button:hover {
+  background-color: rgba(0, 0, 0, 0.1);
+  color: black;
+  border-color: black;
+}
+
+.upload-button i {
+  font-size: 32px;
+}
+
+.upload-text {
+  margin-top: 10px;
+  font-size: 14px;
+  font-family: 'Times New Roman', Times, serif;
+  color: var(--secondary-color);
+}
+
+// Loading configuration
+.loading-configuration {
+  width: 100%;
+  height: 60vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+// ================================
+// Region: Analysis history
+// ================================
+.analysis-tile {
+  position: relative;
+  width: 100%;
+  height: 70px;
+  max-height: 70px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: flex-start;
+  background-color: white;
+  color: #666;
+  font-size: 14px;
+  font-weight: normal;
+  border: 1px solid #666;
+  border-radius: 6px;
+  padding: 5px;
+  transition: all 0.3s;
+}
+
+.analysis-tile:hover {
+  background-color: rgba(0, 0, 0, 0.1);
+  border-color: black;
+  color: black;
+}
+
+.analysis-tile i {
+  position: absolute;
+  right: 5px;
+  top: 5px;
+  font-size: 18px;
+  color: var(--secondary-color);
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+.analysis-tile:hover i {
+  opacity: 1;
+}
+
+.analysis-header {
+  font-size: 12px;
+  font-weight: bold;
+  color: var(--primary-color);
+  align-self: flex-start;
+  margin-bottom: 3px;
+  text-align: left;
+}
+
+.analysis-details {
+  align-items: flex-start;
+  justify-content: start;
+  font-size: 0.8rem;
+  color: #333;
+  text-align: left;
+}
+
+.analysis-details p {
+  margin: 0 5px;
+}
+
+.analysis-details p strong {
+  min-width: 80px;
+  display: inline-block;
 }
 
 // ================================

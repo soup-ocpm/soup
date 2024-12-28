@@ -126,14 +126,6 @@ export class StandardGraphService {
   }
 
   /**
-   * Delete the standard graph by the Database
-   * @returns Observable of ApiResponse object
-   */
-  public deleteGraph(): Observable<ApiResponse<any>> {
-    return this.apiService.delete(`${environment.baseUrl}/graph`);
-  }
-
-  /**
    * Get the entity keys
    * @returns Observable of ApiResponse object
    */
@@ -147,5 +139,21 @@ export class StandardGraphService {
    */
   public getNullEntities(): Observable<ApiResponse<any>> {
     return this.apiService.get(`${environment.baseUrl}/graph/null-entities`);
+  }
+
+  /**
+   * Get all the name of the different activities
+   * @returns Observable of ApiResponse object
+   */
+  public getActivitiesName(): Observable<ApiResponse<any>> {
+    return this.apiService.get(`${environment.baseUrl}/graph/activities`);
+  }
+
+  /**
+   * Delete the standard graph by the Database
+   * @returns Observable of ApiResponse object
+   */
+  public deleteGraph(): Observable<ApiResponse<any>> {
+    return this.apiService.delete(`${environment.baseUrl}/graph`);
   }
 }

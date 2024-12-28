@@ -698,6 +698,8 @@ export class NewDatasetComponent implements OnInit {
       'Dataset Information',
       'Please enter the Dataset information',
       true,
+      '',
+      true,
       'Build',
       'var(--primary-color)',
       'Close',

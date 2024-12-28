@@ -277,23 +277,216 @@
   </div>
 </ng-template>
 
-<!--New analysis template-->
+<!--New analysis Sidebar template-->
 <ng-template #newAnalysisSidebarTemplate>
-  <p>From here you can add filters and create a new analysis</p>
-  <div class="master-filters">
+  <div *ngIf="!this.isLoadingConfiguration">
+    <p *ngIf="!this.jsonConfiguration || this.createTilesByFile">From here you can add filters and create a new analysis</p>
+
     <div
-      *ngFor="let tile of this.tiles"
-      class="filter-tile">
-      <strong>{{ tile.type }}</strong>
-      <p>{{ tile.details }}</p>
+      *ngIf="this.jsonConfiguration && !this.createTilesByFile"
+      style="display: flex">
+      <p>You can upload your json configuration file for import filters</p>
+      <i
+        style="margin-left: 30px"
+        class="bi bi-info-circle"
+        (click)="this.openInfoJSONConfigurationSidebar()"></i>
     </div>
-    <button
-      class="plus-button"
-      (click)="this.addNewAnalysisTile()">
-      <i class="bi bi-plus-lg"></i>
-    </button>
+
+    <div class="master-filters">
+      <div
+        *ngFor="let tile of this.tiles"
+        class="filter-tile">
+        <!-- Tile title -->
+        <div class="tile-header">
+          <strong>{{ tile.type }}</strong>
+        </div>
+
+        <!-- Tile details -->
+        <div class="tile-details">
+          <!--Timestamp filter-->
+          <div *ngIf="tile.type === 'Timestamp'">
+            <p>
+              <strong>Start Date:</strong>
+              {{ tile.details.startDate | date }}
+            </p>
+            <p>
+              <strong>End Date:</strong>
+              {{ tile.details.endDate | date }}
+            </p>
+          </div>
+
+          <!-- Performance filter -->
+          <div *ngIf="tile.type === 'Performance'">
+            <div style="display: flex">
+              <p>
+                <strong>Start Activity:</strong>
+                {{ tile.details.startActivity }}
+              </p>
+              <p>
+                <strong>Metrics:</strong>
+                {{ tile.details.seconds }} seconds
+              </p>
+            </div>
+            <p>
+              <strong>End Activity:</strong>
+              {{ tile.details.endActivity }}
+            </p>
+          </div>
+
+          <!-- Include Activities filter-->
+          <div *ngIf="tile.type === 'Include Activities'">
+            <p>
+              <strong>Activities:</strong>
+              [{{ tile.details.activities.join(', ') }}]
+            </p>
+          </div>
+
+          <!-- Exclude Activities filter-->
+          <div *ngIf="tile.type === 'Exclude Activities'">
+            <p>
+              <strong>Excluded Activities:</strong>
+              [{{ tile.details.activities.join(', ') }}]
+            </p>
+          </div>
+
+          <!-- Filtro Frequence -->
+          <div *ngIf="tile.type === 'Frequence'">
+            <p>
+              <strong>Frequency:</strong>
+              {{ tile.details.frequency }}
+            </p>
+          </div>
+
+          <!-- Filtro Variation -->
+          <div *ngIf="tile.type === 'Variation'">
+            <p>
+              <strong>Variation:</strong>
+              {{ tile.details.variation }}
+            </p>
+          </div>
+        </div>
+
+        <i
+          class="bi bi-trash"
+          (click)="this.deleteTile(tile)"></i>
+      </div>
+
+      <!-- Add new tile -->
+      <button
+        *ngIf="!this.jsonConfiguration || this.createTilesByFile"
+        class="plus-button"
+        (click)="this.addNewAnalysisTile()">
+        <i class="bi bi-plus-lg"></i>
+      </button>
+
+      <!--Upload btn-->
+      <div class="master-upload-button">
+        <button
+          *ngIf="this.jsonConfiguration && !this.createTilesByFile"
+          class="upload-button"
+          (click)="this.triggerFileInput()">
+          <i class="bi bi-upload"></i>
+          <span class="upload-text">Upload JSON File</span>
+        </button>
+
+        <input
+          #fileInput
+          type="file"
+          (change)="this.onFileChange($event)"
+          accept=".json"
+          class="upload-input"
+          style="display: none" />
+      </div>
+    </div>
+  </div>
+
+  <!--Loading the configuration-->
+  <div
+    *ngIf="this.isLoadingConfiguration"
+    class="loading-configuration">
+    <sp-spinner></sp-spinner>
   </div>
 </ng-template>
 
-<!--History analysis template-->
-<ng-template #historyanalysis></ng-template>
+<!--History analysis Sidebar template-->
+<ng-template #analysesSidebarTemplate>
+  <p>List of analyses</p>
+  <div style="width: 50%">
+    <input
+      class="form-control form-control-sm"
+      style="margin-top: 10px"
+      type="text"
+      placeholder="Search analysis"
+      [(ngModel)]="searchTerm" />
+  </div>
+
+  <div style="margin-top: 10px"></div>
+  <sp-divider style="width: 50%"></sp-divider>
+  <div style="margin-top: 10px"></div>
+
+  <div class="master-filters">
+    <div
+      *ngFor="let analysis of this.filteredAnalysis()"
+      class="analysis-tile">
+      <!-- Tile title -->
+      <div class="analysis-header">
+        <strong>{{ analysis.analysisName }}</strong>
+      </div>
+
+      <!-- Tile details -->
+      <div
+        class="analysis-details"
+        style="justify-content: column">
+        <!--Timestamp filter-->
+        <p>
+          <strong>Total filters:</strong>
+          {{ this.getTotalAnalysisFilter(analysis) }}
+        </p>
+        <p>
+          <strong>Filters:</strong>
+          [{{ this.getAnalysisFiltersString(analysis) }}]
+        </p>
+      </div>
+
+      <i
+        class="bi bi-three-dots-vertical"
+        [matMenuTriggerFor]="menu"></i>
+
+      <!--Menu-->
+      <mat-menu #menu="matMenu">
+        <button
+          mat-menu-item
+          (click)="this.processAnalysis(analysis)">
+          <i class="bi bi-box-arrow-in-up-right"></i>
+          <span style="margin-left: 5px">Open</span>
+        </button>
+        <button
+          mat-menu-item
+          (click)="this.onZoomAnalysis(analysis)">
+          <i class="bi bi-arrows-fullscreen"></i>
+          <span style="margin-left: 5px">Zoom</span>
+        </button>
+        <button
+          mat-menu-item
+          (click)="this.deleteAnalysis(analysis)">
+          <i
+            class="bi bi-trash"
+            style="color: red"></i>
+          <span style="margin-left: 5px">Delete</span>
+        </button>
+      </mat-menu>
+    </div>
+  </div>
+</ng-template>
+
+<!--JSON Configuration template-->
+<ng-template #infoJSONConfigurationSidebarTemplate>
+  <p>
+    If you have a filter configuration json file, or have exported it in the past from another analysis, you can easily import it.
+    <br />
+    With this approach, you won't have to create each filter by hand.
+  </p>
+
+  <h5>Example JSON</h5>
+  <pre style="background-color: #f4f4f4; text-align: left">{{ this.getExampleJSON() | json }}</pre>
+</ng-template>

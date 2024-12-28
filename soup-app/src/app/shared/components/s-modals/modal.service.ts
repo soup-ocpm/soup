@@ -61,11 +61,12 @@ export class ModalService {
    * @param title the title of the modal
    * @param message the message of the modal
    * @param doubleButton if modal has two buttons
+   * @param datasetName the name of the dataset if the modal is for analysis
+   * @param isForDataset if the modal is for new dataset or not
    * @param primaryButtonText text of primary button
    * @param primaryButtonColor the color of primary button
    * @param secondaryButtonText text of secondary button
    * @param secondaryButtonColor the color of secondary button
-   * @param containerId the Docker container id
    * @param primaryButtonClick function to execute when primary button is clicked, it accepts inputValue from modal
    * @param secondaryButtonClick function to execute when secondary button is clicked
    */
@@ -73,6 +74,8 @@ export class ModalService {
     title: string,
     message: string,
     doubleButton: boolean,
+    datasetName: string,
+    isForDataset: boolean,
     primaryButtonText: string,
     primaryButtonColor: string,
     secondaryButtonText: string,
@@ -84,6 +87,8 @@ export class ModalService {
       title,
       message,
       doubleButton,
+      datasetName,
+      isForDataset,
       primaryButtonText,
       primaryButtonColor,
       secondaryButtonText,
