@@ -24,14 +24,19 @@ database_connector = get_db_connector(debug=False)
 
 @op_class_graph_controller_bp.route('/api/v2/graph/class/nodes', methods=['GET'])
 def get_class_nodes():
-    return jsonify({
-        'status': 500,
-        'message': 'Not implemented yet'
-    }), 500
+    """
+    Get class nodes
+    :return: ApiResponse model
+    """
+    return OperationClassGraphService.get_class_nodes_s(database_connector)
 
 
 @op_class_graph_controller_bp.route('/api/v2/graph/class/nodes/count', methods=['GET'])
 def get_class_nodes_count():
+    """
+    Get class nodes count
+    :return: ApiResponse model
+    """
     response = ApiResponse()
 
     try:
@@ -57,12 +62,19 @@ def get_class_nodes_count():
 
 @op_class_graph_controller_bp.route('/api/v2/graph/class/obs', methods=['GET'])
 def get_obs_relationships():
-    # Todo: implement
-    return None
+    """
+    Get :OBS relationships
+    :return: ApiResponse model
+    """
+    return OperationClassGraphService.get_obs_relationships_s(database_connector)
 
 
 @op_class_graph_controller_bp.route('/api/v2/graph/class/obs/count', methods=['GET'])
 def get_obs_relationships_count():
+    """
+    Get :OBS relationships count
+    :return: ApiResponse model
+    """
     response = ApiResponse()
 
     try:
@@ -88,12 +100,19 @@ def get_obs_relationships_count():
 
 @op_class_graph_controller_bp.route('/api/v2/graph/class/dfc', methods=['GET'])
 def get_dfc_relationships():
-    # Todo: implement
-    return None
+    """
+    Get :DFC relationships
+    :return: ApiResponse model
+    """
+    return OperationClassGraphService.get_dfc_relationships_s(database_connector)
 
 
 @op_class_graph_controller_bp.route('/api/v2/graph/class/dfc/count', methods=['GET'])
 def get_dfc_relationships_count():
+    """
+    Get :DFC relationships count
+    :return: ApiResponse model
+    """
     response = ApiResponse()
 
     try:
@@ -119,4 +138,8 @@ def get_dfc_relationships_count():
 
 @op_class_graph_controller_bp.route('/api/v2/graph/class', methods=['DELETE'])
 def delete_class_graph():
+    """
+    Delete class graph
+    :return: ApiResponse model
+    """
     return OperationClassGraphService.delete_class_graph_s(database_connector)

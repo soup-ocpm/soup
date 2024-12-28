@@ -26,13 +26,17 @@ database_connector = get_db_connector(debug=False)
 
 @generic_graph_controller_bp.route('/api/v2/complete-graph/build', methods=['POST'])
 def create_dataset_graphs():
+    """
+    Create dataset graphs
+    :return: ApiResponse model
+    """
     data = request.get_json()
     dataset_name = data.get('dataset_name')
 
     response = ApiResponse()
 
     try:
-        container_id = DockerService.get_container_id('soup-database')
+        container_id = DockerService.get_container_id_s('soup-database')
 
         if not container_id or container_id == '':
             response.http_status_code = 404
@@ -40,7 +44,7 @@ def create_dataset_graphs():
             response.message = 'Container not found'
             return jsonify(response.to_dict()), 404
 
-        result = GenericGraphService.create_complete_graphs(container_id, database_connector, dataset_name)
+        result = GenericGraphService.create_complete_graphs_s(container_id, database_connector, dataset_name)
 
         if result != 'success':
             response.http_status_code = 404
@@ -62,6 +66,10 @@ def create_dataset_graphs():
 
 @generic_graph_controller_bp.route('/api/v2/complete-graph', methods=['POST'])
 def get_complete_graph():
+    """
+    Retrieve complete graph
+    :return: ApiResponse model
+    """
     data = request.get_json()
     standard_graph = data.get('standard_graph')
 
@@ -72,4 +80,8 @@ def get_complete_graph():
 
 @generic_graph_controller_bp.route('/api/v2/complete-graph', methods=['DELETE'])
 def remove_memgraph_data():
+    """
+    Remove memory data inside the Memgraph database
+    :return: ApiResponse model
+    """
     return GenericGraphService.delete_memgraph_graph_s(database_connector)

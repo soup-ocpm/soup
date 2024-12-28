@@ -222,8 +222,7 @@ class DockerService:
             return jsonify(response.to_dict()), 500
 
     @staticmethod
-    # Get the docker container id by the name
-    def get_container_id(container_name="soup-database"):
+    def get_container_id_s(container_name="soup-database"):
         try:
             result = subprocess.run(
                 ["docker", "ps", "--filter", f"name={container_name}", "--format", "{{.ID}}"],

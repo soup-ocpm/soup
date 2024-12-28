@@ -13,7 +13,6 @@ License : MIT
 # Import
 import io
 import json
-import os
 import tarfile
 import docker
 
@@ -74,55 +73,72 @@ class DockerFileManager:
             return f"Error during file copy: {e}"
 
     @staticmethod
-    def read_csv_file_from_container(container_id, dataset_name, is_entity=False):
-        # 1. Check the suffix
-        file_suffix = "_entity.csv" if is_entity else ".csv"
-        csv_file_path = f'/soup/{dataset_name}/{dataset_name}{file_suffix}'
-
+    def copy_analysis_file_to_container(container_id, file_path, dataset_name, analysis_name):
         try:
+            # 1. Check if the file exists
+            analysis_file = Path(file_path)
+            if not analysis_file.exists():
+                return f"Error: The analysis file '{file_path}' does not exist.", None
+
+            # 2. Connect to the Docker container
             client = docker.from_env()
             container = client.containers.get(container_id)
 
-            # 4. Check the file
-            result = container.exec_run(['ls', csv_file_path])
-            if result.exit_code != 0:
-                print(f"File {csv_file_path} does not exist in container {container_id}")
-                return None
+            # 3. Define directories in the container
+            dataset_directory = f"/soup/{dataset_name}"
+            analysis_directory = f"{dataset_directory}/Analyses"
 
-            # 5. Read the CSV content
-            exec_result = container.exec_run(['cat', csv_file_path])
-            if exec_result.exit_code != 0:
-                print("Failed to read the CSV file")
-                return None
+            # 4. Create directories in the container
+            for directory in [dataset_directory, analysis_directory]:
+                result = container.exec_run(['sh', '-c', f'mkdir -p {directory}'])
+                if result.exit_code != 0:
+                    return f"Error: Failed to create directory {directory} in container.", None
 
-            # 6. Return the content as a string
-            return exec_result.output.decode('utf-8')
+            # 5. Prepare the tar archive
+            tarstream = io.BytesIO()
+            with tarfile.open(fileobj=tarstream, mode='w') as tar:
+                tar.add(analysis_file, arcname=f"./{analysis_name}.json")
+            tarstream.seek(0)
+
+            # 6. Copy the file into the container
+            container_file_path = f"{analysis_directory}/{analysis_name}.json"
+            success = container.put_archive(analysis_directory, tarstream)
+
+            if not success:
+                return f"Error: Failed to copy the file to {container_file_path}", None
+
+            return "success", container_file_path
 
         except Exception as e:
-            print(f"Error: {e}")
-            return None
+            import traceback
+            traceback.print_exc()
+            return f"Error during analysis file copy: {e}", None
 
     @staticmethod
-    def read_configuration_json_file(container_id, dataset_name):
-        # Json file path
-        json_file_path = f'/soup/{dataset_name}/{dataset_name}_config.json'
+    def read_json_file_from_container(container_id, dataset_name, analyses_name=None):
+        # 0. Create the path
+        if analyses_name:
+            json_file_path = f'/soup/{dataset_name}/Analyses/{analyses_name}'
+        else:
+            json_file_path = f'/soup/{dataset_name}/{dataset_name}_config.json'
 
         try:
             client = docker.from_env()
             container = client.containers.get(container_id)
 
-            # 3. Check if the file exists
+            # 1. Check the file
             result = container.exec_run(['ls', json_file_path])
             if result.exit_code != 0:
                 print(f"File {json_file_path} does not exist in container {container_id}")
                 return None, None
 
-            # 4. Read the JSON content file
+            # 2. Read the content
             exec_result = container.exec_run(['cat', json_file_path])
             if exec_result.exit_code != 0:
                 print("Failed to read the JSON file")
                 return None, None
 
+            # 3. Decode json
             json_content = exec_result.output.decode('utf-8')
             exec_config_data = json.loads(json_content)
 
@@ -133,7 +149,7 @@ class DockerFileManager:
             return None, None
 
     @staticmethod
-    def remove_container_file_folder(container_id, container_csv_path):
+    def remove_container_content_by_path(container_id, container_csv_path):
         client = docker.from_env()
         container = client.containers.get(container_id)
 
@@ -208,15 +224,12 @@ class DockerFileManager:
             return 'Error', None
 
     @staticmethod
-    def get_dataset_folders(container_id):
-        # Folder path
-        dataset_folder_path = f'/soup'
-
+    def get_folder_files(container_id, directory):
         try:
             client = docker.from_env()
             container = client.containers.get(container_id)
 
-            result = container.exec_run(f"ls {dataset_folder_path}")
+            result = container.exec_run(f"ls {directory}")
             folder_list = result.output.decode().splitlines()
 
             return 'success', folder_list

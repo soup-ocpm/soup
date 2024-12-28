@@ -21,26 +21,43 @@ docker_controller_bp = Blueprint('docker_controller_bp', __name__)
 
 @docker_controller_bp.route('/api/v2/docker', methods=['GET'])
 def get_all_containers():
+    """
+    Get all docker containers
+    :return: ApiResponse model
+    """
     return DockerService.get_docker_containers_s()
 
 
 @docker_controller_bp.route('/api/v2/docker/active', methods=['GET'])
 def get_active_containers():
+    """
+    Get all docker containers active
+    :return: ApiResponse model
+    """
     return DockerService.get_active_docker_containers_s()
 
 
 @docker_controller_bp.route('/api/v2/docker/exited', methods=['GET'])
 def get_exited_containers():
+    """
+    Get all docker containers exited
+    :return: ApiResponse model
+    """
     return DockerService.get_stopped_docker_containers_s()
+
 
 @docker_controller_bp.route('/api/v2/docker/id', methods=['POST'])
 def get_docker_container_id():
+    """
+    Get docker container by the id
+    :return: ApiResponse model
+    """
     data = request.get_json()
     container_name = data.get('container_name')
     response = ApiResponse()
 
     try:
-        container_id = DockerService.get_container_id(container_name)
+        container_id = DockerService.get_container_id_s(container_name)
 
         if container_id is None or container_id == '':
             response.http_status_code = 400
@@ -61,6 +78,10 @@ def get_docker_container_id():
 
 @docker_controller_bp.route('/api/v2/docker/start', methods=['POST'])
 def run_container():
+    """
+    Run specific docker container
+    :return: ApiResponse model
+    """
     data = request.get_json()
     container_id = data.get('container_id')
 
@@ -69,6 +90,10 @@ def run_container():
 
 @docker_controller_bp.route('/api/v2/docker/stop', methods=['POST'])
 def stop_container():
+    """
+    Stop specific docker container
+    :return: ApiResponse model
+    """
     data = request.get_json()
     container_id = data.get('container_id')
 

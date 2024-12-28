@@ -20,42 +20,11 @@ from Models.api_response_model import ApiResponse
 from Models.docker_file_manager_model import DockerFileManager
 from Models.file_manager_model import FileManager
 from Services.docker_service import DockerService
-from Utils.query_library import *
+from Utils.general_query_lib import *
 
 
 # The Service for operation graph controller
 class OperationGraphService:
-
-    @staticmethod
-    def download_svg_s(dataset_name, svg_content):
-        response = ApiResponse()
-
-        container_id = DockerService.get_container_id('soup-database')
-
-        if not container_id or container_id == '':
-            response.http_status_code = 404
-            response.response_data = None
-            response.message = 'Container not found'
-            return jsonify(response.to_dict()), 404
-
-        # Create svg
-        result, new_svg_file_path = FileManager.copy_svg_file(dataset_name, svg_content)
-        if result != 'success' or new_svg_file_path is None:
-            return 'Error while copying the entity node svg to the Engine'
-
-        # Copy svg
-        result, new_entity_docker_file_path = DockerFileManager.copy_file_to_container(container_id, dataset_name,
-                                                                                       new_svg_file_path, False,
-                                                                                       False, True)
-
-        # Delete the
-        result = FileManager.delete_svg_file(dataset_name)
-
-        response.http_status_code = 200
-        response.message = 'Event nodes retrieved successfully'
-        response.response_data = result
-
-        return jsonify(response.to_dict()), 200
 
     @staticmethod
     def get_event_nodes_s(database_connector):
@@ -262,7 +231,7 @@ class OperationGraphService:
 
             response.http_status_code = 200
             response.response_data = graph_data
-            response.message = 'Retrieve :corr relationships'
+            response.message = 'Retrieve :CORR relationships'
 
             return jsonify(response.to_dict()), 200
 
@@ -354,7 +323,7 @@ class OperationGraphService:
 
             response.http_status_code = 200
             response.response_data = graph_data
-            response.message = 'Retrieve :df relationships'
+            response.message = 'Retrieve :DF relationships'
 
             return jsonify(response.to_dict()), 200
 
@@ -381,165 +350,6 @@ class OperationGraphService:
         except Exception as e:
             print(f"Error in get_count_event_nodes: {e}")
             return 0
-
-    # Get complete graph details
-    @staticmethod
-    def get_graph_details_s(database_connector, limit):
-        response = ApiResponse()
-
-        try:
-            database_connector.connect()
-
-            if not limit:
-                query = get_nodes_details_query()
-            else:
-                query = get_nodes_details_length_query(limit)
-
-            result = database_connector.run_query_memgraph(query)
-
-            if not isinstance(result, Iterable):
-                response.http_status_code = 404
-                response.response_data = None
-                response.message = "Not found"
-                return jsonify(response.to_dict()), 404
-
-            event_nodes = []
-            entity_nodes = []
-            event_count = 0
-            entity_count = 0
-
-            for record in result:
-                if record['type'] == 'events':
-                    event_nodes = record['data']
-                    event_count = record['count']
-                    event_nodes = [
-                        {k: None if isinstance(v, (int, float)) and math.isnan(v) else v for k, v in node.items()} for
-                        node in event_nodes]
-                    for e in event_nodes:
-                        for key, value in e.items():
-                            if 'Timestamp' in key:
-                                timestamp = memgraph_datetime_to_string(value)
-                                e[key] = timestamp
-
-                elif record['type'] == 'entities':
-                    entity_nodes = record['data']
-                    entity_count = record['count']
-                    entity_nodes = [
-                        {k: None if isinstance(v, (int, float)) and math.isnan(v) else v for k, v in node.items()} for
-                        node
-                        in entity_nodes]
-
-            query = get_corr_relation_query()
-            result = database_connector.run_query_memgraph(query)
-
-            if not isinstance(result, Iterable):
-                response.http_status_code = 404
-                response.response_data = None
-                response.message = "Not found"
-                return jsonify(response.to_dict()), 404
-
-            correlation_data = []
-            correlation_count = 0
-
-            for record in result:
-                relation = record['corr']
-                event = relation[0]
-                relation_type = relation[1]
-                related_event = relation[2]
-
-                for key, value in event.items():
-                    if isinstance(value, (int, float)) and math.isnan(value):
-                        event[key] = None
-                    elif key == 'Timestamp':
-                        event[key] = memgraph_datetime_to_string(event[key])
-
-                for key, value in related_event.items():
-                    if isinstance(value, (int, float)) and math.isnan(value):
-                        related_event[key] = None
-
-                correlation_count = correlation_count + 1
-                relation_id = correlation_count
-
-                correlation_data.append({
-                    'event': event,
-                    'relation_type': relation_type,
-                    'related_event': related_event,
-                    'relation_id': relation_id
-                })
-
-            query = get_df_relation_query()
-            result = database_connector.run_query_memgraph(query)
-
-            if not isinstance(result, Iterable):
-                response.http_status_code = 404
-                response.response_data = None
-                response.message = "Not found"
-                return jsonify(response.to_dict()), 404
-
-            df_data = []
-            df_count = 0
-
-            for record in result:
-                relation = record['df']
-                event = relation[0]
-                relation_type = relation[1]
-                related_event = relation[2]
-
-                for key, value in event.items():
-                    if isinstance(value, (int, float)) and math.isnan(value):
-                        event[key] = None
-                    elif key == 'Timestamp':
-                        event[key] = memgraph_datetime_to_string(event[key])
-
-                for key, value in related_event.items():
-                    if isinstance(value, (int, float)) and math.isnan(value):
-                        related_event[key] = None
-                    elif key == 'Timestamp':
-                        related_event[key] = memgraph_datetime_to_string(related_event[key])
-
-                df_count = df_count + 1
-                relation_id = df_count
-
-                df_data.append({
-                    'event': event,
-                    'relation_type': relation_type,
-                    'related_event': related_event,
-                    'relation_id': relation_id
-                })
-
-            graph_data = {
-                'event_nodes': event_nodes,
-                'entity_nodes': entity_nodes,
-                'event_count': event_count,
-                'entity_count': entity_count,
-                'correlation_data': correlation_data,
-                'correlation_count': correlation_count,
-                'df_data': df_data,
-                'df_count': df_count,
-            }
-
-            if graph_data['entity_count'] == 0 and graph_data['event_count'] == 0 and graph_data[
-                'correlation_count'] == 0 \
-                    and graph_data['df_count'] == 0:
-                response.http_status_code = 202
-                response.message = 'No content'
-                response.response_data = None
-
-                return jsonify(response.to_dict()), 202
-
-            response.http_status_code = 200
-            response.response_data = graph_data
-            response.message = "Retrieve Graph."
-            return jsonify(response.to_dict()), 200
-
-        except Exception as e:
-            response.http_status_code = 500
-            response.response_data = None
-            response.message = f'Internal Server Error : {str(e)}'
-            return jsonify(response.to_dict()), 500
-
-        finally:
-            database_connector.close()
 
     # Get the entity key
     @staticmethod
@@ -619,6 +429,69 @@ class OperationGraphService:
 
         finally:
             database_connector.close()
+
+    @staticmethod
+    def get_activities_s(database_connector):
+        response = ApiResponse()
+
+        try:
+            database_connector.connect()
+
+            query = get_activities_name_query()
+            result = database_connector.run_query_memgraph(query)
+
+            if not isinstance(result, Iterable) or not result:
+                response.http_status_code = 404
+                response.response_data = None
+                response.message = "No activity names found"
+                return jsonify(response.to_dict()), 404
+
+            activity_names = result[0]['activityNames']
+
+            response.http_status_code = 200
+            response.response_data = activity_names
+            response.message = "Successfully retrieved activity names."
+            return jsonify(response.to_dict()), 200
+
+        except Exception as e:
+            response.http_status_code = 500
+            response.message = f"Internal Server Error: {str(e)}"
+            response.response_data = None
+            return jsonify(response.to_dict()), 500
+
+        finally:
+            database_connector.close()
+
+    @staticmethod
+    def download_svg_s(dataset_name, svg_content):
+        response = ApiResponse()
+
+        container_id = DockerService.get_container_id_s('soup-database')
+
+        if not container_id or container_id == '':
+            response.http_status_code = 404
+            response.response_data = None
+            response.message = 'Container not found'
+            return jsonify(response.to_dict()), 404
+
+        # Create svg
+        result, new_svg_file_path = FileManager.copy_svg_file(dataset_name, svg_content)
+        if result != 'success' or new_svg_file_path is None:
+            return 'Error while copying the entity node svg to the Engine'
+
+        # Copy svg
+        result, new_entity_docker_file_path = DockerFileManager.copy_file_to_container(container_id, dataset_name,
+                                                                                       new_svg_file_path, False,
+                                                                                       False, True)
+
+        # Delete the
+        result = FileManager.delete_svg_file(dataset_name)
+
+        response.http_status_code = 200
+        response.message = 'Event nodes retrieved successfully'
+        response.response_data = result
+
+        return jsonify(response.to_dict()), 200
 
     # Delete the complete graph
     @staticmethod

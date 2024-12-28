@@ -14,6 +14,7 @@ License : MIT
 import math
 import json
 
+from datetime import datetime
 from flask import jsonify
 from collections.abc import *
 from neo4j.time import DateTime
@@ -24,14 +25,14 @@ from Models.dataset_process_info_model import DatasetProcessInformation
 from Models.docker_file_manager_model import DockerFileManager
 from Models.file_manager_model import FileManager
 from Utils.causal_query_lib import reveal_causal_rels
-from Utils.query_library import *
+from Utils.general_query_lib import *
 
 
 # The Service for generic graph controller
 class GenericGraphService:
 
     @staticmethod
-    def create_complete_graphs(container_id, database_connector, dataset_name):
+    def create_complete_graphs_s(container_id, database_connector, dataset_name):
         process_info = DatasetProcessInformation()
 
         try:
@@ -47,7 +48,7 @@ class GenericGraphService:
                 return 'Unable to load the Dataset files'
 
             # 2. Read the config file for get the configuration
-            result, exec_config_file = DockerFileManager.read_configuration_json_file(container_id, dataset_name)
+            result, exec_config_file = DockerFileManager.read_json_file_from_container(container_id, dataset_name)
 
             if result != 'success':
                 return result
@@ -162,7 +163,7 @@ class GenericGraphService:
             if result != 'success' or new_json_config_path is None:
                 return result
 
-            result = FileManager.delete_json_file(dataset_name)
+            result = FileManager.delete_file(dataset_name, "json", False)
 
             if result != 'success':
                 return result

@@ -30,7 +30,7 @@ class DatasetService:
 
         try:
             # Retrieve the container id by the name
-            container_id = DockerService.get_container_id('soup-database')
+            container_id = DockerService.get_container_id_s('soup-database')
 
             if container_id is None or container_id == '':
                 response.http_status_code = 400
@@ -38,7 +38,7 @@ class DatasetService:
                 response.response_data = None
                 return jsonify(response.to_dict()), 400
 
-            result, exec_config_file = DockerFileManager.read_configuration_json_file(container_id, dataset_name)
+            result, exec_config_file = DockerFileManager.read_json_file_from_container(container_id, dataset_name)
 
             if result != 'success':
                 response.http_status_code = 202
@@ -72,7 +72,7 @@ class DatasetService:
 
         try:
             # Retrieve the container id by the name
-            container_id = DockerService.get_container_id('soup-database')
+            container_id = DockerService.get_container_id_s('soup-database')
 
             if container_id is None or container_id == '':
                 response.http_status_code = 400
@@ -81,7 +81,7 @@ class DatasetService:
                 return jsonify(response.to_dict()), 400
 
             # 1. Get all datasets folder name
-            result, container_folders = DockerFileManager.get_dataset_folders(container_id)
+            result, container_folders = DockerFileManager.get_folder_files(container_id, '/soup')
 
             if result != 'success':
                 response.http_status_code = 400
@@ -94,7 +94,7 @@ class DatasetService:
             # 2. For each dataset, get the specific information
             for dataset_name in container_folders:
                 # Retrieve configuration file
-                result, exec_config_file = DockerFileManager.read_configuration_json_file(container_id, dataset_name)
+                result, exec_config_file = DockerFileManager.read_json_file_from_container(container_id, dataset_name)
 
                 if result == 'success':
                     # Check if it is already a dictionary
@@ -134,7 +134,7 @@ class DatasetService:
 
         try:
             # Retrieve the container id by the name
-            container_id = DockerService.get_container_id('soup-database')
+            container_id = DockerService.get_container_id_s('soup-database')
 
             if container_id is None or container_id == '':
                 response.http_status_code = 400
@@ -142,7 +142,7 @@ class DatasetService:
                 response.response_data = None
                 return jsonify(response.to_dict()), 400
 
-            result, exec_config_file = DockerFileManager.read_configuration_json_file(container_id, dataset_name)
+            result, exec_config_file = DockerFileManager.read_json_file_from_container(container_id, dataset_name)
 
             if result != 'success':
                 response.http_status_code = 400
@@ -175,7 +175,7 @@ class DatasetService:
                 response.response_data = result
                 return jsonify(response.to_dict()), 500
 
-            FileManager.delete_json_file(dataset_name)
+            FileManager.delete_file(dataset_name, "json", False)
 
             response.http_status_code = 200
             response.message = 'Dataset updated successfully'
@@ -195,7 +195,7 @@ class DatasetService:
 
         try:
             # Retrieve the container id by the name
-            container_id = DockerService.get_container_id('soup-database')
+            container_id = DockerService.get_container_id_s('soup-database')
 
             if container_id is None or container_id == '':
                 response.http_status_code = 400
@@ -205,7 +205,7 @@ class DatasetService:
 
             # 1. Delete the folder
             folder_path = f'/soup/{dataset_name}'
-            result = DockerFileManager.remove_container_file_folder(container_id, folder_path)
+            result = DockerFileManager.remove_container_content_by_path(container_id, folder_path)
 
             if result != 'success':
                 response.http_status_code = 404
@@ -213,7 +213,7 @@ class DatasetService:
                 response.response_data = None
                 return jsonify(response.to_dict()), 404
 
-            result, container_folders = DockerFileManager.get_dataset_folders(container_id)
+            result, container_folders = DockerFileManager.get_folder_files(container_id, '/soup')
 
             if dataset_name in container_folders:
                 response.http_status_code = 404
@@ -238,7 +238,7 @@ class DatasetService:
 
         try:
             # Retrieve the container id by the name
-            container_id = DockerService.get_container_id('soup-database')
+            container_id = DockerService.get_container_id_s('soup-database')
 
             if container_id is None or container_id == '':
                 response.http_status_code = 400
@@ -246,7 +246,7 @@ class DatasetService:
                 response.response_data = None
                 return jsonify(response.to_dict()), 400
 
-            result, container_folders = DockerFileManager.get_dataset_folders(container_id)
+            result, container_folders = DockerFileManager.get_folder_files(container_id, '/soup')
 
             if dataset_name in container_folders:
                 response.http_status_code = 200

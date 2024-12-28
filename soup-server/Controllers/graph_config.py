@@ -19,6 +19,10 @@ from Models.memgraph_connector_model import MemgraphConnector
 
 # Get the database connector configuration
 def get_db_connector(debug=True):
+    """
+    Get the database configuration
+    :return: ApiResponse model
+    """
     if not debug:
         memgraph_host = os.getenv("MEMGRAPH_HOST", "memgraph")
         memgraph_port = int(os.getenv("MEMGRAPH_PORT", 7687))

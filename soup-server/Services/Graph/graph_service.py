@@ -26,8 +26,8 @@ from Models.api_response_model import ApiResponse
 class GraphService:
 
     @staticmethod
-    def create_new_dataset(file, copy_file, dataset_name, dataset_description, all_columns, standard_column,
-                           filtered_column, values_column, trigger_target_rows, database_connector):
+    def create_new_dataset_s(file, copy_file, dataset_name, dataset_description, all_columns, standard_column,
+                             filtered_column, values_column, trigger_target_rows, database_connector):
 
         response = ApiResponse()
 
@@ -37,7 +37,7 @@ class GraphService:
             df = pd.read_csv(io.StringIO(file_data))
 
             # 0. Retrieve the container id by the name
-            container_id = DockerService.get_container_id('soup-database')
+            container_id = DockerService.get_container_id_s('soup-database')
 
             if container_id is None or container_id == '':
                 response.http_status_code = 400
@@ -55,11 +55,11 @@ class GraphService:
                 response.response_data = []
                 return jsonify(response.to_dict()), 500
 
-            build_result = GenericGraphService.create_complete_graphs(container_id, database_connector, dataset_name)
+            build_result = GenericGraphService.create_complete_graphs_s(container_id, database_connector, dataset_name)
 
             if build_result != 'success':
                 folder_path = f'/soup/{dataset_name}'
-                DockerFileManager.remove_container_file_folder(container_id, folder_path)
+                DockerFileManager.remove_container_content_by_path(container_id, folder_path)
                 response.http_status_code = 400
                 response.message = 'Error while create the graph'
                 response.response_data = build_result
@@ -95,7 +95,7 @@ def process_new_dataset_files(container_id, file, df, dataset_name, dataset_desc
         if result != 'success' or new_docker_file_path is None:
             return 'Error while copy the original csv file on the Docker Container'
 
-        result = FileManager.delete_csv_file(dataset_name, False)
+        result = FileManager.delete_file(dataset_name, "csv", False)
         if result != 'success':
             return result
 
@@ -121,7 +121,7 @@ def process_new_dataset_files(container_id, file, df, dataset_name, dataset_desc
         if result != 'success' or new_entity_docker_file_path is None:
             return result
 
-        result = FileManager.delete_csv_file(dataset_name, True)
+        result = FileManager.delete_file(dataset_name, "csv", True)
 
         if result != 'success':
             return result
@@ -142,7 +142,7 @@ def process_new_dataset_files(container_id, file, df, dataset_name, dataset_desc
         if result != 'success' or new_json_config_docker_file_path is None:
             return result
 
-        result = FileManager.delete_json_file(dataset_name)
+        result = FileManager.delete_file(dataset_name, "json", False)
 
         if result != 'success':
             return result

@@ -12,13 +12,11 @@ License : MIT
 
 # Import
 from flask import jsonify
+from datetime import datetime
 from Services.AggregateGraph.op_class_graph_service import OperationClassGraphService
 from Models.dataset_process_info_model import DatasetProcessInformation
 from Models.api_response_model import ApiResponse
-from Utils.query_library import *
-
-# Global variable for socket
-have_finished = False
+from Utils.general_query_lib import *
 
 
 # The Service for class graph
@@ -27,26 +25,13 @@ class ClassGraphService:
     # Create Class Graph function
     @staticmethod
     def create_class_graph_s(filtered_columns, database_connector):
-        global have_finished
-
-        if have_finished:
-            have_finished = False
-
         response = ApiResponse()
 
         try:
             database_connector.connect()
 
-            # Start the Socket IO for WebSocket
-            # socketio.start_background_task(target=track_class_graph_creation_progress_c,
-            # socketio=socketio,
-            # db_connector=database_connector, dataset_name=dataset_name,
-            # start_time=start_time)
-
             # 1. Create the graph
-            result, process_info_updated = ClassGraphService.class_process_query_c(database_connector, filtered_columns)
-
-            have_finished = True
+            result, process_info_updated = ClassGraphService.class_process_query(database_connector, filtered_columns)
 
             if result != 'success' or process_info_updated is None:
                 response.http_status_code = 400
@@ -75,15 +60,13 @@ class ClassGraphService:
             response.message = f'Error while importing data to Neo4j: {str(e)}.'
             response.response_data = None
 
-            have_finished = True
-
             return jsonify(response.to_dict()), 500
 
         finally:
             database_connector.close()
 
     @staticmethod
-    def class_process_query_c(database_connector, filtered_columns):
+    def class_process_query(database_connector, filtered_columns):
         process_info = DatasetProcessInformation()
 
         try:
@@ -100,7 +83,6 @@ class ClassGraphService:
                 entity = element['prop']
                 cypher_query = change_nan(entity)
                 database_connector.run_query_memgraph(cypher_query)
-            process_info.finish_class_node_time = datetime.now().strftime('%Y-%m-%dT%H:%M:%S.%f')[:-3]
 
             # 3. Create the :OBS relationships
             process_info.init_obs_time = datetime.now().strftime('%Y-%m-%dT%H:%M:%S.%f')[:-3]
@@ -109,6 +91,7 @@ class ClassGraphService:
 
             cypher_query = set_class_weight()
             database_connector.run_query_memgraph(cypher_query)
+            process_info.finish_class_node_time = datetime.now().strftime('%Y-%m-%dT%H:%M:%S.%f')[:-3]
             process_info.finish_obs_time = datetime.now().strftime('%Y-%m-%dT%H:%M:%S.%f')[:-3]
 
             # Create the :DF_C relationships

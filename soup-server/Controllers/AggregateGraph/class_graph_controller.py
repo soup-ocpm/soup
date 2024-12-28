@@ -26,7 +26,10 @@ database_connector = get_db_connector(debug=False)
 
 @class_graph_controller_bp.route('/api/v2/graph/class', methods=['POST'])
 def create_class_graph():
-    # socketio = current_app.config['socketio'] (add on the future)
+    """
+    Create aggregate graph
+    :return: ApiResponse model
+    """
     filtered_column_json = request.form.get('filteredColumn')
     filtered_column = json.loads(filtered_column_json)
 

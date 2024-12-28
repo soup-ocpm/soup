@@ -1,6 +1,6 @@
 """
 ------------------------------------------------------------------------
-File : query_library.py
+File : general_query_lib.py
 Description: Cypher query library for EKG
 Date creation: 06-02-2024
 Project : soup-server
@@ -10,20 +10,17 @@ License : MIT
 ------------------------------------------------------------------------
 """
 
-# Import
-from datetime import datetime
-
 
 # ----------Query for Standard Graph----------
 
 def load_event_node_query(container_csv_path, event_id_col, timestamp_col, activity_col, cypher_properties):
     properties_string = ', '.join(cypher_properties)
     return (f"LOAD CSV FROM '{container_csv_path}' WITH HEADER AS row "
-            f"CREATE (e:Event {{EventID: row.{event_id_col}, Timestamp: localDateTime(row.{timestamp_col}), ActivityName: row.{activity_col}, {properties_string}}});")
+            f"CREATE (e:Event {{Event_Id: row.{event_id_col}, Timestamp: localDateTime(row.{timestamp_col}), ActivityName: row.{activity_col}, {properties_string}}});")
 
 
 def create_node_event_query(cypher_properties):
-    return f"CREATE (e:Event {{EventID: $event_id, Timestamp: localDateTime($timestamp), ActivityName: $activity_name, {', '.join(cypher_properties)}}})"
+    return f"CREATE (e:Event {{Event_Id: $event_id, Timestamp: localDateTime($timestamp), ActivityName: $activity_name, {', '.join(cypher_properties)}}})"
 
 
 def load_entity_node_query(container_csv_path):
@@ -45,9 +42,9 @@ def create_entity_from_events(entity_type):
 
 
 def create_entity_index():
-    return ("""
+    return """
            CREATE INDEX ON :Entity(Value)
-           """)
+           """
 
 
 def create_corr_relation_query(key):  # checks if an entity has multiple values
@@ -223,7 +220,15 @@ def get_nan_entities():
             WHERE toString(value) = 'nan' OR toString(value) = ''
             WITH DISTINCT prop, count(DISTINCT e) AS nodeCount
             RETURN prop, nodeCount
-    """
+            """
+
+
+def get_activities_name_query():
+    return """
+            MATCH (n) 
+            WHERE n.ActivityName IS NOT NULL
+            RETURN COLLECT(DISTINCT n.ActivityName) AS activityNames
+            """
 
 
 def change_nan(entity):
@@ -255,7 +260,14 @@ def get_count_nodes_class_query():
     return f"""
             MATCH (c:Class)
             RETURN COUNT(c) as class_count
-    """
+            """
+
+
+def get_obs_relation_query():
+    return f"""
+            MATCH (e:Event)-[obs:OBSERVED]->(c:Class)
+            RETURN e, obs, c
+            """
 
 
 def get_count_obs_relationships_query():
@@ -263,6 +275,13 @@ def get_count_obs_relationships_query():
     MATCH (e:Event)-[obs:OBSERVED]->(c:Class)
     RETURN COUNT(obs) as obs_count
     """
+
+
+def get_dfc_relation_query():
+    return f"""
+            MATCH (c1:Class)-[dfc:DF_C]->(c2:Class)
+            RETURN c1, dfc, c2
+            """
 
 
 def get_count_dfc_relationships_query():
@@ -309,61 +328,6 @@ def set_class_weight():
             WITH c, COUNT(obs) as weight
             SET c.Count = weight
             """
-
-
-# ----------Utils query for Filters SOuP Filters----------
-
-
-def timestamp_filter_query(start_timestamp, end_timestamp):
-    return (f"MATCH (e1:Event)-[r:DF]->(e2:Event) "
-            f"WHERE e1.Timestamp >= localDateTime({start_timestamp}) AND e1.Timestamp <= localDateTime({end_timestamp}) "
-            f"AND e2.Timestamp >= localDateTime({start_timestamp}) AND e2.Timestamp <= localDateTime({end_timestamp}) "
-            f"RETURN e1 as source, id(e1) as source_id, properties(r) as edge, "
-            f"id(r) as edge_id, e2 as target, id(e2) as target_id ")
-
-
-def performance_filter_name_query(start_activity_name, end_activity_name, duration):
-    return (f"MATCH (start: Event {{ActivityName: '{start_activity_name}'}}) "
-            f"MATCH (end: Event {{ActivityName: '{end_activity_name}'}}) "
-            f"WHERE start.Timestamp < end.Timestamp "
-            f"WITH start, end, duration.between(start.Timestamp, end.Timestamp) "
-            f"AS duration "
-            f"WHERE duration.seconds > {duration} "
-            f"MERGE (start)-[r:HAS_DURATION {{duration_seconds: duration.seconds}}]->(end) "
-            f"RETURN start, r, end")
-
-
-def include_activity_filter_query(activities):
-    return (f"MATCH (e1:Event)-[r:DF]->(e2:Event) "
-            f"WHERE e1.ActivityName = '{activities}' AND e2.ActivityName = '{activities}' "
-            f"RETURN e1 as source, id(e1) as source_id, properties(r) as edge, "
-            f"id(r) as edge_id, e2 as target, id(e2) as target_id ")
-
-
-def exclude_activity_filter_query(activities):
-    return (f"MATCH (e1:Event)-[r:DF]->(e2:Event) "
-            f"WHERE NOT (e1.ActivityName = '{activities}' AND e2.ActivityName = '{activities}') "
-            f"RETURN e1 as source, id(e1) as source_id, properties(r) as edge, "
-            f"id(r) as edge_id, e2 as target, id(e2) as target_id ")
-
-
-def frequency_filter_query(frequency):
-    return (f"MATCH (e1:Event) "
-            f"WITH e.ActivityName AS activities, COUNT(e) AS frequency "
-            f"WHERE frequency >= {frequency} "
-            f"RETURN activities, frequency "
-            f"ORDER BY frequency ASC ")
-
-
-def variation_filter_query():
-    query = """
-    MATCH (start:Event)-[:DF*]->(end:Event)
-    WITH start.EventID AS caseId, COLLECT(start.ActivityName) + COLLECT(end.ActivityName) AS activities,
-    duration.between(start.Timestamp, end.Timestamp) AS duration
-    RETURN activities, AVG(duration.seconds) AS avg_duration, COUNT(*) AS frequency
-    ORDER BY avg_duration ASC;
-    """
-    return query
 
 
 # ----------Utils query for graph----------

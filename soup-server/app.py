@@ -15,7 +15,6 @@ from flask import Flask, jsonify
 from flask_cors import CORS
 from flask_socketio import SocketIO
 
-# Controllers
 from Controllers.docker_controller import docker_controller_bp
 from Controllers.Graph.graph_controller import graph_controller_bp
 from Controllers.AggregateGraph.class_graph_controller import class_graph_controller_bp
@@ -24,6 +23,8 @@ from Controllers.Graph.op_graph_controller import op_graph_controller_bp
 from Controllers.AggregateGraph.op_class_graph_controller import op_class_graph_controller_bp
 from Controllers.graph_json_controller import graph_json_controller_bp
 from Controllers.dataset_controller import dataset_controller_bp
+from Controllers.filters_controller import filters_controller_bp
+from Models.api_response_model import ApiResponse
 
 # App
 app = Flask(__name__)
@@ -38,6 +39,8 @@ app.register_blueprint(op_graph_controller_bp)
 app.register_blueprint(op_class_graph_controller_bp)
 app.register_blueprint(graph_json_controller_bp)
 
+app.register_blueprint(filters_controller_bp)
+
 # Init the Socket
 socketio = SocketIO(app, cors_allowed_origins="*")
 
@@ -50,13 +53,15 @@ CORS(app)
 # Configure SOuP Docker folder and volume
 docker_soup_path = '/soup'
 
-# Welcome API
+
+# Welcome, API
 @app.route('/api/v2/welcome', methods=['GET'])
 def welcome_api():
-    return jsonify({
-        'http_status_code': 200,
-        'message': 'Hello User'
-    }), 200
+    response = ApiResponse()
+    response.http_status_code = 200
+    response.message = "Hello user, the Engine work :)"
+    response.response_data = None
+    return jsonify(response.to_dict()), 200
 
 
 # Main (run the Server on 8080)

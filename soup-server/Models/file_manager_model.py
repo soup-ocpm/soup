@@ -12,7 +12,6 @@ License : MIT
 
 # Import
 import json
-import shutil
 
 from pathlib import Path
 
@@ -64,27 +63,33 @@ class FileManager:
             return f"Error while copy the file: {e}", None
 
     @staticmethod
-    def delete_csv_file(file_name, entity_folder):
-        project_dir = Path(__file__).parent.parent
-        folder_name = FileManager.csv_folder_name
-
-        if entity_folder is True:
-            folder_name = FileManager.csv_entity_folder_name
-
-        temp_dir = project_dir / folder_name
-
-        complete_file_name = f'{file_name}.csv'
-        temp_csv_path = temp_dir / complete_file_name
-
+    def delete_file(file_name, file_type, entity_folder):
         try:
-            # Check the file and then delete
-            if temp_csv_path.exists():
-                temp_csv_path.unlink()
-                return f"success"
+            project_dir = Path(__file__).parent.parent
+
+            # 0. Configure the path
+            if file_type == "csv":
+                folder_name = FileManager.csv_folder_name
+                if entity_folder:
+                    folder_name = FileManager.csv_entity_folder_name
+            elif file_type == "json":
+                folder_name = FileManager.json_folder_name
             else:
-                return f"Error while delete the file"
+                return "Error: Unsupported file type"
+
+            temp_dir = project_dir / folder_name
+            complete_file_name = f"{file_name}.{file_type}"
+            file_path = temp_dir / complete_file_name
+
+            # 1. Check and remove the file
+            if file_path.exists():
+                file_path.unlink()
+                return "success"
+            else:
+                return f"Error: File {complete_file_name} not found"
+
         except Exception as e:
-            return f"Error while delete the file: {e}"
+            return f"Error while deleting the file: {e}"
 
     @staticmethod
     def copy_json_file(json_content, file_name):
@@ -108,25 +113,6 @@ class FileManager:
 
         except Exception as e:
             return f"Error while copying the file: {e}", None
-
-    @staticmethod
-    def delete_json_file(file_name):
-        project_dir = Path(__file__).parent.parent
-        temp_dir = project_dir / FileManager.json_folder_name
-
-        complete_file_name = f'{file_name}.json'
-        temp_json_path = temp_dir / complete_file_name
-
-        try:
-            # Check the file and then delete
-            if temp_json_path.exists():
-                temp_json_path.unlink()
-                return "success"
-            else:
-                return "Error while deleting the file"
-
-        except Exception as e:
-            return f"Error while deleting the file: {e}"
 
     @staticmethod
     def copy_svg_file(file_name, svg_content):

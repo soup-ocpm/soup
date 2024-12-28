@@ -23,22 +23,21 @@ op_graph_controller_bp = Blueprint('op_graph_controller_bp', __name__)
 database_connector = get_db_connector(debug=False)
 
 
-@op_graph_controller_bp.route('/api/v2/graph/svg', methods=['POST'])
-def download_svg():
-    data = request.get_json()
-    dataset_name = data.get('dataset_name')
-    svg_content = data.get('svg')
-
-    return OperationGraphService.download_svg_s(dataset_name, svg_content)
-
-
 @op_graph_controller_bp.route('/api/v2/graph/nodes/event', methods=['GET'])
 def get_event_nodes():
+    """
+    Get event nodes
+    :return: ApiResponse model
+    """
     return OperationGraphService.get_event_nodes_s(database_connector)
 
 
 @op_graph_controller_bp.route('/api/v2/graph/nodes/event/count', methods=['GET'])
 def get_event_nodes_count():
+    """
+    Get event nodes count
+    :return: ApiResponse model
+    """
     response = ApiResponse()
 
     try:
@@ -64,11 +63,19 @@ def get_event_nodes_count():
 
 @op_graph_controller_bp.route('/api/v2/graph/nodes/entity', methods=['GET'])
 def get_entity_nodes():
+    """
+    Get entity nodes
+    :return: ApiResponse model
+    """
     return OperationGraphService.get_entity_nodes_s(database_connector)
 
 
 @op_graph_controller_bp.route('/api/v2/graph/nodes/entity/count', methods=['GET'])
 def get_entity_nodes_count():
+    """
+    Get entity nodes count
+    :return: ApiResponse model
+    """
     response = ApiResponse()
 
     try:
@@ -94,11 +101,19 @@ def get_entity_nodes_count():
 
 @op_graph_controller_bp.route('/api/v2/graph/relationships/corr', methods=['GET'])
 def get_corr_relationships():
+    """
+    Get :CORR relationships
+    :return: ApiResponse model
+    """
     return OperationGraphService.get_corr_relationships_s(database_connector)
 
 
 @op_graph_controller_bp.route('/api/v2/graph/relationships/corr/count', methods=['GET'])
 def get_corr_relationships_count():
+    """
+    Get :CORR relationships count
+    :return: ApiResponse model
+    """
     response = ApiResponse()
 
     try:
@@ -124,11 +139,19 @@ def get_corr_relationships_count():
 
 @op_graph_controller_bp.route('/api/v2/graph/relationships/df', methods=['GET'])
 def get_df_relationships():
+    """
+    Get :DF relationships
+    :return: ApiResponse model
+    """
     return OperationGraphService.get_df_relationships_s(database_connector)
 
 
 @op_graph_controller_bp.route('/api/v2/graph/relationships/df/count', methods=['GET'])
 def get_df_relationships_count():
+    """
+    Get :DF relationships count
+    :return: ApiResponse model
+    """
     response = ApiResponse()
 
     try:
@@ -152,16 +175,48 @@ def get_df_relationships_count():
         database_connector.close()
 
 
-@op_graph_controller_bp.route('/api/v2/graph', methods=['DELETE'])
-def delete_memgraph_graph():
-    return GenericGraphService.delete_memgraph_graph_s(database_connector)
-
-
 @op_graph_controller_bp.route('/api/v2/graph/entities_key', methods=['GET'])
 def get_entities_key():
+    """
+    Get entity keys
+    :return: ApiResponse model
+    """
     return OperationGraphService.get_entities_key_s(database_connector)
 
 
 @op_graph_controller_bp.route('/api/v2/graph/null-entities', methods=['GET'])
 def get_null_entities():
+    """
+    Get entity with null values
+    :return: ApiResponse model
+    """
     return OperationGraphService.get_null_entities_s(database_connector)
+
+@op_graph_controller_bp.route('/api/v2/graph/activities', methods=['GET'])
+def get_all_activities_name():
+    """
+    Get all activities name
+    :return: ApiResponse model
+    """
+    return OperationGraphService.get_activities_s(database_connector)
+
+@op_graph_controller_bp.route('/api/v2/graph/svg', methods=['POST'])
+def download_svg():
+    """
+    Download the svg graph preview
+    :return: ApiResponse model
+    """
+    data = request.get_json()
+    dataset_name = data.get('dataset_name')
+    svg_content = data.get('svg')
+
+    return OperationGraphService.download_svg_s(dataset_name, svg_content)
+
+
+@op_graph_controller_bp.route('/api/v2/graph', methods=['DELETE'])
+def delete_memgraph_graph():
+    """
+    Delete the memgraph graph
+    :return: ApiResponse model
+    """
+    return GenericGraphService.delete_memgraph_graph_s(database_connector)
