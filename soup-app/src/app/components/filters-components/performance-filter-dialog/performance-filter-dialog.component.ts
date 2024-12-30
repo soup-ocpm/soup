@@ -4,6 +4,7 @@ import { Component, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { NgbActiveModal } from '@ng-bootstrap/ng-bootstrap';
 import { Dataset } from 'src/app/models/dataset.model';
+import { Entity } from 'src/app/models/entity.mode';
 import { LocalDataService } from 'src/app/shared/services/support.service';
 import { PerformanceFilter } from './performance-filter.model';
 
@@ -27,6 +28,9 @@ export class PerformanceFilterDialogComponent implements OnInit {
   // The seconds
   public seconds = 0;
 
+  // All different activities for this Dataset
+  public allDatasetActivities: Entity[] = [];
+
   // The current dataset
   public currentDataset: Dataset | undefined;
 
@@ -43,6 +47,12 @@ export class PerformanceFilterDialogComponent implements OnInit {
   // NgOnInit implementation
   public ngOnInit(): void {
     this.currentDataset = this.supportService.getCurrentDataset();
+    this.currentDataset!.allActivities.forEach((item) => {
+      const entity = new Entity();
+      entity.name = item;
+      entity.selected = false;
+      this.allDatasetActivities.push(entity);
+    });
   }
 
   /**
@@ -70,6 +80,6 @@ export class PerformanceFilterDialogComponent implements OnInit {
    * @returns
    */
   public getFilteredValuesColumn(): string[] {
-    return this.currentDataset!.filteredColumns;
+    return this.allDatasetActivities.map((activity) => activity.name);
   }
 }

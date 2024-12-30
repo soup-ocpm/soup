@@ -7,11 +7,14 @@ import { TimestampFilter } from '../components/filters-components/timestam-filte
  * @version 2.0
  */
 export class Analysis {
+  // The analysys dataset name
+  public datasetName = '';
+
   // The analysys name
   public analysisName = '';
 
-  // The analysys dataset name
-  public datasetName = '';
+  // The analysis description
+  public analysisDescription = '';
 
   // The analysys timestamp filters
   public timestampFilters: TimestampFilter[] = [];

@@ -969,7 +969,8 @@ export class DetailsDatasetComponent implements OnInit, AfterViewInit {
     this.dialog.open(AnalysisDialogComponent, {
       data: analysis,
       width: '800px',
-      height: '600px',
+      minHeight: '700px',
+      maxHeight: '700px',
       disableClose: false
     });
   }
@@ -1460,8 +1461,9 @@ export class DetailsDatasetComponent implements OnInit, AfterViewInit {
           if (allAnalysis.length > 0) {
             allAnalysis.forEach((item: any) => {
               const newAnalysis = new Analysis();
-              newAnalysis.analysisName = item['analysis_name'];
               newAnalysis.datasetName = item['dataset_name'];
+              newAnalysis.analysisName = item['analysis_name'];
+              newAnalysis.analysisDescription = item['analysis_description'];
               newAnalysis.timestampFilters = item['timestamp'];
               newAnalysis.performanceFilters = item['performance'];
               newAnalysis.includeActivitiesFilters = item['includeActivities'];

@@ -29,8 +29,8 @@ export class ActivityFilterDialogComponent implements OnInit {
   // The input data from external
   public inputData: any;
 
-  // All the .csv file entities
-  public allFilteredValues: Entity[] = [];
+  // All different activities for this Dataset
+  public allDatasetActivities: Entity[] = [];
 
   // The current dataset
   public currentDataset: Dataset | undefined;
@@ -52,7 +52,7 @@ export class ActivityFilterDialogComponent implements OnInit {
       const entity = new Entity();
       entity.name = item;
       entity.selected = false;
-      this.allFilteredValues.push(entity);
+      this.allDatasetActivities.push(entity);
     });
   }
 
@@ -64,7 +64,7 @@ export class ActivityFilterDialogComponent implements OnInit {
   public submitEntity(entity: Entity, event: any): void {
     entity.selected = event;
     if (entity.selected) {
-      this.allFilteredValues.forEach((e: Entity): void => {
+      this.allDatasetActivities.forEach((e: Entity): void => {
         if (e.name == entity.name) {
           e.selected = entity.selected;
         }
@@ -76,7 +76,7 @@ export class ActivityFilterDialogComponent implements OnInit {
    * Submit the data
    */
   public onSubmit(): void {
-    const selectedActivityNames = this.allFilteredValues.filter((entity) => entity.selected).map((entity) => entity.name);
+    const selectedActivityNames = this.allDatasetActivities.filter((entity) => entity.selected).map((entity) => entity.name);
 
     if (selectedActivityNames.length === 0) {
       return;

@@ -9,8 +9,11 @@ import { ApiService } from './api_response.service';
   providedIn: 'root'
 })
 export class EngineService {
-  // Success connection with the Engine
-  private successConnection = false;
+  // Connection status with the Engine
+  private engineConnection = false;
+
+  // Connection status with the Memgraph (in Docker)
+  private memgraphConnection = false;
 
   /**
    * Initialize a new instance of EngineService service
@@ -20,24 +23,49 @@ export class EngineService {
 
   /**
    * Test the connection with the Engine
+   * @return Observable of ApiResponse object
    */
   public testEngineConnection(): Observable<ApiResponse<any>> {
     return this.apiService.get(`${environment.baseUrl}/welcome`);
   }
 
   /**
-   * Return the success connection
-   * @returns the success connection status
+   * Return the engine connection status
+   * @returns the engine connection status
    */
-  public getSuccessConnection(): boolean {
-    return this.successConnection;
+  public getEngineConnection(): boolean {
+    return this.engineConnection;
   }
 
   /**
-   * Set the success connection status
-   * @param success the success connection status
+   * Set the engine connection statud
+   * @param status the engine connection status
    */
-  public setSuccessConnection(success: boolean): void {
-    this.successConnection = success;
+  public setEngineConnection(status: boolean): void {
+    this.engineConnection = status;
+  }
+
+  /**
+   * Test the connection with the Memgraph database
+   * @returns Observable of ApiResponse object
+   */
+  public testMemgraphConnection(): Observable<ApiResponse<any>> {
+    return this.apiService.get(`${environment.baseUrl}/memgraph-connect`);
+  }
+
+  /**
+   * Return the success connection
+   * @returns memgraph connection status
+   */
+  public getMemgraphConnection(): boolean {
+    return this.memgraphConnection;
+  }
+
+  /**
+   * Set the memgraph connection status
+   * @param status the memgraph connection status
+   */
+  public setMemgraphConnection(status: boolean): void {
+    this.memgraphConnection = status;
   }
 }

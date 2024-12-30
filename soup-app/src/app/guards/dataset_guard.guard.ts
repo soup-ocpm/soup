@@ -8,9 +8,9 @@ import { LocalDataService } from '../shared/services/support.service';
 })
 export class DatasetAuthGuard implements CanActivate, CanActivateChild {
   /**
-   * Initialize a new instance of AuthGuard guard
+   * Initialize a new instance of DatasetAuthGuard guard
    * @param router the Router
-   * @param supportService
+   * @param supportService the LocalDataService service
    */
   constructor(
     private router: Router,

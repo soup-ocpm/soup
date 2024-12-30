@@ -4,6 +4,9 @@
       <h4 style="color: var(--primary-color)">{{ this.analysis.analysisName }} - {{ this.analysis.datasetName }}</h4>
 
       <div style="margin-top: 20px">
+        <p *ngIf="this.analysis.analysisDescription != null && this.analysis.analysisDescription != ''">
+          {{ this.analysis.analysisDescription }}
+        </p>
         <p>
           Total filters :
           <strong>{{ this.getTotalFilter() }}</strong>

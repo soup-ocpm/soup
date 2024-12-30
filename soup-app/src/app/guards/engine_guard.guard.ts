@@ -10,9 +10,9 @@ import { ToastLevel } from '../shared/components/s-toast/toast_type.enum';
 @Injectable({
   providedIn: 'root'
 })
-export class GenericAuthGuard implements CanActivate, CanActivateChild {
+export class EngineAuthGuard implements CanActivate, CanActivateChild {
   /**
-   * Initialize a new instance of AuthGuard guard
+   * Initialize a new instance of EngineAuthGuard guard
    * @param router the Router
    * @param engineService the EngineService service
    * @param logger the LoggerService service
@@ -47,11 +47,11 @@ export class GenericAuthGuard implements CanActivate, CanActivateChild {
       map((response) => {
         if (response.statusCode === 200) {
           this.logger.info('Success connect with Engine...');
-          this.engineService.setSuccessConnection(true);
+          this.engineService.setEngineConnection(true);
           return true;
         } else {
           this.logger.warn('SOuP Engine down');
-          this.engineService.setSuccessConnection(false);
+          this.engineService.setEngineConnection(false);
           this.toast.show('The Engine is down. Please start the Engine', ToastLevel.Warning, 4000);
           this.router.navigate(['/welcome']);
           return false;
@@ -59,7 +59,7 @@ export class GenericAuthGuard implements CanActivate, CanActivateChild {
       }),
       catchError(() => {
         this.logger.warn('SOuP Engine down');
-        this.engineService.setSuccessConnection(false);
+        this.engineService.setEngineConnection(false);
         this.toast.show('The Engine is down. Please start the Engine', ToastLevel.Warning, 4000);
         this.router.navigate(['/welcome']);
         return of(false);
