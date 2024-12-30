@@ -24,6 +24,7 @@ from Controllers.AggregateGraph.op_class_graph_controller import op_class_graph_
 from Controllers.graph_json_controller import graph_json_controller_bp
 from Controllers.dataset_controller import dataset_controller_bp
 from Controllers.filters_controller import filters_controller_bp
+from Controllers.graph_config import get_db_connector
 from Models.api_response_model import ApiResponse
 
 # App
@@ -57,11 +58,50 @@ docker_soup_path = '/soup'
 # Welcome, API
 @app.route('/api/v2/welcome', methods=['GET'])
 def welcome_api():
+    """
+    Test the connection with the Engine
+    :return: ApiResponse model
+    """
     response = ApiResponse()
     response.http_status_code = 200
     response.message = "Hello user, the Engine work :)"
     response.response_data = None
     return jsonify(response.to_dict()), 200
+
+
+@app.route('/api/v2/memgraph-connect', methods=['GET'])
+def connect_database():
+    """
+    Test the connection with Memgraph
+    :return: ApiResponse model
+    """
+    response = ApiResponse()
+
+    try:
+        # Engine database setup
+        database_connector = get_db_connector(debug=False)
+        database_connector.connect()
+
+        # Execute query test
+        query = "RETURN 1"
+        result = database_connector.run_query_memgraph(query)
+
+        if result:
+            response.http_status_code = 200
+            response.message = "Success connect with Memgraph"
+            response.response_data = result
+            return jsonify(response.to_dict()), 200
+        else:
+            response.http_status_code = 500
+            response.message = "Error while connecting to Memgraph"
+            response.response_data = None
+            return jsonify(response.to_dict()), 500
+
+    except Exception as e:
+        response.http_status_code = 500
+        response.message = f"Error while connecting to Memgraph: {e}"
+        response.response_data = None
+        return jsonify(response.to_dict()), 500
 
 
 # Main (run the Server on 8080)

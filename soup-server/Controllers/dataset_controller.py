@@ -12,14 +12,10 @@ License : MIT
 
 # Import
 from flask import Blueprint, request
-from Controllers.graph_config import get_db_connector
 from Services.dataset_service import DatasetService
 
 # Init the bp
 dataset_controller_bp = Blueprint('dataset_controller_bp', __name__)
-
-# Engine database setup
-database_connector = get_db_connector(debug=False)
 
 
 @dataset_controller_bp.route('/api/v2/datasets/single', methods=['GET'])
