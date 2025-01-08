@@ -79,7 +79,7 @@ def connect_database():
 
     try:
         # Engine database setup
-        database_connector = get_db_connector(debug=False)
+        database_connector = get_db_connector(debug=True)
         database_connector.connect()
 
         # Execute query test

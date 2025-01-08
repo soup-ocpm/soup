@@ -11,14 +11,17 @@ License : MIT
 """
 
 # Import
+import math
 import json
-
+from collections.abc import *
+from neo4j.time import DateTime
 from flask import jsonify
+from Controllers.graph_config import memgraph_datetime_to_string
+from Services.docker_service import DockerService
 from Models.docker_file_manager_model import DockerFileManager
 from Models.file_manager_model import FileManager
-from Services.docker_service import DockerService
 from Models.api_response_model import ApiResponse
-from Utils.filter_query_lib import prototype_combined_query
+from Utils.general_query_lib import get_limit_standard_graph_query
 
 
 # The service for docker controller
@@ -65,31 +68,43 @@ class FiltersService:
             container_id = DockerService.get_container_id_s('soup-database')
 
             if container_id is None or container_id == '':
-                response.http_status_code = 400
+                response.http_status_code = 500
                 response.message = 'Container not found'
                 response.response_data = []
-                return jsonify(response.to_dict()), 400
-
-            # 1. Process the analysis
-            result = process_analysis(container_id, database_connector, dataset_name, analyses_name)
-
-            if result != 'success':
-                response.http_status_code = 500
-                response.message = result
-                response.response_data = None
                 return jsonify(response.to_dict()), 500
 
-            # 3. Finally success
-            response.http_status_code = 201
-            response.message = 'Analysis created successfully'
-            response.response_data = result
-            return jsonify(response.to_dict()), 201
+            # 1. Process the analysis
+            result, data = process_analysis(container_id, database_connector, dataset_name, analyses_name)
+
+            # 2. Check the response content
+            if result == 'error':
+                response.http_status_code = 400
+                response.message = 'Error processing analysis. Probably no content inside Memgraph Database'
+                response.response_data = None
+                return jsonify(response.to_dict()), 400
+
+            if result == 'no content':
+                response.http_status_code = 204
+                response.message = 'No content available for the analysis'
+                response.response_data = []
+                return jsonify(response.to_dict()), 204
+
+            if result == 'success':
+                response.http_status_code = 201
+                response.message = 'Analysis created successfully'
+                response.response_data = data
+                return jsonify(response.to_dict()), 201
+
+            response.http_status_code = 500
+            response.message = 'Unexpected error'
+            response.response_data = None
+            return jsonify(response.to_dict()), 500
 
         except Exception as e:
             response.response_data = None
             response.http_status_code = 500
-            response.message = f'{e}'
-            return response
+            response.message = f'Error: {e}'
+            return jsonify(response.to_dict()), 500
 
     @staticmethod
     def get_all_analyses_s(dataset_name):
@@ -248,6 +263,12 @@ def process_new_analysis_file(container_id, filters_data):
         if result != 'success' or container_file_path is None:
             return 'Error while copy the json file on the Engine directory', None
 
+        # 3. Remove the json file from the Engine
+        result = FileManager.delete_file(dataset_name, "json", False)
+
+        if result != 'success':
+            return result
+
         return 'success', analysis_name
 
     except Exception as e:
@@ -274,9 +295,57 @@ def process_analysis(container_id, database_connector, dataset_name, analysis_na
             exec_config_file = json.loads(exec_config_file)
         analysis_data = exec_config_file
 
-        query = prototype_combined_query(analysis_data)
+        # TODO: add the correct query + elaboration
+        # query = prototype_combined_query(analysis_data)
 
-        return 'success', None
+        # This is tested for the response
+        database_connector.connect()
+        limit = 300
+        query_result = get_limit_standard_graph_query(limit)
+
+        result = database_connector.run_query_memgraph(query_result)
+
+        if not isinstance(result, Iterable) or len(result) == 0:
+            return 'error', []
+
+        graph_data = []
+
+        for record in result:
+            # Node source
+            source = record['source']
+            source['id'] = record['source_id']
+
+            # Relationship
+            edge = record['edge']
+            edge['id'] = record['edge_id']
+
+            # Node target
+            target = record['target']
+            target['id'] = record['target_id']
+
+            # Correct the info
+            for key, value in source.items():
+                if isinstance(value, (int, float)) and math.isnan(value):
+                    source[key] = None
+                elif isinstance(value, DateTime):
+                    source[key] = memgraph_datetime_to_string(value)
+
+            for key, value in target.items():
+                if isinstance(value, (int, float)) and math.isnan(value):
+                    target[key] = None
+                elif isinstance(value, DateTime):
+                    target[key] = memgraph_datetime_to_string(value)
+
+            graph_data.append({
+                'node_source': source,
+                'edge': edge,
+                'node_target': target
+            })
+
+        if not graph_data:
+            return 'no content', []
+
+        return 'success', graph_data
 
     except Exception as e:
         return f'${e}', None
