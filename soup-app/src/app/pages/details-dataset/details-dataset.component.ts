@@ -18,6 +18,7 @@ import { PrimaryFilterDialogComponent } from 'src/app/components/filters-compone
 import { TimestamFilterDialogComponent } from 'src/app/components/filters-components/timestam-filter-dialog/timestam-filter-dialog.component';
 import { TimestampFilter } from 'src/app/components/filters-components/timestam-filter-dialog/timestamp-filter.model';
 import { VariationFilterDialogComponent } from 'src/app/components/filters-components/variation-filter-dialog/variation-filter-dialog.component';
+import { GraphType } from 'src/app/enums/graph_type.enum';
 import { Analysis } from 'src/app/models/analysis.mdel';
 import { AnalysisService } from 'src/app/services/analysis.service';
 import { ModalService } from 'src/app/shared/components/s-modals/modal.service';
@@ -26,7 +27,7 @@ import { SidebarService } from 'src/app/shared/components/s-sidebar/sidebar.serv
 import { NotificationService } from 'src/app/shared/components/s-toast/toast.service';
 import { SideOperationComponent } from '../../components/side-operation/side-operation.component';
 import { LoggerService } from '../../core/services/logger.service';
-import { GraphDataEnum } from '../../enums/graph_data.enum';
+import { GraphData } from '../../enums/graph_data.enum';
 import { Dataset } from '../../models/dataset.model';
 import { DetailGraphData } from '../../models/detail_graph_data.model';
 import { ClassGraphService } from '../../services/class_graph.service';
@@ -121,9 +122,6 @@ export class DetailsDatasetComponent implements OnInit, AfterViewInit {
   // List of the sidebar ids
   public sidebarIds: string[] = [];
 
-  // If the progress bar is show or not
-  public isLoading = false;
-
   // List of the filters for the analysis
   public filters = ['Timestamp', 'Performance', 'Include Activities', 'Exclude Activities', 'Frequence', 'Variation'];
 
@@ -174,7 +172,7 @@ export class DetailsDatasetComponent implements OnInit, AfterViewInit {
       icon: 'analytics',
       action: () =>
         this.currentDataset?.classNodes === 0 || this.currentDataset?.classNodes === undefined
-          ? this.goToGraphVisualization(true)
+          ? this.goToGraphVisualization(GraphType.Standard, null, null)
           : this.openGraphVisualizationSidebar()
     },
     {
@@ -196,6 +194,12 @@ export class DetailsDatasetComponent implements OnInit, AfterViewInit {
       action: () => this.goToDatasetsPage()
     }
   ];
+
+  // If the progress bar is show or not
+  public isLoading = false;
+
+  // If the analysis is applying
+  public isLoadingAnalysis = false;
 
   // Pie chart for dataset data
   @ViewChild('dataPieChart', { static: false }) dataPieChart: ElementRef | undefined;
@@ -311,15 +315,14 @@ export class DetailsDatasetComponent implements OnInit, AfterViewInit {
    * @param standardGraph if we want to view the standard EKG
    * or aggregate EKG
    */
-  public goToGraphVisualization(standardGraph: boolean): void {
-    if (standardGraph) {
-      this.supportService.viewStandardGraph = true;
-      this.supportService.viewClassGraph = false;
+  public goToGraphVisualization(graphType: GraphType, analysisName: string | null, content: any | null): void {
+    this.supportService.graphType = graphType;
+
+    if (graphType != GraphType.Filtered) {
+      this.router.navigate(['datasets', this.currentDataset!.name, 'graph']);
     } else {
-      this.supportService.viewStandardGraph = false;
-      this.supportService.viewClassGraph = true;
+      this.router.navigate(['datasets', this.currentDataset!.name, analysisName, 'graph'], { state: { customData: content } });
     }
-    this.router.navigate(['datasets', this.currentDataset!.name, 'graph']);
   }
 
   /**
@@ -859,20 +862,16 @@ export class DetailsDatasetComponent implements OnInit, AfterViewInit {
     const payload = this.buildFiltersPayload();
 
     if (payload != null) {
-      console.log('Sono dentro');
       payload['dataset_name'] = this.currentDataset?.name;
       payload['analysis_name'] = analysisName;
       payload['analysis_description'] = analysisDescription;
 
       // Call the API
       this.analysisService.createAnalysis(payload).subscribe({
-        next: (responseData) => {
-          console.log('Analisi creata con successo:', responseData);
+        next: (response) => {
           // TODO: implementare
         },
-        error: (errorData) => {
-          console.error("Errore nella creazione dell'analisi:", errorData);
-        }
+        error: (error) => {}
       });
     }
   }
@@ -915,9 +914,36 @@ export class DetailsDatasetComponent implements OnInit, AfterViewInit {
    */
   public processAnalysis(analysis: Analysis): void {
     if (analysis != null) {
+      // Loading status
+      this.isLoadingAnalysis = true;
+
       this.analysisService.processAnalysis(this.currentDataset!.name, analysis.analysisName).subscribe({
-        next: (response) => {},
-        error: (error) => {},
+        next: (response) => {
+          if (response.statusCode === 201 && response.responseData != null) {
+            this.isLoadingAnalysis = false;
+            this.sidebarService.close('analyses');
+            this.toast.show('Analysis created successfully.', ToastLevel.Success, 3000);
+            this.goToGraphVisualization(GraphType.Filtered, analysis.analysisName, response.responseData);
+          } else if (response.statusCode === 204) {
+            this.isLoadingAnalysis = false;
+            this.sidebarService.reOpen('master-sidebar');
+            this.sidebarService.reOpen('analyses');
+
+            this.toast.show('No content for this Analysis. Try applying different filters', ToastLevel.Warning, 3000);
+          }
+        },
+        error: (error) => {
+          this.isLoadingAnalysis = false;
+          this.logService.error(error.message || 'Unknown error');
+          this.sidebarService.reOpen('master-sidebar');
+          this.sidebarService.reOpen('analyses');
+
+          if (error.statusCode === 400) {
+            this.toast.show(error.message, ToastLevel.Error, 3000);
+          } else {
+            this.toast.show('Error while applying the filter analysis', ToastLevel.Error, 3000);
+          }
+        },
         complete: () => {}
       });
     }
@@ -943,7 +969,9 @@ export class DetailsDatasetComponent implements OnInit, AfterViewInit {
         }
       },
       error: (error) => {
-        this.logService.error(error);
+        const errorData: any = error;
+        this.logService.error(errorData.message);
+
         this.toast.show('Unable to delete analysis. Please retry.', ToastLevel.Error, 3000);
       },
       complete: () => {}
@@ -1055,15 +1083,17 @@ export class DetailsDatasetComponent implements OnInit, AfterViewInit {
    */
   public deletePreviousClassGraph(): void {
     this.classGraphService.deleteGraph().subscribe({
-      next: (responseData) => {
-        if (responseData.statusCode == 200 && responseData.responseData != null) {
+      next: (response) => {
+        if (response.statusCode == 200 && response.responseData != null) {
           this.buildClassGraph();
         } else {
           this.toast.show('Unable to create the aggregate graph. Check the info and retry.', ToastLevel.Error, 3000);
         }
       },
-      error: (errorData) => {
-        this.logService.error(errorData);
+      error: (error) => {
+        const errorData: any = error;
+        this.logService.error(errorData.message);
+
         this.toast.show('Unable to create the aggregate graph. Check the info and retry.', ToastLevel.Error, 3000);
       },
       complete: () => {}
@@ -1101,12 +1131,14 @@ export class DetailsDatasetComponent implements OnInit, AfterViewInit {
             this.toast.show('Error while creating Class Graph. Retry', ToastLevel.Error, 3000);
           }
         },
-        error: (errorData) => {
-          const apiResponse: any = errorData;
-          this.logService.error(apiResponse);
+        error: (error) => {
+          const errorData: any = error;
+          this.logService.error(errorData.message);
+
           this.sidebarService.reOpen('master-sidebar');
           this.sidebarService.reOpen('aggregate-sidebar');
           this.isLoading = false;
+
           this.toast.show('Error while creating Class Graph. Retry', ToastLevel.Error, 3000);
         },
         complete: () => {}
@@ -1177,11 +1209,14 @@ export class DetailsDatasetComponent implements OnInit, AfterViewInit {
           console.log(this.currentDataset!.allActivities);
         } else {
           this.logService.error(response.message);
+
           this.toast.show('Unable to load some Dataset data. Please retry.', ToastLevel.Error, 3000);
         }
       },
       error: (error) => {
-        this.logService.error(error);
+        const errorData: any = error;
+        this.logService.error(errorData.message);
+
         this.toast.show('Unable to load some Dataset data. Please retry.', ToastLevel.Error, 3000);
       },
       complete: () => {}
@@ -1205,9 +1240,10 @@ export class DetailsDatasetComponent implements OnInit, AfterViewInit {
           this.toast.show('Unable to load the entities key of the Dataset', ToastLevel.Error, 3000);
         }
       },
-      error: (errorData) => {
-        const apiResponse: any = errorData;
-        this.logService.error(apiResponse);
+      error: (error) => {
+        const errorData: any = error;
+        this.logService.error(errorData.message);
+
         this.toast.show('Unable to load the entities key of the Dataset', ToastLevel.Error, 3000);
       },
       complete: () => {}
@@ -1240,9 +1276,10 @@ export class DetailsDatasetComponent implements OnInit, AfterViewInit {
           this.toast.show('Unable to load the entities key of the Dataset', ToastLevel.Error, 3000);
         }
       },
-      error: (errorData) => {
-        const apiResponse: any = errorData;
-        this.logService.error(apiResponse);
+      error: (error) => {
+        const errorData: any = error;
+        this.logService.error(errorData.message);
+
         this.toast.show('Unable to load the entities key of the Dataset', ToastLevel.Error, 3000);
       },
       complete: () => {}
@@ -1479,7 +1516,9 @@ export class DetailsDatasetComponent implements OnInit, AfterViewInit {
         }
       },
       error: (error) => {
-        this.logService.error(error);
+        const errorData: any = error;
+        this.logService.error(errorData.message);
+
         this.toast.show('Unable to retrieve the Dataset Analyses. Retry', ToastLevel.Error, 3000);
       },
       complete: () => {}
@@ -1521,28 +1560,28 @@ export class DetailsDatasetComponent implements OnInit, AfterViewInit {
     const entityTile = new DetailGraphData();
     entityTile.title = 'Event nodes';
     entityTile.dataNumber = this.currentDataset!.eventNodes;
-    entityTile.dataType = GraphDataEnum.EventNodes;
+    entityTile.dataType = GraphData.EventNodes;
     entityTile.description = `Generated ${entityTile.dataNumber} event nodes`;
     entityTile.type = 'event nodes';
 
     const eventTile = new DetailGraphData();
     eventTile.title = 'Entity nodes';
     eventTile.dataNumber = this.currentDataset!.entityNodes;
-    eventTile.dataType = GraphDataEnum.EntityNodes;
+    eventTile.dataType = GraphData.EntityNodes;
     eventTile.description = `Generated ${eventTile.dataNumber} entity nodes`;
     eventTile.type = 'entity nodes';
 
     const corrTile = new DetailGraphData();
     corrTile.title = ':CORR relationships';
     corrTile.dataNumber = this.currentDataset!.corrRel;
-    corrTile.dataType = GraphDataEnum.CorrLinks;
+    corrTile.dataType = GraphData.CorrLinks;
     corrTile.description = `Generated ${corrTile.dataNumber} :CORR relationships`;
     corrTile.type = ':CORR relationships';
 
     const dfTile = new DetailGraphData();
     dfTile.title = ':DF relationships';
     dfTile.dataNumber = this.currentDataset!.dfRel;
-    dfTile.dataType = GraphDataEnum.DfcLinks;
+    dfTile.dataType = GraphData.DfcLinks;
     dfTile.description = `Generated ${dfTile.dataNumber} :DF relationships`;
     dfTile.type = ':DF relationships';
 
@@ -1630,7 +1669,8 @@ export class DetailsDatasetComponent implements OnInit, AfterViewInit {
         this.exampleJSONConfiguration = response;
       },
       error: (error) => {
-        this.logService.error('Unable to load the json configuration example');
+        const errorData: any = error;
+        this.logService.error('Unable to load the json configuration example' + errorData.message);
       }
     });
   }

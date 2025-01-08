@@ -1,6 +1,6 @@
 import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
 import { Injectable } from '@angular/core';
-import { catchError, map, Observable, of } from 'rxjs';
+import { catchError, map, Observable, throwError } from 'rxjs';
 
 import { ApiResponse } from '../models/api_response.model';
 
@@ -24,8 +24,8 @@ export class ApiService {
     return this.http.get(url, { params }).pipe(
       map((response) => this.handleResponse<T>(response)),
       catchError((error) => {
-        const apiErrorResponse = this.handleError<T>(error);
-        return of(apiErrorResponse);
+        // Catch and propagate the error
+        return throwError(() => this.handleError<T>(error));
       })
     );
   }
@@ -38,11 +38,11 @@ export class ApiService {
    * @returns an ApiResponse object
    */
   public post<T>(url: string, body: any, headers?: HttpHeaders): Observable<ApiResponse<T>> {
-    return this.http.post(url, body, { headers }).pipe(
+    return this.http.post<ApiResponse<T>>(url, body, { headers }).pipe(
       map((response) => this.handleResponse<T>(response)),
       catchError((error) => {
-        const apiErrorResponse = this.handleError<T>(error);
-        return of(apiErrorResponse);
+        // Catch and propagate the error
+        return throwError(() => this.handleError<T>(error));
       })
     );
   }
@@ -58,8 +58,8 @@ export class ApiService {
     return this.http.put(url, body, { headers }).pipe(
       map((response) => this.handleResponse<T>(response)),
       catchError((error) => {
-        const apiErrorResponse = this.handleError<T>(error);
-        return of(apiErrorResponse);
+        // Catch and propagate the error
+        return throwError(() => this.handleError<T>(error));
       })
     );
   }
@@ -74,8 +74,8 @@ export class ApiService {
     return this.http.delete(url, { params }).pipe(
       map((response) => this.handleResponse<T>(response)),
       catchError((error) => {
-        const apiErrorResponse = this.handleError<T>(error);
-        return of(apiErrorResponse);
+        // Catch and propagate the error
+        return throwError(() => this.handleError<T>(error));
       })
     );
   }
@@ -86,6 +86,7 @@ export class ApiService {
    * @returns an ApiResponse object
    */
   private handleResponse<T>(response: any): ApiResponse<T> {
+    // Return the ApiResponse object
     return new ApiResponse(response.http_status_code, response.response_data, response.message);
   }
 
@@ -96,7 +97,10 @@ export class ApiService {
    */
   private handleError<T>(error: any): ApiResponse<T> {
     const statusCode = error.status || 500;
-    const message = error.message || 'An unexpected error occurred';
-    return new ApiResponse<T>(statusCode, null, message);
+    const message = error.error?.message || error.message || 'An unexpected error occurred';
+    const responseData = error.error?.response_data ?? null;
+
+    // Return the ApiResponse object
+    return new ApiResponse<T>(statusCode, responseData, message);
   }
 }

@@ -1,4 +1,4 @@
-import { GraphDataEnum } from '../enums/graph_data.enum';
+import { GraphData } from '../enums/graph_data.enum';
 
 /**
  * Card model class
@@ -21,5 +21,5 @@ export class DetailGraphData {
   public dataNumber = 0;
 
   // The data type
-  public dataType: GraphDataEnum = GraphDataEnum.EventNodes;
+  public dataType: GraphData = GraphData.EventNodes;
 }

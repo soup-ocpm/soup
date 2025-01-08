@@ -41,6 +41,12 @@ export const routes: Routes = [
     canActivate: [EngineAuthGuard, MemgraphAuthGuard, DatasetAuthGuard]
   },
   {
+    path: 'datasets/:name/:analysisName/graph',
+    loadComponent: () => import('./pages/graph-dataset/graph.component').then((c) => c.GraphComponent),
+    data: { animation: 'GraphDatasetPage' },
+    canActivate: [EngineAuthGuard, MemgraphAuthGuard, DatasetAuthGuard]
+  },
+  {
     path: '**',
     redirectTo: 'welcome'
   }

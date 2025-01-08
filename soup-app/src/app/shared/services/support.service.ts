@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { DomSanitizer } from '@angular/platform-browser';
 
+import { GraphType } from 'src/app/enums/graph_type.enum';
 import { Dataset } from '../../models/dataset.model';
 import { DatasetProcessInfo } from '../../models/dataset_process_info.model';
 
@@ -14,11 +15,8 @@ export class LocalDataService {
   // The dataset filtered column
   private datasetFilteredColumn: string[] = [];
 
-  // For view the standard graph
-  public viewStandardGraph = false;
-
-  // For view the aggregate graph
-  public viewClassGraph = false;
+  // The graph type for view the graph
+  public graphType: GraphType = GraphType.Standard;
 
   /**
    * Initialize a new instance of SupportService service

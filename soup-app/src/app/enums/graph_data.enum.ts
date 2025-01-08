@@ -2,7 +2,7 @@
  * Graph data enum
  * @version 1.0
  */
-export enum GraphDataEnum {
+export enum GraphData {
   // The event nodes
   EventNodes,
 

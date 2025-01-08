@@ -2,7 +2,7 @@
  * Filters enum
  * @version 1.0
  */
-export enum FiltersEnu {
+export enum AnalysisFilter {
   // Timestamp filter
   TimestampFilter = 0,
 

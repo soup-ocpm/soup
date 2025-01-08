@@ -1,4 +1,4 @@
-import { CommonModule } from '@angular/common';
+import { CommonModule, Location } from '@angular/common';
 import { AfterViewInit, Component, ElementRef, OnInit, TemplateRef, ViewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -8,6 +8,7 @@ import saveAs from 'file-saver';
 import { concatMap, from, map, Observable, toArray } from 'rxjs';
 
 import { SpDividerComponent } from '@aledevsharp/sp-lib';
+import { GraphType } from 'src/app/enums/graph_type.enum';
 import { ModalService } from 'src/app/shared/components/s-modals/modal.service';
 import { SidebarService } from 'src/app/shared/components/s-sidebar/sidebar.service';
 import { NotificationService } from 'src/app/shared/components/s-toast/toast.service';
@@ -137,9 +138,6 @@ export class GraphComponent implements OnInit, AfterViewInit {
   // The loading state
   public isLoading = false;
 
-  // If the user come to view the standard graph or class
-  public isViewStandardGraph = false;
-
   // The json object list
   public jsonList: JsonObject[] = [];
 
@@ -230,6 +228,7 @@ export class GraphComponent implements OnInit, AfterViewInit {
    */
   constructor(
     private router: Router,
+    private location: Location,
     private toast: NotificationService,
     private activatedRoute: ActivatedRoute,
     private modalService: ModalService,
@@ -239,7 +238,7 @@ export class GraphComponent implements OnInit, AfterViewInit {
     public sidebarService: SidebarService,
     private standardGraphService: StandardGraphService,
     private genericGraphService: GenericGraphService,
-    private supportService: LocalDataService
+    public supportService: LocalDataService
   ) {}
 
   // NgOnInit implementation
@@ -249,18 +248,26 @@ export class GraphComponent implements OnInit, AfterViewInit {
     const datasetName = this.activatedRoute.snapshot.paramMap.get('name');
     this.currentDataset = this.supportService.getCurrentDataset();
 
-    if (this.currentDataset != null && this.currentDataset.name == datasetName) {
-      this.g = new dagreD3.graphlib.Graph().setGraph({ rankdir: 'LR' });
-      this.isViewStandardGraph = this.supportService.viewStandardGraph;
-      this.getGraphDetails();
-    } else {
-      this.toast.show('Unable to retrieve Graph. Retry', ToastLevel.Error, 3000);
+    if (this.currentDataset == null || this.currentDataset.name !== datasetName) {
+      this.toast.show('Dataset unknow, unable to retrieve Graph. Retry', ToastLevel.Error, 3000);
       this.router.navigate(['/welcome']);
       return;
     }
 
-    this.populateJsonContent();
     this.g = new dagreD3.graphlib.Graph().setGraph({ rankdir: 'LR' });
+
+    if (this.supportService.graphType != GraphType.Filtered) {
+      this.getGraphDetails();
+    } else {
+      const state = this.location.getState();
+      if (state && (state as any).customData) {
+        const data = (state as any).customData;
+        this.injectData(data);
+      }
+    }
+
+    // Add json content options
+    this.populateJsonContent();
   }
 
   // NgAfterViewInit implementation
@@ -284,7 +291,7 @@ export class GraphComponent implements OnInit, AfterViewInit {
    * Get the graph details
    */
   private getGraphDetails(): void {
-    const standardGraph = this.isViewStandardGraph ? '1' : '0';
+    const standardGraph = this.supportService.graphType == GraphType.Standard ? '1' : '0';
 
     this.genericGraphService.getGraph(200, standardGraph).subscribe({
       next: (response) => {
@@ -296,10 +303,11 @@ export class GraphComponent implements OnInit, AfterViewInit {
           this.router.navigate(['/datasets', this.currentDataset!.name]);
         }
       },
-      error: (errorData) => {
-        const apiResponse: any = errorData;
-        this.logService.error(apiResponse);
+      error: (error) => {
+        const errorData: any = error;
+        this.logService.error(errorData);
         this.isLoading = false;
+
         this.toast.show('Unable to retrieve Graph. Retry', ToastLevel.Error, 3000);
         this.router.navigate(['/datasets', this.currentDataset!.name]);
       },
@@ -1213,8 +1221,9 @@ export class GraphComponent implements OnInit, AfterViewInit {
           }
         },
         error: (error) => {
-          const apiResponse: any = error;
-          this.logService.error(apiResponse);
+          const errorData: any = error;
+          this.logService.error(errorData);
+
           this.toast.show('Unable to delete the Dataset. Please retry', ToastLevel.Error, 3000);
         },
         complete: () => {}
@@ -1226,7 +1235,7 @@ export class GraphComponent implements OnInit, AfterViewInit {
    * Add the json object
    */
   private populateJsonContent(): void {
-    if (!this.isViewStandardGraph) {
+    if (this.supportService.graphType === GraphType.Aggregate) {
       this.jsonList.push(new JsonObject('Class nodes', false));
       this.jsonList.push(new JsonObject(':OBS links', false));
       this.jsonList.push(new JsonObject(':DFC links', false));

@@ -117,7 +117,7 @@
                 <strong>Event id:</strong>
                 {{ item['Event_Id'] }}
               </p>
-              <p *ngIf="this.isViewStandardGraph">
+              <p *ngIf="this.supportService.graphType == 1">
                 <strong>Timestamp:</strong>
                 {{ item['Timestamp'] }}
               </p>
