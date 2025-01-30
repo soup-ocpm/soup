@@ -11,21 +11,25 @@ License : MIT
 """
 
 # Import
-import math
 import json
 
 from datetime import datetime
 from flask import jsonify
 from collections.abc import *
-from neo4j.time import DateTime
-from Controllers.graph_config import memgraph_datetime_to_string
 from Services.Graph.op_graph_service import OperationGraphService
+from Services.support_service import SupportService
 from Models.api_response_model import ApiResponse
 from Models.dataset_process_info_model import DatasetProcessInformation
 from Models.docker_file_manager_model import DockerFileManager
 from Models.file_manager_model import FileManager
-from Utils.causal_query_lib import reveal_causal_rels
+from Models.logger_model import Logger
+from Utils.graph_query_lib import *
 from Utils.general_query_lib import *
+from Utils.aggregate_graph_query_lib import *
+from Utils.causal_query_lib import *
+
+# Engine logger setup
+logger = Logger()
 
 
 # The Service for generic graph controller
@@ -45,12 +49,14 @@ class GenericGraphService:
                 dataset_name)
 
             if not main_csv_path or not entity_csv_path or not config_json_path:
+                logger.error('Unable to load the Dataset files')
                 return 'Unable to load the Dataset files'
 
             # 2. Read the config file for get the configuration
             result, exec_config_file = DockerFileManager.read_json_file_from_container(container_id, dataset_name)
 
             if result != 'success':
+                logger.error(f'Unable to read the json file from container: {str(result)}')
                 return result
 
             # Check if it is already a dictionary
@@ -131,6 +137,7 @@ class GenericGraphService:
                 process_info.finish_time = datetime.now().strftime('%Y-%m-%dT%H:%M:%S.%f')[:-3]
 
             except Exception as e:
+                logger.error(f'Internal error: {str(e)}')
                 return f'Error: {e}'
 
             # Finally get the information and save the new json
@@ -150,27 +157,34 @@ class GenericGraphService:
                                                                   process_info.to_dict())
 
             if new_json_configuration is None:
+                logger.error('Error while creating the json file configuration')
                 return 'Error while creating the json file configuration'
 
             result, new_json_config_path = FileManager.copy_json_file(new_json_configuration, dataset_name)
+
             if result != 'success' or new_json_config_path is None:
+                logger.error('Error while copy the json file on the Engine directory')
                 return 'Error while copy the json file on the Engine directory'
 
             result, new_json_config_docker_file_path = DockerFileManager.copy_file_to_container(container_id,
                                                                                                 dataset_name,
                                                                                                 new_json_config_path,
                                                                                                 False, True)
+
             if result != 'success' or new_json_config_path is None:
+                logger.error(f'Error while copy the docker file on the Engine directory: {str(result)}')
                 return result
 
             result = FileManager.delete_file(dataset_name, "json", False)
 
             if result != 'success':
+                logger.error(f'Error while delete the file on the Engine directory: {str(result)}')
                 return result
 
             return 'success'
 
         except Exception as e:
+            logger.error(f'Internal error: {str(e)}')
             return f'Error: {e}'
 
     # Get complete graph (standard or class)
@@ -194,62 +208,46 @@ class GenericGraphService:
 
             result = database_connector.run_query_memgraph(query_result)
 
-            if not isinstance(result, Iterable) or len(result) == 0:
+            if len(result) == 0:
+                response.http_status_code = 204
+                response.response_data = None
+                response.message = "No content"
+
+                logger.info('No content')
+                return jsonify(response.to_dict()), 204
+
+            if not isinstance(result, Iterable):
                 response.http_status_code = 404
                 response.response_data = None
                 response.message = "Not found"
+
+                logger.error('Not found')
                 return jsonify(response.to_dict()), 404
 
-            graph_data = []
-
-            for record in result:
-                # Node source
-                source = record['source']
-                source['id'] = record['source_id']
-
-                # Relationship
-                edge = record['edge']
-                edge['id'] = record['edge_id']
-
-                # Node target
-                target = record['target']
-                target['id'] = record['target_id']
-
-                # Correct the info
-                for key, value in source.items():
-                    if isinstance(value, (int, float)) and math.isnan(value):
-                        source[key] = None
-                    elif isinstance(value, DateTime):
-                        source[key] = memgraph_datetime_to_string(value)
-
-                for key, value in target.items():
-                    if isinstance(value, (int, float)) and math.isnan(value):
-                        target[key] = None
-                    elif isinstance(value, DateTime):
-                        target[key] = memgraph_datetime_to_string(value)
-
-                graph_data.append({
-                    'node_source': source,
-                    'edge': edge,
-                    'node_target': target
-                })
+            # Extract data information
+            graph_data = SupportService.extract_graph_data(result)
 
             if not graph_data:
-                response.http_status_code = 404
+                response.http_status_code = 204
                 response.response_data = None
-                response.message = "Not found"
-                return jsonify(response.to_dict()), 404
+                response.message = "No content"
+
+                logger.info('No content')
+                return jsonify(response.to_dict()), 204
 
             response.http_status_code = 200
             response.response_data = graph_data
-            response.message = "Retrieve Graph."
+            response.message = "Retrieve Graph"
 
+            logger.info('Retrieve Graph')
             return jsonify(response.to_dict()), 200
 
         except Exception as e:
             response.http_status_code = 500
             response.response_data = None
             response.message = f'Internal Server Error : {str(e)}'
+
+            logger.error(f'Internal Server Error : {str(e)}')
             return jsonify(response.to_dict()), 500
 
         finally:
@@ -271,19 +269,25 @@ class GenericGraphService:
 
             if result_node and result_node[0]['count'] == 0:
                 response.http_status_code = 200
-                response.message = 'Graph deleted successfully !'
+                response.message = 'Graph deleted successfully'
                 response.response_data = None
+
+                logger.info('Graph deleted successfully')
                 return jsonify(response.to_dict()), 200
             else:
                 response.http_status_code = 404
-                response.message = 'Data was not deleted!'
+                response.message = 'Data was not deleted'
                 response.response_data = None
+
+                logger.error('Data was not deleted')
                 return jsonify(response.to_dict()), 404
 
         except Exception as e:
             response.http_status_code = 500
             response.message = f"Internal Server Error : {str(e)}"
             response.response_data = None
+
+            logger.error(f'Internal Server Error : {str(e)}')
             return jsonify(response.to_dict()), 500
 
         finally:

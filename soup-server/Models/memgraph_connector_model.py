@@ -32,6 +32,12 @@ class MemgraphConnector:
 
     # Run specific query with parameters in Memgraph
     def run_query_memgraph(self, query: object, parameters: dict = None) -> object:
+        """
+        Run memgraph query
+        :param query: the query
+        :param parameters: the parameters
+        :return: data result
+        """
         if self._driver is None:
             raise Exception("Error while connecting to the database.")
 

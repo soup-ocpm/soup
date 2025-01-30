@@ -16,11 +16,17 @@ import math
 from flask import jsonify
 from collections.abc import Iterable
 from Controllers.graph_config import memgraph_datetime_to_string
+from Services.docker_service import DockerService
+from Services.support_service import SupportService
 from Models.api_response_model import ApiResponse
 from Models.docker_file_manager_model import DockerFileManager
 from Models.file_manager_model import FileManager
-from Services.docker_service import DockerService
+from Models.logger_model import Logger
 from Utils.general_query_lib import *
+from Utils.graph_query_lib import *
+
+# Engine logger setup
+logger = Logger()
 
 
 # The Service for operation graph controller
@@ -40,41 +46,33 @@ class OperationGraphService:
                 response.http_status_code = 404
                 response.response_data = None
                 response.message = "Not found"
+
+                logger.error('Event nodes not found')
                 return jsonify(response.to_dict()), 404
 
-            graph_data = []
-
-            for record in result:
-                event_node = record['node']
-
-                for key, value in event_node.items():
-                    if 'Timestamp' in key:
-                        timestamp = memgraph_datetime_to_string(value)
-                        event_node[key] = timestamp
-
-                for key, value in event_node.items():
-                    if isinstance(value, (int, float)) and math.isnan(value):
-                        event_node[key] = None
-
-                graph_data.append(event_node)
+            graph_data = SupportService.extract_class_graph_data(result)
 
             if len(graph_data) == 0:
                 response.http_status_code = 202
                 response.message = 'No content'
                 response.response_data = graph_data
 
+                logger.info('No content for event nodes')
                 return jsonify(response.to_dict()), 202
 
             response.http_status_code = 200
             response.message = 'Event nodes retrieve successfully'
             response.response_data = graph_data
 
+            logger.info('Event nodes retrieve successfully')
             return jsonify(response.to_dict()), 200
 
         except Exception as e:
             response.http_status_code = 500
             response.response_data = None
             response.message = f'Internal Server Error : {str(e)}'
+
+            logger.error(f'Internal Server Error : {str(e)}')
             return jsonify(response.to_dict()), 500
 
         finally:
@@ -92,7 +90,7 @@ class OperationGraphService:
 
             return 0
         except Exception as e:
-            print(f"Error in get_count_event_nodes: {e}")
+            logger.error(f'Internal Server Error : {str(e)}')
             return 0
 
     # Get entity nodes
@@ -110,6 +108,8 @@ class OperationGraphService:
                 response.http_status_code = 404
                 response.response_data = None
                 response.message = "Not found"
+
+                logger.error('Entity nodes not found')
                 return jsonify(response.to_dict()), 404
 
             graph_data = []
@@ -133,18 +133,22 @@ class OperationGraphService:
                 response.message = 'No content'
                 response.response_data = graph_data
 
+                logger.info('No content for entity nodes')
                 return jsonify(response.to_dict()), 202
 
             response.http_status_code = 200
             response.message = 'Entity nodes retrieve successfully'
             response.response_data = graph_data
 
+            logger.info('Entity nodes retrieve successfully')
             return jsonify(response.to_dict()), 200
 
         except Exception as e:
             response.http_status_code = 500
             response.response_data = None
             response.message = f'Internal Server Error : {str(e)}'
+
+            logger.error(f'Internal Server Error : {str(e)}')
             return jsonify(response.to_dict()), 500
 
         finally:
@@ -162,7 +166,7 @@ class OperationGraphService:
 
             return 0
         except Exception as e:
-            print(f"Error in get_count_event_nodes: {e}")
+            logger.error(f'Internal Server Error : {str(e)}')
             return 0
 
     # Get :CORR relationships
@@ -180,6 +184,8 @@ class OperationGraphService:
                 response.http_status_code = 404
                 response.response_data = None
                 response.message = "Not found"
+
+                logger.error('Correlation relationships not found')
                 return jsonify(response.to_dict()), 404
 
             correlation_data = []
@@ -227,18 +233,22 @@ class OperationGraphService:
                 response.message = 'No content'
                 response.response_data = graph_data
 
+                logger.info('No content for :CORR relationships')
                 return jsonify(response.to_dict()), 202
 
             response.http_status_code = 200
             response.response_data = graph_data
             response.message = 'Retrieve :CORR relationships'
 
+            logger.info('Retrieve :CORR relationships')
             return jsonify(response.to_dict()), 200
 
         except Exception as e:
             response.http_status_code = 500
             response.response_data = None
             response.message = f'Internal Server Error : {str(e)}'
+
+            logger.error(f'Internal Server Error : {str(e)}')
             return jsonify(response.to_dict()), 500
 
         finally:
@@ -256,7 +266,7 @@ class OperationGraphService:
 
             return 0
         except Exception as e:
-            print(f"Error in get_count_event_nodes: {e}")
+            logger.error(f'Internal Server Error : {str(e)}')
             return 0
 
     # Get :DF relationships
@@ -274,6 +284,8 @@ class OperationGraphService:
                 response.http_status_code = 404
                 response.response_data = None
                 response.message = "Not found"
+
+                logger.error('DF relationships not found')
                 return jsonify(response.to_dict()), 404
 
             df_data = []
@@ -319,18 +331,22 @@ class OperationGraphService:
                 response.message = 'No content'
                 response.response_data = graph_data
 
+                logger.info('No content for DF relationships')
                 return jsonify(response.to_dict()), 202
 
             response.http_status_code = 200
             response.response_data = graph_data
             response.message = 'Retrieve :DF relationships'
 
+            logger.info('Retrieve :DF relationships')
             return jsonify(response.to_dict()), 200
 
         except Exception as e:
             response.http_status_code = 500
             response.response_data = None
             response.message = f'Internal Server Error : {str(e)}'
+
+            logger.error(f'Internal Server Error : {str(e)}')
             return jsonify(response.to_dict()), 500
 
         finally:
@@ -348,7 +364,7 @@ class OperationGraphService:
 
             return 0
         except Exception as e:
-            print(f"Error in get_count_event_nodes: {e}")
+            logger.error(f'Internal Server Error : {str(e)}')
             return 0
 
     # Get the entity key
@@ -366,6 +382,8 @@ class OperationGraphService:
                 response.http_status_code = 404
                 response.response_data = None
                 response.message = "Not found"
+
+                logger.error('Entities key not found')
                 return jsonify(response.to_dict()), 404
 
             entities_type = []
@@ -377,12 +395,16 @@ class OperationGraphService:
             response.http_status_code = 200
             response.response_data = entities_type
             response.message = "Retrieve distinct entities."
+
+            logger.info('Entities key found')
             return jsonify(response.to_dict()), 200
 
         except Exception as e:
             response.http_status_code = 500
             response.message = f"Internal Server Error : {str(e)}"
             response.response_data = None
+
+            logger.error(f"Internal Server Error : {str(e)}")
             return jsonify(response.to_dict()), 500
 
         finally:
@@ -403,6 +425,8 @@ class OperationGraphService:
                 response.http_status_code = 404
                 response.response_data = None
                 response.message = "Not found"
+
+                logger.error('Entities key not found')
                 return jsonify(response.to_dict()), 404
 
             null_node_entities = []
@@ -419,12 +443,16 @@ class OperationGraphService:
             response.http_status_code = 200
             response.response_data = null_node_entities
             response.message = "Retrieve null values for node."
+
+            logger.info('Entities key found')
             return jsonify(response.to_dict()), 200
 
         except Exception as e:
             response.http_status_code = 500
             response.message = f"Internal Server Error : {str(e)}"
             response.response_data = None
+
+            logger.error(f"Internal Server Error : {str(e)}")
             return jsonify(response.to_dict()), 500
 
         finally:
@@ -444,6 +472,8 @@ class OperationGraphService:
                 response.http_status_code = 404
                 response.response_data = None
                 response.message = "No activity names found"
+
+                logger.error('Activities name not found')
                 return jsonify(response.to_dict()), 404
 
             activity_names = result[0]['activityNames']
@@ -451,12 +481,16 @@ class OperationGraphService:
             response.http_status_code = 200
             response.response_data = activity_names
             response.message = "Successfully retrieved activity names."
+
+            logger.info('Activities name found')
             return jsonify(response.to_dict()), 200
 
         except Exception as e:
             response.http_status_code = 500
             response.message = f"Internal Server Error: {str(e)}"
             response.response_data = None
+
+            logger.error(f"Internal Server Error : {str(e)}")
             return jsonify(response.to_dict()), 500
 
         finally:
@@ -472,11 +506,15 @@ class OperationGraphService:
             response.http_status_code = 404
             response.response_data = None
             response.message = 'Container not found'
+
+            logger.error('Container id not found')
             return jsonify(response.to_dict()), 404
 
         # Create svg
         result, new_svg_file_path = FileManager.copy_svg_file(dataset_name, svg_content)
+
         if result != 'success' or new_svg_file_path is None:
+            logger.error('Failed to copy svg file from docker service')
             return 'Error while copying the entity node svg to the Engine'
 
         # Copy svg
@@ -488,9 +526,10 @@ class OperationGraphService:
         result = FileManager.delete_svg_file(dataset_name)
 
         response.http_status_code = 200
-        response.message = 'Event nodes retrieved successfully'
+        response.message = 'SVG correctly imported'
         response.response_data = result
 
+        logger.info('SVG correctly imported')
         return jsonify(response.to_dict()), 200
 
     # Delete the complete graph
@@ -520,19 +559,25 @@ class OperationGraphService:
 
             if result_entity and result_event and result_entity[0]['count'] == 0 and result_event[0]['count'] == 0:
                 response.http_status_code = 200
-                response.message = 'Standard Graph deleted successfully !'
+                response.message = 'Standard Graph deleted successfully'
                 response.response_data = None
+
+                logger.info('Standard Graph deleted successfully')
                 return jsonify(response.to_dict()), 200
             else:
                 response.http_status_code = 404
-                response.message = 'Data was not deleted!'
+                response.message = 'Data was not deleted'
                 response.response_data = None
+
+                logger.error('Data was not deleted')
                 return jsonify(response.to_dict()), 404
 
         except Exception as e:
             response.http_status_code = 500
             response.message = f"Internal Server Error : {str(e)}"
             response.response_data = None
+
+            logger.error(f"Internal Server Error : {str(e)}")
             return jsonify(response.to_dict()), 500
 
         finally:

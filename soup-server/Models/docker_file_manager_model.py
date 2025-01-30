@@ -25,6 +25,16 @@ class DockerFileManager:
 
     @staticmethod
     def copy_file_to_container(container_id, dataset_name, file_path, is_entity=False, is_json=False, is_svg=False):
+        """
+        Copy specific file to the docker container
+        :param container_id: the container unique id
+        :param dataset_name: the dataset name
+        :param file_path: the file path
+        :param is_entity: if the file is for entity
+        :param is_json: if the file is json file
+        :param is_svg: if the file is svg file
+        :return: success or error message with content
+        """
         # 1. Check the file
         temp_path = Path(file_path)
         if not temp_path.exists():
@@ -74,6 +84,14 @@ class DockerFileManager:
 
     @staticmethod
     def copy_analysis_file_to_container(container_id, file_path, dataset_name, analysis_name):
+        """
+        Copy new analysis to the docker container
+        :param container_id: the container unique id
+        :param file_path: the file path
+        :param dataset_name: the dataset name
+        :param analysis_name: the analysis name
+        :return: success or error message with content
+        """
         try:
             # 1. Check if the file exists
             analysis_file = Path(file_path)
@@ -116,6 +134,13 @@ class DockerFileManager:
 
     @staticmethod
     def read_json_file_from_container(container_id, dataset_name, analyses_name=None):
+        """
+        Read specific json file from the docker container
+        :param container_id: the container unique id
+        :param dataset_name: the dataset name
+        :param analyses_name: the analysis name
+        :return: the content or an error
+        """
         # 0. Create the path
         if analyses_name:
             json_file_path = f'/soup/{dataset_name}/Analyses/{analyses_name}'
@@ -150,6 +175,12 @@ class DockerFileManager:
 
     @staticmethod
     def remove_container_content_by_path(container_id, container_csv_path):
+        """
+        Remove specific content on specific docker container
+        :param container_id: the container unique id
+        :param container_csv_path: the path for the file or folder to remove
+        :return: success or error message
+        """
         client = docker.from_env()
         container = client.containers.get(container_id)
 
@@ -163,6 +194,12 @@ class DockerFileManager:
 
     @staticmethod
     def get_dataset_file_path(container_id, dataset_name):
+        """
+        Get specific dataset files path
+        :param container_id: the container unique id
+        :param dataset_name: the dataset name
+        :return: the content or an error
+        """
         # Folder path
         dataset_folder_path = f'/soup/{dataset_name}/'
 
@@ -205,6 +242,12 @@ class DockerFileManager:
 
     @staticmethod
     def get_svg_content_from_container(container_id, dataset_name):
+        """
+        Get specific svg content from docker container
+        :param container_id: the container unique id
+        :param dataset_name: the dataset name
+        :return: the content or an error
+        """
         try:
             client = docker.from_env()
             container = client.containers.get(container_id)
@@ -225,6 +268,12 @@ class DockerFileManager:
 
     @staticmethod
     def get_folder_files(container_id, directory):
+        """
+        Get all folder files from docker container
+        :param container_id: the container unique id
+        :param directory: the directory path
+        :return: content or an error
+        """
         try:
             client = docker.from_env()
             container = client.containers.get(container_id)
@@ -240,6 +289,13 @@ class DockerFileManager:
 
     @staticmethod
     def _find_file(container, folder_path: str, file_name: str) -> Optional[str]:
+        """
+        Find specific file on docker container
+        :param container: the docker container
+        :param folder_path: the folder path
+        :param file_name: the file name
+        :return: the content if exists
+        """
         result = container.exec_run(['find', folder_path, '-name', file_name])
         if result.exit_code == 0:
             file_path = result.output.decode('utf-8').strip()

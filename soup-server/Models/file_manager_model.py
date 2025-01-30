@@ -27,10 +27,18 @@ class FileManager:
     # The folder name for the json files
     json_folder_name = 'FileData/temp_json'
 
+    # The svg folder name for the svg files
     svg_folder_name = 'FileData/temp_svg'
 
     @staticmethod
     def copy_csv_file(file, file_name, entity_folder):
+        """
+        Copy specific file on the engine
+        :param file: the file
+        :param file_name: file name
+        :param entity_folder: if the file is entity
+        :return: success or error message with content
+        """
         project_dir = Path(__file__).parent.parent
         folder_name = FileManager.csv_folder_name
 
@@ -64,6 +72,13 @@ class FileManager:
 
     @staticmethod
     def delete_file(file_name, file_type, entity_folder):
+        """
+        Delete specific file on the engine
+        :param file_name: the name of the file
+        :param file_type: the file type
+        :param entity_folder: if the file is entity
+        :return: success or error message with content
+        """
         try:
             project_dir = Path(__file__).parent.parent
 
@@ -93,6 +108,12 @@ class FileManager:
 
     @staticmethod
     def copy_json_file(json_content, file_name):
+        """
+        Copy new json file on the engine
+        :param json_content: the json content
+        :param file_name: the file name
+        :return: success or error message with content
+        """
         project_dir = Path(__file__).parent.parent
         temp_dir = project_dir / FileManager.json_folder_name
 
@@ -116,6 +137,12 @@ class FileManager:
 
     @staticmethod
     def copy_svg_file(file_name, svg_content):
+        """
+        Copy new svg file on the engine
+        :param file_name: the file name
+        :param svg_content: the svg content
+        :return: success or error message with content
+        """
         project_dir = Path(__file__).parent.parent
         folder_name = FileManager.svg_folder_name
 
@@ -140,6 +167,11 @@ class FileManager:
 
     @staticmethod
     def delete_svg_file(file_name):
+        """
+        Delete specific svg file on the engine
+        :param file_name: the file name
+        :return: success or error message with content
+        """
         project_dir = Path(__file__).parent.parent
         temp_dir = project_dir / FileManager.svg_folder_name
 
@@ -162,6 +194,10 @@ class FileManager:
                          values_columns=None, trigger_target_rows=None, event_nodes=None,
                          entity_nodes=None, corr_rel=None, df_rel=None, date_created=None, date_modified=None,
                          process_info=None):
+
+        """
+        Create json file
+        """
 
         # Dictionary
         optional_fields = {
@@ -192,6 +228,11 @@ class FileManager:
     @staticmethod
     def update_json_file(existing_json_data, dataset_name=None, standard_columns=None, filtered_columns=None,
                          values_columns=None, trigger_target_rows=None, json_file_path=None):
+
+        """
+        Update specific json file
+        """
+
         # 1. Load the JSON data
         json_data = json.loads(existing_json_data)
 
@@ -220,6 +261,11 @@ class FileManager:
 
     @staticmethod
     def parse_json_content(json_content):
+        """
+        Parse specific json content
+        :param json_content: the json content
+        :return: success or error message with content
+        """
         try:
             # 1. Convert JSON in a dictionary
             json_data = json.loads(json_content)

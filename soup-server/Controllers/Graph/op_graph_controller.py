@@ -15,12 +15,16 @@ from flask import Blueprint, request
 from Controllers.graph_config import get_db_connector
 from Services.Graph.op_graph_service import *
 from Services.generic_graph_service import GenericGraphService
+from Models.logger_model import Logger
 
 # Init the bp
 op_graph_controller_bp = Blueprint('op_graph_controller_bp', __name__)
 
 # Engine database setup
 database_connector = get_db_connector(debug=False)
+
+# Engine logger setup
+logger = Logger()
 
 
 @op_graph_controller_bp.route('/api/v2/graph/nodes/event', methods=['GET'])
@@ -49,12 +53,15 @@ def get_event_nodes_count():
         response.response_data = event_nodes_count
         response.message = 'Retrieve event nodes count'
 
+        logger.info('Retrieve event nodes count')
         return jsonify(response.to_dict()), 200
 
     except Exception as e:
         response.http_status_code = 500
         response.response_data = None
         response.message = f'Internal Server Error : {str(e)}'
+
+        logger.error(f'Internal Server Error : {str(e)}')
         return jsonify(response.to_dict()), 500
 
     finally:
@@ -87,12 +94,15 @@ def get_entity_nodes_count():
         response.response_data = entity_nodes_count
         response.message = 'Retrieve entity nodes count'
 
+        logger.info('Retrieve entity nodes count')
         return jsonify(response.to_dict()), 200
 
     except Exception as e:
         response.http_status_code = 500
         response.response_data = None
         response.message = f'Internal Server Error : {str(e)}'
+
+        logger.error(f'Internal Server Error : {str(e)}')
         return jsonify(response.to_dict()), 500
 
     finally:
@@ -125,12 +135,15 @@ def get_corr_relationships_count():
         response.response_data = corr_relationships_count
         response.message = 'Retrieve :CORR relationship count'
 
+        logger.info('Retrieve :CORR relationship count')
         return jsonify(response.to_dict()), 200
 
     except Exception as e:
         response.http_status_code = 500
         response.response_data = None
         response.message = f'Internal Server Error : {str(e)}'
+
+        logger.error(f'Internal Server Error : {str(e)}')
         return jsonify(response.to_dict()), 500
 
     finally:
@@ -163,12 +176,15 @@ def get_df_relationships_count():
         response.response_data = df_relationships_count
         response.message = 'Retrieve :DF relationship count'
 
+        logger.info('Retrieve :DF relationship count')
         return jsonify(response.to_dict()), 200
 
     except Exception as e:
         response.http_status_code = 500
         response.response_data = None
         response.message = f'Internal Server Error : {str(e)}'
+
+        logger.error(f'Internal Server Error : {str(e)}')
         return jsonify(response.to_dict()), 500
 
     finally:
@@ -192,6 +208,7 @@ def get_null_entities():
     """
     return OperationGraphService.get_null_entities_s(database_connector)
 
+
 @op_graph_controller_bp.route('/api/v2/graph/activities', methods=['GET'])
 def get_all_activities_name():
     """
@@ -199,6 +216,7 @@ def get_all_activities_name():
     :return: ApiResponse model
     """
     return OperationGraphService.get_activities_s(database_connector)
+
 
 @op_graph_controller_bp.route('/api/v2/graph/svg', methods=['POST'])
 def download_svg():

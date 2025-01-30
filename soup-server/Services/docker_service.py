@@ -16,6 +16,10 @@ import subprocess
 
 from flask import jsonify
 from Models.api_response_model import ApiResponse
+from Models.logger_model import Logger
+
+# Engine logger setup
+logger = Logger()
 
 
 # The service for docker controller
@@ -46,6 +50,8 @@ class DockerService:
             response.http_status_code = 200
             response.response_data = response_data
             response.message = 'Success'
+
+            logger.info('Successfully get docker containers info')
             return jsonify(response.to_dict()), 200
 
         except Exception as e:
@@ -54,11 +60,15 @@ class DockerService:
                 response.http_status_code = 400
                 response.response_data = None
                 response.message = "Docker Engine is exited."
+
+                logger.error(f'Docker Engine is exited. Error: {error}')
                 return jsonify(response.to_dict()), 400
             else:
                 response.http_status_code = 500
                 response.response_data = None
                 response.message = f"An unexpected error occurred: {str(e)}"
+
+                logger.error(f'Docker Engine is exited. Error: {error}')
                 return jsonify(response.to_dict()), 500
 
     @staticmethod
@@ -81,12 +91,16 @@ class DockerService:
             response.http_status_code = 200
             response.response_data = response_data
             response.message = 'Success'
+
+            logger.info('Successfully docker container start info')
             return jsonify(response.to_dict()), 200
 
         except Exception as e:
             response.http_status_code = 500
             response.response_data = None
             response.message = f'Internal Server Error : {str(e)}'
+
+            logger.error(f'Internal Server Error : {str(e)}')
             return jsonify(response.to_dict()), 500
 
     @staticmethod
@@ -109,12 +123,16 @@ class DockerService:
             response.http_status_code = 200
             response.response_data = response_data
             response.message = 'Success'
+
+            logger.info('Successfully docker container exited info')
             return jsonify(response.to_dict()), 200
 
         except Exception as e:
             response.http_status_code = 500
             response.response_data = None
             response.message = f'Internal Server Error : {str(e)}'
+
+            logger.error(f'Internal Server Error : {str(e)}')
             return jsonify(response.to_dict()), 500
 
     @staticmethod
@@ -136,12 +154,16 @@ class DockerService:
             response.http_status_code = 200
             response.response_data = response_data
             response.message = 'Container started successfully'
+
+            logger.info('Successfully start docker container')
             return jsonify(response.to_dict()), 200
 
         except Exception as e:
             response.http_status_code = 500
             response.response_data = None
-            response.message = f'Failed to start container: {str(e)}'
+            response.message = f'Internal Server Error: {str(e)}'
+
+            logger.error(f'Internal Server Error: {str(e)}')
             return jsonify(response.to_dict()), 500
 
     @staticmethod
@@ -163,12 +185,16 @@ class DockerService:
             response.http_status_code = 200
             response.response_data = response_data
             response.message = 'Container stopped successfully'
+
+            logger.info('Successfully stop docker container')
             return jsonify(response.to_dict()), 200
 
         except Exception as e:
             response.http_status_code = 500
             response.response_data = None
-            response.message = f'Failed to stop container: {str(e)}'
+            response.message = f'Internal Server Error: {str(e)}'
+
+            logger.error(f'Internal Server Error: {str(e)}')
             return jsonify(response.to_dict()), 500
 
     @staticmethod
@@ -213,12 +239,16 @@ class DockerService:
             response.http_status_code = 200
             response.response_data = response_data
             response.message = 'Success'
+
+            logger.info('Successfully get directory directory info')
             return jsonify(response.to_dict()), 200
 
         except Exception as e:
             response.http_status_code = 500
             response.response_data = None
             response.message = f'Internal Server Error : {str(e)}'
+
+            logger.error(f'Internal Server Error: {str(e)}')
             return jsonify(response.to_dict()), 500
 
     @staticmethod
@@ -233,5 +263,5 @@ class DockerService:
             container_id = result.stdout.decode('utf-8').strip()
             return container_id
         except subprocess.CalledProcessError as e:
-            print(f"Error while retrieving docker container id: {e}")
+            logger.error(f'Error while retrieving docker container id: {e}')
             return None

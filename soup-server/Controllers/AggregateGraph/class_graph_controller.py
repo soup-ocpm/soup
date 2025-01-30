@@ -28,7 +28,7 @@ database_connector = get_db_connector(debug=False)
 def create_class_graph():
     """
     Create aggregate graph
-    :return: ApiResponse model
+    :return: ApiResponse object
     """
     filtered_column_json = request.form.get('filteredColumn')
     filtered_column = json.loads(filtered_column_json)

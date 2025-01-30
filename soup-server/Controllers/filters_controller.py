@@ -12,16 +12,19 @@ License : MIT
 
 # Import
 from flask import Blueprint, request, jsonify
-
 from Controllers.graph_config import get_db_connector
 from Services.filters_service import FiltersService
 from Models.api_response_model import ApiResponse
+from Models.logger_model import Logger
 
 # Init the bp
 filters_controller_bp = Blueprint('filters_controller_bp', __name__)
 
 # Engine database setup
 database_connector = get_db_connector(debug=False)
+
+# Engine logger setup
+logger = Logger()
 
 
 @filters_controller_bp.route('/api/v2/analyses/new', methods=['POST'])
@@ -39,6 +42,8 @@ def create_new_analysis():
         response.http_status_code = 400
         response.message = "Bad request. Content not provided"
         response.response_data = None
+
+        logger.error("Bad Request: Content not provided")
         return jsonify(response.to_dict()), 400
 
     return FiltersService.process_new_analyses_s(database_connector, filters_data)
@@ -56,10 +61,12 @@ def process_analysis():
     analysis_name = request.get_json()['analysis_name']
 
     # Check the name
-    if not analysis_name:
+    if not analysis_name or not dataset_name:
         response.http_status_code = 400
-        response.message = "Bad request. Name not provided"
+        response.message = "Bad request. Content not provided"
         response.response_data = None
+
+        logger.error("Bad Request: Content not provided")
         return jsonify(response.to_dict()), 400
 
     return FiltersService.process_analyses_s(database_connector, dataset_name, analysis_name)
@@ -79,17 +86,22 @@ def get_all_analyses():
         response.http_status_code = 400
         response.message = "Bad request. Dataset name not provided."
         response.response_data = None
+
+        logger.error("Bad Request: Dataset name not provided")
         return jsonify(response.to_dict()), 400
 
     try:
         # Call the service to get analyses
         result = FiltersService.get_all_analyses_s(dataset_name)
+
         return result
+
     except Exception as e:
-        # Handle unexpected errors
         response.http_status_code = 500
         response.message = f"Internal server error: {str(e)}"
         response.response_data = None
+
+        logger.error(f"Internal server error: {str(e)}")
         return jsonify(response.to_dict()), 500
 
 
@@ -109,6 +121,8 @@ def check_unique_analysis_name():
         response.http_status_code = 400
         response.message = "Bad request. Name not provided"
         response.response_data = None
+
+        logger.error("Bad Request: Name not provided")
         return jsonify(response.to_dict()), 400
 
     return FiltersService.check_unique_analysis_name(dataset_name, analysis_name)
@@ -130,6 +144,8 @@ def remove_analyses():
         response.http_status_code = 400
         response.message = "Bad request. Name or Dataset name not provided"
         response.response_data = None
+
+        logger.error("Bad Request: Name or Dataset name not provided")
         return jsonify(response.to_dict()), 400
 
     return FiltersService.delete_analyses_s(dataset_name, analysis_name)

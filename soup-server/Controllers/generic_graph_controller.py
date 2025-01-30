@@ -16,12 +16,16 @@ from Controllers.graph_config import get_db_connector
 from Services.generic_graph_service import GenericGraphService
 from Services.docker_service import DockerService
 from Models.api_response_model import ApiResponse
+from Models.logger_model import Logger
 
 # Init the bp
 generic_graph_controller_bp = Blueprint('generic_graph_controller_bp', __name__)
 
 # Engine database setup
 database_connector = get_db_connector(debug=False)
+
+# Engine logger setup
+logger = Logger()
 
 
 @generic_graph_controller_bp.route('/api/v2/complete-graph/build', methods=['POST'])
@@ -42,6 +46,8 @@ def create_dataset_graphs():
             response.http_status_code = 404
             response.response_data = None
             response.message = 'Container not found'
+
+            logger.error("Container not found")
             return jsonify(response.to_dict()), 404
 
         result = GenericGraphService.create_complete_graphs_s(container_id, database_connector, dataset_name)
@@ -50,17 +56,23 @@ def create_dataset_graphs():
             response.http_status_code = 404
             response.response_data = result
             response.message = 'Unable to create the Dataset graphs'
+
+            logger.error("Unable to create the Dataset graphs: {}".format(result))
             return jsonify(response.to_dict()), 404
 
         response.http_status_code = 200
         response.response_data = result
         response.message = 'Successfully created the Dataset graphs'
+
+        logger.info("Successfully created the Dataset graphs")
         return jsonify(response.to_dict()), 200
 
     except Exception as e:
         response.http_status_code = 500
         response.response_data = None
         response.message = f'Internal Server Error : {str(e)}'
+
+        logger.error(f"Internal Server Error : {str(e)}")
         return jsonify(response.to_dict()), 500
 
 

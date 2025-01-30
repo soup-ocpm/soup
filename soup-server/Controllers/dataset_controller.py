@@ -24,7 +24,9 @@ def get_dataset_info():
     Get specific dataset info
     :return: ApiResponse model
     """
+
     dataset_name = request.args.get('dataset_name', type=str)
+
     return DatasetService.get_dataset_info_s(dataset_name)
 
 
@@ -34,6 +36,7 @@ def get_all_dataset_info():
     Get all dataset information
     :return: ApiResponse model
     """
+
     return DatasetService.get_all_dataset_info_s()
 
 
@@ -43,6 +46,7 @@ def update_dataset_info():
     Update specific dataset info
     :return: ApiResponse model
     """
+
     data = request.get_json()
     dataset_name = data.get('dataset_name')
     dataset_description = data.get('dataset_description')
@@ -56,6 +60,7 @@ def check_unique_dataset():
     Check the unique name for new dataset
     :return: ApiResponse model
     """
+
     data = request.get_json()
     dataset_name = data.get('dataset_name')
 

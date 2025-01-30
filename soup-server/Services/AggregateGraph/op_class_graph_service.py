@@ -10,15 +10,19 @@ License : MIT
 ------------------------------------------------------------------------
 """
 
-
 # Import
 import math
 
 from typing import Iterable
 from flask import jsonify
 from Controllers.graph_config import memgraph_datetime_to_string
+from Services.support_service import SupportService
 from Models.api_response_model import ApiResponse
-from Utils.general_query_lib import *
+from Models.logger_model import Logger
+from Utils.aggregate_graph_query_lib import *
+
+# Engine logger setup
+logger = Logger()
 
 
 # The Service for operation class graph controller
@@ -36,44 +40,36 @@ class OperationClassGraphService:
             result = database_connector.run_query_memgraph(query)
 
             if not isinstance(result, Iterable):
-                response.http_status_code = 404
+                response.http_status_code = 204
                 response.response_data = None
-                response.message = "Not found"
-                return jsonify(response.to_dict()), 404
+                response.message = "No content"
 
-            graph_data = []
+                logger.info("No content")
+                return jsonify(response.to_dict()), 204
 
-            for record in result:
-                event_node = record['node']
-
-                for key, value in event_node.items():
-                    if 'Timestamp' in key:
-                        timestamp = memgraph_datetime_to_string(value)
-                        event_node[key] = timestamp
-
-                for key, value in event_node.items():
-                    if isinstance(value, (int, float)) and math.isnan(value):
-                        event_node[key] = None
-
-                graph_data.append(event_node)
+            graph_data = SupportService.extract_class_graph_data(result)
 
             if len(graph_data) == 0:
                 response.http_status_code = 202
                 response.message = 'No content'
                 response.response_data = graph_data
 
+                logger.info("No content")
                 return jsonify(response.to_dict()), 202
 
             response.http_status_code = 200
             response.message = 'Class nodes retrieve successfully'
             response.response_data = graph_data
 
+            logger.info("Class nodes retrieve successfully")
             return jsonify(response.to_dict()), 200
 
         except Exception as e:
             response.http_status_code = 500
             response.response_data = None
             response.message = f'Internal Server Error : {str(e)}'
+
+            logger.error(f"Internal Server Error : {str(e)}")
             return jsonify(response.to_dict()), 500
 
         finally:
@@ -91,7 +87,7 @@ class OperationClassGraphService:
 
             return 0
         except Exception as e:
-            print(f"Error in get_count_nodes_class_query: {e}")
+            logger.error(f"Internal Server Error : {str(e)}")
             return 0
 
     # Get :OBS relationships
@@ -185,7 +181,7 @@ class OperationClassGraphService:
 
             return 0
         except Exception as e:
-            print(f"Error in get_count_obs_relationships_query: {e}")
+            logger.error(f"Internal Server Error : {str(e)}")
             return 0
 
     # Get :DFC relationships
@@ -200,10 +196,12 @@ class OperationClassGraphService:
             result = database_connector.run_query_memgraph(query)
 
             if not isinstance(result, Iterable):
-                response.http_status_code = 404
+                response.http_status_code = 204
                 response.response_data = None
-                response.message = "Not found"
-                return jsonify(response.to_dict()), 404
+                response.message = "No content"
+
+                logger.info("No content")
+                return jsonify(response.to_dict()), 204
 
             df_data = []
             df_count = 0
@@ -248,18 +246,22 @@ class OperationClassGraphService:
                 response.message = 'No content'
                 response.response_data = graph_data
 
+                logger.info("No content")
                 return jsonify(response.to_dict()), 202
 
             response.http_status_code = 200
             response.response_data = graph_data
-            response.message = 'Retrieve :dfc relationships'
+            response.message = 'Retrieve :DFC relationships'
 
+            logger.info("Retrieve :DFC relationships")
             return jsonify(response.to_dict()), 200
 
         except Exception as e:
             response.http_status_code = 500
             response.response_data = None
             response.message = f'Internal Server Error : {str(e)}'
+
+            logger.error(f'Internal Server Error : {str(e)}')
             return jsonify(response.to_dict()), 500
 
         finally:
@@ -277,7 +279,7 @@ class OperationClassGraphService:
 
             return 0
         except Exception as e:
-            print(f"Error in get_count_dfc_relationships_query: {e}")
+            logger.error(f"Internal Server Error : {str(e)}")
             return 0
 
     # Delete Class Graph
@@ -296,19 +298,25 @@ class OperationClassGraphService:
 
             if result and result[0]['count'] == 0:
                 response.http_status_code = 200
-                response.message = 'Class Graph deleted successfully !'
+                response.message = 'Class Graph deleted successfully'
                 response.response_data = None
+
+                logger.info("Class Graph deleted successfully")
                 return jsonify(response.to_dict()), 200
             else:
                 response.http_status_code = 404
-                response.message = 'Data was not deleted!'
+                response.message = 'Class graph not deleted'
                 response.response_data = None
+
+                logger.error("Class graph not deleted")
                 return jsonify(response.to_dict()), 404
 
         except Exception as e:
             response.http_status_code = 500
             response.message = f"Internal Server Error : {str(e)}"
             response.response_data = None
+
+            logger.error(f"Internal Server Error : {str(e)}")
             return jsonify(response.to_dict()), 500
 
         finally:

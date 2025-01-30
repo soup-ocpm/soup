@@ -15,12 +15,16 @@ from flask import Blueprint
 from Controllers.graph_config import get_db_connector
 from Services.AggregateGraph.op_class_graph_service import OperationClassGraphService
 from Services.Graph.op_graph_service import OperationGraphService
+from Models.logger_model import Logger
 
 # Init the bp
 graph_json_controller_bp = Blueprint('graph_json_controller_bp', __name__)
 
 # Engine database setup
 database_connector = get_db_connector(debug=False)
+
+# Engine logger setup
+logger = Logger()
 
 
 # Standard Graph JSON

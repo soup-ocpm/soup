@@ -11,40 +11,128 @@ License : MIT
 """
 
 
-def timestamp_filter_query(start_timestamp, end_timestamp):
+def timestamp_filter_query(start_date, end_date):
+    """
+    Timestamp filter query
+    :param start_date: the start date
+    :param end_date: the end date
+    :return the filtered graph
+    """
+    start_date = clean_timestamp(start_date)
+    end_date = clean_timestamp(end_date)
+
     return (f"MATCH (e1:Event)-[r:DF]->(e2:Event) "
-            f"WHERE e1.Timestamp >= localDateTime({start_timestamp}) AND e1.Timestamp <= localDateTime({end_timestamp}) "
-            f"AND e2.Timestamp >= localDateTime({start_timestamp}) AND e2.Timestamp <= localDateTime({end_timestamp}) "
+            f"WHERE e1.Timestamp >= localDateTime({start_date}) AND e1.Timestamp <= localDateTime({end_date}) "
+            f"AND e2.Timestamp >= localDateTime({start_date}) AND e2.Timestamp <= localDateTime({end_date}) "
             f"RETURN e1 as source, id(e1) as source_id, properties(r) as edge, "
             f"id(r) as edge_id, e2 as target, id(e2) as target_id ")
 
 
-def performance_filter_name_query(start_activity_name, end_activity_name, duration):
+def timestamp_filter_delete_query(start_date, end_date):
+    """
+    Timestamp filter delete query
+    :param start_date: the start date
+    :param end_date: the end date
+    :return the filtered graph
+    """
+    start_date = clean_timestamp(start_date)
+    end_date = clean_timestamp(end_date)
+
+    return (f"MATCH (e1:Event)-[r:DF]->(e2:Event) "
+            f"WHERE NOT (e1.Timestamp >= localDateTime('{start_date}') AND e1.Timestamp <= localDateTime('{end_date}')) "
+            f"AND NOT (e2.Timestamp >= localDateTime('{start_date}') AND e2.Timestamp <= localDateTime('{end_date}')) "
+            f"DETACH DELETE e1, e2, r")
+
+
+def performance_filter_query(start_activity_name, end_activity_name, duration):
+    """
+    Performance filter query
+    :param start_activity_name: the start activity name
+    :param end_activity_name: the end activity name
+    :param duration: the duration
+    :return: the filtered graph
+    """
     return (f"MATCH (start: Event {{ActivityName: '{start_activity_name}'}}) "
             f"MATCH (end: Event {{ActivityName: '{end_activity_name}'}}) "
             f"WHERE start.Timestamp < end.Timestamp "
-            f"WITH start, end, duration.between(start.Timestamp, end.Timestamp) "
-            f"AS duration "
+            f"WITH start, end, duration.between(start.Timestamp, end.Timestamp) AS duration "
             f"WHERE duration.seconds > {duration} "
             f"MERGE (start)-[r:HAS_DURATION {{duration_seconds: duration.seconds}}]->(end) "
             f"RETURN start, r, end")
 
 
+def performance_filter_delete_query(start_activity_name, end_activity_name, duration):
+    """
+    Performance filter delete query
+    :param start_activity_name: the start activity name
+    :param end_activity_name: the end activity name
+    :param duration: the duration
+    :return: the filtered graph
+    """
+    return (f"MATCH (start: Event {{ActivityName: '{start_activity_name}'}}) "
+            f"MATCH (end: Event {{ActivityName: '{end_activity_name}'}}) "
+            f"WHERE start.Timestamp < end.Timestamp "
+            f"WITH start, end, (end.Timestamp - start.Timestamp) AS time_diff "
+            f"WITH start, end, time_diff, "
+            f"(time_diff.day * 86400) + (time_diff.hour * 3600) + (time_diff.minute * 60) + time_diff.second AS total_seconds "
+            f"WHERE total_seconds <= {duration} "
+            f"DETACH DELETE start, end")
+
+
 def include_activity_filter_query(activities):
+    """
+    Include activity filter query
+    :param activities: list of the activities
+    :return: the filtered graph
+    """
     return (f"MATCH (e1:Event)-[r:DF]->(e2:Event) "
             f"WHERE e1.ActivityName = '{activities}' AND e2.ActivityName = '{activities}' "
             f"RETURN e1 as source, id(e1) as source_id, properties(r) as edge, "
             f"id(r) as edge_id, e2 as target, id(e2) as target_id ")
 
 
+def include_activity_filter_delete_query(activities):
+    """
+    Include activity filter delete query
+    :param activities: the activities
+    :return: the filtered graph
+    """
+    activities_str = "', '".join(activities)
+    return (f"MATCH (e1:Event)-[r:DF]->(e2:Event) "
+            f"WHERE NOT (e1.ActivityName IN ['{activities_str}'] AND e2.ActivityName IN ['{activities_str}']) "
+            f"DETACH DELETE e1, e2, r")
+
+
 def exclude_activity_filter_query(activities):
+    """
+    Exclude activity filter query
+    :param activities: the activities
+    :return: the filtered graph
+    """
     return (f"MATCH (e1:Event)-[r:DF]->(e2:Event) "
             f"WHERE NOT (e1.ActivityName = '{activities}' AND e2.ActivityName = '{activities}') "
             f"RETURN e1 as source, id(e1) as source_id, properties(r) as edge, "
             f"id(r) as edge_id, e2 as target, id(e2) as target_id ")
 
 
+def exclude_activity_filter_delete_query(activities):
+    """
+    Exclude activity filter delete query
+    :param activities: the activities
+    :return: the filtered graph
+    """
+    activities_str = "', '".join(activities)
+    return (f"MATCH (e1:Event)-[r:DF]->(e2:Event) "
+            f"WHERE (e1.ActivityName IN ['{activities_str}'] OR e2.ActivityName IN ['{activities_str}']) "
+            f"DETACH DELETE e1, e2, r")
+
+
 def frequency_filter_query(frequency):
+    """
+    Frequency filter query
+    :param frequency: the frequency
+    :return: the activities and frequencies
+    """
     return (f"MATCH (e1:Event) "
             f"WITH e.ActivityName AS activities, COUNT(e) AS frequency "
             f"WHERE frequency >= {frequency} "
@@ -53,6 +141,10 @@ def frequency_filter_query(frequency):
 
 
 def variation_filter_query():
+    """
+    Variation filter query
+    :return: the activities and durations
+    """
     query = """
     MATCH (start:Event)-[:DF*]->(end:Event)
     WITH start.EventID AS caseId, COLLECT(start.ActivityName) + COLLECT(end.ActivityName) AS activities,
@@ -63,64 +155,12 @@ def variation_filter_query():
     return query
 
 
-def prototype_combined_query(filters):
-    # 1. Base
-    base_query = "MATCH (e1:Event)-[r:DF]->(e2:Event) WHERE 1=1 "
-
-    # 2. Timestamp filters
-    for timestamp_filter in filters.get("timestamp", []):
-        start_date = timestamp_filter["startDate"]
-        end_date = timestamp_filter["endDate"]
-
-        # 2.1 Clean the timestamp
-        start_date = clean_timestamp(start_date)
-        end_date = clean_timestamp(end_date)
-
-        base_query += (f"AND e1.Timestamp >= localDateTime(toString({start_date})) "
-                       f"AND e1.Timestamp <= localDateTime(toString({end_date})) "
-                       f"AND e2.Timestamp >= localDateTime(toString({start_date})) "
-                       f"AND e2.Timestamp <= localDateTime(toString({end_date})) ")
-
-    # 3. Performance filters
-    for performance_filter in filters.get("performance", []):
-        start_activity = performance_filter["startActivity"]
-        end_activity = performance_filter["endActivity"]
-        seconds = performance_filter["seconds"]
-
-        # 3.1 Calculate the seconds
-        base_query += (f"WITH e1, e2, r "
-                       f"MATCH (start:Event {{ActivityName: '{start_activity}'}}), "
-                       f"(end:Event {{ActivityName: '{end_activity}'}}) "
-                       f"WHERE start.Timestamp < end.Timestamp "
-                       f"WITH e1, e2, r, start, end, (end.Timestamp - start.Timestamp) AS time_diff "
-                       f"WITH e1, e2, r, start, end, time_diff, "
-                       f"(time_diff.day * 86400) + (time_diff.hour * 3600) + (time_diff.minute * 60) + time_diff.second AS total_seconds "
-                       f"WHERE total_seconds > {seconds} ")
-
-    # 4. Include activities filters
-    for include_filter in filters.get("includeActivities", []):
-        activities = include_filter["activities"]
-        base_query += "AND ("
-        base_query += " OR ".join([f"e1.ActivityName = '{activity}' AND e2.ActivityName = '{activity}'"
-                                   for activity in activities])
-        base_query += ") "
-
-    # 5. Exclude activities filters
-    for exclude_filter in filters.get("excludeActivities", []):
-        activities = exclude_filter["activities"]
-        base_query += "AND NOT ("
-        base_query += " OR ".join([f"e1.ActivityName = '{activity}' AND e2.ActivityName = '{activity}'"
-                                   for activity in activities])
-        base_query += ") "
-
-    # 6. Return the result
-    base_query += ("RETURN e1 as source, id(e1) as source_id, properties(r) as edge, "
-                   "id(r) as edge_id, e2 as target, id(e2) as target_id")
-
-    return base_query
-
-
 def clean_timestamp(timestamp):
+    """
+    Clean the timestamp
+    :param timestamp:  the time to clean
+    :return: the cleaned timestamp
+    """
     if timestamp.endswith("Z"):
         return timestamp[:-1]
 

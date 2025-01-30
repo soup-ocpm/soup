@@ -11,17 +11,22 @@ License : MIT
 """
 
 # Import
-import math
 import json
+
 from collections.abc import *
-from neo4j.time import DateTime
 from flask import jsonify
-from Controllers.graph_config import memgraph_datetime_to_string
+
 from Services.docker_service import DockerService
+from Services.support_service import SupportService
 from Models.docker_file_manager_model import DockerFileManager
 from Models.file_manager_model import FileManager
 from Models.api_response_model import ApiResponse
-from Utils.general_query_lib import get_limit_standard_graph_query
+from Models.logger_model import Logger
+from Utils.filter_query_lib import *
+from Utils.graph_query_lib import get_limit_standard_graph_query
+
+# Engine logger setup
+logger = Logger()
 
 
 # The service for docker controller
@@ -39,6 +44,8 @@ class FiltersService:
                 response.http_status_code = 400
                 response.message = 'Container not found'
                 response.response_data = []
+
+                logger.error('Container not found')
                 return jsonify(response.to_dict()), 400
 
             # 1. Process the csv file on Docker Container
@@ -48,6 +55,8 @@ class FiltersService:
                 response.http_status_code = 500
                 response.message = result
                 response.response_data = None
+
+                logger.error(f'Process analysis failed: {str(result)}')
                 return jsonify(response.to_dict()), 500
 
             # 2. Proces the analysis
@@ -57,7 +66,10 @@ class FiltersService:
         except Exception as e:
             response.response_data = None
             response.http_status_code = 500
-            response.message = f'{e}'
+            response.message = f'Internal Server Error: {str(e)}'
+
+            logger.error(f'Internal Server Error: {str(e)}')
+            return jsonify(response.to_dict()), 500
 
     @staticmethod
     def process_analyses_s(database_connector, dataset_name, analyses_name):
@@ -71,39 +83,59 @@ class FiltersService:
                 response.http_status_code = 500
                 response.message = 'Container not found'
                 response.response_data = []
+
+                logger.error('Container not found')
                 return jsonify(response.to_dict()), 500
 
             # 1. Process the analysis
             result, data = process_analysis(container_id, database_connector, dataset_name, analyses_name)
 
             # 2. Check the response content
-            if result == 'error':
-                response.http_status_code = 400
-                response.message = 'Error processing analysis. Probably no content inside Memgraph Database'
+            if result.startswith('error'):
+                response.http_status_code = 404
+                response.message = f'Error processing analysis. Probably an error occurred: {result}'
                 response.response_data = None
-                return jsonify(response.to_dict()), 400
+
+                logger.error(f'Error processing analysis. Probably an error occurred: {result}')
+                return jsonify(response.to_dict()), 404
+
+            if result == 'nothing changed':
+                response.http_status_code = 204
+                response.message = 'Nothing changed'
+                response.response_data = []
+
+                logger.info('Nothing changed')
+                return jsonify(response.to_dict()), 204
 
             if result == 'no content':
                 response.http_status_code = 204
                 response.message = 'No content available for the analysis'
                 response.response_data = []
+
+                logger.info('No content available for the analysis')
                 return jsonify(response.to_dict()), 204
 
             if result == 'success':
                 response.http_status_code = 201
                 response.message = 'Analysis created successfully'
                 response.response_data = data
+
+                logger.info('Analysis created successfully')
                 return jsonify(response.to_dict()), 201
 
             response.http_status_code = 500
             response.message = 'Unexpected error'
             response.response_data = None
+
+            logger.error('Unexpected error')
             return jsonify(response.to_dict()), 500
 
         except Exception as e:
             response.response_data = None
             response.http_status_code = 500
-            response.message = f'Error: {e}'
+            response.message = f'Internal Server Error: {str(e)}'
+
+            logger.error(f'Internal Server Error: {str(e)}')
             return jsonify(response.to_dict()), 500
 
     @staticmethod
@@ -118,6 +150,8 @@ class FiltersService:
                 response.http_status_code = 400
                 response.message = 'Container not found'
                 response.response_data = None
+
+                logger.error('Container not found')
                 return jsonify(response.to_dict()), 400
 
             # 1. Get all analyses
@@ -126,8 +160,10 @@ class FiltersService:
 
             if result != 'success':
                 response.http_status_code = 400
-                response.message = 'Internal Server Error. Error while retrieving the Analyses'
+                response.message = f'Error while get folder files: {str(result)}'
                 response.response_data = result
+
+                logger.info(f'Error while get folder files: {str(result)}')
                 return jsonify(response.to_dict()), 400
 
             analyses_data = []
@@ -149,17 +185,23 @@ class FiltersService:
                 response.http_status_code = 202
                 response.message = 'No content'
                 response.response_data = analyses_data
+
+                logger.info('No content')
                 return jsonify(response.to_dict()), 202
 
             response.http_status_code = 200
             response.message = 'Analyses retrieved successfully'
             response.response_data = analyses_data
+
+            logger.info('Analyses retrieved successfully')
             return jsonify(response.to_dict()), 200
 
         except Exception as e:
-            response.http_status_code = 500
             response.response_data = None
-            response.message = f'Internal Server Error : {str(e)}'
+            response.http_status_code = 500
+            response.message = f'Internal Server Error: {str(e)}'
+
+            logger.error(f'Internal Server Error: {str(e)}')
             return jsonify(response.to_dict()), 500
 
     @staticmethod
@@ -174,6 +216,8 @@ class FiltersService:
                 response.http_status_code = 400
                 response.message = 'Container not found'
                 response.response_data = None
+
+                logger.error('Container not found')
                 return jsonify(response.to_dict()), 400
 
             full_analysis_name = f'{analysis_name}.json'
@@ -185,17 +229,23 @@ class FiltersService:
                 response.http_status_code = 202
                 response.message = 'No content'
                 response.response_data = None
+
+                logger.info('No content')
                 return jsonify(response.to_dict()), 202
 
             response.http_status_code = 200
             response.message = 'Analysis name already exist'
             response.response_data = None
+
+            logger.info('Analysis name already exist')
             return jsonify(response.to_dict()), 200
 
         except Exception as e:
-            response.http_status_code = 500
-            response.message = f"Internal Server Error : {str(e)}"
             response.response_data = None
+            response.http_status_code = 500
+            response.message = f'Internal Server Error: {str(e)}'
+
+            logger.error(f'Internal Server Error: {str(e)}')
             return jsonify(response.to_dict()), 500
 
     @staticmethod
@@ -210,6 +260,8 @@ class FiltersService:
                 response.http_status_code = 400
                 response.message = 'Container not found'
                 response.response_data = None
+
+                logger.error('Container not found')
                 return jsonify(response.to_dict()), 400
 
             # 1. Delete the folder
@@ -219,8 +271,10 @@ class FiltersService:
 
             if result != 'success':
                 response.http_status_code = 404
-                response.message = 'Unable to delete the Analysis'
+                response.message = f'Unable to delete the Analysis: {str(result)}'
                 response.response_data = None
+
+                logger.error(f'Unable to delete the Analysis: {str(result)}')
                 return jsonify(response.to_dict()), 404
 
             result, container_folders = DockerFileManager.get_folder_files(container_id,
@@ -230,17 +284,23 @@ class FiltersService:
                 response.http_status_code = 404
                 response.message = 'Unable to delete the Analysis'
                 response.response_data = None
+
+                logger.error('Unable to delete the Analysis')
                 return jsonify(response.to_dict()), 404
 
             response.http_status_code = 200
             response.message = 'Analysis deleted successfully'
             response.response_data = None
+
+            logger.info('Analysis deleted successfully')
             return jsonify(response.to_dict()), 200
 
         except Exception as e:
-            response.http_status_code = 500
             response.response_data = None
-            response.message = f'Internal Server Error : {str(e)}'
+            response.http_status_code = 500
+            response.message = f'Internal Server Error: {str(e)}'
+
+            logger.error(f'Internal Server Error: {str(e)}')
             return jsonify(response.to_dict()), 500
 
 
@@ -254,6 +314,7 @@ def process_new_analysis_file(container_id, filters_data):
         result, new_json_config_path = FileManager.copy_json_file(filters_data, analysis_name)
 
         if result != 'success' or new_json_config_path is None:
+            logger.error('Error while copying json file on the Engine')
             return 'Error while copy the analysis json file on the Engine directory', None
 
         # 2. Save the json file on the docker container
@@ -261,26 +322,26 @@ def process_new_analysis_file(container_id, filters_data):
                                                                                         new_json_config_path,
                                                                                         dataset_name, analysis_name)
         if result != 'success' or container_file_path is None:
-            return 'Error while copy the json file on the Engine directory', None
+            logger.error(f'Error while copying analysis file on the Engine: {str(result)}')
+            return f'Error while copy the json file on the Engine directory: {str(result)}', None
 
         # 3. Remove the json file from the Engine
         result = FileManager.delete_file(dataset_name, "json", False)
 
         if result != 'success':
+            logger.error('Error while deleting file on the Engine')
             return result
 
         return 'success', analysis_name
 
     except Exception as e:
-        return f'${e}', None
+        logger.error(f'Internal Server Error: {str(e)}')
 
 
 # Process the analysis (filters)
 def process_analysis(container_id, database_connector, dataset_name, analysis_name):
     try:
-        analysis_data = None
-
-        # 1. Check the name
+        # 1. Check the name and read configuration
         if not analysis_name.endswith(".json"):
             analysis_name = f'{analysis_name}.json'
 
@@ -288,59 +349,101 @@ def process_analysis(container_id, database_connector, dataset_name, analysis_na
                                                                                    analysis_name)
 
         if result != 'success':
+            logger.error(f'Error while reading json file on the Engine: {str(result)}')
             return result
 
-        # Check the instance
+        # 2. Check the instance
         if not isinstance(exec_config_file, dict):
             exec_config_file = json.loads(exec_config_file)
         analysis_data = exec_config_file
 
-        # TODO: add the correct query + elaboration
-        # query = prototype_combined_query(analysis_data)
+        # 3. Extract the filter
+        timestamp_filters = analysis_data['timestamp']
+        performance_filters = analysis_data['performance']
+        include_filters = analysis_data['includeActivities']
+        exclude_filters = analysis_data['excludeActivities']
 
-        # This is tested for the response
+        # 4. Save the current data from Memgraph
+        node_counter, relationships_counter = get_node_and_relationship_count(database_connector)
+
+        # 5. Connect to the Database and Run queries
         database_connector.connect()
+
+        # 5.1 Timestamp filter queries
+        for current_timestamp_filter in timestamp_filters:
+            start_date = current_timestamp_filter['startDate']
+            end_date = current_timestamp_filter['endDate']
+            query = timestamp_filter_delete_query(start_date, end_date)
+
+            try:
+                # Execute the query
+                database_connector.run_query_memgraph(query)
+
+            except Exception as e:
+                logger.error(f'Timestmap Internal Server Error: {str(e)}')
+                return f'error {e}', []
+
+        # 5.2 Performance filter queries
+        for current_performance_filter in performance_filters:
+            start_activity = current_performance_filter['startActivity']
+            end_activity = current_performance_filter['endActivity']
+            seconds = current_performance_filter['seconds']
+            query = performance_filter_delete_query(start_activity, end_activity, seconds)
+
+            try:
+                # Execute the query
+                database_connector.run_query_memgraph(query)
+
+            except Exception as e:
+                logger.error(f'Performance Internal Server Error: {str(e)}')
+                return f'error {e}', []
+
+        # 5.3 Include activities filter queries
+        for current_include_filter in include_filters:
+            activities = current_include_filter['activities']
+            query = include_activity_filter_delete_query(activities)
+
+            try:
+                # Execute the query
+                database_connector.run_query_memgraph(query)
+
+            except Exception as e:
+                logger.error(f'Include Activities Internal Server Error: {str(e)}')
+                return f'error {e}', []
+
+        # 5.4 Exclude activities filter queries
+        for current_exclude_filter in exclude_filters:
+            activities = current_exclude_filter['activities']
+            query = exclude_activity_filter_delete_query(activities)
+
+            try:
+                # Execute the query
+                database_connector.run_query_memgraph(query)
+
+            except Exception as e:
+                logger.error(f'Exclude Activities Internal Server Error: {str(e)}')
+                return f'error {e}', []
+
+        # 6. Check the counter difference
+        node_counter_updated, relationships_counter_updated = get_node_and_relationship_count(database_connector)
+
+        if node_counter == node_counter_updated and relationships_counter == relationships_counter_updated:
+            return 'nothing changed', []
+
+        # 6. Get the updated and filtered EKG from the db
         limit = 300
         query_result = get_limit_standard_graph_query(limit)
 
         result = database_connector.run_query_memgraph(query_result)
 
-        if not isinstance(result, Iterable) or len(result) == 0:
+        if len(result) == 0:
+            return 'no content', []
+
+        if not isinstance(result, Iterable):
             return 'error', []
 
-        graph_data = []
-
-        for record in result:
-            # Node source
-            source = record['source']
-            source['id'] = record['source_id']
-
-            # Relationship
-            edge = record['edge']
-            edge['id'] = record['edge_id']
-
-            # Node target
-            target = record['target']
-            target['id'] = record['target_id']
-
-            # Correct the info
-            for key, value in source.items():
-                if isinstance(value, (int, float)) and math.isnan(value):
-                    source[key] = None
-                elif isinstance(value, DateTime):
-                    source[key] = memgraph_datetime_to_string(value)
-
-            for key, value in target.items():
-                if isinstance(value, (int, float)) and math.isnan(value):
-                    target[key] = None
-                elif isinstance(value, DateTime):
-                    target[key] = memgraph_datetime_to_string(value)
-
-            graph_data.append({
-                'node_source': source,
-                'edge': edge,
-                'node_target': target
-            })
+        # Extract data information
+        graph_data = SupportService.extract_graph_data(result)
 
         if not graph_data:
             return 'no content', []
@@ -348,4 +451,27 @@ def process_analysis(container_id, database_connector, dataset_name, analysis_na
         return 'success', graph_data
 
     except Exception as e:
-        return f'${e}', None
+        logger.error(f'Internal Server Error: {str(e)}')
+        return f'error: {e}', []
+
+
+# Get the current data (node count and relationships count) inside Memgraph database
+def get_node_and_relationship_count(database_connector):
+    database_connector.connect()
+
+    node_count_query = "MATCH (n) RETURN count(n) AS node_count"
+    relationship_count_query = "MATCH ()-[r]->() RETURN count(r) AS relationship_count"
+
+    try:
+        # 1. Execute the query
+        node_count_result = database_connector.run_query_memgraph(node_count_query)
+        relationship_count_result = database_connector.run_query_memgraph(relationship_count_query)
+
+        # 2. Extract and return the data
+        node_count = node_count_result[0]['node_count'] if node_count_result else 0
+        relationship_count = relationship_count_result[0]['relationship_count'] if relationship_count_result else 0
+
+        return node_count, relationship_count
+    except Exception as e:
+        logger.error(f'Performance Internal Server Error: {str(e)}')
+        return 0, 0

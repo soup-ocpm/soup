@@ -11,10 +11,11 @@ License : MIT
 """
 
 # Import
+import logging
+
 from flask import Flask, jsonify
 from flask_cors import CORS
 from flask_socketio import SocketIO
-
 from Controllers.docker_controller import docker_controller_bp
 from Controllers.Graph.graph_controller import graph_controller_bp
 from Controllers.AggregateGraph.class_graph_controller import class_graph_controller_bp
@@ -26,6 +27,7 @@ from Controllers.dataset_controller import dataset_controller_bp
 from Controllers.filters_controller import filters_controller_bp
 from Controllers.graph_config import get_db_connector
 from Models.api_response_model import ApiResponse
+from Models.logger_model import Logger
 
 # App
 app = Flask(__name__)
@@ -39,7 +41,6 @@ app.register_blueprint(generic_graph_controller_bp)
 app.register_blueprint(op_graph_controller_bp)
 app.register_blueprint(op_class_graph_controller_bp)
 app.register_blueprint(graph_json_controller_bp)
-
 app.register_blueprint(filters_controller_bp)
 
 # Init the Socket
@@ -54,6 +55,13 @@ CORS(app)
 # Configure SOuP Docker folder and volume
 docker_soup_path = '/soup'
 
+# View only default error log
+log = logging.getLogger('werkzeug')
+log.setLevel(logging.ERROR)
+
+# Engine custom logger setup
+logger = Logger()
+
 
 # Welcome, API
 @app.route('/api/v2/welcome', methods=['GET'])
@@ -66,6 +74,8 @@ def welcome_api():
     response.http_status_code = 200
     response.message = "Hello user, the Engine work :)"
     response.response_data = None
+
+    logger.info('Successfully connected to the Engine')
     return jsonify(response.to_dict()), 200
 
 
@@ -79,32 +89,39 @@ def connect_database():
 
     try:
         # Engine database setup
-        database_connector = get_db_connector(debug=True)
+        database_connector = get_db_connector(debug=False)
         database_connector.connect()
 
         # Execute query test
         query = "RETURN 1"
         result = database_connector.run_query_memgraph(query)
 
-        if result:
-            response.http_status_code = 200
-            response.message = "Success connect with Memgraph"
-            response.response_data = result
-            return jsonify(response.to_dict()), 200
-        else:
+        # Check the result and response
+        if not result:
             response.http_status_code = 500
             response.message = "Error while connecting to Memgraph"
             response.response_data = None
+
+            logger.error('Error while connecting to Memgraph')
             return jsonify(response.to_dict()), 500
 
+        response.http_status_code = 200
+        response.message = "Success connect with Memgraph"
+        response.response_data = result
+
+        logger.info('Successfully connected to Memgraph')
+        return jsonify(response.to_dict()), 200
+
+    # Catch exception
     except Exception as e:
         response.http_status_code = 500
-        response.message = f"Error while connecting to Memgraph: {e}"
+        response.message = f"Internal Server Error: {e}"
         response.response_data = None
+
+        logger.error(f'Internal Server Error: {e}')
         return jsonify(response.to_dict()), 500
 
 
 # Main (run the Server on 8080)
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=8080, debug=True)
-    socketio.run(app, debug=True)
+    app.run(host='0.0.0.0', port=8080, debug=False, use_reloader=False)

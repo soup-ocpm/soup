@@ -267,7 +267,7 @@ export class RetriveDatasetComponent implements OnInit, AfterViewChecked {
         title: this.currentDataset!.name + ' ' + 'Dataset',
         closeIcon: true,
         stickyFooter: true,
-        footerButtons: [{ label: 'Delete', action: () => this.deleteDataset(), color: '#ff0000' }]
+        footerButtons: [{ label: 'Delete', action: () => this.openModalDelete(), color: '#ff0000' }]
       },
       content,
       sidebarId

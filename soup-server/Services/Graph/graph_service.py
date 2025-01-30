@@ -20,6 +20,10 @@ from Services.generic_graph_service import GenericGraphService
 from Models.file_manager_model import FileManager
 from Models.docker_file_manager_model import DockerFileManager
 from Models.api_response_model import ApiResponse
+from Models.logger_model import Logger
+
+# Engine logger setup
+logger = Logger()
 
 
 # The Service for graph controller
@@ -43,6 +47,8 @@ class GraphService:
                 response.http_status_code = 400
                 response.message = 'Container not found'
                 response.response_data = []
+
+                logger.error('Container not found')
                 return jsonify(response.to_dict()), 400
 
             # 1. Process the csv file on Docker Container
@@ -53,6 +59,8 @@ class GraphService:
                 response.http_status_code = 500
                 response.message = result
                 response.response_data = []
+
+                logger.error(f'Failed to process new dataset files: {str(result)}')
                 return jsonify(response.to_dict()), 500
 
             build_result = GenericGraphService.create_complete_graphs_s(container_id, database_connector, dataset_name)
@@ -63,19 +71,26 @@ class GraphService:
                 response.http_status_code = 400
                 response.message = 'Error while create the graph'
                 response.response_data = build_result
+
+                logger.error(f'Error while create the graph: {str(build_result)}')
                 return jsonify(response.to_dict()), 400
 
             # 5. Finally success
             response.http_status_code = 201
             response.message = 'Create graph successfully'
             response.response_data = build_result
+
+            logger.info(f'Successfully created new dataset')
             return jsonify(response.to_dict()), 201
 
         except Exception as e:
             response.http_status_code = 500
             response.message = f'Internal Server Error: {str(e)}.'
             response.response_data = None
+
+            logger.error(f'Internal Server Error: {str(e)}')
             return jsonify(response.to_dict()), 500
+
         finally:
             database_connector.close()
 
@@ -93,10 +108,13 @@ def process_new_dataset_files(container_id, file, df, dataset_name, dataset_desc
                                                                                 new_file_path, False,
                                                                                 False)
         if result != 'success' or new_docker_file_path is None:
+            logger.error('Error while copy the docker file on the Engine')
             return 'Error while copy the original csv file on the Docker Container'
 
         result = FileManager.delete_file(dataset_name, "csv", False)
+
         if result != 'success':
+            logger.error('Error while delete the file on the Engine')
             return result
 
         # 2. Entity nodes csv file processes
@@ -111,7 +129,9 @@ def process_new_dataset_files(container_id, file, df, dataset_name, dataset_desc
         unique_values_df = pd.DataFrame(unique_values_data)
 
         result, new_entity_file_path = FileManager.copy_csv_file(unique_values_df, dataset_name, True)
+
         if result != 'success' or new_entity_file_path is None:
+            logger.error(f'Error while copy the entity node csv on the Engine: {str(result)}')
             return 'Error while copy the entity node csv on the Engine'
 
         result, new_entity_docker_file_path = DockerFileManager.copy_file_to_container(container_id, dataset_name,
@@ -119,35 +139,46 @@ def process_new_dataset_files(container_id, file, df, dataset_name, dataset_desc
                                                                                        False)
 
         if result != 'success' or new_entity_docker_file_path is None:
+            logger.error(f'Error while copy the entity node docker file on the Engine: {str(result)}')
             return result
 
         result = FileManager.delete_file(dataset_name, "csv", True)
 
         if result != 'success':
+            logger.error(f'Error while delete the file on the Engine: {str(result)}')
             return result
 
         # 3. Configuration json file processes
         json_result = FileManager.create_json_file(dataset_name, dataset_description, all_columns, standard_columns,
                                                    filtered_columns, values_columns, trigger_target_rows)
+
         if json_result is None:
+            logger.error('Error while create the json file configuration on the Engine')
             return 'Error while creating the json file configuration'
 
         result, new_json_config_path = FileManager.copy_json_file(json_result, dataset_name)
+
         if result != 'success' or new_json_config_path is None:
+            logger.error(f'Error while copy the json file on the Engine directory: {str(result)}')
             return 'Error while copy the json file on the Engine directory'
 
         result, new_json_config_docker_file_path = DockerFileManager.copy_file_to_container(container_id, dataset_name,
                                                                                             new_json_config_path,
                                                                                             False, True)
+
         if result != 'success' or new_json_config_docker_file_path is None:
+            logger.error(f'Error while copy the json file on the docker container: {str(result)}')
             return result
 
         result = FileManager.delete_file(dataset_name, "json", False)
 
         if result != 'success':
+            logger.error(f'Error while delete the file on the Engine: {str(result)}')
             return result
 
+        logger.info('Success process dataset files')
         return 'success'
 
     except Exception as e:
+        logger.error(f'Error while process the dataset files: {str(e)}')
         return f'${e}'

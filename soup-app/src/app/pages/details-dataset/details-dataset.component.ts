@@ -869,6 +869,7 @@ export class DetailsDatasetComponent implements OnInit, AfterViewInit {
       // Call the API
       this.analysisService.createAnalysis(payload).subscribe({
         next: (response) => {
+          console.log(response);
           // TODO: implementare
         },
         error: (error) => {}

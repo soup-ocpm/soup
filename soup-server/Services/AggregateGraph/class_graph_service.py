@@ -16,7 +16,12 @@ from datetime import datetime
 from Services.AggregateGraph.op_class_graph_service import OperationClassGraphService
 from Models.dataset_process_info_model import DatasetProcessInformation
 from Models.api_response_model import ApiResponse
-from Utils.general_query_lib import *
+from Models.logger_model import Logger
+from Utils.graph_query_lib import *
+from Utils.aggregate_graph_query_lib import *
+
+# Engine logger setup
+logger = Logger()
 
 
 # The Service for class graph
@@ -37,6 +42,8 @@ class ClassGraphService:
                 response.http_status_code = 400
                 response.message = f'Error while importing data to Memgraph: {str(result)}.'
                 response.response_data = None
+
+                logger.error(f'Error while importing data to Memgraph: {str(result)}')
                 return jsonify(response.to_dict()), 400
 
             class_nodes_count = OperationClassGraphService.get_count_class_nodes_s(database_connector)
@@ -53,13 +60,16 @@ class ClassGraphService:
             response.http_status_code = 201
             response.message = 'Class Graph created successfully.'
             response.response_data = data
+
+            logger.info("Class Graph created successfully")
             return jsonify(response.to_dict()), 201
 
         except Exception as e:
             response.http_status_code = 500
-            response.message = f'Error while importing data to Neo4j: {str(e)}.'
+            response.message = f'Error while importing data to Memgraph: {str(e)}.'
             response.response_data = None
 
+            logger.error(f'Error while importing data to Memgraph: {str(e)}')
             return jsonify(response.to_dict()), 500
 
         finally:
@@ -105,4 +115,6 @@ class ClassGraphService:
             return 'success', process_info.to_dict()
 
         except Exception as e:
+
+            logger.error('Error while importing data to Memgraph: {}'.format(str(e)))
             return f'Error: {e}'

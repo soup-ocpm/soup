@@ -33,6 +33,7 @@ def get_db_connector(debug=True):
         uri_mem = 'bolt://localhost:7687'
         auth_mem = ("", "")
         database_connector = MemgraphConnector(uri_mem, auth_mem)
+
     return database_connector
 
 
