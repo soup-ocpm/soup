@@ -9,8 +9,7 @@ describe('PerformanceFilterDialogComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [PerformanceFilterDialogComponent]
-    })
-    .compileComponents();
+    }).compileComponents();
 
     fixture = TestBed.createComponent(PerformanceFilterDialogComponent);
     component = fixture.componentInstance;

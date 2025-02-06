@@ -20,6 +20,7 @@
 .operation-card:hover {
   transform: translateY(-3px);
   box-shadow: 0 5px 10px rgba(0, 0, 0, 0.2);
+  background: #e8e8e8;
 }
 
 .operation-header {
@@ -43,10 +44,14 @@
   text-decoration: underline;
 }
 
+.operation-title:hover {
+  color: var(--primary-color);
+}
+
 .operation-description {
   font-size: 14px;
   color: #555;
   margin: 0;
   flex-grow: 1;
-  margin-top: 8px;
+  margin-top: 6px;
 }

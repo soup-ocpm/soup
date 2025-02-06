@@ -7,6 +7,4 @@ import { Component } from '@angular/core';
   templateUrl: './variation-filter-dialog.component.html',
   styleUrl: './variation-filter-dialog.component.scss'
 })
-export class VariationFilterDialogComponent {
-
-}
+export class VariationFilterDialogComponent {}

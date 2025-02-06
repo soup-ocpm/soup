@@ -17,7 +17,6 @@ export class SidebarManager {
   ) {
     this.router.events.subscribe((event) => {
       if (event instanceof NavigationStart) {
-        console.log('Clear sidebar. Lenght: ');
         // Rese the sidebar map
         this.sidebarService.clearAllSidebars();
       }

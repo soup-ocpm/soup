@@ -9,8 +9,7 @@ describe('VariationFilterDialogComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [VariationFilterDialogComponent]
-    })
-    .compileComponents();
+    }).compileComponents();
 
     fixture = TestBed.createComponent(VariationFilterDialogComponent);
     component = fixture.componentInstance;

@@ -9,8 +9,7 @@ describe('TimestamFilterDialogComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [TimestamFilterDialogComponent]
-    })
-    .compileComponents();
+    }).compileComponents();
 
     fixture = TestBed.createComponent(TimestamFilterDialogComponent);
     component = fixture.componentInstance;

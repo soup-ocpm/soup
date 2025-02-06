@@ -47,6 +47,7 @@ export class PerformanceFilterDialogComponent implements OnInit {
   // NgOnInit implementation
   public ngOnInit(): void {
     this.currentDataset = this.supportService.getCurrentDataset();
+
     this.currentDataset!.allActivities.forEach((item) => {
       const entity = new Entity();
       entity.name = item;

@@ -21,6 +21,7 @@ import { VariationFilterDialogComponent } from 'src/app/components/filters-compo
 import { GraphType } from 'src/app/enums/graph_type.enum';
 import { Analysis } from 'src/app/models/analysis.mdel';
 import { AnalysisService } from 'src/app/services/analysis.service';
+import { DatasetService } from 'src/app/services/datasets.service';
 import { ModalService } from 'src/app/shared/components/s-modals/modal.service';
 import { SidebarComponent } from 'src/app/shared/components/s-sidebar/s-sidebar.component';
 import { SidebarService } from 'src/app/shared/components/s-sidebar/sidebar.service';
@@ -176,22 +177,28 @@ export class DetailsDatasetComponent implements OnInit, AfterViewInit {
           : this.openGraphVisualizationSidebar()
     },
     {
-      title: 'New Analysis',
-      description: 'Create new analysis for this dataset',
-      icon: 'add_chart',
-      action: () => this.requestFileConfiguration()
-    },
-    {
       title: 'Aggregate Graph',
       description: 'Aggregate graph by grouping nodes into chosen classes',
       icon: 'group_work',
       action: () => this.openAggregateSidebar()
     },
     {
+      title: 'New Analysis',
+      description: 'Create new analysis for this dataset',
+      icon: 'add_chart',
+      action: () => this.requestFileConfiguration()
+    },
+    {
       title: 'Manage Datasets',
       description: 'View all datasets',
       icon: 'dashboard',
       action: () => this.goToDatasetsPage()
+    },
+    {
+      title: 'Delete Dataset',
+      description: 'This operation is not reversible',
+      icon: 'delete_forever',
+      action: () => this.openModalDeleteDataset()
     }
   ];
 
@@ -247,6 +254,7 @@ export class DetailsDatasetComponent implements OnInit, AfterViewInit {
    * @param jsonDataService the JSONDataService service
    * @param classGraphService the ClassGraphService service
    * @param analysisService the AnalysisService service
+   * @param datasetService the DatasetService service
    * @param standardGraphService the StandardGraphService service
    */
   constructor(
@@ -263,6 +271,7 @@ export class DetailsDatasetComponent implements OnInit, AfterViewInit {
     private classGraphService: ClassGraphService,
     public sidebarService: SidebarService,
     private analysisService: AnalysisService,
+    private datasetService: DatasetService,
     private standardGraphService: StandardGraphService
   ) {
     Chart.register(...registerables);
@@ -271,18 +280,29 @@ export class DetailsDatasetComponent implements OnInit, AfterViewInit {
   // NgOnInit implementation
   public ngOnInit(): void {
     this.sidebarService.clearAllSidebars();
+    this.loadJSONConfigurationExample();
 
     const datasetName = this.activatedRoute.snapshot.paramMap.get('name');
     this.currentDataset = this.supportService.getCurrentDataset();
 
     if (this.currentDataset != null && this.currentDataset.name == datasetName) {
-      this.loadJSONConfigurationExample();
       this.loadDatasetDetails();
-      this.loadDatasetAnalyses();
+
+      setTimeout(() => {
+        this.loadEntityKey();
+      }, 500);
+
       this.loadDatasetActivities();
-      this.loadEntityKey();
-      this.createDataPieChart();
-      this.createProcessPieChart();
+
+      setTimeout(() => {
+        this.loadEventMinMaxTimestamp();
+      }, 200);
+
+      // Create the chart
+      setTimeout(() => {
+        this.createDataPieChart();
+        this.createProcessPieChart();
+      }, 200);
     } else {
       this.toast.show('Unable to retrieve Dataset. Retry', ToastLevel.Error, 3000);
       this.router.navigate(['/welcome']);
@@ -469,6 +489,7 @@ export class DetailsDatasetComponent implements OnInit, AfterViewInit {
    */
   public triggerFileInput(): void {
     const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
+
     if (fileInput) {
       fileInput.click();
     }
@@ -506,7 +527,6 @@ export class DetailsDatasetComponent implements OnInit, AfterViewInit {
       }
     };
 
-    // Leggi il contenuto del file come stringa
     reader.readAsText(file);
   }
 
@@ -987,6 +1007,7 @@ export class DetailsDatasetComponent implements OnInit, AfterViewInit {
     if (!this.searchTerm) {
       return this.currentDataset!.analyses;
     }
+
     return this.currentDataset!.analyses.filter((analysis) => analysis.analysisName.toLowerCase().includes(this.searchTerm.toLowerCase()));
   }
 
@@ -994,7 +1015,7 @@ export class DetailsDatasetComponent implements OnInit, AfterViewInit {
    * Handle the zoom in specific analysis
    * @param analysis the analysis
    */
-  public onZoomAnalysis(analysis: Analysis) {
+  public onZoomAnalysis(analysis: Analysis): void {
     this.dialog.open(AnalysisDialogComponent, {
       data: analysis,
       width: '800px',
@@ -1050,7 +1071,7 @@ export class DetailsDatasetComponent implements OnInit, AfterViewInit {
         title: 'Group by class',
         closeIcon: true,
         stickyFooter: true,
-        footerButtons: []
+        footerButtons: [{ label: 'Build', action: () => this.buildClassGraph(), color: 'var(--primary-color)' }]
       },
       this.aggregateSidebarTemplate,
       sidebarId
@@ -1074,7 +1095,7 @@ export class DetailsDatasetComponent implements OnInit, AfterViewInit {
       });
     } else {
       this.sidebarService.updateConfig(sidebarId, {
-        footerButtons: []
+        footerButtons: [{ label: 'Build', action: () => this.buildClassGraph(), color: 'var(--primary-color)' }]
       });
     }
   }
@@ -1205,14 +1226,15 @@ export class DetailsDatasetComponent implements OnInit, AfterViewInit {
   private loadDatasetActivities(): void {
     this.standardGraphService.getActivitiesName().subscribe({
       next: (response) => {
-        if (response.statusCode == 200) {
+        if (response.statusCode == 200 || response.statusCode == 202 || response.statusCode == 204) {
           this.currentDataset!.allActivities = response.responseData as string[];
-          console.log(this.currentDataset!.allActivities);
         } else {
           this.logService.error(response.message);
 
           this.toast.show('Unable to load some Dataset data. Please retry.', ToastLevel.Error, 3000);
         }
+
+        this.loadDatasetAnalyses();
       },
       error: (error) => {
         const errorData: any = error;
@@ -1230,6 +1252,7 @@ export class DetailsDatasetComponent implements OnInit, AfterViewInit {
   private loadEntityKey(): void {
     this.standardGraphService.getEntityKey().subscribe({
       next: (response) => {
+        console.log(response);
         if (response.statusCode == 200 && response.responseData != null) {
           const data = response.responseData;
           data.forEach((item: any) => {
@@ -1284,6 +1307,32 @@ export class DetailsDatasetComponent implements OnInit, AfterViewInit {
         this.toast.show('Unable to load the entities key of the Dataset', ToastLevel.Error, 3000);
       },
       complete: () => {}
+    });
+  }
+
+  /**
+   * Load information about min and max event timestamp
+   */
+  private loadEventMinMaxTimestamp(): void {
+    this.standardGraphService.getMinMaxTimestamp().subscribe({
+      next: (response) => {
+        if (response.statusCode == 200 && response.responseData != null) {
+          const timestampData = response.responseData;
+
+          // Get the information
+          const minTimestampDate = timestampData['minDate'];
+          const maxTimestampDate = timestampData['maxDate'];
+
+          if (minTimestampDate != null && maxTimestampDate != null) {
+            this.currentDataset!.minEventDateTime = minTimestampDate;
+            this.currentDataset!.maxEventDateTime = maxTimestampDate;
+            console.log(this.currentDataset);
+          }
+        }
+      },
+      error: (error) => {
+        this.logService.error(error);
+      }
     });
   }
 
@@ -1402,6 +1451,7 @@ export class DetailsDatasetComponent implements OnInit, AfterViewInit {
    */
   private createAggregateDataPieChart(): void {
     const ctx = (this.aggregateDataPieChart?.nativeElement as HTMLCanvasElement).getContext('2d');
+
     if (ctx) {
       this.destroyChart(this.aggregateDataPieChartInstance);
 
@@ -1440,13 +1490,14 @@ export class DetailsDatasetComponent implements OnInit, AfterViewInit {
    */
   private createAggregateProcessPieChart(): void {
     const ctx = (this.aggregateProcessPieChart?.nativeElement as HTMLCanvasElement).getContext('2d');
+
     if (ctx) {
       this.destroyChart(this.aggregateProcessPieChartInstance);
 
       this.aggregateProcessPieChartInstance = new Chart(ctx, {
         type: 'pie',
         data: {
-          labels: ['Total', 'Class queries', ':OBS queries', ':DFC queries'], // Etichette
+          labels: ['Total', 'Class queries', ':OBS queries', ':DFC queries'],
           datasets: [
             {
               label: 'seconds',
@@ -1599,7 +1650,7 @@ export class DetailsDatasetComponent implements OnInit, AfterViewInit {
    */
   private validateArray<T>(array: any[], validator: (item: any) => T): T[] {
     if (!array || array.length === 0) {
-      return []; // Returns an empty array if it's undefined or empty
+      return [];
     }
 
     if (!Array.isArray(array)) {
@@ -1672,6 +1723,92 @@ export class DetailsDatasetComponent implements OnInit, AfterViewInit {
       error: (error) => {
         const errorData: any = error;
         this.logService.error('Unable to load the json configuration example' + errorData.message);
+      }
+    });
+  }
+
+  /**
+   * Handle the click for delete EKG
+   */
+  public openModalDeleteDataset(): void {
+    if (this.currentDataset != null) {
+      const title = 'Delete' + ' ' + this.currentDataset!.name + ' ' + 'Dataset?';
+
+      this.modalService.showDeleteDatasetModal(
+        title,
+        'Are you sure you want to delete this Dataset? This operation is not reversible',
+        this.currentDataset!.name,
+        'Delete',
+        '#FF0000',
+        'Cancel',
+        '#555',
+        (name: string) => {
+          return this.preDeleteDataset(name);
+        },
+        () => {
+          this.modalService.hideDeleteDatasetModal();
+        }
+      );
+    }
+  }
+
+  /**
+   * Catch the promise and data from modal
+   * @param name the name
+   */
+  public preDeleteDataset(name: string): Promise<void> {
+    if (name !== null && name != '') {
+      this.deleteDataset();
+    }
+
+    return Promise.resolve();
+  }
+
+  /**
+   * Delete the Dataset
+   */
+  private deleteDataset(): void {
+    if (this.currentDataset != null) {
+      this.datasetService.deleteDataset(this.currentDataset!.name).subscribe({
+        next: (response) => {
+          if (response.statusCode == 200) {
+            // Now we can remove the Memgraph data
+            this.deleteMemgraphData();
+          } else {
+            this.logService.error('Unable to delete the Dataset. Please retry');
+            this.toast.show('Unable to delete the Dataset. Please retry', ToastLevel.Error, 3000);
+          }
+        },
+        error: (error) => {
+          const errorData: any = error;
+          this.logService.error(errorData);
+
+          this.toast.show('Unable to delete the Dataset. Please retry', ToastLevel.Error, 3000);
+        }
+      });
+    }
+  }
+
+  /**
+   * Remove the current content inside memgraph database
+   */
+  private deleteMemgraphData(): void {
+    this.standardGraphService.deleteGraph().subscribe({
+      next: (response) => {
+        if (response.statusCode == 200) {
+          this.toast.show('Dataset deleted successfully', ToastLevel.Success, 3000);
+          this.supportService.removeCurrentDataset();
+          this.router.navigate(['/welcome']);
+        } else {
+          this.logService.error('Unable to delete the Memgraph Data. Please retry');
+          this.toast.show('Unable to delete the Memgraph Data. Please retry', ToastLevel.Error, 3000);
+        }
+      },
+      error: (error) => {
+        const errorData: any = error;
+        this.logService.error(errorData);
+
+        this.toast.show('Unable to delete the Memgraph Data. Please retry', ToastLevel.Error, 3000);
       }
     });
   }

@@ -67,11 +67,14 @@
           </tr>
         </thead>
         <tbody>
-          <tr *ngFor="let row of dataSource; let i = index">
+          <!-- Show 1000 rows -->
+          <tr *ngFor="let row of dataSource | slice: 0 : 1000; let i = index">
             <th scope="row">{{ i + 1 }}</th>
             <td *ngFor="let column of displayedColumns">{{ row[column] }}</td>
           </tr>
-          <tr *ngIf="dataSource.length === 1000">
+
+          <!-- Show the "..." if the rows are > 1000-->
+          <tr *ngIf="dataSource.length > 1000">
             <th scope="row">...</th>
             <td *ngFor="let column of displayedColumns">...</td>
           </tr>

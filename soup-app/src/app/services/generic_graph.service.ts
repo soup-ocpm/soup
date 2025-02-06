@@ -22,11 +22,12 @@ export class GenericGraphService {
    * @returns Observale of Http request
    */
   public createDatasetGraphs(datasetName: string): Observable<ApiResponse<any>> {
-    const jsonRequest = {
+    // Create the body object
+    const bodyRequest = {
       dataset_name: datasetName
     };
 
-    return this.apiService.post(`${environment.baseUrl}/complete-graph/build`, jsonRequest);
+    return this.apiService.post(`${environment.baseUrl}/complete-graph/build`, bodyRequest);
   }
 
   /**
@@ -36,11 +37,12 @@ export class GenericGraphService {
    * @returns Observale of Http request
    */
   public getGraph(limit: number, standardGraph: string): Observable<ApiResponse<any>> {
-    const jsonRequest = {
+    // Create the body object
+    const bodyRequest = {
       standard_graph: standardGraph
     };
 
-    return this.apiService.post(`${environment.baseUrl}/complete-graph?limit=${limit}`, jsonRequest);
+    return this.apiService.post(`${environment.baseUrl}/complete-graph?limit=${limit}`, bodyRequest);
   }
 
   /**

@@ -46,13 +46,13 @@ export class MemgraphAuthGuard implements CanActivate, CanActivateChild {
     return this.engineService.testMemgraphConnection().pipe(
       map((response) => {
         if (response.statusCode === 200) {
-          this.logger.info('Success connect with Memgraph...');
+          this.logger.info('Success connect with SOuP database...');
           this.engineService.setMemgraphConnection(true);
           return true;
         } else {
           this.logger.warn('SOuP Database is down');
           this.engineService.setMemgraphConnection(false);
-          this.toast.show('The Database is down. Please start the Memgraph Database', ToastLevel.Warning, 4000);
+          this.toast.showWithTitle('Database down', 'The Database is down. Please start the SOuP Database', ToastLevel.Warning, 4000);
           this.router.navigate(['/welcome']);
           return false;
         }
@@ -60,7 +60,7 @@ export class MemgraphAuthGuard implements CanActivate, CanActivateChild {
       catchError(() => {
         this.logger.warn('SOuP Database is down');
         this.engineService.setMemgraphConnection(false);
-        this.toast.show('The Database is down. Please start the Memgraph Database', ToastLevel.Warning, 4000);
+        this.toast.showWithTitle('Database down', 'The Database is down. Please start the SOuP Database', ToastLevel.Warning, 4000);
         this.router.navigate(['/welcome']);
         return of(false);
       })

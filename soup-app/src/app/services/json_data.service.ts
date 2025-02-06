@@ -52,7 +52,7 @@ export class JSONDataService {
    * @returns Observable of ApiResponse object
    */
   public classNodeJSON(): Observable<ApiResponse<any>> {
-    return this.apiService.get(`${environment.baseUrl}/json/graph/class-nodes`);
+    return this.apiService.get(`${environment.baseUrl}/json/class-graph/class-nodes`);
   }
 
   /**
@@ -60,7 +60,7 @@ export class JSONDataService {
    * @returns Observable of ApiResponse object
    */
   public obsLinkJSON(): Observable<ApiResponse<any>> {
-    return this.apiService.get(`${environment.baseUrl}/json/graph/class-obs-links`);
+    return this.apiService.get(`${environment.baseUrl}/json/class-graph/class-obs-links`);
   }
 
   /**
@@ -68,6 +68,6 @@ export class JSONDataService {
    * @returns Observable of ApiResponse object
    */
   public dfcLinkJSON(): Observable<ApiResponse<any>> {
-    return this.apiService.get(`${environment.baseUrl}/json/graph/class-df-links`);
+    return this.apiService.get(`${environment.baseUrl}/json/class-graph/class-df-links`);
   }
 }

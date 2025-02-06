@@ -22,6 +22,8 @@
               ngbDatepicker
               #startDate="ngbDatepicker"
               [(ngModel)]="startDateModel"
+              [minDate]="this.minDateModel!"
+              [maxDate]="this.maxDateModel!"
               name="startDate"
               required
               (dateSelect)="this.onDateSelect('start', $event)" />
@@ -59,6 +61,8 @@
               ngbDatepicker
               #endDate="ngbDatepicker"
               [(ngModel)]="endDateModel"
+              [minDate]="this.minDateModel!"
+              [maxDate]="this.maxDateModel!"
               name="endDate"
               required
               (dateSelect)="this.onDateSelect('end', $event)" />

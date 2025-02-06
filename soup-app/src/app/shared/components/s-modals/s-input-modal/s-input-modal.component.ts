@@ -1,11 +1,10 @@
+import { SpBtnTxtComponent } from '@aledevsharp/sp-lib';
+import { animate, style, transition, trigger } from '@angular/animations';
 import { CommonModule } from '@angular/common';
 import { Component, Input, OnInit, Output } from '@angular/core';
 import { FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
-
-import { SpBtnTxtComponent } from '@aledevsharp/sp-lib';
 import { LoggerService } from 'src/app/core/services/logger.service';
 import { AnalysisService } from 'src/app/services/analysis.service';
-import { LocalDataService } from 'src/app/shared/services/support.service';
 import { DatasetService } from '../../../../services/datasets.service';
 import { MaterialModule } from '../../../../shared/modules/materlal.module';
 import { ModalService } from '../modal.service';
@@ -20,6 +19,12 @@ import { ModalService } from '../modal.service';
     MaterialModule,
     // Components import
     SpBtnTxtComponent
+  ],
+  animations: [
+    trigger('slideInOut', [
+      transition(':enter', [style({ top: '-300px', opacity: 0 }), animate('0.3s ease-out', style({ top: '55px', opacity: 1 }))]),
+      transition(':leave', [animate('0.3s ease-in', style({ top: '-300px', opacity: 0 }))])
+    ])
   ],
   templateUrl: './s-input-modal.component.html',
   styleUrl: './s-input-modal.component.scss'
@@ -89,15 +94,13 @@ export class InputModalComponent implements OnInit {
    * @param loggerService the LoggerService service
    * @param datasetService the DatasetService service
    * @param analysisService the AnalysisService service
-   * @param localDataService the LocalDataService service
    */
   constructor(
     private formBuilder: FormBuilder,
     private modalService: ModalService,
     private loggerService: LoggerService,
     private datasetService: DatasetService,
-    private analysisService: AnalysisService,
-    private localDataService: LocalDataService
+    private analysisService: AnalysisService
   ) {}
 
   // NgOnInit implementation
@@ -135,15 +138,21 @@ export class InputModalComponent implements OnInit {
     this.errorMessage = '';
 
     if (typeof this.primaryButtonClick === 'function') {
+      // Check the name
       if (this.name === '') {
         this.hasError = true;
         this.errorMessage = 'Please enter a valid name';
         return;
       }
 
-      console.log(this.isForDataset);
+      // Check the spaces
+      if (/\s/.test(this.name)) {
+        this.hasError = true;
+        this.errorMessage = 'The name cannot contain spaces';
+        return;
+      }
+
       if (this.isForDataset) {
-        console.log('Checking name...');
         this.checkUniqueDatasetName();
       } else {
         this.checkUniqueAnalysisName();
@@ -214,6 +223,7 @@ export class InputModalComponent implements OnInit {
     if (typeof this.secondaryButtonClick === 'function') {
       this.secondaryButtonClick();
     }
+
     this.isVisible = false;
   }
 

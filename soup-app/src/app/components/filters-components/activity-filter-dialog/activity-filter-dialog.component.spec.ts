@@ -9,8 +9,7 @@ describe('ActivityFilterDialogComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [ActivityFilterDialogComponent]
-    })
-    .compileComponents();
+    }).compileComponents();
 
     fixture = TestBed.createComponent(ActivityFilterDialogComponent);
     component = fixture.componentInstance;

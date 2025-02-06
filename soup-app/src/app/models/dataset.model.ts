@@ -54,6 +54,14 @@ export class Dataset {
   // All the different activities
   public allActivities: string[] = [];
 
+  // The max date time for event
+  public minEventDateTime: { year: number; month: number; day: number; hour: number; minute: number; second: number } | undefined =
+    undefined;
+
+  // The min date time for event
+  public maxEventDateTime: { year: number; month: number; day: number; hour: number; minute: number; second: number } | undefined =
+    undefined;
+
   // The process info object
   public processInfo: DatasetProcessInfo = new DatasetProcessInfo();
 

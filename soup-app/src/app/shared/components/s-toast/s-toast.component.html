@@ -4,6 +4,14 @@
     success: this.toastLevel === 1,
     warning: this.toastLevel === 2,
     error: this.toastLevel === 3
-  }">
-  <span>{{ this.message }}</span>
+  }"
+  [@toastAnimation]>
+  <div
+    *ngIf="title"
+    class="toast-title">
+    <strong>{{ title }}</strong>
+    <hr class="toast-divider" />
+  </div>
+
+  <span>{{ message }}</span>
 </div>

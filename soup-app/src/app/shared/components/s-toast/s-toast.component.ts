@@ -1,6 +1,7 @@
+import { animate, style, transition, trigger } from '@angular/animations';
 import { CommonModule } from '@angular/common';
-import { Component, Input, OnInit } from '@angular/core';
 
+import { Component, Input, OnInit } from '@angular/core';
 import { NotificationService } from './toast.service';
 import { ToastLevel } from './toast_type.enum';
 
@@ -8,10 +9,19 @@ import { ToastLevel } from './toast_type.enum';
   selector: 'app-s-toast',
   standalone: true,
   imports: [CommonModule],
+  animations: [
+    trigger('toastAnimation', [
+      transition(':enter', [style({ opacity: 0, bottom: '-70px' }), animate('0.5s ease-out', style({ opacity: 1, bottom: '20px' }))]),
+      transition(':leave', [animate('0.5s ease-in', style({ opacity: 0, bottom: '-70px' }))])
+    ])
+  ],
   templateUrl: './s-toast.component.html',
   styleUrl: './s-toast.component.scss'
 })
 export class SToastComponent implements OnInit {
+  // Input the title for Toast
+  @Input() title = '';
+
   // Input the message for Toast
   @Input() message = '';
 
@@ -34,6 +44,7 @@ export class SToastComponent implements OnInit {
   ngOnInit(): void {
     this.messageService.toastState.subscribe((toast) => {
       if (toast) {
+        this.title = toast.title;
         this.message = toast.message;
         this.toastLevel = toast.toastLevel;
         this.hideTime = toast.time;
@@ -43,7 +54,7 @@ export class SToastComponent implements OnInit {
   }
 
   /**
-   * Show the toast message
+   * Show the toast
    */
   public show() {
     const toastElement: Element | null = document.querySelector('.toast');
@@ -56,7 +67,7 @@ export class SToastComponent implements OnInit {
   }
 
   /**
-   * Hide toast message
+   * Hide the toast
    */
   public hide() {
     const toastElement: Element | null = document.querySelector('.toast');

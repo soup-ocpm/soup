@@ -9,8 +9,7 @@ describe('SideOperationComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [SideOperationComponent]
-    })
-    .compileComponents();
+    }).compileComponents();
 
     fixture = TestBed.createComponent(SideOperationComponent);
     component = fixture.componentInstance;

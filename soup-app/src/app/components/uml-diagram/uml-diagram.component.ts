@@ -47,6 +47,7 @@ export class UmlDiagramComponent implements OnInit {
    */
   private createUMLClassDiagram(): void {
     const container = document.getElementById('myGraphContainer');
+
     if (container) {
       const width: number = container.clientWidth;
       const height: number = container.clientHeight;
@@ -103,6 +104,7 @@ export class UmlDiagramComponent implements OnInit {
    */
   private initializePanZoom(svg: any, svgGroup: any): void {
     this.svg = svg;
+
     if (!svgGroup) {
       console.error('svgGroup is not defined!');
       return;

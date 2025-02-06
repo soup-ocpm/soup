@@ -22,6 +22,7 @@ export class ClassGraphService {
    * @returns Observable of ApiResponse object
    */
   public createClassGraph(formData: FormData, filteredColumn: string[], datasetName: string): Observable<ApiResponse<any>> {
+    // Create the form data
     filteredColumn.push('ActivityName');
     formData.append('filteredColumn', JSON.stringify(filteredColumn));
     formData.append('dataset_name', datasetName);
@@ -31,7 +32,7 @@ export class ClassGraphService {
 
   /**
    * Get class nodes
-   * @returns
+   * @returns Observable of ApiResponse object
    */
   public getClassNodes(): Observable<ApiResponse<any>> {
     return this.apiService.get(`${environment.baseUrl}/graph/class/nodes`);

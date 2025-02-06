@@ -7,8 +7,9 @@ import * as dagreD3 from 'dagre-d3';
 import saveAs from 'file-saver';
 import { concatMap, from, map, Observable, toArray } from 'rxjs';
 
-import { SpDividerComponent } from '@aledevsharp/sp-lib';
+import { SpDividerComponent, SpSpinnerComponent } from '@aledevsharp/sp-lib';
 import { GraphType } from 'src/app/enums/graph_type.enum';
+import { ClassGraphService } from 'src/app/services/class_graph.service';
 import { ModalService } from 'src/app/shared/components/s-modals/modal.service';
 import { SidebarService } from 'src/app/shared/components/s-sidebar/sidebar.service';
 import { NotificationService } from 'src/app/shared/components/s-toast/toast.service';
@@ -35,6 +36,7 @@ import { JsonObject } from '../details-dataset/details-dataset.component';
     FormsModule,
     // Component import
     SpDividerComponent,
+    SpSpinnerComponent,
     SidebarComponent,
     SideOperationComponent
   ],
@@ -108,8 +110,20 @@ export class GraphComponent implements OnInit, AfterViewInit {
   // The displayed edges inside Sidebar
   public displayedEdges: any[] = [];
 
+  // The total unique node showed on the ekg
+  public totalUniqueNodeShowed: number = 0;
+
+  // The total unique node showed on the ekg bak
+  public totalUniqueNodeShowedBak: number = 0;
+
+  // The total unique rel showed on the ekg
+  public totalUniqueRelShowed: number = 0;
+
   // Loading nodes for scrollbar
   public loadingFewData = false;
+
+  // Loading new nodes
+  public isLoadingNewNodes: boolean = false;
 
   // Selected the researched node
   public selectedNode: any;
@@ -163,12 +177,6 @@ export class GraphComponent implements OnInit, AfterViewInit {
       description: 'Export and save the SVG of the graph',
       icon: 'picture_as_pdf',
       action: () => this.exportSvg()
-    },
-    {
-      title: 'Delete Dataset',
-      description: 'This operation is not reversible',
-      icon: 'delete_forever',
-      action: () => this.handleDeleteGraph()
     }
   ];
 
@@ -223,6 +231,7 @@ export class GraphComponent implements OnInit, AfterViewInit {
    * @param logService the LoggerService service
    * @param sidebarService the SidebarService service
    * @param standardGraphService  the StandardGraphService service
+   * @param aggregateGraphService the ClassGraphService service
    * @param genericGraphService the GenericGraphService service
    * @param supportService the LocalDataService service
    */
@@ -237,6 +246,7 @@ export class GraphComponent implements OnInit, AfterViewInit {
     private logService: LoggerService,
     public sidebarService: SidebarService,
     private standardGraphService: StandardGraphService,
+    private aggregateGraphService: ClassGraphService,
     private genericGraphService: GenericGraphService,
     public supportService: LocalDataService
   ) {}
@@ -257,9 +267,10 @@ export class GraphComponent implements OnInit, AfterViewInit {
     this.g = new dagreD3.graphlib.Graph().setGraph({ rankdir: 'LR' });
 
     if (this.supportService.graphType != GraphType.Filtered) {
-      this.getGraphDetails();
+      this.getGraphDetails(200);
     } else {
       const state = this.location.getState();
+
       if (state && (state as any).customData) {
         const data = (state as any).customData;
         this.injectData(data);
@@ -268,6 +279,7 @@ export class GraphComponent implements OnInit, AfterViewInit {
 
     // Add json content options
     this.populateJsonContent();
+    this.updateOperations();
   }
 
   // NgAfterViewInit implementation
@@ -290,13 +302,22 @@ export class GraphComponent implements OnInit, AfterViewInit {
   /**
    * Get the graph details
    */
-  private getGraphDetails(): void {
+  private getGraphDetails(node: number): void {
     const standardGraph = this.supportService.graphType == GraphType.Standard ? '1' : '0';
 
-    this.genericGraphService.getGraph(200, standardGraph).subscribe({
+    this.genericGraphService.getGraph(node, standardGraph).subscribe({
       next: (response) => {
         if (response.statusCode == 200 && response.responseData != null) {
-          this.injectData(response.responseData);
+          const data = response.responseData;
+          const graphData = data['graph_data'];
+          this.totalUniqueNodeShowed = data['unique_nodes_count'];
+          this.totalUniqueRelShowed = data['unique_edges_count'];
+
+          this.totalUniqueNodeShowedBak = this.totalUniqueNodeShowed;
+
+          console.log(this.currentDataset);
+          console.log(this.totalUniqueNodeShowed);
+          this.injectData(graphData);
         } else {
           this.isLoading = false;
           this.toast.show('Unable to retrieve Graph. Retry', ToastLevel.Error, 3000);
@@ -322,6 +343,7 @@ export class GraphComponent implements OnInit, AfterViewInit {
   private injectData(data: any): void {
     const uniqueNodes: Set<any> = new Set<any>();
     const uniqueDfRelationships: Set<any> = new Set<any>();
+    this.relationLabelColors.clear();
 
     data.forEach((item: any) => {
       // Node source
@@ -357,10 +379,10 @@ export class GraphComponent implements OnInit, AfterViewInit {
         link.personal_id = edge['ID'];
       }
 
+      // Node target
       const nodeTarget = item['node_target'];
       nodeTarget['label'] = nodeTarget['ActivityName'];
 
-      // Aggiungi la logica per gestire più relazioni
       if (nodeTarget != null) {
         this.addNode(uniqueNodes, nodeTarget);
         link.target = nodeTarget;
@@ -384,6 +406,7 @@ export class GraphComponent implements OnInit, AfterViewInit {
   private createGraphVisualization(graphContainer: ElementRef, htmlId: string): void {
     const container = document.getElementById(htmlId);
     if (container) {
+      console.log('Sono dentro al create');
       const width: number = container.clientWidth;
       const height: number = container.clientHeight;
 
@@ -410,7 +433,7 @@ export class GraphComponent implements OnInit, AfterViewInit {
       this.g.nodes().forEach((v: any): void => {
         const node = this.g.node(v);
         node.rx = node.ry = 5;
-        node.style = 'fill: #fff; stroke: #000; stroke-width: 2px; cursor: pointer';
+        node.style = 'fill: #fff; stroke: #000; stroke-width: 2px; user-select:none; cursor: pointer';
         node.labelStyle = 'font-size: 2.3em';
       });
 
@@ -459,6 +482,8 @@ export class GraphComponent implements OnInit, AfterViewInit {
         }
       });
 
+      this.isLoadingNewNodes = false;
+
       // Configure the SVG
       const svg = d3
         .select(graphContainer.nativeElement)
@@ -482,7 +507,7 @@ export class GraphComponent implements OnInit, AfterViewInit {
       svg.attr('height', this.g.graph().height + 40);
 
       // Inizializza lo zoom
-      this.initializePanZoom(svg, svgGroup, width, height, xCenterOffset, yCenterOffset);
+      this.initializePanZoom(svg, svgGroup);
 
       // Send the svg to the backend
       if (this.currentDataset!.svg === null) {
@@ -513,7 +538,7 @@ export class GraphComponent implements OnInit, AfterViewInit {
    * @param uniqueNodes the array of nodes
    * @param node the unique node to add.
    */
-  private addNode(uniqueNodes: Set<any>, node: any) {
+  private addNode(uniqueNodes: Set<any>, node: any): void {
     let nodeExists = false;
 
     for (const existingNode of uniqueNodes) {
@@ -565,22 +590,20 @@ export class GraphComponent implements OnInit, AfterViewInit {
    * @param svg the svg
    * @param svgGroup the svgGroup
    */
-  private initializePanZoom(svg: any, svgGroup: any, width: number, height: number, xCenterOffset: number, yCenterOffset: number): void {
+  private initializePanZoom(svg: any, svgGroup: any): void {
     this.svg = svg;
     if (!svgGroup) {
       console.error('svgGroup is not defined!');
       return;
     }
 
-    // Comportamento di zoom
     const zoomBehavior = d3.zoom().on('zoom', (event) => {
       if (event && event.transform) {
-        // Calcola la nuova traslazione tenendo conto dello zoom
         const translateX = event.transform.x;
         const translateY = event.transform.y;
         const scale = event.transform.k;
 
-        // Applica lo zoom senza modificare la posizione iniziale
+        // Apply the zoom
         svgGroup.attr('transform', `translate(${translateX}, ${translateY}) scale(${scale})`);
       } else {
         console.error('Zoom event or transform is undefined');
@@ -588,7 +611,7 @@ export class GraphComponent implements OnInit, AfterViewInit {
     });
 
     this.zoom = zoomBehavior;
-    svg.call(zoomBehavior); // Associa lo zoom all'SVG
+    svg.call(zoomBehavior);
   }
 
   /**
@@ -826,7 +849,7 @@ export class GraphComponent implements OnInit, AfterViewInit {
   private resetScrollNodeState(): void {
     if (this.scrollNodeContainer) {
       const element = this.scrollNodeContainer.nativeElement;
-      element.scrollTop = 0; // Imposta la posizione dello scroll all'inizio
+      element.scrollTop = 0;
     }
   }
 
@@ -836,7 +859,7 @@ export class GraphComponent implements OnInit, AfterViewInit {
   private resetScrollEdgeState(): void {
     if (this.scrollEdgesContainer) {
       const element = this.scrollEdgesContainer.nativeElement;
-      element.scrollTop = 0; // Imposta la posizione dello scroll all'inizio
+      element.scrollTop = 0;
     }
   }
 
@@ -884,28 +907,22 @@ export class GraphComponent implements OnInit, AfterViewInit {
       return;
     }
 
-    // Trova l'arco in base all'ID
     const edge = this.g.edge(edgeId);
 
     if (edge) {
       this.selectedEdge = edge;
 
-      // Imposta lo stile dell'arco selezionato
-      edge.style = 'stroke: #FF6347; stroke-width: 3px;'; // Cambia il colore e lo spessore dell'arco
+      edge.style = 'stroke: #FF6347; stroke-width: 3px;';
 
-      // Trova i nodi associati a questo arco
       const sourceNode = this.g.node(edge.source);
       const targetNode = this.g.node(edge.target);
 
-      // Calcola il centro dell'arco per centrare la visualizzazione
       const centerX = (sourceNode.x + targetNode.x) / 2;
       const centerY = (sourceNode.y + targetNode.y) / 2;
 
-      // Zoom sulla parte centrale dell'arco
       const zoomTransform = d3.zoomIdentity.translate(-centerX, -centerY).scale(2);
       this.svg.call(this.zoom.transform, zoomTransform);
 
-      // Rende di nuovo il grafo con il nuovo stato
       const render = new dagreD3.render();
       render(this.svg, this.g);
     }
@@ -916,6 +933,7 @@ export class GraphComponent implements OnInit, AfterViewInit {
    */
   public closeCardProperties(): void {
     this.isShowCardProperties = false;
+
     this.closeNodeSearched();
   }
 
@@ -962,8 +980,8 @@ export class GraphComponent implements OnInit, AfterViewInit {
     this.nodes.forEach((item: any) => {
       for (const key in item) {
         if (item[key] && item[key].toString().toLowerCase().includes(this.searchTerm.toLowerCase())) {
-          standardNodeFiltered.add(item); // Aggiunge il nodo al Set
-          break; // Evita di continuare a controllare le altre chiavi una volta trovato un match
+          standardNodeFiltered.add(item); // add node to set
+          break;
         }
       }
     });
@@ -1008,6 +1026,20 @@ export class GraphComponent implements OnInit, AfterViewInit {
     // Reset scroll state
     this.resetScrollNodeState();
     this.resetScrollEdgeState();
+  }
+
+  /**
+   * Handle the slider event
+   * @param event the event
+   */
+  public onSliderValueChanged(event: any): void {
+    this.totalUniqueNodeShowed = event;
+
+    if (this.totalUniqueNodeShowed !== this.totalUniqueNodeShowedBak) {
+      this.updateManageSidebar(true);
+    } else {
+      this.updateManageSidebar(false);
+    }
   }
 
   /**
@@ -1069,6 +1101,100 @@ export class GraphComponent implements OnInit, AfterViewInit {
 
     const render = new dagreD3.render();
     render(this.svg, this.g);
+  }
+
+  /**
+   * Update the JSON sidebar content
+   * @param addButtons if we want to include the footer buttons
+   */
+  public updateManageSidebar(addButtons: boolean): void {
+    const sidebarId: string = 'manage-graph-sidebar';
+
+    if (addButtons) {
+      this.sidebarService.updateConfig(sidebarId, {
+        footerButtons: [
+          { label: 'Apply', action: () => this.updateNodeShowed(), color: 'var(--primary-color)' },
+          { label: 'Restore', action: () => this.resetNodeShowed(), color: '#6c757d' }
+        ]
+      });
+    } else {
+      this.sidebarService.updateConfig(sidebarId, {
+        footerButtons: []
+      });
+    }
+  }
+
+  /**
+   * Update the graph with new nodes
+   */
+  public updateNodeShowed(): void {
+    // Update and close sidebar
+    this.updateManageSidebar(false);
+    this.sidebarService.close('manage-graph-sidebar');
+    this.sidebarService.close('master-sidebar');
+
+    // Clear the graph
+    this.clearGraphSVG();
+
+    // Remove the nodes and edges
+    this.g.nodes().forEach((n: any) => {
+      this.g.removeNode(n);
+    });
+
+    this.g.edges().forEach((e: any) => {
+      this.g.removeEdge(e);
+    });
+
+    // Render the view
+    setTimeout(() => {
+      const render = new dagreD3.render();
+      render(this.svg, this.g);
+    }, 600);
+
+    // Reset all data and create the new graph
+    setTimeout(() => {
+      this.g = new dagreD3.graphlib.Graph({ multigraph: true, compound: true }).setGraph({ rankdir: 'LR', nodesep: 25, multiedgesep: 10 });
+      this.nodes = [];
+      this.edges = [];
+      this.nodeNameMap = {};
+      this.allRelationships = [];
+
+      // Update the graph with new data
+      setTimeout(() => {
+        this.isLoadingNewNodes = true;
+        this.getGraphDetails(this.totalUniqueNodeShowed);
+      }, 300);
+    }, 1000);
+  }
+
+  /**
+   * Clear the svg content and inner html
+   */
+  private clearGraphSVG(): void {
+    const container = document.getElementById('myGraphContainer');
+
+    // Check the container and apply updates
+    if (container) {
+      container.innerHTML = '';
+
+      // Set the svg
+      const svgElement = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+      svgElement.setAttribute('id', 'graphSvg');
+      svgElement.classList.add('graph-svg');
+      svgElement.style.width = '100%';
+      svgElement.style.height = '85vh';
+
+      container.appendChild(svgElement);
+      this.graphContainer.nativeElement = svgElement;
+    }
+  }
+
+  /**
+   * Restore the unique node showed to the original
+   */
+  private resetNodeShowed(): void {
+    this.updateManageSidebar(false);
+    this.totalUniqueNodeShowed = this.totalUniqueNodeShowedBak;
   }
 
   /**
@@ -1170,16 +1296,12 @@ export class GraphComponent implements OnInit, AfterViewInit {
    */
   public exportSvg(): void {
     const svgContent = document.querySelector('#myGraphContainer svg');
+
     if (svgContent != null) {
       const svgBlob = new Blob([svgContent.outerHTML], { type: 'image/svg+xml' });
       saveAs(svgBlob, 'graph.svg');
     }
   }
-
-  /**
-   * Open dialog for delete the class graph
-   */
-  public openDialogDelete(): void {}
 
   /**
    * Leave the graph page
@@ -1189,35 +1311,55 @@ export class GraphComponent implements OnInit, AfterViewInit {
   }
 
   /**
-   * Handle the click for delete EKG
+   * Open the modal for delete dataset
    */
-  public handleDeleteGraph(): void {
-    this.modalService.showGenericModal(
-      'Delete Dataset?',
-      'The Dataset will be completely removed.',
-      true,
-      'Delete',
-      '#FF0000',
-      'Cancel',
-      '#000000',
-      () => this.deleteDataset(),
-      () => {
-        this.modalService.hideGenericModal();
-      }
-    );
+  public openModalDeleteDataset(): void {
+    if (this.currentDataset != null) {
+      const title = 'Delete' + ' ' + this.currentDataset!.name + ' ' + 'Dataset?';
+
+      this.modalService.showDeleteDatasetModal(
+        title,
+        'Are you sure you want to delete this Dataset? This operation is not reversible',
+        this.currentDataset!.name,
+        'Delete',
+        '#FF0000',
+        'Cancel',
+        '#555',
+        (name: string) => {
+          return this.preDeleteDataset(name);
+        },
+        () => {
+          this.modalService.hideDeleteDatasetModal();
+        }
+      );
+    }
   }
 
   /**
-   * Delete the Dataset (and EKG)
+   * Catch the promise and data from modal
+   * @param name the name
+   */
+  public preDeleteDataset(name: string): Promise<void> {
+    if (name !== null && name != '') {
+      this.deleteDataset();
+    }
+
+    return Promise.resolve();
+  }
+
+  /**
+   * Delete the Dataset
    */
   private deleteDataset(): void {
     if (this.currentDataset != null) {
       this.datasetService.deleteDataset(this.currentDataset!.name).subscribe({
         next: (response) => {
           if (response.statusCode == 200) {
-            this.toast.show('Dataset deleted successfully', ToastLevel.Success, 3000);
-            this.supportService.removeCurrentDataset();
-            this.router.navigate(['/welcome']);
+            // Now we can remove the Memgraph data
+            this.deleteMemgraphData();
+          } else {
+            this.logService.error('Unable to delete the Dataset. Please retry');
+            this.toast.show('Unable to delete the Dataset. Please retry', ToastLevel.Error, 3000);
           }
         },
         error: (error) => {
@@ -1225,10 +1367,61 @@ export class GraphComponent implements OnInit, AfterViewInit {
           this.logService.error(errorData);
 
           this.toast.show('Unable to delete the Dataset. Please retry', ToastLevel.Error, 3000);
-        },
-        complete: () => {}
+        }
       });
     }
+  }
+
+  /**
+   * Remove the current content inside memgraph database
+   */
+  private deleteMemgraphData(): void {
+    this.standardGraphService.deleteGraph().subscribe({
+      next: (response) => {
+        if (response.statusCode == 200) {
+          this.toast.show('Dataset deleted successfully', ToastLevel.Success, 3000);
+          this.supportService.removeCurrentDataset();
+          this.router.navigate(['/welcome']);
+        } else {
+          this.logService.error('Unable to delete the Memgraph Data. Please retry');
+          this.toast.show('Unable to delete the Memgraph Data. Please retry', ToastLevel.Error, 3000);
+        }
+      },
+      error: (error) => {
+        const errorData: any = error;
+        this.logService.error(errorData);
+
+        this.toast.show('Unable to delete the Memgraph Data. Please retry', ToastLevel.Error, 3000);
+      }
+    });
+  }
+
+  /**
+   * Remove the current aggregate graph inside
+   * Memgraph database
+   */
+  private deleteAggregateGraph(): void {
+    this.aggregateGraphService.deleteGraph().subscribe({
+      next: (response) => {
+        if (response.statusCode == 200) {
+          // Restore some data
+          const dataset = this.currentDataset;
+          this.currentDataset = this.supportService.resetDatasetInfo(dataset);
+          this.supportService.setCurrentDataset(this.currentDataset);
+          this.toast.show('Aggregate graph deleted successfully', ToastLevel.Success, 3000);
+          this.leavePage();
+        } else {
+          this.logService.error('Unable to delete aggregate graph Please retry');
+          this.toast.show('Unable to delete the aggregate graph. Please retry', ToastLevel.Error, 3000);
+        }
+      },
+      error: (error) => {
+        const errorData: any = error;
+        this.logService.error(errorData);
+
+        this.toast.show('Unable to delete the aggregate graph. Please retry', ToastLevel.Error, 3000);
+      }
+    });
   }
 
   /**
@@ -1248,14 +1441,35 @@ export class GraphComponent implements OnInit, AfterViewInit {
   }
 
   /**
+   * Update the operation sidebar with some content
+   */
+  private updateOperations(): void {
+    if (this.supportService.graphType === GraphType.Aggregate) {
+      this.operations.push({
+        title: 'Delete Aggregation',
+        description: 'This operation is not reversible',
+        icon: 'delete_forever',
+        action: () => this.deleteAggregateGraph()
+      });
+    } else {
+      this.operations.push({
+        title: 'Delete Dataset',
+        description: 'This operation is not reversible',
+        icon: 'delete_forever',
+        action: () => this.openModalDeleteDataset()
+      });
+    }
+  }
+
+  /**
    * Send the svg to the engine
    * @param svg the svg
    */
   private publishSVG(svg: string, datasetName: string): void {
+    // Do nothing
     this.standardGraphService.sendSVG(svg, datasetName).subscribe({
       next: () => {},
-      error: () => {},
-      complete: () => {}
+      error: () => {}
     });
   }
 }

@@ -1,7 +1,8 @@
 import { SpBtnComponent } from '@aledevsharp/sp-lib';
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { NgbActiveModal, NgbDateStruct, NgbModule, NgbTimeStruct } from '@ng-bootstrap/ng-bootstrap';
+import { LocalDataService } from 'src/app/shared/services/support.service';
 import { TimestampFilter } from './timestamp-filter.model';
 
 @Component({
@@ -16,7 +17,7 @@ import { TimestampFilter } from './timestamp-filter.model';
   templateUrl: './timestam-filter-dialog.component.html',
   styleUrl: './timestam-filter-dialog.component.scss'
 })
-export class TimestamFilterDialogComponent {
+export class TimestamFilterDialogComponent implements OnInit {
   // The timestamp model
   public timestampModel: TimestampFilter = new TimestampFilter();
 
@@ -26,6 +27,12 @@ export class TimestamFilterDialogComponent {
   // The end date model
   public endDateModel: { year: number; month: number; day: number } | undefined;
 
+  // The min date
+  public minDateModel: { year: number; month: number; day: number } | undefined;
+
+  // The max date
+  public maxDateModel: { year: number; month: number; day: number } | undefined;
+
   // Start time model
   public startTimeModel: NgbTimeStruct = { hour: 0, minute: 0, second: 0 };
 
@@ -34,9 +41,47 @@ export class TimestamFilterDialogComponent {
 
   /**
    * Constructor for TimestamFilterDialogComponent component
-   * @param activeModal the NgbActiveModal
+   * @param activeModal the NgbActiveModal modal
+   * @param supportService the LocalDataService service
    */
-  constructor(public activeModal: NgbActiveModal) {}
+  constructor(
+    public activeModal: NgbActiveModal,
+    private supportService: LocalDataService
+  ) {}
+
+  // NgOnInit implementation
+  public ngOnInit(): void {
+    const currentDataset = this.supportService.getCurrentDataset();
+
+    // Set the min and max date for the picker
+    if (currentDataset != null && currentDataset.minEventDateTime != null && currentDataset.maxEventDateTime) {
+      // Set the minimum
+      this.minDateModel = {
+        year: currentDataset.minEventDateTime.year,
+        month: currentDataset.minEventDateTime.month,
+        day: currentDataset.minEventDateTime.day
+      };
+
+      this.startTimeModel = {
+        hour: currentDataset.minEventDateTime.hour,
+        minute: currentDataset.minEventDateTime.minute,
+        second: currentDataset.minEventDateTime.second
+      };
+
+      // Set maximum
+      this.maxDateModel = {
+        year: currentDataset.maxEventDateTime.year,
+        month: currentDataset.maxEventDateTime.month,
+        day: currentDataset.maxEventDateTime.day
+      };
+
+      this.endTimeModel = {
+        hour: currentDataset.maxEventDateTime.hour,
+        minute: currentDataset.maxEventDateTime.minute,
+        second: currentDataset.maxEventDateTime.second
+      };
+    }
+  }
 
   /**
    * Handle date selection from the datepicker.

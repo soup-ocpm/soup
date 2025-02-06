@@ -31,6 +31,7 @@ export class AnalysisService {
    * @returns an Observable of ApiResponse object
    */
   public processAnalysis(datasetName: string, analysisName: string): Observable<ApiResponse<any>> {
+    // Create body object
     const bodyRequest = {
       dataset_name: datasetName,
       analysis_name: analysisName
@@ -46,6 +47,7 @@ export class AnalysisService {
    * @returns an Observable of ApiResponse object
    */
   public checkUniqueAnalysisName(datasetName: string, analysisName: string): Observable<ApiResponse<any>> {
+    // Create body object
     const bodyRequest = {
       dataset_name: datasetName,
       analysis_name: analysisName
@@ -70,6 +72,7 @@ export class AnalysisService {
    * @returns an Observable of ApiResponse object
    */
   public deleteAnalysis(datasetName: string, analysisName: string): Observable<ApiResponse<any>> {
+    // Create body object
     const bodyRequest = {
       dataset_name: datasetName,
       analysis_name: analysisName

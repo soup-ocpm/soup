@@ -4,19 +4,23 @@
 <div
   class="card"
   *ngIf="this.isVisible"
-  [ngClass]="{ show: this.isVisible }">
+  [ngClass]="{ show: this.isVisible }"
+  [@slideInOut]>
+  <!--Header and description-->
   <div class="header">
     <h4 class="card-title">{{ this.title }}</h4>
     <i
       class="bi bi-x-lg"
       (click)="this.isVisible = false"></i>
   </div>
-  <p style="color: #666; margin-top: 15px">{{ this.message }}</p>
+  <p style="color: var(--secondary-color); margin-top: 15px">{{ this.message }}</p>
 
+  <!--Input form for name-->
   <div class="mb-1">
     <label
       for="name"
-      class="form-label">
+      class="form-label"
+      style="color: var(--secondary-color)">
       {{ this.isForDataset ? 'Dataset name' : 'Analysis name' }}
     </label>
     <input
@@ -35,12 +39,14 @@
     </span>
   </div>
 
+  <!--Input form for description-->
   <div
     class="mb-1"
     style="margin-top: 20px">
     <label
       for="description"
-      class="form-label">
+      class="form-label"
+      style="color: var(--secondary-color)">
       {{ this.isForDataset ? 'Dataset description (optional)' : 'Aanlysis description (optional)' }}
     </label>
     <textarea
@@ -52,13 +58,15 @@
       (input)="this.onInputChange()"></textarea>
   </div>
 
+  <!--Process execution toggle-->
   <div
     class="process-execution"
     *ngIf="this.isForDataset">
     <div class="mb-1">
       <label
         for="saveProcessExecution"
-        class="form-label">
+        class="form-label"
+        style="color: var(--secondary-color)">
         Save process and query execution time for this Dataset for in-depth
         <br />
         information
@@ -71,27 +79,29 @@
     </div>
   </div>
 
-  <div
-    *ngIf="!this.doubleButton"
-    style="margin-top: 20px">
-    <sp-btn-txt
-      [text]="this.primaryButtonText"
-      [color]="this.primaryButtonColor"
-      (buttonClick)="onClickPrimaryButton()"></sp-btn-txt>
-  </div>
+  <!--Footer-->
+  <div style="margin-top: 25px">
+    <!--Single button-->
+    <div *ngIf="!this.doubleButton">
+      <sp-btn-txt
+        [text]="this.primaryButtonText"
+        [color]="this.primaryButtonColor"
+        (buttonClick)="onClickPrimaryButton()"></sp-btn-txt>
+    </div>
 
-  <div
-    class="footer"
-    *ngIf="this.doubleButton"
-    style="margin-top: 20px">
-    <sp-btn-txt
-      [text]="this.primaryButtonText"
-      [color]="this.primaryButtonColor"
-      (buttonClick)="onClickPrimaryButton()"></sp-btn-txt>
-    <sp-btn-txt
-      [text]="this.secondaryButtonText"
-      [color]="this.secondaryButtonColor"
-      style="margin-left: 25px"
-      (buttonClick)="onClickSecondaryButton()"></sp-btn-txt>
+    <!--Double buttons-->
+    <div
+      class="footer"
+      *ngIf="this.doubleButton">
+      <sp-btn-txt
+        [text]="this.primaryButtonText"
+        [color]="this.primaryButtonColor"
+        (buttonClick)="onClickPrimaryButton()"></sp-btn-txt>
+      <sp-btn-txt
+        [text]="this.secondaryButtonText"
+        [color]="this.secondaryButtonColor"
+        style="margin-left: 25px"
+        (buttonClick)="onClickSecondaryButton()"></sp-btn-txt>
+    </div>
   </div>
 </div>

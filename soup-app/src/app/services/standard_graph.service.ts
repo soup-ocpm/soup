@@ -36,6 +36,7 @@ export class StandardGraphService {
     filteredColumn: string[],
     valuesColumn: string[]
   ): Observable<ApiResponse<any>> {
+    // Create the form
     formData.append('dataset_name', datasetName);
     formData.append('dataset_description', datasetDescription);
     formData.append('process_execution', saveProcessExecution.toString());
@@ -51,14 +52,16 @@ export class StandardGraphService {
   /**
    * Send the svg to the backend
    * @param svg the svg
+   * @returns Observable of ApiResponse object
    */
   public sendSVG(svg: string, datasetName: string): Observable<ApiResponse<any>> {
-    const body = {
+    // Create the body object
+    const bodyRequest = {
       dataset_name: datasetName,
       svg: svg
     };
 
-    return this.apiService.post(`${environment.baseUrl}/graph/svg`, body);
+    return this.apiService.post(`${environment.baseUrl}/graph/svg`, bodyRequest);
   }
 
   /**
@@ -147,6 +150,14 @@ export class StandardGraphService {
    */
   public getActivitiesName(): Observable<ApiResponse<any>> {
     return this.apiService.get(`${environment.baseUrl}/graph/activities`);
+  }
+
+  /**
+   * Get the min and max timestamp for nodes
+   * @returns  Observable of ApiResponse object
+   */
+  public getMinMaxTimestamp(): Observable<ApiResponse<any>> {
+    return this.apiService.get(`${environment.baseUrl}/graph/timestamps`);
   }
 
   /**

@@ -21,7 +21,18 @@ export class NotificationService {
    * @param success the success or danger status
    * @param time the time for show message
    */
-  public show(message: string, toastLevel: ToastLevel, time: number) {
+  public show(message: string, toastLevel: ToastLevel, time: number): void {
     this.toastSubject.next({ message, toastLevel, time });
+  }
+
+  /**
+   * Show the Toast message with title
+   * @param title the title
+   * @param message the message
+   * @param success the success or danger status
+   * @param time the time for show message
+   */
+  public showWithTitle(title: string, message: string, toastLevel: ToastLevel, time: number): void {
+    this.toastSubject.next({ title, message, toastLevel, time });
   }
 }

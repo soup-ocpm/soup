@@ -41,7 +41,7 @@ export class LocalDataService {
 
   /**
    * Retrieve the current dataset
-   * @returns
+   * @returns the current dataset if exists
    */
   public getCurrentDataset(): Dataset | undefined {
     return this.currentDataset;
@@ -49,7 +49,7 @@ export class LocalDataService {
 
   /**
    * Set the current dataset
-   * @param dataset the Dataset
+   * @param dataset the dataset
    */
   public setCurrentDataset(dataset: Dataset): void {
     this.currentDataset = dataset;
@@ -65,7 +65,7 @@ export class LocalDataService {
   /**
    * Parse the item to Dataset
    * @param item the item
-   * @returns a Dataset object
+   * @returns a dataset updated
    * ** orrible code depends on the python variables :( **
    */
   public parseItemToDataset(item: any): Dataset | undefined {
@@ -78,6 +78,7 @@ export class LocalDataService {
       dataset.entityNodes = item['entity_nodes'];
       dataset.corrRel = item['corr_rel'];
 
+      // Class properties
       dataset.dfRel = item['df_rel'];
       dataset.classNodes = item['class_nodes'];
       dataset.obsRel = item['obs_rel'];
@@ -145,6 +146,7 @@ export class LocalDataService {
 
   /**
    * Retrieve the updated dataset class
+   * @returns a dataset updated
    */
   public updateDatasetInfo(item: any): Dataset {
     // Standard data
@@ -188,6 +190,35 @@ export class LocalDataService {
   }
 
   /**
+   * Reset the dataset
+   * @return a dataset updated
+   */
+  public resetDatasetInfo(item: any): Dataset {
+    // Remove the properties
+    delete item['classNodes'];
+    delete item['obsRel'];
+    delete item['dfcRel'];
+
+    // Restore the data
+    if (item['processInfo']) {
+      delete item['processInfo']['durationClassExecution'];
+      delete item['processInfo']['durationClassNodeExecution'];
+      delete item['processInfo']['durationObsExecution'];
+      delete item['processInfo']['durationDfCExecution'];
+      delete item['processInfo']['finishClassExecutionTime'];
+      delete item['processInfo']['finishClassNodeTimeExecution'];
+      delete item['processInfo']['finishObsTimeExecution'];
+      delete item['processInfo']['finishDfCTimeExecution'];
+      delete item['processInfo']['startClassExecutionTime'];
+      delete item['processInfo']['startClassNodeTimeExecution'];
+      delete item['processInfo']['startObsTimeExecution'];
+      delete item['processInfo']['startDfCTimeExecution'];
+    }
+
+    return item;
+  }
+
+  /**
    * Process the time duration
    * @param start start time
    * @param finish end time
@@ -200,6 +231,7 @@ export class LocalDataService {
       const durationMs = finishTime.getTime() - startTime.getTime();
       return durationMs / 1000;
     }
+
     return undefined;
   }
 
@@ -212,12 +244,18 @@ export class LocalDataService {
     if (!isoString) {
       return undefined;
     }
+
     const date = new Date(isoString);
     const formattedDate = date.toLocaleDateString('en-US');
     const formattedTime = date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
     return `${formattedDate} ${formattedTime}`;
   }
 
+  /**
+   * Format a SVG content
+   * @param svgContent the svg content
+   * @returns a string formatted
+   */
   private formatSvg(svgContent: string): string {
     return svgContent
       .replace(/[\n\r\t]+/g, ' ')

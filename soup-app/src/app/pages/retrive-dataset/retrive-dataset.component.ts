@@ -68,6 +68,9 @@ export class RetriveDatasetComponent implements OnInit, AfterViewChecked {
   // If the dataset is in creation mode
   public isCreatingDataset = false;
 
+  // The svg container
+  @ViewChild('svgContainer', { static: false }) svgContainer: any;
+
   /**
    * Constructor for RetriveDatasetComponent component
    * @param router the Router
@@ -95,11 +98,18 @@ export class RetriveDatasetComponent implements OnInit, AfterViewChecked {
   // NgOnInit implementation
   public ngOnInit(): void {
     this.sidebarService.clearAllSidebars();
-
     this.isLoadingDatasets = true;
+
     setTimeout(() => {
       this.getAllDatasets();
     }, 1000);
+  }
+
+  // NgAfterViewInit implementation
+  public ngAfterViewChecked() {
+    if (this.svgContainer) {
+      this.resizeSvg();
+    }
   }
 
   /**
@@ -114,6 +124,7 @@ export class RetriveDatasetComponent implements OnInit, AfterViewChecked {
         next: (responseData) => {
           if (responseData.statusCode == 200 && responseData.responseData != null) {
             const data = responseData.responseData;
+
             data.forEach((item: any) => {
               const dataset = this.localDataService.parseItemToDataset(item);
 
@@ -161,6 +172,7 @@ export class RetriveDatasetComponent implements OnInit, AfterViewChecked {
    */
   public reloadDatasets(): void {
     this.isLoadingDatasets = true;
+
     setTimeout(() => {
       this.getAllDatasets();
     }, 1000);
@@ -168,28 +180,31 @@ export class RetriveDatasetComponent implements OnInit, AfterViewChecked {
 
   /**
    * Check the validity of the svg file if exist
+   * @returns true if the svg is valid, false otherwise
    */
   public checkIfSvgIsValid(svgContent: any): boolean {
     if (typeof svgContent === 'string') {
       return svgContent.trim().startsWith('<svg');
     }
+
     return true;
   }
 
   /**
    * Filter the dataset
-   * @returns the Datasets
+   * @returns a list of filtered datasets
    */
   public filteredDatasets(): Dataset[] {
     if (!this.searchTerm) {
       return this.allDataset;
     }
+
     return this.allDataset.filter((dataset) => dataset.name.toLowerCase().includes(this.searchTerm.toLowerCase()));
   }
 
   /**
    * Selected the dataset
-   * @param dataset the Dataset
+   * @param dataset the dataset
    */
   public onSelectedDataset(dataset: Dataset): void {
     if (dataset != null) {
@@ -241,8 +256,6 @@ export class RetriveDatasetComponent implements OnInit, AfterViewChecked {
     });
   }
 
-  @ViewChild('svgContainer', { static: false }) svgContainer: any; // Usa ViewChild per il riferimento
-
   /**
    * Manage the dataset
    * @param event the Dataset
@@ -267,7 +280,7 @@ export class RetriveDatasetComponent implements OnInit, AfterViewChecked {
         title: this.currentDataset!.name + ' ' + 'Dataset',
         closeIcon: true,
         stickyFooter: true,
-        footerButtons: [{ label: 'Delete', action: () => this.openModalDelete(), color: '#ff0000' }]
+        footerButtons: [{ label: 'Delete', action: () => this.openModalDeleteDataset(), color: '#ff0000' }]
       },
       content,
       sidebarId
@@ -275,29 +288,23 @@ export class RetriveDatasetComponent implements OnInit, AfterViewChecked {
 
     setTimeout(() => {
       this.resizeSvg();
-    }, 0);
+    }, 10);
   }
 
+  /**
+   * Resize the svg dimension
+   */
   private resizeSvg(): void {
     const svgElement = this.svgContainer?.nativeElement.querySelector('svg');
-    if (svgElement) {
-      svgElement.setAttribute('width', '100%'); // Imposta la larghezza al 100% del contenitore
-      svgElement.setAttribute('height', '300px'); // Imposta l'altezza a 300px
-    }
-  }
 
-  // Puoi anche usare ngAfterViewChecked se necessario
-  ngAfterViewChecked() {
-    // Se vuoi essere sicuro che l'SVG sia ridimensionato dopo ogni cambio di vista
-    if (this.svgContainer) {
-      this.resizeSvg();
+    if (svgElement) {
+      svgElement.setAttribute('width', '100%');
+      svgElement.setAttribute('height', '300px');
     }
   }
 
   /**
    * Check the model change
-   * @returns true if the Dataset is changed, false
-   * otherwise
    */
   public checkForModelChange(): void {
     const sidebarId = 'manage-dataset-sidebar';
@@ -386,9 +393,9 @@ export class RetriveDatasetComponent implements OnInit, AfterViewChecked {
    * Delete the Dataset
    * @param event the Dataset
    */
-  public onDeleteDataset(event: Dataset) {
+  public onDeleteDataset(event: Dataset): void {
     this.currentDataset = event;
-    this.openModalDelete();
+    this.openModalDeleteDataset();
   }
 
   /**
@@ -427,20 +434,38 @@ export class RetriveDatasetComponent implements OnInit, AfterViewChecked {
   /**
    * Open the modal for delete dataset
    */
-  public openModalDelete(): void {
+  public openModalDeleteDataset(): void {
     if (this.currentDataset != null) {
-      this.modalService.showGenericModal(
-        'Delete Dataset?',
-        'Are you sure you want to delete the dataset? With this non-reversible operation, all graphs within this dataset will be deleted',
-        true,
+      const title = 'Delete' + ' ' + this.currentDataset!.name + ' ' + 'Dataset?';
+      this.modalService.showDeleteDatasetModal(
+        title,
+        'Are you sure you want to delete this Dataset? This operation is not reversible',
+        this.currentDataset!.name,
         'Delete',
         '#FF0000',
         'Cancel',
         '#555',
-        () => this.deleteDataset(),
-        () => this.closeModal()
+        (name: string) => {
+          return this.preDeleteDataset(name);
+        },
+        () => {
+          this.modalService.hideDeleteDatasetModal();
+        }
       );
     }
+  }
+
+  /**
+   * Catch the promise and data from modal
+   * @param name the name
+   * @return a void Promise
+   */
+  public preDeleteDataset(name: string): Promise<void> {
+    if (name !== null && name != '') {
+      this.deleteDataset();
+    }
+
+    return Promise.resolve();
   }
 
   /**

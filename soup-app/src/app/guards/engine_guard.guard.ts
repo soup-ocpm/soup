@@ -52,7 +52,7 @@ export class EngineAuthGuard implements CanActivate, CanActivateChild {
         } else {
           this.logger.warn('SOuP Engine down');
           this.engineService.setEngineConnection(false);
-          this.toast.show('The Engine is down. Please start the Engine', ToastLevel.Warning, 4000);
+          this.toast.showWithTitle('Engine Off', 'The Engine is down. Please start the SOuP Engine', ToastLevel.Warning, 4000);
           this.router.navigate(['/welcome']);
           return false;
         }
@@ -60,7 +60,7 @@ export class EngineAuthGuard implements CanActivate, CanActivateChild {
       catchError(() => {
         this.logger.warn('SOuP Engine down');
         this.engineService.setEngineConnection(false);
-        this.toast.show('The Engine is down. Please start the Engine', ToastLevel.Warning, 4000);
+        this.toast.showWithTitle('Engine Off', 'The Engine is down. Please start the SOuP Engine', ToastLevel.Warning, 4000);
         this.router.navigate(['/welcome']);
         return of(false);
       })

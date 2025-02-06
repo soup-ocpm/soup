@@ -180,17 +180,20 @@ export class NewDatasetComponent implements OnInit {
       this.toast.show('Only one file can be uploaded', ToastLevel.Error, 2000);
       return;
     }
+
     if (this.files.length > 0) {
       this.files = [];
     }
 
     this.files.push(...event.addedFiles);
+
     if (!this.files[0].name.endsWith('.csv')) {
       this.files.splice(this.files.indexOf(event), 1);
       this.selectedFile = undefined;
       this.toast.show('Only file with CSV extension', ToastLevel.Error, 2000);
       return;
     }
+
     this.selectedFile = this.files[0];
     this.haveSelectFile = true;
   }
@@ -204,6 +207,16 @@ export class NewDatasetComponent implements OnInit {
   }
 
   /**
+   * Check if a string matches the timestamp format
+   * @param value the string to check
+   */
+  private isTimestamp(value: string): boolean {
+    const timestampRegex = /^(?:\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(:\d{2})?(\.\d{3})?|(\d{8})T\d{6}(\.\d{3})?)$/;
+
+    return timestampRegex.test(value);
+  }
+
+  /**
    * Parse the csv file
    */
   public parseFileData(): void {
@@ -213,45 +226,71 @@ export class NewDatasetComponent implements OnInit {
         this.isShowTable = true;
         return;
       }
+
       const reader: FileReader = new FileReader();
       reader.onload = (e) => {
         if (e.target?.result) {
           const csvData: string = e.target.result.toString();
 
+          // Parse file data
           this.parser.parse(csvData, {
-            complete: (result): void => {
-              const allColumn: string[] = result.meta.fields;
-              this.allColumns = allColumn;
-
-              if (allColumn.length > 0) {
-                // Preparazione delle colonne della tabella
-                this.displayedColumns = allColumn;
-                this.allFileEntitiesSelected = allColumn.map((columnName) => ({ name: columnName, selected: false }));
-                this.allFileValuesSelected = allColumn.map((columnName) => ({ name: columnName, selected: false }));
-
-                // Trasforma i dati del timestamp
-                this.dataSource = result.data.map((row: any) => {
-                  const modifiedRow = { ...row };
-                  for (const key in modifiedRow) {
-                    if (typeof modifiedRow[key] === 'string') {
-                      modifiedRow[key] = this.convertTimestampFormat(modifiedRow[key]);
-                    }
-                  }
-                  return modifiedRow;
-                });
-
-                this.isShowUpload = false;
-                this.isShowTable = true;
-                this.onManageMasterSidebar();
-              }
+            header: true,
+            dynamicTyping: true,
+            chunk: (results, parser) => {
+              this.processChunk(results.data);
             },
-            header: true
+            complete: () => {
+              // When the parsing finish
+              this.isShowUpload = false;
+              this.isShowTable = true;
+
+              this.onManageMasterSidebar();
+            },
+            error: (error) => {
+              this.toast.show(`Error processing CSV: ${error.message}`, ToastLevel.Error, 3000);
+            }
           });
         }
       };
       reader.readAsText(this.selectedFile);
     } else {
       this.toast.show('Upload the csv file', ToastLevel.Error, 2000);
+    }
+  }
+
+  /**
+   * Process a csv chunk
+   * @param chunkData the data
+   */
+  private processChunk(chunkData: any[]): void {
+    if (chunkData.length > 0) {
+      // Replace spaces with underscores in column names
+      const allColumn: string[] = Object.keys(chunkData[0]).map((col) => col.replace(/ /g, '_'));
+      this.allColumns = allColumn;
+
+      // Prepare the columns for the table and replace spaces with underscores in column names
+      this.displayedColumns = allColumn;
+      this.allFileEntitiesSelected = allColumn.map((columnName) => ({ name: columnName, selected: false }));
+      this.allFileValuesSelected = allColumn.map((columnName) => ({ name: columnName, selected: false }));
+
+      // Process each row, replace spaces with underscores in the values
+      chunkData.forEach((row: any, rowIndex: number) => {
+        // Loop through each cell in the row
+        for (const key in row) {
+          if (row.hasOwnProperty(key)) {
+            if (typeof row[key] === 'string') {
+              row[key] = row[key].replace(/\s+/g, '_').trim();
+
+              // Format the timestamp if the row is time
+              if (this.isTimestamp(row[key])) {
+                row[key] = this.convertTimestampFormat(row[key]);
+              }
+            }
+          }
+        }
+
+        this.dataSource.push(row);
+      });
     }
   }
 
@@ -299,6 +338,7 @@ export class NewDatasetComponent implements OnInit {
     if (this.files.length == 0) {
       this.haveSelectFile = false;
     }
+
     this.selectedFile = undefined;
   }
 
@@ -337,6 +377,7 @@ export class NewDatasetComponent implements OnInit {
   /**
    * Check the selected entity
    * @param entity the entity
+   * @return the seleted entities if exist
    */
   public checkSelectedEntity(entity: string): boolean {
     return this.allFileEntitiesSelected.some((e: Entity) => e.name === entity && e.selected);
@@ -345,6 +386,7 @@ export class NewDatasetComponent implements OnInit {
   /**
    * Check the selected entity
    * @param entity the entity
+   * @return the selected elements if exist
    */
   public checkSelectedElement(entity: string): boolean {
     return this.allFileValuesSelected.some((e: Entity) => e.name === entity && e.selected && !this.checkSelectedEntity(entity));
@@ -357,6 +399,7 @@ export class NewDatasetComponent implements OnInit {
    */
   public onSelectionChange(event: Event, type: string): void {
     const selectElement = event.target as HTMLSelectElement;
+
     if (selectElement != null) {
       const value = selectElement.value;
       switch (type) {
@@ -391,6 +434,7 @@ export class NewDatasetComponent implements OnInit {
     if (this.eventIdColumn == '') {
       this.eventIdColumn = this.allFileEntitiesSelected[0].name;
     }
+
     return this.allFileValuesSelected.filter((column) => column.selected).map((column) => column.name);
   }
 
@@ -451,6 +495,7 @@ export class NewDatasetComponent implements OnInit {
    * Calculate the moltiplicity between two columns
    * @param column1 the column1
    * @param column2 the column2
+   * @return a Multiplicity object
    */
   public calculateMultiplicity(column1: string, column2: string): Multiplicity {
     const multiplicity = new Multiplicity();
@@ -476,6 +521,7 @@ export class NewDatasetComponent implements OnInit {
         if (!mapColumn1ToColumn2[value1]) {
           mapColumn1ToColumn2[value1] = new Set();
         }
+
         mapColumn1ToColumn2[value1].add(value2);
       }
 
@@ -483,6 +529,7 @@ export class NewDatasetComponent implements OnInit {
         if (!mapColumn2ToColumn1[value2]) {
           mapColumn2ToColumn1[value2] = new Set();
         }
+
         mapColumn2ToColumn1[value2].add(value1);
       }
     });
@@ -502,9 +549,11 @@ export class NewDatasetComponent implements OnInit {
     if (multiplicityOne === 'N' || multiplicityTwo === 'N') {
       multiplicity.globalMultiplicity = 'N a N';
     }
+
     if (multiplicityOne === '1' && multiplicityTwo === 'N') {
       multiplicity.globalMultiplicity = '1 a N';
     }
+
     if (multiplicityOne === 'N' && multiplicityTwo === '1') {
       multiplicity.globalMultiplicity = 'N a 1';
     } else {
@@ -516,6 +565,7 @@ export class NewDatasetComponent implements OnInit {
 
   /**
    * Calculate the moltiplicities between csv columns for trigger and target
+   * @return an array of Multiplicity object
    */
   private calculateAllMultiplicities(): Multiplicity[] {
     const filteredColumn: string[] = this.getFilteredColumn();
@@ -544,8 +594,8 @@ export class NewDatasetComponent implements OnInit {
 
         // Calculate multiplicity for this columns pair
         const multiplicity = this.calculateMultiplicity(column1, column2);
-
         const pairKey = this.generateSymmetricKey(column1, column2, multiplicity.globalMultiplicity);
+
         if (seenPairs.has(pairKey)) {
           continue;
         }
@@ -564,9 +614,11 @@ export class NewDatasetComponent implements OnInit {
    * @param column1 the first column
    * @param column2 the second column
    * @param globalMultiplicity global rel
+   * @return a string for symmetric multiplicity
    */
   private generateSymmetricKey(column1: string, column2: string, globalMultiplicity: string): string {
-    const sortedColumns = [column1, column2].sort(); // Ordina alfabeticamente le colonne
+    const sortedColumns = [column1, column2].sort();
+
     return `${sortedColumns[0]}-${sortedColumns[1]}-${globalMultiplicity}`;
   }
 
@@ -624,9 +676,6 @@ export class NewDatasetComponent implements OnInit {
       if (nodes != null && nodes.length > 0 && edges != null && edges.length > 0) {
         this.umlNodes = nodes;
         this.umlEdges = edges;
-
-        console.log(this.umlNodes);
-        console.log(this.umlEdges);
 
         this.isShowTable = false;
         this.isShowUML = true;
@@ -686,6 +735,7 @@ export class NewDatasetComponent implements OnInit {
     this.isShowUML = false;
     this.sidebarService.close('master-uml');
     this.isShowTable = true;
+
     this.onManageMasterSidebar();
   }
 
@@ -719,6 +769,7 @@ export class NewDatasetComponent implements OnInit {
    * @param datasetDescription the dataset informaton
    * @param saveProcessExecution if the user want to save the
    * timestamp execution
+   * @return a void Promise
    */
   private retrieveModalData(datasetName: string, datasetDescription: string, saveProcessExecution: boolean): Promise<void> {
     this.prepareBuild(datasetName, datasetDescription, saveProcessExecution);
@@ -743,6 +794,7 @@ export class NewDatasetComponent implements OnInit {
       this.toast.show('Please map the information.', ToastLevel.Error, 2000);
       return;
     }
+
     if (this.selectedFile) {
       const reader: FileReader = new FileReader();
       reader.onload = (e) => {
@@ -753,7 +805,22 @@ export class NewDatasetComponent implements OnInit {
           if (lines.length > 0) {
             const header = lines[0].split(',');
 
-            const timestampIndex = header.findIndex((col) => col === this.timestampColumn);
+            // Check columns spaces
+            for (let i = 0; i < header.length; i++) {
+              header[i] = header[i].replace(/ /g, '_');
+            }
+
+            // Check the row spaces
+            for (let i = 1; i < lines.length; i++) {
+              const row = lines[i].split(',');
+              for (let j = 0; j < row.length; j++) {
+                row[j] = row[j].replace(/ /g, '_');
+              }
+
+              lines[i] = row.join(',');
+            }
+
+            // Rename the standard columns
             for (let i = 0; i < header.length; i++) {
               if (header[i] === this.eventIdColumn) {
                 header[i] = 'event_id';
@@ -764,7 +831,9 @@ export class NewDatasetComponent implements OnInit {
               }
             }
 
-            // Modifica le righe per convertire i timestamp
+            // Check the timestamp
+            const timestampIndex = header.findIndex((col) => col === this.timestampColumn);
+
             for (let i = 1; i < lines.length; i++) {
               const row = lines[i].split(',');
               if (timestampIndex !== -1 && row[timestampIndex]) {
@@ -823,16 +892,17 @@ export class NewDatasetComponent implements OnInit {
       });
     }
 
+    // Close the sidebars
     const isShowUML = this.isShowUML;
 
     if (isShowUML) {
       this.isShowUML = false;
       this.sidebarService.close('master-uml');
-    } else {
-      this.sidebarService.close('master-sidebar');
     }
 
+    this.sidebarService.close('master-sidebar');
     this.isLoading = true;
+
     try {
       this.graphService
         .createGraph(
@@ -856,11 +926,11 @@ export class NewDatasetComponent implements OnInit {
               this.toast.show('Error while creatin the Graph. Retry', ToastLevel.Error, 3000);
               this.isLoading = false;
 
+              // Re-open the sidebars
+              this.sidebarService.reOpen('master-sidebar');
               if (isShowUML) {
                 this.isShowUML = true;
                 this.sidebarService.reOpen('master-uml');
-              } else {
-                this.sidebarService.reOpen('master-sidebar');
               }
             }
           },
@@ -868,11 +938,11 @@ export class NewDatasetComponent implements OnInit {
             this.toast.show('Error while creatin the Graph. Retry', ToastLevel.Error, 3000);
             this.isLoading = false;
 
+            // Re-open the sidebars
+            this.sidebarService.reOpen('master-sidebar');
             if (isShowUML) {
               this.isShowUML = true;
               this.sidebarService.reOpen('master-uml');
-            } else {
-              this.sidebarService.reOpen('master-sidebar');
             }
           },
           complete: () => {}
@@ -909,8 +979,7 @@ export class NewDatasetComponent implements OnInit {
         this.logger.error(errorData);
         this.isLoading = false;
         this.toast.show('Unable to retrieve the Dataset. Retry', ToastLevel.Error, 3000);
-      },
-      complete: () => {}
+      }
     });
   }
 

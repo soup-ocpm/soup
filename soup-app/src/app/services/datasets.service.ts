@@ -23,6 +23,7 @@ export class DatasetService {
    * @returns an Observable of ApiResponse object
    */
   public getDataset(datasetName: string): Observable<ApiResponse<any>> {
+    // Add params
     const params = new HttpParams().set('dataset_name', datasetName);
 
     return this.apiService.get(`${environment.baseUrl}/datasets/single`, params);
@@ -44,12 +45,13 @@ export class DatasetService {
    * @returns Observable of ApiResponse object
    */
   public updateDatasetDescription(datasetName: string, datasetDescription: string): Observable<ApiResponse<any>> {
-    const jsonRequest = {
+    // Create body object
+    const bodyRequest = {
       dataset_name: datasetName,
       dataset_description: datasetDescription
     };
 
-    return this.apiService.put(`${environment.baseUrl}/datasets/single`, jsonRequest);
+    return this.apiService.put(`${environment.baseUrl}/datasets/single`, bodyRequest);
   }
 
   /**
@@ -58,6 +60,7 @@ export class DatasetService {
    * @returns Observable of ApiResponse object
    */
   public deleteDataset(datasetName: string): Observable<ApiResponse<any>> {
+    // Add params
     const params = new HttpParams().set('dataset_name', datasetName);
 
     return this.apiService.delete(`${environment.baseUrl}/datasets/single`, params);
@@ -69,10 +72,11 @@ export class DatasetService {
    * @returns Observable of ApiResponse object
    */
   public checkUniqueDataset(datasetName: string): Observable<ApiResponse<any>> {
-    const jsonRequest = {
+    // Create body object
+    const bodyRequest = {
       dataset_name: datasetName
     };
 
-    return this.apiService.post(`${environment.baseUrl}/datasets/exist`, jsonRequest);
+    return this.apiService.post(`${environment.baseUrl}/datasets/exist`, bodyRequest);
   }
 }

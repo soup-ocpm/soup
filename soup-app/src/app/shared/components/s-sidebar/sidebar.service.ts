@@ -12,6 +12,7 @@ export class SidebarService {
 
   /**
    * Observable of the open status
+   * @returns a boolean Observable
    */
   public isOpen$(id: string): Observable<boolean> {
     return this.sidebars.get(id)?.isOpen.asObservable() ?? of(false);
@@ -19,6 +20,7 @@ export class SidebarService {
 
   /**
    * Observable of the configuration
+   * @returns a sidebar configuration Observable
    */
   public config$(id: string): Observable<SidebarConfig> {
     return this.sidebars.get(id)?.behaviourConfig.asObservable() ?? of(null as any);
@@ -26,6 +28,7 @@ export class SidebarService {
 
   /**
    * Observable of the content
+   * @return a template ref observale of null
    */
   public content$(id: string): Observable<TemplateRef<any> | null> {
     return this.sidebars.get(id)?.behaviourContent.asObservable() ?? of(null);
@@ -35,7 +38,7 @@ export class SidebarService {
    * Initialize a new Sidebar
    * @param id the id of the unique sidebar
    */
-  public initSidebar(id: string) {
+  public initSidebar(id: string): void {
     this.sidebars.set(id, new SidebarSubject());
   }
 
@@ -56,13 +59,12 @@ export class SidebarService {
     const sidebar = this.sidebars.get(sidebarId)!;
     sidebar.behaviourConfig.next(config);
     sidebar.behaviourContent.next(content);
-    // Inizialmente disabilitiamo la sidebar per la transizione.
     sidebar.isOpen.next(false);
 
-    // Aggiungiamo un timeout per applicare la transizione dopo un piccolo ritardo.
+    // Set timeout
     setTimeout(() => {
-      sidebar.isOpen.next(true); // Dopo il ritardo, la sidebar si aprirà con la transizione.
-    }, 50); // Impostiamo un timeout di 50ms per permettere la renderizzazione.
+      sidebar.isOpen.next(true);
+    }, 50);
 
     return sidebarId;
   }
@@ -76,8 +78,6 @@ export class SidebarService {
 
     if (sidebar) {
       sidebar.isOpen.next(true);
-    } else {
-      console.warn(`Sidebar with id "${id}" does not exist. Use 'open' to create it.`);
     }
   }
 
@@ -88,6 +88,7 @@ export class SidebarService {
    */
   public isSidebarOpen(id: string): boolean {
     const sidebar = this.sidebars.get(id);
+
     return sidebar ? sidebar.isOpen.getValue() === true : false;
   }
 
@@ -103,8 +104,9 @@ export class SidebarService {
    * @param id the id of the Sidebar to update
    * @param partialConfig the partial configuration to apply
    */
-  public updateConfig(id: string, partialConfig: Partial<SidebarConfig>) {
+  public updateConfig(id: string, partialConfig: Partial<SidebarConfig>): void {
     const sidebar = this.sidebars.get(id);
+
     if (sidebar) {
       const currentConfig = sidebar.behaviourConfig.getValue();
       sidebar.behaviourConfig.next({ ...currentConfig, ...partialConfig });
@@ -115,8 +117,9 @@ export class SidebarService {
    * Close a specific sidebar
    * @param id the id of the Sidebar to close
    */
-  public close(id: string) {
+  public close(id: string): void {
     const sidebar = this.sidebars.get(id);
+
     if (sidebar) {
       sidebar.isOpen.next(false);
     }

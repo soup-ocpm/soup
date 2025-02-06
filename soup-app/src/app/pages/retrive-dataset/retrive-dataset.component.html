@@ -15,12 +15,22 @@
     <div class="header">
       <div style="display: flex; justify-content: space-between; align-items: center">
         <h4>All Dataset</h4>
-        <i
-          class="bi bi-arrow-clockwise"
-          style="font-size: 24px; cursor: pointer; color: var(--secondary-color)"
-          onmouseover="this.style.color='var(--primary-color)'"
-          onmouseout="this.style.color='var(--secondary-color)'"
-          (click)="this.reloadDatasets()"></i>
+
+        <!--Icons operation-->
+        <div style="display: flex">
+          <i
+            class="bi bi-plus-lg"
+            style="font-size: 24px; cursor: pointer; color: var(--secondary-color)"
+            onmouseover="this.style.color='var(--primary-color)'"
+            onmouseout="this.style.color='var(--secondary-color)'"
+            (click)="this.newDataset()"></i>
+          <i
+            class="bi bi-arrow-clockwise"
+            style="font-size: 24px; margin-left: 10px; cursor: pointer; color: var(--secondary-color)"
+            onmouseover="this.style.color='var(--primary-color)'"
+            onmouseout="this.style.color='var(--secondary-color)'"
+            (click)="this.reloadDatasets()"></i>
+        </div>
       </div>
       <sp-divider></sp-divider>
     </div>
