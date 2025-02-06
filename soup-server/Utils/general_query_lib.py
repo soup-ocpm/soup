@@ -22,6 +22,13 @@ def get_count_data_query():
     return "MATCH (n) RETURN count(n) as count"
 
 
+def get_count_event_nodes_query():
+    """
+    Get count of database data
+    :return: the query
+    """
+    return "MATCH (n: Event) RETURN count(n) as count"
+
 def drop_entity_index():
     """
     Drop entity index

@@ -443,7 +443,8 @@ def process_analysis(container_id, database_connector, dataset_name, analysis_na
             return 'error', []
 
         # Extract data information
-        graph_data = SupportService.extract_graph_data(result)
+        result = SupportService.extract_graph_data(result)
+        graph_data = result['graph_data']
 
         if not graph_data:
             return 'no content', []

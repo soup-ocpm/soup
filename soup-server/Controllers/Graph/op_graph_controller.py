@@ -218,6 +218,15 @@ def get_all_activities_name():
     return OperationGraphService.get_activities_s(database_connector)
 
 
+@op_graph_controller_bp.route('/api/v2/graph/timestamps', methods=['GET'])
+def get_min_max_timestamp_information():
+    """
+    Get min and max timestamp for event
+    :return: ApiResponse model
+    """
+    return OperationGraphService.get_min_max_timestamp(database_connector)
+
+
 @op_graph_controller_bp.route('/api/v2/graph/svg', methods=['POST'])
 def download_svg():
     """

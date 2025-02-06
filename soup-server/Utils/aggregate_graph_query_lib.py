@@ -154,3 +154,11 @@ def delete_class_graph_query():
     :return: the query
     """
     return "MATCH (n:Class) DETACH DELETE n"
+
+
+def get_count_class_nodes_query():
+    """
+    Get count of database data
+    :return: the query
+    """
+    return "MATCH (n: Class) RETURN count(n) as count"

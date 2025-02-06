@@ -23,6 +23,8 @@ class SupportService:
     @staticmethod
     def extract_graph_data(data):
         graph_data = []
+        unique_nodes = set()
+        unique_edges = set()
 
         for record in data:
             # Node source
@@ -50,13 +52,21 @@ class SupportService:
                 elif isinstance(value, DateTime):
                     target[key] = memgraph_datetime_to_string(value)
 
+            unique_nodes.add(str(source['id']))
+            unique_nodes.add(str(target['id']))
+            unique_edges.add(str(edge['id']))
+
             graph_data.append({
                 'node_source': source,
                 'edge': edge,
                 'node_target': target
             })
 
-        return graph_data
+        return {
+            'graph_data': graph_data,
+            'unique_nodes_count': len(unique_nodes),
+            'unique_edges_count': len(unique_edges)
+        }
 
     @staticmethod
     def extract_class_graph_data(data):

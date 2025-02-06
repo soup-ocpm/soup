@@ -497,6 +497,55 @@ class OperationGraphService:
             database_connector.close()
 
     @staticmethod
+    def get_min_max_timestamp(database_connector):
+        response = ApiResponse()
+
+        try:
+            database_connector.connect()
+
+            query = get_min_max_timestamp_query()
+            result = database_connector.run_query_memgraph(query)
+
+            if not isinstance(result, Iterable) or not result:
+                response.http_status_code = 404
+                response.response_data = None
+                response.message = "No timestamps found"
+
+                logger.error('Timestamps not found')
+                return jsonify(response.to_dict()), 404
+
+            min_timestamp = result[0]['minTimestamp']
+            max_timestamp = result[0]['maxTimestamp']
+
+            # Transform the date
+            min_date = reconstruct_datetime(min_timestamp)
+            max_date = reconstruct_datetime(max_timestamp)
+
+            # Create the object
+            data = {
+                "minDate": min_date,
+                "maxDate": max_date
+            }
+
+            response.http_status_code = 200
+            response.response_data = data
+            response.message = "Successfully retrieved min and max timestamps."
+
+            logger.info('Min and Max timestamps retrieved')
+            return jsonify(response.to_dict()), 200
+
+        except Exception as e:
+            response.http_status_code = 500
+            response.message = f"Internal Server Error: {str(e)}"
+            response.response_data = None
+
+            logger.error(f"Internal Server Error : {str(e)}")
+            return jsonify(response.to_dict()), 500
+
+        finally:
+            database_connector.close()
+
+    @staticmethod
     def download_svg_s(dataset_name, svg_content):
         response = ApiResponse()
 
@@ -522,7 +571,7 @@ class OperationGraphService:
                                                                                        new_svg_file_path, False,
                                                                                        False, True)
 
-        # Delete the
+        # Delete the svg file
         result = FileManager.delete_svg_file(dataset_name)
 
         response.http_status_code = 200
@@ -582,3 +631,25 @@ class OperationGraphService:
 
         finally:
             database_connector.close()
+
+
+def reconstruct_datetime(timestamp):
+    """
+    Reconstruct the datetime components from a numerical timestamp.
+    """
+    # Extract the components
+    year = timestamp // 10000000000
+    month = (timestamp % 10000000000) // 100000000
+    day = (timestamp % 100000000) // 1000000
+    hour = (timestamp % 1000000) // 10000
+    minute = (timestamp % 10000) // 100
+    second = timestamp % 100
+
+    return {
+        "year": year,
+        "month": month,
+        "day": day,
+        "hour": hour,
+        "minute": minute,
+        "second": second
+    }

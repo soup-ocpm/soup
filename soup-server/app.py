@@ -74,8 +74,6 @@ def welcome_api():
     response.http_status_code = 200
     response.message = "Hello user, the Engine work :)"
     response.response_data = None
-
-    logger.info('Successfully connected to the Engine')
     return jsonify(response.to_dict()), 200
 
 
@@ -108,8 +106,6 @@ def connect_database():
         response.http_status_code = 200
         response.message = "Success connect with Memgraph"
         response.response_data = result
-
-        logger.info('Successfully connected to Memgraph')
         return jsonify(response.to_dict()), 200
 
     # Catch exception
@@ -124,4 +120,4 @@ def connect_database():
 
 # Main (run the Server on 8080)
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=8080, debug=False, use_reloader=False)
+    app.run(host='0.0.0.0', port=8080, debug=True)

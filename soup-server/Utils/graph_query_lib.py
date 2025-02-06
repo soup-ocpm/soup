@@ -247,6 +247,21 @@ def get_activities_name_query():
             """)
 
 
+def get_min_max_timestamp_query():
+    """
+    Get min and max timestamp from the nodes
+    :return: the query
+    """
+
+    return ("""
+            MATCH (n)
+            WHERE n.Timestamp IS NOT NULL
+            RETURN 
+            MIN(n.Timestamp.year * 10000000000 + n.Timestamp.month * 100000000 + n.Timestamp.day * 1000000 + n.Timestamp.hour * 10000 + n.Timestamp.minute * 100 + n.Timestamp.second) AS minTimestamp,
+            MAX(n.Timestamp.year * 10000000000 + n.Timestamp.month * 100000000 + n.Timestamp.day * 1000000 + n.Timestamp.hour * 10000 + n.Timestamp.minute * 100 + n.Timestamp.second) AS maxTimestamp
+            """)
+
+
 def change_nan(entity):
     """
     Change specific property

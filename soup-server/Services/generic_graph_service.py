@@ -225,9 +225,13 @@ class GenericGraphService:
                 return jsonify(response.to_dict()), 404
 
             # Extract data information
-            graph_data = SupportService.extract_graph_data(result)
+            result = SupportService.extract_graph_data(result)
 
-            if not graph_data:
+            graph_data = result['graph_data']
+            nodes_count = result['unique_nodes_count']
+            edges_count = result['unique_edges_count']
+
+            if not graph_data or nodes_count < 1 or edges_count < 1:
                 response.http_status_code = 204
                 response.response_data = None
                 response.message = "No content"
@@ -236,7 +240,7 @@ class GenericGraphService:
                 return jsonify(response.to_dict()), 204
 
             response.http_status_code = 200
-            response.response_data = graph_data
+            response.response_data = result
             response.message = "Retrieve Graph"
 
             logger.info('Retrieve Graph')
@@ -261,26 +265,60 @@ class GenericGraphService:
         try:
             database_connector.connect()
 
-            query = delete_all_data_query()
-            database_connector.run_query_memgraph(query)
+            # 1. Remove the event nodes
+            event_node_delete_query = delete_event_graph_query()
+            database_connector.run_query_memgraph(event_node_delete_query)
 
-            verification_query = get_count_data_query()
+            verification_query = get_count_event_nodes_query()
             result_node = database_connector.run_query_memgraph(verification_query)
 
-            if result_node and result_node[0]['count'] == 0:
-                response.http_status_code = 200
-                response.message = 'Graph deleted successfully'
+            # Check the data
+            if not result_node or result_node[0]['count'] != 0:
+                response.http_status_code = 500
+                response.message = 'Internal Server Error. Unable to delete the event nodes'
                 response.response_data = None
 
-                logger.info('Graph deleted successfully')
-                return jsonify(response.to_dict()), 200
-            else:
-                response.http_status_code = 404
-                response.message = 'Data was not deleted'
+                logger.error('Internal Server Error. Unable to delete the event nodes')
+                return jsonify(response.to_dict()), 500
+
+            # 2. Remove the entity nodes
+            entity_node_delete_query = delete_entity_graph_query()
+            database_connector.run_query_memgraph(entity_node_delete_query)
+
+            verification_query = get_count_event_nodes_query()
+            result_node = database_connector.run_query_memgraph(verification_query)
+
+            # Check the data
+            if not result_node or result_node[0]['count'] != 0:
+                response.http_status_code = 500
+                response.message = 'Internal Server Error. Unable to delete the entity nodes'
                 response.response_data = None
 
-                logger.error('Data was not deleted')
-                return jsonify(response.to_dict()), 404
+                logger.error('Internal Server Error. Unable to delete the entity nodes')
+                return jsonify(response.to_dict()), 500
+
+            # 3. Remove the aggregate graph (if exists)
+            aggregate_graph_delete_query = delete_class_graph_query()
+            database_connector.run_query_memgraph(aggregate_graph_delete_query)
+
+            verification_query = get_count_class_nodes_query()
+            result_node = database_connector.run_query_memgraph(verification_query)
+
+            # Check the data
+            if not result_node or result_node[0]['count'] != 0:
+                response.http_status_code = 500
+                response.message = 'Internal Server Error. Unable to delete the class nodes'
+                response.response_data = None
+
+                logger.error('Internal Server Error. Unable to delete the class nodes')
+                return jsonify(response.to_dict()), 500
+
+            response.http_status_code = 200
+            response.message = 'Data deleted successfully'
+            response.response_data = None
+
+            logger.info('Data deleted successfully')
+            return jsonify(response.to_dict()), 200
 
         except Exception as e:
             response.http_status_code = 500

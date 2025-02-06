@@ -293,7 +293,7 @@ class OperationClassGraphService:
             query = delete_class_graph_query()
             database_connector.run_query_memgraph(query)
 
-            verification_query = get_count_nodes_class_query()
+            verification_query = get_count_class_nodes_query()
             result = database_connector.run_query_memgraph(verification_query)
 
             if result and result[0]['count'] == 0:
