@@ -8,4 +8,12 @@
     </h5>
   </div>
   <p class="operation-description">{{ description }}</p>
+
+  <div
+    *ngIf="this.loading"
+    class="loading">
+    <sp-spinner
+      [size]="25"
+      [primaryColor]="'var(--secondary-color)'"></sp-spinner>
+  </div>
 </div>

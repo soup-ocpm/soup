@@ -102,7 +102,7 @@ export class RetriveDatasetComponent implements OnInit, AfterViewChecked {
 
     setTimeout(() => {
       this.getAllDatasets();
-    }, 1000);
+    }, 200);
   }
 
   // NgAfterViewInit implementation
@@ -441,6 +441,7 @@ export class RetriveDatasetComponent implements OnInit, AfterViewChecked {
         title,
         'Are you sure you want to delete this Dataset? This operation is not reversible',
         this.currentDataset!.name,
+        true,
         'Delete',
         '#FF0000',
         'Cancel',

@@ -31,33 +31,42 @@ export class ModalService {
    * @param title the title of the modal
    * @param message the message of the modal
    * @param doubleButton if modal has two buttons
+   * @param showInput if we want to include generic input
+   * @param inputLabel the label for the input if exist
    * @param primaryButtonText text of primary button
    * @param primaryButtonColor the color of primary button
    * @param secondaryButtonText text of secondary button
    * @param secondaryButtonColor the color of secondary button
    * @param primaryButtonClick function to execute when primary button is clicked
+   * @param primaryButtonClickWithInput function to execute when primary button is clicked if exist input
    * @param secondaryButtonClick function to execute when secondary button is clicked
    */
   public showGenericModal(
     title: string,
     message: string,
     doubleButton: boolean,
+    showInput: boolean,
+    inputLabel: string,
     primaryButtonText: string,
     primaryButtonColor: string,
     secondaryButtonText: string,
     secondaryButtonColor: string,
     primaryButtonClick: () => void,
+    primaryButtonClickWithInput: (value: any) => Promise<any> | null,
     secondaryButtonClick: (() => void) | null
   ) {
     this.genericModalSubject.next({
       title,
       message,
       doubleButton,
+      showInput,
+      inputLabel,
       primaryButtonText,
       primaryButtonColor,
       secondaryButtonText,
       secondaryButtonColor,
       primaryButtonClick,
+      primaryButtonClickWithInput,
       secondaryButtonClick
     });
   }
@@ -78,6 +87,7 @@ export class ModalService {
     title: string,
     message: string,
     datasetName: string,
+    isForDataset: boolean,
     primaryButtonText: string,
     primaryButtonColor: string,
     secondaryButtonText: string,
@@ -89,6 +99,7 @@ export class ModalService {
       title,
       message,
       datasetName,
+      isForDataset,
       primaryButtonText,
       primaryButtonColor,
       secondaryButtonText,

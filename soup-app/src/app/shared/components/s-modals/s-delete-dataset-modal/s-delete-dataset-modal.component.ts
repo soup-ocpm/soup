@@ -36,6 +36,9 @@ export class DeleteDatasetModalComponent {
   // The dataset name
   @Input() datasetName = '';
 
+  // If the modal is fot delete dataset or analysis
+  @Input() isForDataset = false;
+
   // The principal button text
   @Input() primaryButtonText = '';
 
@@ -84,6 +87,7 @@ export class DeleteDatasetModalComponent {
         this.title = modal.title;
         this.message = modal.message;
         this.datasetName = modal.datasetName;
+        this.isForDataset = modal.isForDataset;
         this.primaryButtonText = modal.primaryButtonText;
         this.primaryButtonColor = modal.primaryButtonColor;
         this.secondaryButtonText = modal.secondaryButtonText;

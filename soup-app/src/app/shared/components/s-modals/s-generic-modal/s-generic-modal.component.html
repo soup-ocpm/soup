@@ -16,6 +16,24 @@
   </div>
   <p style="color: #666; margin-top: 15px">{{ this.message }}</p>
 
+  <!--Input-->
+  <div
+    class="mb-1"
+    *ngIf="this.showInput">
+    <label
+      *ngIf="this.inputLabel"
+      for="inputValue"
+      class="form-label"
+      style="color: black">
+      {{ this.inputLabel }}
+    </label>
+    <input
+      class="form-control form-control-sm"
+      id="inputValue"
+      type="text"
+      [(ngModel)]="this.inputValue" />
+  </div>
+
   <!--Footer-->
   <div style="margin-top: 25px">
     <!--Single button-->

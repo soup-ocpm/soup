@@ -20,12 +20,22 @@
   <!--The input label-->
   <div class="mb-1">
     <label
+      *ngIf="this.isForDataset"
       for="name"
       class="form-label"
       style="color: var(--secondary-color)">
       Please insert
       <strong style="color: black">{{ this.datasetName }}</strong>
       for delete the Dataset
+    </label>
+    <label
+      *ngIf="!this.isForDataset"
+      for="name"
+      class="form-label"
+      style="color: var(--secondary-color)">
+      Please insert
+      <strong style="color: black">{{ this.datasetName }}</strong>
+      for delete the Analysis
     </label>
     <input
       class="form-control form-control-sm"

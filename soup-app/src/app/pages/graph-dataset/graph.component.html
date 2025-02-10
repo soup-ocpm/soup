@@ -32,7 +32,11 @@
   <!--Left Action buttons-->
   <div
     class="left-actions"
-    *ngIf="!this.sidebarService.isSidebarOpen('master-sidebar') && !this.sidebarService.isSidebarOpen('search-sidebar')">
+    *ngIf="
+      !this.sidebarService.isSidebarOpen('master-sidebar') &&
+      !this.sidebarService.isSidebarOpen('search-sidebar') &&
+      this.supportService.graphType != 3
+    ">
     <i
       matTooltip="Leave"
       class="bi bi-arrow-left-square"
@@ -74,6 +78,7 @@
         [description]="operation.description"
         [icon]="operation.icon"
         [action]="operation.action"
+        [loading]="operation.loading"
         (operationSelected)="this.onOperationSelected(operation)"></app-side-operation>
     </div>
   </ng-template>
@@ -148,22 +153,23 @@
         class="tabber">
         <div
           class="master-search"
-          (scroll)="onScrollEdges()"
+          (scroll)="this.onScrollEdges()"
           style="margin-top: 15px"
           #scrollEdgesContainer>
           <div
-            class="search-term"
             *ngFor="let item of displayedEdges"
-            (click)="this.selectEdgeSearched(item)">
+            class="search-term"
+            (mouseenter)="this.hoverEdge(item)"
+            (mouseleave)="this.leaveHoverEdge(item)">
             <div class="item-details">
               <h5 style="color: var(--primary-color)">{{ item['label'] }}</h5>
               <p>
                 <strong>From:</strong>
-                {{ getNodeName(item.source.id) }} [{{ item.source.id }}]
+                {{ this.getNodeName(item.source.id) }} [{{ item.source.id }}]
               </p>
               <p>
                 <strong>To:</strong>
-                {{ getNodeName(item.target.id) }} [{{ item.target.id }}]
+                {{ this.getNodeName(item.target.id) }} [{{ item.target.id }}]
               </p>
             </div>
           </div>
@@ -177,6 +183,87 @@
         </div>
       </mat-tab>
     </mat-tab-group>
+  </ng-template>
+
+  <!--Frequency Sidebar-->
+  <ng-template #frequencySidebarTemplate>
+    <p style="margin-top: 15px; font-size: 16px">Here are the calculated frequencies for the activities</p>
+
+    <sp-divider></sp-divider>
+
+    <!--List of the frequencies-->
+    <ul class="frequency-list">
+      <li
+        *ngFor="let item of this.frequencyResults"
+        class="frequency-card">
+        <div class="card-content">
+          <span class="activity-name">{{ item.activity }}</span>
+          <span class="activity-frequency">{{ item.frequency | number: '1.0-0' }} occurrences</span>
+        </div>
+      </li>
+    </ul>
+  </ng-template>
+
+  <!--Variation Sidebar-->
+  <ng-template #variationSidebarTemplate>
+    <div class="activity-summary">
+      <!-- Iterate over all variationResults to show the details for each one -->
+      <p>
+        Sequence of maximum
+        <strong>5</strong>
+        consecutive steps based on the complete Dataset
+      </p>
+      <div
+        *ngFor="let variation of this.variationResults"
+        class="details-summary">
+        <p>
+          <strong>Involved Activities:</strong>
+          The combination of events that produced this case includes
+          <strong>{{ variation.activities.length }}</strong>
+          activities, some of which are repeated.
+        </p>
+
+        <p>
+          <strong>Distinct Activities:</strong>
+          There are
+          <strong>{{ variation.distinctActivities.length }}</strong>
+          distinct activities in your dataset. Some events are repeated within the cycle.
+        </p>
+
+        <p>
+          <strong>Average Duration:</strong>
+          The average duration of the event cycle is
+          <strong>{{ variation.avgDuration }}</strong>
+          seconds (about
+          <strong>{{ this.convertVariationTimeDuraiton(variation.avgDuration) }}</strong>
+          ).
+        </p>
+
+        <p>
+          <strong>Frequency:</strong>
+          This specific case of activities has been observed
+          <strong>{{ variation.frequency }}</strong>
+          times.
+        </p>
+      </div>
+    </div>
+
+    <!-- List of distinct activities for each variation -->
+    <div *ngFor="let variation of this.variationResults">
+      <!-- Bold text for the section heading -->
+      <p style="font-weight: bold; margin-bottom: 8px">List of distinct activities</p>
+
+      <ul>
+        <!-- List of distinct activities -->
+        <li
+          *ngFor="let activity of variation.distinctActivities"
+          class="activity-item">
+          <div class="activity-info">
+            <span class="activity-name">{{ activity }}</span>
+          </div>
+        </li>
+      </ul>
+    </div>
   </ng-template>
 
   <!--Json Sidebar-->
@@ -210,70 +297,74 @@
     <p>A list of operations available for this section</p>
 
     <!--Node showed slider-->
-    <div style="margin-top: 35px"></div>
-    <div class="double-flex">
-      <h5>Data displayed</h5>
-      <mat-icon
-        *ngIf="this.totalUniqueNodeShowed > 300"
-        [matTooltip]="'More than 300 nodes may cause rendering delays'">
-        warning
-      </mat-icon>
-    </div>
-    <div style="width: 100%">
-      <mat-slider
-        class="example-margin"
-        [max]="this.currentDataset!.eventNodes"
-        [min]="2"
-        [step]="1"
-        [discrete]="true"
-        [showTickMarks]="true">
-        <input
-          matSliderThumb
-          [(ngModel)]="this.totalUniqueNodeShowed"
-          (ngModelChange)="this.onSliderValueChanged($event)"
-          #slider />
-      </mat-slider>
-    </div>
-
-    <div style="margin-top: 35px">
-      <!--Node view-->
+    <div *ngIf="this.supportService.graphType != 3">
       <div style="margin-top: 35px"></div>
       <div class="double-flex">
-        <h5>Nodes</h5>
-        <mat-icon [matTooltip]="'The size of the circle does not correspond to node weight'">warning</mat-icon>
+        <h5>Data displayed</h5>
+        <mat-icon
+          *ngIf="this.totalUniqueNodeShowed > 300"
+          [matTooltip]="'More than 300 nodes may cause rendering delays'">
+          warning
+        </mat-icon>
       </div>
-      <p>Change the view of your nodes</p>
-      <div style="margin-top: 15px"></div>
-      <mat-radio-group
-        aria-labelledby="example-radio-group-label"
-        class="example-radio-group"
-        [(ngModel)]="nodeViewType"
-        (ngModelChange)="this.onChangeNodeView($event)">
-        @for (type of allNodesViewType; track type) {
-          <mat-radio-button
-            class="example-radio-button"
+      <div style="width: 100%">
+        <mat-slider
+          class="example-margin"
+          [max]="this.currentDataset!.eventNodes"
+          [min]="2"
+          [step]="1"
+          [discrete]="true"
+          [showTickMarks]="true">
+          <input
+            matSliderThumb
+            [(ngModel)]="this.totalUniqueNodeShowed"
+            (ngModelChange)="this.onSliderValueChanged($event)"
+            #slider />
+        </mat-slider>
+      </div>
+    </div>
+
+    <!--Node view-->
+    <div>
+      <div style="margin-top: 35px">
+        <div style="margin-top: 35px"></div>
+        <div class="double-flex">
+          <h5>Nodes</h5>
+          <mat-icon [matTooltip]="'The size of the circle does not correspond to node weight'">warning</mat-icon>
+        </div>
+        <p>Change the view of your nodes</p>
+        <div style="margin-top: 15px"></div>
+        <mat-radio-group
+          aria-labelledby="example-radio-group-label"
+          class="example-radio-group"
+          [(ngModel)]="nodeViewType"
+          (ngModelChange)="this.onChangeNodeView($event)">
+          @for (type of allNodesViewType; track type) {
+            <mat-radio-button
+              class="example-radio-button"
+              color="primary"
+              [value]="type">
+              {{ type }}
+            </mat-radio-button>
+          }
+        </mat-radio-group>
+
+        <!--Edges view-->
+        <div style="margin-top: 35px"></div>
+        <div class="double-flex">
+          <h5>Edges</h5>
+        </div>
+
+        <p>Select the relationships you want to see</p>
+
+        <div *ngFor="let rel of this.allRelationships">
+          <mat-checkbox
             color="primary"
-            [value]="type">
-            {{ type }}
-          </mat-radio-button>
-        }
-      </mat-radio-group>
-
-      <!--Edges view-->
-      <div style="margin-top: 35px"></div>
-      <div class="double-flex">
-        <h5>Edges</h5>
-      </div>
-
-      <p>Select the relationships you want to see</p>
-
-      <div *ngFor="let rel of this.allRelationships">
-        <mat-checkbox
-          color="primary"
-          [ngModel]="rel.selected"
-          (ngModelChange)="this.onChangeRelationshipsView(rel, $event)">
-          {{ rel.name }}
-        </mat-checkbox>
+            [ngModel]="rel.selected"
+            (ngModelChange)="this.onChangeRelationshipsView(rel, $event)">
+            {{ rel.name }}
+          </mat-checkbox>
+        </div>
       </div>
     </div>
   </ng-template>

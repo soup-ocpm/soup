@@ -479,11 +479,14 @@ export class NewDatasetComponent implements OnInit {
       'Trigger and Target?',
       'Do you want to map information about trigger and target',
       true,
+      false,
+      '',
       'Yes',
       'var(--primary-color)',
       'No',
       '#000000',
       () => this.createUMLDiagram(),
+      () => null,
       () => {
         this.modalService.hideGenericModal();
         this.inputDatasetName();

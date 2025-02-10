@@ -1,3 +1,4 @@
+import { SpSpinnerComponent } from '@aledevsharp/sp-lib';
 import { CommonModule } from '@angular/common';
 import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { MaterialModule } from 'src/app/shared/modules/materlal.module';
@@ -5,7 +6,12 @@ import { MaterialModule } from 'src/app/shared/modules/materlal.module';
 @Component({
   selector: 'app-side-operation',
   standalone: true,
-  imports: [CommonModule, MaterialModule],
+  imports: [
+    CommonModule,
+    MaterialModule,
+    // Component import
+    SpSpinnerComponent
+  ],
   templateUrl: './side-operation.component.html',
   styleUrl: './side-operation.component.scss'
 })
@@ -18,6 +24,9 @@ export class SideOperationComponent {
 
   // The operation icon
   @Input() icon: string = '';
+
+  // If we want to add the loading status
+  @Input() loading: boolean = false;
 
   // The operation action
   @Input() action: () => void = () => {};

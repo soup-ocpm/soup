@@ -57,6 +57,28 @@ export class AnalysisService {
   }
 
   /**
+   * Calculate the frequency
+   * @param frequency the frequency
+   * @returns an Observable of ApiResponse object
+   */
+  public calculateFrequencyFilter(frequency: number): Observable<ApiResponse<any>> {
+    // Create body object
+    const bodyRequest = {
+      frequency: frequency
+    };
+
+    return this.apiService.post(`${environment.baseUrl}/analyses/frequency`, bodyRequest);
+  }
+
+  /**
+   * Calculate the variation
+   * @returns an Observable of ApiResponse object
+   */
+  public calculateVariationFilter(): Observable<ApiResponse<any>> {
+    return this.apiService.get(`${environment.baseUrl}/analyses/variation`);
+  }
+
+  /**
    * Get all analyses
    * @param datasetName the dataset name
    * @returns an Observable of ApiResponse object

@@ -145,6 +145,48 @@ svg {
 }
 
 // ================================
+// Region: Frequency Sidebar
+// ================================
+.frequency-list {
+  list-style: none;
+  padding-left: 0;
+  margin-top: 10px;
+}
+
+.frequency-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px;
+  margin-bottom: 10px;
+  background-color: #fff;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  font-size: 14px;
+  transition: transform 0.2s ease;
+}
+
+.frequency-card:hover {
+  transform: scale(1.02);
+}
+
+.card-content {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.activity-name {
+  color: var(--primary-color);
+}
+
+.activity-frequency {
+  color: black;
+  font-size: 14px;
+}
+
+// ================================
 // Region: JSON Sidebar
 // ================================
 .list-group-item {

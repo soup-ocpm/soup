@@ -204,6 +204,7 @@
       [description]="operation.description"
       [icon]="operation.icon"
       [action]="operation.action"
+      [loading]="operation.loading"
       (operationSelected)="this.onOperationSelected(operation)"></app-side-operation>
   </div>
 </ng-template>
@@ -409,11 +410,12 @@
     </div>
   </div>
 
+  <!--Loading status-->
   <div
     *ngIf="this.isLoadingAnalysis"
     class="loading-analysis">
     <sp-spinner></sp-spinner>
-    <h5 style="margin-left: 20px">Process Filters...</h5>
+    <h5 style="margin-left: 20px">Creating analysis...</h5>
   </div>
 </ng-template>
 
@@ -478,7 +480,7 @@
           </button>
           <button
             mat-menu-item
-            (click)="this.deleteAnalysis(analysis)">
+            (click)="this.openModalDeleteAnalysis(analysis)">
             <i
               class="bi bi-trash"
               style="color: red"></i>
