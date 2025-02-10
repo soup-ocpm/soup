@@ -164,7 +164,7 @@ export class NewDatasetComponent implements OnInit {
     private sidebarService: SidebarService,
     private supportService: LocalDataService,
     private graphService: StandardGraphService
-  ) {}
+  ) { }
 
   // NgOnInit implementation
   public ngOnInit(): void {
@@ -517,32 +517,34 @@ export class NewDatasetComponent implements OnInit {
 
     // Create the map
     this.dataSource.forEach((row: any) => {
-      const value1 = row[column1];
-      const value2 = row[column2];
+      // handle multiple entities values
+      const values1 = typeof row[column1] === 'string' ? row[column1].split(',').map(item => item.trim()) : [row[column1]];
+      const values2 = typeof row[column2] === 'string' ? row[column2].split(',').map(item => item.trim()) : [row[column2]];
 
-      if (value1) {
-        if (!mapColumn1ToColumn2[value1]) {
-          mapColumn1ToColumn2[value1] = new Set();
+      const updateMap = (map: Record<string, Set<any>>, key: any, values: any[]) => {
+        if (key === null || key === 'null') return; // Skip null keys
+        if (!map[key]) {
+          map[key] = new Set();
         }
+        values.forEach(value => {
+          if (value !== null && value !== 'null') {
+            map[key].add(value);
+          }
+        });
+      };
 
-        mapColumn1ToColumn2[value1].add(value2);
-      }
-
-      if (value2) {
-        if (!mapColumn2ToColumn1[value2]) {
-          mapColumn2ToColumn1[value2] = new Set();
-        }
-
-        mapColumn2ToColumn1[value2].add(value1);
-      }
+      values1.forEach(v1 => updateMap(mapColumn1ToColumn2, v1, values2));
+      values2.forEach(v2 => updateMap(mapColumn2ToColumn1, v2, values1));
     });
 
-    // Determinate the multiplicity
-    const multiplicityOne =
-      Object.keys(mapColumn1ToColumn2).length === 0 ? '0' : Object.values(mapColumn1ToColumn2).some((set) => set.size > 1) ? 'N' : '1';
+    // Determine the multiplicity
+    const determineMultiplicity = (map: Record<string, Set<any>>): '0' | '1' | 'N' =>
+      Object.keys(map).length === 0 ? '0' : Object.values(map).some(set => set.size > 1) ? 'N' : '1';
 
-    const multiplicityTwo =
-      Object.keys(mapColumn2ToColumn1).length === 0 ? '0' : Object.values(mapColumn2ToColumn1).some((set) => set.size > 1) ? 'N' : '1';
+    // determineMultiplicity(mapColumnXToColumnY) checks on the size of the list in col Y, so to assign the correct
+    // cardinality the multiplicity of col one has to be calculated based on mapColumn2ToColumn1 and viceversa
+    const multiplicityOne = determineMultiplicity(mapColumn2ToColumn1);
+    const multiplicityTwo = determineMultiplicity(mapColumn1ToColumn2);
 
     multiplicity.columnOne = column1;
     multiplicity.multiplicityOne = multiplicityOne;
@@ -550,17 +552,17 @@ export class NewDatasetComponent implements OnInit {
     multiplicity.multiplicityTwo = multiplicityTwo;
 
     if (multiplicityOne === 'N' || multiplicityTwo === 'N') {
-      multiplicity.globalMultiplicity = 'N a N';
+      multiplicity.globalMultiplicity = 'N to N';
     }
 
     if (multiplicityOne === '1' && multiplicityTwo === 'N') {
-      multiplicity.globalMultiplicity = '1 a N';
+      multiplicity.globalMultiplicity = '1 to N';
     }
 
     if (multiplicityOne === 'N' && multiplicityTwo === '1') {
-      multiplicity.globalMultiplicity = 'N a 1';
+      multiplicity.globalMultiplicity = 'N to 1';
     } else {
-      multiplicity.globalMultiplicity = '1 a 1';
+      multiplicity.globalMultiplicity = '1 to 1';
     }
 
     return multiplicity;
@@ -948,7 +950,7 @@ export class NewDatasetComponent implements OnInit {
               this.sidebarService.reOpen('master-uml');
             }
           },
-          complete: () => {}
+          complete: () => { }
         });
     } catch (error) {
       this.toast.show(`Internal Server Error: ${error}`, ToastLevel.Error, 2000);
