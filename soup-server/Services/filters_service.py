@@ -15,15 +15,15 @@ import json
 
 from collections.abc import *
 from flask import jsonify
-
 from Services.docker_service import DockerService
 from Services.support_service import SupportService
+from Services.generic_graph_service import GenericGraphService
 from Models.docker_file_manager_model import DockerFileManager
 from Models.file_manager_model import FileManager
 from Models.api_response_model import ApiResponse
 from Models.logger_model import Logger
 from Utils.filter_query_lib import *
-from Utils.graph_query_lib import get_limit_standard_graph_query
+from Utils.graph_query_lib import get_limit_standard_graph_query, delete_event_graph_query, delete_entity_graph_query
 
 # Engine logger setup
 logger = Logger()
@@ -92,6 +92,9 @@ class FiltersService:
 
             # 2. Check the response content
             if result.startswith('error'):
+                # Execute the rollback
+                execute_rollback_data(container_id, database_connector, dataset_name)
+
                 response.http_status_code = 404
                 response.message = f'Error processing analysis. Probably an error occurred: {result}'
                 response.response_data = None
@@ -100,20 +103,26 @@ class FiltersService:
                 return jsonify(response.to_dict()), 404
 
             if result == 'nothing changed':
+                # Execute the rollback
+                execute_rollback_data(container_id, database_connector, dataset_name)
+
                 response.http_status_code = 204
                 response.message = 'Nothing changed'
-                response.response_data = []
+                response.response_data = None
 
                 logger.info('Nothing changed')
-                return jsonify(response.to_dict()), 204
+                return jsonify(response.to_dict()), 202
 
             if result == 'no content':
+                # Execute the rollback
+                execute_rollback_data(container_id, database_connector, dataset_name)
+
                 response.http_status_code = 204
                 response.message = 'No content available for the analysis'
-                response.response_data = []
+                response.response_data = None
 
                 logger.info('No content available for the analysis')
-                return jsonify(response.to_dict()), 204
+                return jsonify(response.to_dict()), 202
 
             if result == 'success':
                 response.http_status_code = 201
@@ -123,6 +132,8 @@ class FiltersService:
                 logger.info('Analysis created successfully')
                 return jsonify(response.to_dict()), 201
 
+            # Execute the rollback
+            execute_rollback_data(container_id, database_connector, dataset_name)
             response.http_status_code = 500
             response.message = 'Unexpected error'
             response.response_data = None
@@ -249,6 +260,108 @@ class FiltersService:
             return jsonify(response.to_dict()), 500
 
     @staticmethod
+    def process_frequency(database_connector, frequency):
+        response = ApiResponse()
+
+        try:
+            database_connector.connect()
+
+            # Execute the query
+            query = frequency_filter_query(frequency)
+            result = database_connector.run_query_memgraph(query)
+
+            if len(result) == 0 or not isinstance(result, Iterable):
+                response.http_status_code = 204
+                response.response_data = None
+                response.message = f"No content for {frequency} frequency"
+
+                logger.error(f'No content for {frequency} frequency')
+                return jsonify(response.to_dict()), 404
+
+            # Process the result and structure the data
+            data = []
+            for row in result:
+                activity = row.get('activities')
+                freq = row.get('frequency')
+
+                data.append({
+                    'activity': activity,
+                    'frequency': freq
+                })
+
+            response.http_status_code = 200
+            response.response_data = data
+            response.message = "Successfully retrieved frequency."
+
+            logger.info('Frequency retrieved')
+            return jsonify(response.to_dict()), 200
+
+        except Exception as e:
+            response.http_status_code = 500
+            response.message = f"Internal Server Error: {str(e)}"
+            response.response_data = None
+
+            logger.error(f"Internal Server Error : {str(e)}")
+            return jsonify(response.to_dict()), 500
+
+        finally:
+            database_connector.close()
+
+    @staticmethod
+    def process_variation(database_connector):
+        response = ApiResponse()
+
+        try:
+            database_connector.connect()
+
+            # Execute the query
+            query = variation_filter_query()
+            result = database_connector.run_query_memgraph(query)
+
+            if not isinstance(result, Iterable) or not result:
+                response.http_status_code = 404
+                response.response_data = None
+                response.message = "No activities found"
+
+                logger.error('Activities not found')
+                return jsonify(response.to_dict()), 404
+
+            # Process the result and structure the data
+            data = []
+
+            for row in result:
+                activities = row.get('activities')
+                distinct_activities = row.get('distinct_activities')
+                avg_duration = row.get('avg_duration')
+                frequency = row.get('frequency')
+
+                # Add the data
+                data.append({
+                    'activities': activities,
+                    'distinct_activities': distinct_activities,
+                    'avg_duration': avg_duration,
+                    'frequency': frequency
+                })
+
+            response.http_status_code = 200
+            response.response_data = data
+            response.message = "Successfully retrieved activity variations."
+
+            logger.info('Activity variations retrieved')
+            return jsonify(response.to_dict()), 200
+
+        except Exception as e:
+            response.http_status_code = 500
+            response.message = f"Internal Server Error: {str(e)}"
+            response.response_data = None
+
+            logger.error(f"Internal Server Error : {str(e)}")
+            return jsonify(response.to_dict()), 500
+
+        finally:
+            database_connector.close()
+
+    @staticmethod
     def delete_analyses_s(dataset_name, analyses_name):
         response = ApiResponse()
 
@@ -326,7 +439,7 @@ def process_new_analysis_file(container_id, filters_data):
             return f'Error while copy the json file on the Engine directory: {str(result)}', None
 
         # 3. Remove the json file from the Engine
-        result = FileManager.delete_file(dataset_name, "json", False)
+        result = FileManager.delete_file(analysis_name, "json", False)
 
         if result != 'success':
             logger.error('Error while deleting file on the Engine')
@@ -454,6 +567,19 @@ def process_analysis(container_id, database_connector, dataset_name, analysis_na
     except Exception as e:
         logger.error(f'Internal Server Error: {str(e)}')
         return f'error: {e}', []
+
+
+# Execute the rollback
+def execute_rollback_data(container_id, database_connector, dataset_name):
+    # 1. Clean the memgraph data
+    event_node_delete_query = delete_event_graph_query()
+    database_connector.run_query_memgraph(event_node_delete_query)
+
+    entity_node_delete_query = delete_entity_graph_query()
+    database_connector.run_query_memgraph(entity_node_delete_query)
+
+    # 2. Reload the data
+    GenericGraphService.create_complete_graphs_s(container_id, database_connector, dataset_name)
 
 
 # Get the current data (node count and relationships count) inside Memgraph database

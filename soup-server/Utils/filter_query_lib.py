@@ -133,7 +133,7 @@ def frequency_filter_query(frequency):
     :param frequency: the frequency
     :return: the activities and frequencies
     """
-    return (f"MATCH (e1:Event) "
+    return (f"MATCH (e:Event) "
             f"WITH e.ActivityName AS activities, COUNT(e) AS frequency "
             f"WHERE frequency >= {frequency} "
             f"RETURN activities, frequency "
@@ -146,12 +146,18 @@ def variation_filter_query():
     :return: the activities and durations
     """
     query = """
-    MATCH (start:Event)-[:DF*]->(end:Event)
-    WITH start.EventID AS caseId, COLLECT(start.ActivityName) + COLLECT(end.ActivityName) AS activities,
-    duration.between(start.Timestamp, end.Timestamp) AS duration
-    RETURN activities, AVG(duration.seconds) AS avg_duration, COUNT(*) AS frequency
-    ORDER BY avg_duration ASC;
+            MATCH (start:Event)-[:DF*1..5]->(end:Event)
+            WITH start.EventID AS caseId,
+            COLLECT(DISTINCT start.ActivityName) + COLLECT(DISTINCT end.ActivityName) AS activities,
+            COLLECT(DISTINCT start.ActivityName) AS distinct_activities,
+            MIN(start.Timestamp.year * 10000000000 + start.Timestamp.month * 100000000 + start.Timestamp.day * 1000000 + start.Timestamp.hour * 10000 + start.Timestamp.minute * 100 + start.Timestamp.second) AS min_timestamp,
+            MAX(end.Timestamp.year * 10000000000 + end.Timestamp.month * 100000000 + end.Timestamp.day * 1000000 + end.Timestamp.hour * 10000 + end.Timestamp.minute * 100 + end.Timestamp.second) AS max_timestamp
+            WITH caseId, activities, distinct_activities,
+            (max_timestamp - min_timestamp) / 1000 AS duration_seconds
+            RETURN activities, distinct_activities, AVG(duration_seconds) AS avg_duration, COUNT(*) AS frequency
+            ORDER BY avg_duration ASC
     """
+
     return query
 
 
