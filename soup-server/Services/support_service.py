@@ -15,6 +15,10 @@ import math
 
 from neo4j.time import DateTime
 from Controllers.graph_config import memgraph_datetime_to_string
+from Models.logger_model import Logger
+
+# Engine logger setup
+logger = Logger()
 
 
 # The service for generic logic
