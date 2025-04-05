@@ -1,8 +1,15 @@
 import { Injectable, TemplateRef } from '@angular/core';
 import { Observable, of } from 'rxjs';
+
 import { SidebarSubject } from './sidebar-subject.model';
 import { SidebarConfig } from './sidebar.interface';
 
+/**
+ * Sidebar service
+ * @version 1.0
+ * @since 2.0.0
+ * @author Alessio Giacché
+ */
 @Injectable({
   providedIn: 'root'
 })

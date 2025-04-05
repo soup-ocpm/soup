@@ -1,9 +1,16 @@
 import { SpBtnComponent } from '@aledevsharp/sp-lib';
 import { CommonModule } from '@angular/common';
-import { Component, Input, TemplateRef } from '@angular/core';
+import { Component, input, OnInit, TemplateRef } from '@angular/core';
+
 import { SidebarConfig } from './sidebar.interface';
 import { SidebarService } from './sidebar.service';
 
+/**
+ * Sidebars component
+ * @version 1.0
+ * @since 2.0.0
+ * @author Alessio Giacché
+ */
 @Component({
   selector: 's-sidebar',
   standalone: true,
@@ -15,7 +22,7 @@ import { SidebarService } from './sidebar.service';
   templateUrl: './s-sidebar.component.html',
   styleUrl: './s-sidebar.component.scss'
 })
-export class SidebarComponent {
+export class SidebarComponent implements OnInit {
   // The sidebar configuration
   public config: SidebarConfig | null = null;
 
@@ -23,10 +30,10 @@ export class SidebarComponent {
   public content: TemplateRef<any> | null = null;
 
   // If the sidebar is open
-  public isOpen: boolean = false;
+  public isOpen = false;
 
   // The sidebar id
-  @Input() sidebarId!: string;
+  public sidebarId = input.required<string>();
 
   /**
    * Constructor for SidebarComponent component
@@ -36,15 +43,15 @@ export class SidebarComponent {
 
   // NgOnInit implementation
   public ngOnInit(): void {
-    this.sidebarService.isOpen$(this.sidebarId).subscribe((open) => {
+    this.sidebarService.isOpen$(this.sidebarId()).subscribe((open) => {
       this.isOpen = open;
     });
 
-    this.sidebarService.config$(this.sidebarId).subscribe((config) => {
+    this.sidebarService.config$(this.sidebarId()).subscribe((config) => {
       this.config = config;
     });
 
-    this.sidebarService.content$(this.sidebarId).subscribe((content) => {
+    this.sidebarService.content$(this.sidebarId()).subscribe((content) => {
       this.content = content;
     });
   }
@@ -54,6 +61,6 @@ export class SidebarComponent {
    */
   public closeSidebar() {
     this.isOpen = false;
-    setTimeout(() => this.sidebarService.close(this.sidebarId), 300);
+    setTimeout(() => this.sidebarService.close(this.sidebarId()), 300);
   }
 }

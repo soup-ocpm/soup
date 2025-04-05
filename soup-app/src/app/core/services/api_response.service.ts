@@ -4,6 +4,12 @@ import { catchError, map, Observable, throwError } from 'rxjs';
 
 import { ApiResponse } from '../models/api_response.model';
 
+/**
+ * Api service
+ * @version 1.0.0
+ * @since 1.0.0
+ * @author Alessio Giacché
+ */
 @Injectable({
   providedIn: 'root'
 })

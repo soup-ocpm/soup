@@ -1,10 +1,16 @@
 import { Injectable } from '@angular/core';
-
 import { Observable } from 'rxjs';
 import { environment } from 'src/environments/environment';
+
 import { ApiResponse } from '../core/models/api_response.model';
 import { ApiService } from '../core/services/api_response.service';
 
+/**
+ * Analysis service
+ * @version 1.0
+ * @since 2.0.0
+ * @author Alessio Giacché
+ */
 @Injectable({
   providedIn: 'root'
 })

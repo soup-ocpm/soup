@@ -7,8 +7,15 @@ import { Dataset } from 'src/app/models/dataset.model';
 import { Entity } from 'src/app/models/entity.mode';
 import { MaterialModule } from 'src/app/shared/modules/materlal.module';
 import { LocalDataService } from 'src/app/shared/services/support.service';
+
 import { ActivityFilter } from './activity-filter.model';
 
+/**
+ * Activity Filter Component
+ * @version 1.0.0
+ * @since 2.0.0
+ * @author Alessio Giacché
+ */
 @Component({
   selector: 'app-activity-filter-dialog',
   standalone: true,
@@ -48,6 +55,7 @@ export class ActivityFilterDialogComponent implements OnInit {
   // NgOnInit implementation
   public ngOnInit(): void {
     this.currentDataset = this.supportDataService!.getCurrentDataset();
+
     this.currentDataset!.allActivities.forEach((item) => {
       const entity = new Entity();
       entity.name = item;
@@ -63,6 +71,7 @@ export class ActivityFilterDialogComponent implements OnInit {
    */
   public submitEntity(entity: Entity, event: any): void {
     entity.selected = event;
+
     if (entity.selected) {
       this.allDatasetActivities.forEach((e: Entity): void => {
         if (e.name == entity.name) {
@@ -84,7 +93,6 @@ export class ActivityFilterDialogComponent implements OnInit {
 
     this.activityModel.activities = selectedActivityNames;
     this.activityModel.include = this.inputData;
-
     this.activeModal.close({ activities: this.activityModel });
   }
 

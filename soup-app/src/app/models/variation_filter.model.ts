@@ -1,6 +1,8 @@
 /**
  * Variation filter model class
- * @version 2.0
+ * @version 1.0
+ * @since 1.0.0
+ * @author Alessio Giacché
  */
 export class VariationFilter {
   // List of the activities

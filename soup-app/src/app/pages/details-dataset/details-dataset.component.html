@@ -1,9 +1,11 @@
 <!--The progress bar-->
-<sp-progressbar *ngIf="this.isLoading"></sp-progressbar>
+@if (this.isLoading) {
+  <sp-progressbar></sp-progressbar>
+}
 
 <!--Master content-->
 <div class="master">
-  <div *ngIf="!this.isLoading">
+  @if (!this.isLoading) {
     <!--Data-->
     <div class="dataset-content">
       <div class="dataset-name">
@@ -92,7 +94,7 @@
       </div>
 
       <!--Aggregate Charts-->
-      <div *ngIf="this.currentDataset!.classNodes > 0">
+      @if (this.currentDataset!.classNodes > 0) {
         <!--Aggregate data-->
         <div
           class="content"
@@ -166,12 +168,12 @@
             </div>
           </div>
         </div>
-      </div>
+      }
     </div>
-  </div>
+  }
 
   <!--Loading content-->
-  <div *ngIf="isLoading">
+  @if (this.isLoading) {
     <div class="process-div">
       <h3>
         Building the Class EKG
@@ -179,18 +181,18 @@
         This operation may take a few minutes...
       </h3>
     </div>
-  </div>
+  }
 </div>
 
 <!--Overlay sidebar open-->
-<div
-  class="overlay"
-  *ngIf="this.sidebarService.isSidebarOpen('new-analysis')"></div>
+@if (this.sidebarService.isSidebarOpen('new-analysis')) {
+  <div class="overlay"></div>
+}
 
 <!--List of the sidebar-->
-<s-sidebar
-  *ngFor="let sidebarId of this.sidebarIds"
-  [sidebarId]="sidebarId"></s-sidebar>
+@for (sidebarId of this.sidebarIds; track $index) {
+  <s-sidebar [sidebarId]="sidebarId"></s-sidebar>
+}
 
 <!-- Master Sidebar template-->
 <ng-template #masterSidebarTemplate>
@@ -198,14 +200,15 @@
 
   <!-- Operations Section -->
   <div class="operation-container">
-    <app-side-operation
-      *ngFor="let operation of this.operations"
-      [title]="operation.title"
-      [description]="operation.description"
-      [icon]="operation.icon"
-      [action]="operation.action"
-      [loading]="operation.loading"
-      (operationSelected)="this.onOperationSelected(operation)"></app-side-operation>
+    @for (operation of this.operations; track $index) {
+      <app-side-operation
+        [title]="operation.title"
+        [description]="operation.description"
+        [icon]="operation.icon"
+        [action]="operation.action"
+        [loading]="operation.loading"
+        (operationSelected)="this.onOperationSelected(operation)"></app-side-operation>
+    }
   </div>
 </ng-template>
 
@@ -247,255 +250,253 @@
 
   <sp-divider></sp-divider>
 
-  <li
-    *ngFor="let entity of this.entityList"
-    class="list-group-item">
-    <span style="margin-top: 5px">{{ entity.name }}</span>
+  @for (entity of this.entityList; track $index) {
+    <li class="list-group-item">
+      <span style="margin-top: 5px">{{ entity.name }}</span>
 
-    <div class="group">
-      <mat-icon
-        *ngIf="entity.numberOfNanNodes > 0"
-        [matTooltip]="getEntityWarningLabel(entity)">
-        warning
-      </mat-icon>
-      <mat-slide-toggle
-        style="margin-top: 3px"
-        [(ngModel)]="entity.isSelected"
-        (change)="selectionEntity(entity)"
-        color="primary"></mat-slide-toggle>
-    </div>
-  </li>
+      <div class="group">
+        @if (entity.numberOfNanNodes > 0) {
+          <mat-icon [matTooltip]="getEntityWarningLabel(entity)">warning</mat-icon>
+        }
+        <mat-slide-toggle
+          style="margin-top: 3px"
+          color="primary"
+          [(ngModel)]="entity.isSelected"
+          (change)="selectionEntity(entity)"></mat-slide-toggle>
+      </div>
+    </li>
+  }
 
   <div style="margin-top: 13px"></div>
   <sp-divider></sp-divider>
 
-  <div *ngIf="this.currentDataset!.classNodes > 0">
+  @if (this.currentDataset!.classNodes > 0) {
     <p style="color: #ff0000; margin-top: 10px">Warning</p>
     <p>
       Aggregate class graph is already present inside the Memgraph Database. This operation will remove the present graph to make new
       aggregation
     </p>
-  </div>
+  }
 </ng-template>
 
 <!--New analysis Sidebar template-->
 <ng-template #newAnalysisSidebarTemplate>
-  <div *ngIf="!this.isLoadingAnalysis">
-    <div *ngIf="!this.isLoadingConfiguration">
-      <p *ngIf="!this.jsonConfiguration || this.createTilesByFile">From here you can add filters and create a new analysis</p>
+  @if (!this.isLoadingAnalysis) {
+    @if (!this.isLoadingConfiguration) {
+      @if (this.createTilesByFile) {
+        <p>From here you can add filters and create a new analysis</p>
+      }
 
-      <div
-        *ngIf="this.jsonConfiguration && !this.createTilesByFile"
-        style="display: flex">
-        <p>You can upload your json configuration file for import filters</p>
-        <i
-          style="margin-left: 30px"
-          class="bi bi-info-circle"
-          (click)="this.openInfoJSONConfigurationSidebar()"></i>
-      </div>
+      @if (this.jsonConfiguration && !this.createTilesByFile) {
+        <div style="display: flex">
+          <p>You can upload your json configuration file for import filters</p>
+          <i
+            class="bi bi-info-circle"
+            style="margin-left: 30px"
+            (click)="this.openInfoJSONConfigurationSidebar()"></i>
+        </div>
+      }
 
       <div class="master-filters">
-        <div
-          *ngFor="let tile of this.tiles"
-          class="filter-tile">
-          <!-- Tile title -->
-          <div class="tile-header">
-            <strong>{{ tile.type }}</strong>
+        @for (tile of this.tiles; track $index) {
+          <div class="filter-tile">
+            <!-- Tile title -->
+            <div class="tile-header">
+              <strong>{{ tile.type }}</strong>
+            </div>
+
+            <!-- Tile details -->
+            <div class="tile-details">
+              @switch (tile.type) {
+                @case ('Timestamp') {
+                  <!--Timestamp filter-->
+                  <p>
+                    <strong>Start Date:</strong>
+                    {{ tile.details.startDate | date }}
+                  </p>
+                  <p>
+                    <strong>End Date:</strong>
+                    {{ tile.details.endDate | date }}
+                  </p>
+                }
+                @case ('Performance') {
+                  <!-- Performance filter -->
+                  <div style="display: flex">
+                    <p>
+                      <strong>Start Activity:</strong>
+                      {{ tile.details.startActivity }}
+                    </p>
+                    <p>
+                      <strong>Metrics:</strong>
+                      {{ tile.details.seconds }} seconds
+                    </p>
+                  </div>
+                  <p>
+                    <strong>End Activity:</strong>
+                    {{ tile.details.endActivity }}
+                  </p>
+                }
+                @case ('Include Activities') {
+                  <!-- Include Activities filter-->
+                  <p>
+                    <strong>Activities:</strong>
+                    [{{ tile.details.activities.join(', ') }}]
+                  </p>
+                }
+                @case ('Exclude Activities') {
+                  <!-- Exclude Activities filter-->
+                  <p>
+                    <strong>Excluded Activities:</strong>
+                    [{{ tile.details.activities.join(', ') }}]
+                  </p>
+                }
+                @case ('Frequence') {
+                  <!--Frequence filter-->
+                  <p>
+                    <strong>Frequency:</strong>
+                    {{ tile.details.frequency }}
+                  </p>
+                }
+                @case ('Variation') {
+                  <!--Variation filter-->
+                  <p>
+                    <strong>Variation:</strong>
+                    {{ tile.details.variation }}
+                  </p>
+                }
+              }
+            </div>
+
+            <i
+              class="bi bi-trash"
+              (click)="this.deleteTile(tile)"></i>
           </div>
-
-          <!-- Tile details -->
-          <div class="tile-details">
-            <!--Timestamp filter-->
-            <div *ngIf="tile.type === 'Timestamp'">
-              <p>
-                <strong>Start Date:</strong>
-                {{ tile.details.startDate | date }}
-              </p>
-              <p>
-                <strong>End Date:</strong>
-                {{ tile.details.endDate | date }}
-              </p>
-            </div>
-
-            <!-- Performance filter -->
-            <div *ngIf="tile.type === 'Performance'">
-              <div style="display: flex">
-                <p>
-                  <strong>Start Activity:</strong>
-                  {{ tile.details.startActivity }}
-                </p>
-                <p>
-                  <strong>Metrics:</strong>
-                  {{ tile.details.seconds }} seconds
-                </p>
-              </div>
-              <p>
-                <strong>End Activity:</strong>
-                {{ tile.details.endActivity }}
-              </p>
-            </div>
-
-            <!-- Include Activities filter-->
-            <div *ngIf="tile.type === 'Include Activities'">
-              <p>
-                <strong>Activities:</strong>
-                [{{ tile.details.activities.join(', ') }}]
-              </p>
-            </div>
-
-            <!-- Exclude Activities filter-->
-            <div *ngIf="tile.type === 'Exclude Activities'">
-              <p>
-                <strong>Excluded Activities:</strong>
-                [{{ tile.details.activities.join(', ') }}]
-              </p>
-            </div>
-
-            <!-- Filtro Frequence -->
-            <div *ngIf="tile.type === 'Frequence'">
-              <p>
-                <strong>Frequency:</strong>
-                {{ tile.details.frequency }}
-              </p>
-            </div>
-
-            <!-- Filtro Variation -->
-            <div *ngIf="tile.type === 'Variation'">
-              <p>
-                <strong>Variation:</strong>
-                {{ tile.details.variation }}
-              </p>
-            </div>
-          </div>
-
-          <i
-            class="bi bi-trash"
-            (click)="this.deleteTile(tile)"></i>
-        </div>
+        }
 
         <!-- Add new tile -->
-        <button
-          *ngIf="!this.jsonConfiguration || this.createTilesByFile"
-          class="plus-button"
-          (click)="this.addNewAnalysisTile()">
-          <i class="bi bi-plus-lg"></i>
-        </button>
+        @if (!this.jsonConfiguration || this.createTilesByFile) {
+          <button
+            class="plus-button"
+            (click)="this.addNewAnalysisTile()">
+            <i class="bi bi-plus-lg"></i>
+          </button>
+        }
 
         <!--Upload btn-->
         <div class="master-upload-button">
-          <button
-            *ngIf="this.jsonConfiguration && !this.createTilesByFile"
-            class="upload-button"
-            (click)="this.triggerFileInput()">
-            <i class="bi bi-upload"></i>
-            <span class="upload-text">Upload JSON File</span>
-          </button>
+          @if (this.jsonConfiguration && !this.createTilesByFile) {
+            <button
+              class="upload-button"
+              (click)="this.triggerFileInput()">
+              <i class="bi bi-upload"></i>
+              <span class="upload-text">Upload JSON File</span>
+            </button>
+          }
 
           <input
             #fileInput
-            type="file"
-            (change)="this.onFileChange($event)"
-            accept=".json"
             class="upload-input"
-            style="display: none" />
+            style="display: none"
+            type="file"
+            accept=".json"
+            (change)="this.onFileChange($event)" />
         </div>
       </div>
-    </div>
+    }
 
     <!--Loading the configuration-->
-    <div
-      *ngIf="this.isLoadingConfiguration"
-      class="loading-configuration">
+    @if (this.isLoadingConfiguration) {
+      <div class="loading-configuration">
+        <sp-spinner></sp-spinner>
+      </div>
+    }
+  } @else if (this.isLoadingAnalysis) {
+    <!--Loading status-->
+    <div class="loading-analysis">
       <sp-spinner></sp-spinner>
+      <h5 style="margin-left: 20px">Creating analysis...</h5>
     </div>
-  </div>
-
-  <!--Loading status-->
-  <div
-    *ngIf="this.isLoadingAnalysis"
-    class="loading-analysis">
-    <sp-spinner></sp-spinner>
-    <h5 style="margin-left: 20px">Creating analysis...</h5>
-  </div>
+  }
 </ng-template>
 
 <!--History analysis Sidebar template-->
 <ng-template #analysesSidebarTemplate>
-  <div *ngIf="!this.isLoadingAnalysis">
-    <p>List of analyses</p>
-    <div style="width: 50%">
-      <input
-        class="form-control form-control-sm"
-        style="margin-top: 10px"
-        type="text"
-        placeholder="Search analysis"
-        [(ngModel)]="searchTerm" />
-    </div>
+  @if (!this.isLoadingAnalysis) {
+    <div>
+      <p>List of analyses</p>
+      <div style="width: 50%">
+        <input
+          class="form-control form-control-sm"
+          style="margin-top: 10px"
+          type="text"
+          placeholder="Search analysis"
+          [(ngModel)]="searchTerm" />
+      </div>
 
-    <div style="margin-top: 10px"></div>
-    <sp-divider style="width: 50%"></sp-divider>
-    <div style="margin-top: 10px"></div>
+      <div style="margin-top: 10px"></div>
+      <sp-divider style="width: 50%"></sp-divider>
+      <div style="margin-top: 10px"></div>
 
-    <div class="master-filters">
-      <div
-        *ngFor="let analysis of this.filteredAnalysis()"
-        class="analysis-tile">
-        <!-- Tile title -->
-        <div class="analysis-header">
-          <strong>{{ analysis.analysisName }}</strong>
-        </div>
+      <div class="master-filters">
+        @for (analysis of this.filteredAnalysis(); track $index) {
+          <div class="analysis-tile">
+            <!-- Tile title -->
+            <div class="analysis-header">
+              <strong>{{ analysis.analysisName }}</strong>
+            </div>
 
-        <!-- Tile details -->
-        <div
-          class="analysis-details"
-          style="justify-content: column">
-          <!--Timestamp filter-->
-          <p>
-            <strong>Total filters:</strong>
-            {{ this.getTotalAnalysisFilter(analysis) }}
-          </p>
-          <p>
-            <strong>Filters:</strong>
-            [{{ this.getAnalysisFiltersString(analysis) }}]
-          </p>
-        </div>
+            <!-- Tile details -->
+            <div
+              class="analysis-details"
+              style="justify-content: column">
+              <!--Timestamp filter-->
+              <p>
+                <strong>Total filters:</strong>
+                {{ this.getTotalAnalysisFilter(analysis) }}
+              </p>
+              <p>
+                <strong>Filters:</strong>
+                [{{ this.getAnalysisFiltersString(analysis) }}]
+              </p>
+            </div>
 
-        <i
-          class="bi bi-three-dots-vertical"
-          [matMenuTriggerFor]="menu"></i>
-
-        <!--Menu-->
-        <mat-menu #menu="matMenu">
-          <button
-            mat-menu-item
-            (click)="this.processAnalysis(analysis)">
-            <i class="bi bi-box-arrow-in-up-right"></i>
-            <span style="margin-left: 5px">Open</span>
-          </button>
-          <button
-            mat-menu-item
-            (click)="this.onZoomAnalysis(analysis)">
-            <i class="bi bi-arrows-fullscreen"></i>
-            <span style="margin-left: 5px">Zoom</span>
-          </button>
-          <button
-            mat-menu-item
-            (click)="this.openModalDeleteAnalysis(analysis)">
             <i
-              class="bi bi-trash"
-              style="color: red"></i>
-            <span style="margin-left: 5px">Delete</span>
-          </button>
-        </mat-menu>
+              class="bi bi-three-dots-vertical"
+              [matMenuTriggerFor]="menu"></i>
+
+            <!--Menu-->
+            <mat-menu #menu="matMenu">
+              <button
+                mat-menu-item
+                (click)="this.processAnalysis(analysis)">
+                <i class="bi bi-box-arrow-in-up-right"></i>
+                <span style="margin-left: 5px">Open</span>
+              </button>
+              <button
+                mat-menu-item
+                (click)="this.onZoomAnalysis(analysis)">
+                <i class="bi bi-arrows-fullscreen"></i>
+                <span style="margin-left: 5px">Zoom</span>
+              </button>
+              <button
+                mat-menu-item
+                (click)="this.openModalDeleteAnalysis(analysis)">
+                <i
+                  class="bi bi-trash"
+                  style="color: red"></i>
+                <span style="margin-left: 5px">Delete</span>
+              </button>
+            </mat-menu>
+          </div>
+        }
       </div>
     </div>
-  </div>
-  <div
-    *ngIf="this.isLoadingAnalysis"
-    class="loading-analysis">
-    <sp-spinner></sp-spinner>
-    <h5 style="margin-left: 20px">Process Filters...</h5>
-  </div>
+  } @else if (this.isLoadingAnalysis) {
+    <div class="loading-analysis">
+      <sp-spinner></sp-spinner>
+      <h5 style="margin-left: 20px">Process Filters...</h5>
+    </div>
+  }
 </ng-template>
 
 <!--JSON Configuration template-->
@@ -507,5 +508,5 @@
   </p>
 
   <h5>Example JSON</h5>
-  <pre style="background-color: #f4f4f4; text-align: left">{{ this.getExampleJSON() | json }}</pre>
+  <pre class="example-json">{{ this.getExampleJSON() | json }}</pre>
 </ng-template>

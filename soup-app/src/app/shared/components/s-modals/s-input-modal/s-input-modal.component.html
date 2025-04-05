@@ -1,107 +1,106 @@
-<div
-  class="overlay"
-  *ngIf="this.isVisible"></div>
-<div
-  class="card"
-  *ngIf="this.isVisible"
-  [ngClass]="{ show: this.isVisible }"
-  [@slideInOut]>
-  <!--Header and description-->
-  <div class="header">
-    <h4 class="card-title">{{ this.title }}</h4>
-    <i
-      class="bi bi-x-lg"
-      (click)="this.isVisible = false"></i>
-  </div>
-  <p style="color: var(--secondary-color); margin-top: 15px">{{ this.message }}</p>
-
-  <!--Input form for name-->
-  <div class="mb-1">
-    <label
-      for="name"
-      class="form-label"
-      style="color: var(--secondary-color)">
-      {{ this.isForDataset ? 'Dataset name' : 'Analysis name' }}
-    </label>
-    <input
-      class="form-control form-control-sm"
-      id="name"
-      type="text"
-      [(ngModel)]="this.name"
-      (input)="this.onInputChange()"
-      [ngClass]="{ 'input-error': this.hasError }" />
-    <span>
-      <p
-        *ngIf="this.hasError"
-        style="color: red; margin-top: 5px">
-        {{ this.errorMessage }}
-      </p>
-    </span>
-  </div>
-
-  <!--Input form for description-->
+@if (this.isVisible) {
+  <div class="overlay"></div>
   <div
-    class="mb-1"
-    style="margin-top: 20px">
-    <label
-      for="description"
-      class="form-label"
-      style="color: var(--secondary-color)">
-      {{ this.isForDataset ? 'Dataset description (optional)' : 'Aanlysis description (optional)' }}
-    </label>
-    <textarea
-      class="form-control form-control-sm"
-      id="description"
-      type="text"
-      style="max-height: 100px"
-      [(ngModel)]="this.description"
-      (input)="this.onInputChange()"></textarea>
-  </div>
+    class="card"
+    [ngClass]="{ show: this.isVisible }"
+    [@slideInOut]>
+    <!--Header and description-->
+    <div class="header">
+      <h4 class="card-title">{{ this.title }}</h4>
+      <i
+        class="bi bi-x-lg"
+        (click)="this.isVisible = false"></i>
+    </div>
+    <p class="message">{{ this.message }}</p>
 
-  <!--Process execution toggle-->
-  <div
-    class="process-execution"
-    *ngIf="this.isForDataset">
+    <!--Input form for name-->
     <div class="mb-1">
       <label
-        for="saveProcessExecution"
         class="form-label"
-        style="color: var(--secondary-color)">
-        Save process and query execution time for this Dataset for in-depth
-        <br />
-        information
+        style="color: var(--secondary-color)"
+        for="name">
+        {{ this.isForDataset ? 'Dataset name' : 'Analysis name' }}
       </label>
-      <mat-slide-toggle
-        id="saveProcessExecution"
-        [(ngModel)]="this.saveProcessExecution"
-        color="primary"
-        class="small-slide-toggle"></mat-slide-toggle>
-    </div>
-  </div>
-
-  <!--Footer-->
-  <div style="margin-top: 25px">
-    <!--Single button-->
-    <div *ngIf="!this.doubleButton">
-      <sp-btn-txt
-        [text]="this.primaryButtonText"
-        [color]="this.primaryButtonColor"
-        (buttonClick)="onClickPrimaryButton()"></sp-btn-txt>
+      <input
+        id="name"
+        class="form-control form-control-sm"
+        type="text"
+        [(ngModel)]="this.name"
+        (input)="this.onInputChange()"
+        [ngClass]="{ 'input-error': this.hasError }" />
+      @if (this.hasError) {
+        <span>
+          <p class="error-message">
+            {{ this.errorMessage }}
+          </p>
+        </span>
+      }
     </div>
 
-    <!--Double buttons-->
+    <!--Input form for description-->
     <div
-      class="footer"
-      *ngIf="this.doubleButton">
-      <sp-btn-txt
-        [text]="this.primaryButtonText"
-        [color]="this.primaryButtonColor"
-        (buttonClick)="onClickPrimaryButton()"></sp-btn-txt>
-      <sp-btn-txt
-        [text]="this.secondaryButtonText"
-        [color]="this.secondaryButtonColor"
-        style="margin-left: 25px"
-        (buttonClick)="onClickSecondaryButton()"></sp-btn-txt>
+      class="mb-1"
+      style="margin-top: 20px">
+      <label
+        class="form-label"
+        style="color: var(--secondary-color)"
+        for="description">
+        {{ this.isForDataset ? 'Dataset description (optional)' : 'Aanlysis description (optional)' }}
+      </label>
+      <textarea
+        id="description"
+        class="form-control form-control-sm"
+        style="max-height: 100px"
+        type="text"
+        [(ngModel)]="this.description"
+        (input)="this.onInputChange()"></textarea>
+    </div>
+
+    <!--Process execution toggle-->
+    @if (this.isForDataset) {
+      <div class="process-execution">
+        <div class="mb-1">
+          <label
+            class="form-label"
+            style="color: var(--secondary-color)"
+            for="saveProcessExecution">
+            Save process and query execution time for this Dataset for in-depth
+            <br />
+            information
+          </label>
+          <mat-slide-toggle
+            id="saveProcessExecution"
+            color="primary"
+            class="small-slide-toggle"
+            [(ngModel)]="this.saveProcessExecution"></mat-slide-toggle>
+        </div>
+      </div>
+    }
+
+    <!--Footer-->
+    <div style="margin-top: 25px">
+      <!--Single button-->
+      @if (!this.doubleButton) {
+        <sp-btn-txt
+          [text]="this.primaryButtonText"
+          [color]="this.primaryButtonColor"
+          (buttonClick)="onClickPrimaryButton()"></sp-btn-txt>
+      }
+
+      <!--Double buttons-->
+      @if (this.doubleButton) {
+        <div class="footer">
+          <sp-btn-txt
+            [text]="this.primaryButtonText"
+            [color]="this.primaryButtonColor"
+            (buttonClick)="onClickPrimaryButton()"></sp-btn-txt>
+          <sp-btn-txt
+            style="margin-left: 25px"
+            [text]="this.secondaryButtonText"
+            [color]="this.secondaryButtonColor"
+            (buttonClick)="onClickSecondaryButton()"></sp-btn-txt>
+        </div>
+      }
     </div>
   </div>
-</div>
+}

@@ -1,6 +1,8 @@
 /**
  * Timestamp filter model class
- * @version 2.0
+ * @version 1.0.0
+ * @since 2.0.0
+ * @author Alessio Giacché
  */
 export class TimestampFilter {
   // The start date

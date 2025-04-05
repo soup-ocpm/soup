@@ -1,8 +1,14 @@
 import { SpSpinnerComponent } from '@aledevsharp/sp-lib';
 import { CommonModule } from '@angular/common';
-import { Component, EventEmitter, Input, Output } from '@angular/core';
+import { Component, Input, input, output } from '@angular/core';
 import { MaterialModule } from 'src/app/shared/modules/materlal.module';
 
+/**
+ * Side operation Component
+ * @version 1.0.0
+ * @since 2.0.0
+ * @author Alessio Giacché
+ */
 @Component({
   selector: 'app-side-operation',
   standalone: true,
@@ -17,22 +23,22 @@ import { MaterialModule } from 'src/app/shared/modules/materlal.module';
 })
 export class SideOperationComponent {
   // The operation title
-  @Input() title: string = '';
+  public title = input<string>();
 
   // The operation description
-  @Input() description: string = '';
+  public description = input<string>();
 
   // The operation icon
-  @Input() icon: string = '';
+  public icon = input<string>();
 
   // If we want to add the loading status
-  @Input() loading: boolean = false;
+  public loading = input<boolean>();
 
   // The operation action
   @Input() action: () => void = () => {};
 
   // @Output for emitting the click event
-  @Output() operationSelected: EventEmitter<void> = new EventEmitter<void>();
+  public operationSelected = output<void>();
 
   /**
    * Constructor for SideOperationComponent component

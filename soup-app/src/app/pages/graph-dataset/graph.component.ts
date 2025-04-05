@@ -1,3 +1,4 @@
+import { SpDividerComponent, SpSpinnerComponent } from '@aledevsharp/sp-lib';
 import { CommonModule, Location } from '@angular/common';
 import { AfterViewInit, Component, ElementRef, OnInit, TemplateRef, ViewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
@@ -6,8 +7,6 @@ import * as d3 from 'd3';
 import * as dagreD3 from 'dagre-d3';
 import saveAs from 'file-saver';
 import { concatMap, from, map, Observable, toArray } from 'rxjs';
-
-import { SpDividerComponent, SpSpinnerComponent } from '@aledevsharp/sp-lib';
 import { GraphType } from 'src/app/enums/graph_type.enum';
 import { FrequencyFilter } from 'src/app/models/frequency_filter.model';
 import { VariationFilter } from 'src/app/models/variation_filter.model';
@@ -16,6 +15,7 @@ import { ClassGraphService } from 'src/app/services/class_graph.service';
 import { ModalService } from 'src/app/shared/components/s-modals/modal.service';
 import { SidebarService } from 'src/app/shared/components/s-sidebar/sidebar.service';
 import { NotificationService } from 'src/app/shared/components/s-toast/toast.service';
+
 import { SideOperationComponent } from '../../components/side-operation/side-operation.component';
 import { ApiResponse } from '../../core/models/api_response.model';
 import { LoggerService } from '../../core/services/logger.service';
@@ -30,6 +30,12 @@ import { MaterialModule } from '../../shared/modules/materlal.module';
 import { LocalDataService } from '../../shared/services/support.service';
 import { JsonObject } from '../details-dataset/details-dataset.component';
 
+/**
+ * Graph visualization component
+ * @version 1.0
+ * @since 1.0.0
+ * @author Alessio Giacché
+ */
 @Component({
   selector: 'app-graph',
   standalone: true,
@@ -69,7 +75,7 @@ export class GraphComponent implements OnInit, AfterViewInit {
   public edges: any = [];
 
   // Map id to name node
-  private nodeNameMap: { [id: string]: string } = {};
+  private nodeNameMap: Record<string, string> = {};
 
   // All type of relationships
   public allRelationships: { name: string; selected: boolean }[] = [];
@@ -114,19 +120,19 @@ export class GraphComponent implements OnInit, AfterViewInit {
   public displayedEdges: any[] = [];
 
   // The total unique node showed on the ekg
-  public totalUniqueNodeShowed: number = 0;
+  public totalUniqueNodeShowed = 0;
 
   // The total unique node showed on the ekg bak
-  public totalUniqueNodeShowedBak: number = 0;
+  public totalUniqueNodeShowedBak = 0;
 
   // The total unique rel showed on the ekg
-  public totalUniqueRelShowed: number = 0;
+  public totalUniqueRelShowed = 0;
 
   // Loading nodes for scrollbar
   public loadingFewData = false;
 
   // Loading new nodes
-  public isLoadingNewNodes: boolean = false;
+  public isLoadingNewNodes = false;
 
   // Selected the researched node
   public selectedNode: any;
@@ -162,7 +168,7 @@ export class GraphComponent implements OnInit, AfterViewInit {
   public selectedJson: string[] = [];
 
   // The analysis name if we watch filtered ekg
-  public analysisName: string = '';
+  public analysisName = '';
 
   // If the user attend download the json
   public isLoadingJsonDownload = false;
@@ -442,14 +448,14 @@ export class GraphComponent implements OnInit, AfterViewInit {
 
       // Add nodes
       this.nodes.forEach((node: any): void => {
-        let nodeId = node.id;
-        let nodeName = node.ActivityName;
-        let nodeProperties: any = {
+        const nodeId = node.id;
+        const nodeName = node.ActivityName;
+        const nodeProperties: any = {
           label: nodeName
         };
 
         for (const prop in node) {
-          if (node.hasOwnProperty(prop)) {
+          if (Object.prototype.hasOwnProperty.call(node, prop)) {
             nodeProperties[prop] = node[prop];
           }
         }
@@ -656,7 +662,7 @@ export class GraphComponent implements OnInit, AfterViewInit {
    * Open the master sidebar
    */
   public openMasterSidebar(): void {
-    const sidebarId: string = 'master-sidebar';
+    const sidebarId = 'master-sidebar';
 
     if (!this.sidebarIds.includes(sidebarId)) {
       this.sidebarIds.push(sidebarId);
@@ -703,7 +709,7 @@ export class GraphComponent implements OnInit, AfterViewInit {
    * Open the master sidebar
    */
   public openSearchSidebar(): void {
-    const sidebarId: string = 'search-sidebar';
+    const sidebarId = 'search-sidebar';
 
     if (!this.sidebarIds.includes(sidebarId)) {
       this.sidebarIds.push(sidebarId);
@@ -728,7 +734,7 @@ export class GraphComponent implements OnInit, AfterViewInit {
    * Open the graph manager sidebar
    */
   public openGraphManager(): void {
-    const sidebarId: string = 'manage-graph-sidebar';
+    const sidebarId = 'manage-graph-sidebar';
 
     if (!this.sidebarIds.includes(sidebarId)) {
       this.sidebarIds.push(sidebarId);
@@ -753,7 +759,7 @@ export class GraphComponent implements OnInit, AfterViewInit {
    * Open the graph manager sidebar
    */
   public openJSONSidebar(): void {
-    const sidebarId: string = 'json-sidebar';
+    const sidebarId = 'json-sidebar';
 
     if (!this.sidebarIds.includes(sidebarId)) {
       this.sidebarIds.push(sidebarId);
@@ -779,7 +785,7 @@ export class GraphComponent implements OnInit, AfterViewInit {
    * @param addButtons if we want to include the footer buttons
    */
   public updateJSONSidebar(addButtons: boolean): void {
-    const sidebarId: string = 'json-sidebar';
+    const sidebarId = 'json-sidebar';
 
     if (addButtons) {
       this.sidebarService.updateConfig(sidebarId, {
@@ -922,8 +928,8 @@ export class GraphComponent implements OnInit, AfterViewInit {
   public hoverEdge(item: any): void {
     setTimeout(() => {}, 500);
     if (item != null && item.source.id != null && item.target.id != null) {
-      let nodeSource = this.g.node(item.source.id);
-      let nodeTarget = this.g.node(item.target.id);
+      const nodeSource = this.g.node(item.source.id);
+      const nodeTarget = this.g.node(item.target.id);
 
       // Change node style
       if (nodeSource && nodeTarget) {
@@ -944,8 +950,8 @@ export class GraphComponent implements OnInit, AfterViewInit {
    */
   public leaveHoverEdge(item: any): void {
     if (item != null && item.source.id != null && item.target.id != null) {
-      let nodeSource = this.g.node(item.source.id);
-      let nodeTarget = this.g.node(item.target.id);
+      const nodeSource = this.g.node(item.source.id);
+      const nodeTarget = this.g.node(item.target.id);
 
       if (nodeSource && nodeTarget) {
         const style = 'fill: #fff; stroke: #000; stroke-width: 2px';
@@ -1174,7 +1180,7 @@ export class GraphComponent implements OnInit, AfterViewInit {
    * @param addButtons if we want to include the footer buttons
    */
   public updateManageSidebar(addButtons: boolean): void {
-    const sidebarId: string = 'manage-graph-sidebar';
+    const sidebarId = 'manage-graph-sidebar';
 
     if (addButtons) {
       this.sidebarService.updateConfig(sidebarId, {
@@ -1339,7 +1345,7 @@ export class GraphComponent implements OnInit, AfterViewInit {
    * Open the sidebar for show the frequency result
    */
   private openFrequencySidebar(): void {
-    const sidebarId: string = 'frequency-sidebar';
+    const sidebarId = 'frequency-sidebar';
 
     if (!this.sidebarIds.includes(sidebarId)) {
       this.sidebarIds.push(sidebarId);
@@ -1417,7 +1423,7 @@ export class GraphComponent implements OnInit, AfterViewInit {
    * Open the sidebar for show the variation result
    */
   private openVariationSidebar(): void {
-    const sidebarId: string = 'variation-sidebar';
+    const sidebarId = 'variation-sidebar';
 
     if (!this.sidebarIds.includes(sidebarId)) {
       this.sidebarIds.push(sidebarId);
@@ -1883,7 +1889,7 @@ export class GraphComponent implements OnInit, AfterViewInit {
       '',
       '',
       () => {},
-      (value) => {
+      () => {
         return Promise.resolve();
       },
       () => {}

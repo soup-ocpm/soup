@@ -1,6 +1,8 @@
 /**
  * Graph data enum
  * @version 1.0
+ * @since 1.0.0
+ * @author Alessio Giacché
  */
 export enum GraphData {
   // The event nodes

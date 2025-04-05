@@ -1,10 +1,16 @@
+import { SpBtnTxtComponent } from '@aledevsharp/sp-lib';
 import { CommonModule } from '@angular/common';
 import { Component } from '@angular/core';
 import { NgbActiveModal } from '@ng-bootstrap/ng-bootstrap';
 
-import { SpBtnTxtComponent } from '@aledevsharp/sp-lib';
 import { MaterialModule } from '../../../shared/modules/materlal.module';
 
+/**
+ * Primary Filter Component
+ * @version 1.0.0
+ * @since 2.0.0
+ * @author Alessio Giacché
+ */
 @Component({
   selector: 'app-primary-filter-dialog',
   standalone: true,

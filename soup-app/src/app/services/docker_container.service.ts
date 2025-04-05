@@ -5,6 +5,13 @@ import { environment } from '../../environments/environment';
 import { ApiResponse } from '../core/models/api_response.model';
 import { ApiService } from '../core/services/api_response.service';
 
+/**
+ * Analysis service
+ * @version 1.0
+ * @since 1.0.0
+ * @author Alessio Giacché
+ * @deprecated
+ */
 @Injectable({
   providedIn: 'root'
 })

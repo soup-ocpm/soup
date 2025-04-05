@@ -8,7 +8,7 @@
   font-family: 'Times New Roman', Times, serif;
 
   h4 {
-    color: #666;
+    color: var(--secondary-color);
   }
 }
 
@@ -81,7 +81,7 @@ app-s-button {
 // ================================
 .form-label {
   margin-bottom: 0.2rem;
-  color: #666;
+  color: var(--secondary-color);
 }
 
 .show {
@@ -112,7 +112,7 @@ app-s-button {
 .double-flex {
   display: flex;
   justify-content: space-between;
-  color: #666;
+  color: var(--secondary-color);
 
   mat-icon {
     color: #c4a805;
@@ -135,7 +135,7 @@ app-s-button {
   justify-content: center;
 
   h4 {
-    color: #666;
+    color: var(--secondary-color);
     font-family: 'Times New Roman', Times, serif;
     margin-top: 6px;
     margin-left: 15px;

@@ -1,8 +1,14 @@
+import { SpBtnComponent } from '@aledevsharp/sp-lib';
 import { Component } from '@angular/core';
 
-import { SpBtnComponent } from '@aledevsharp/sp-lib';
 import { environment } from '../../../environments/environment';
 
+/**
+ * Home page  component
+ * @version 1.0
+ * @since 1.0.0
+ * @author Alessio Giacché
+ */
 @Component({
   selector: 'app-welcome',
   standalone: true,

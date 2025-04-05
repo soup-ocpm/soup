@@ -2,6 +2,12 @@ import { Injectable } from '@angular/core';
 
 import { LogLevel } from '../enums/logger.enum';
 
+/**
+ * Logger service
+ * @version 1.0.0
+ * @since 1.0.0
+ * @author Alessio Giacché
+ */
 @Injectable({
   providedIn: 'root'
 })

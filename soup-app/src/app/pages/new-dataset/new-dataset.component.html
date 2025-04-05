@@ -1,102 +1,109 @@
 <!--The progress bar-->
-<sp-progressbar *ngIf="isLoading"></sp-progressbar>
+@if (this.isLoading) {
+  <sp-progressbar></sp-progressbar>
+}
 
 <!--Master Layout-->
 <div class="master">
   <!--Upload card-->
-  <mat-card
-    class="upload-card"
-    *ngIf="this.isShowUpload && !this.isLoading">
-    <h3 class="text-font">Upload .csv file</h3>
-    <p class="text-font-p">Drag your .csv file containing the event log or choose it directly from your computer by clicking on upload</p>
-    <ngx-dropzone (change)="this.onSelectFile($event)">
-      <ngx-dropzone-label>Upload</ngx-dropzone-label>
-      <ngx-dropzone-preview
-        *ngFor="let f of files"
-        [removable]="false"
-        (removed)="this.removeFile(f)">
-        <ngx-dropzone-label>{{ f.name }} ({{ f.type }})</ngx-dropzone-label>
-      </ngx-dropzone-preview>
-    </ngx-dropzone>
-    <div class="upload-buttons">
-      <sp-btn-txt
-        *ngIf="this.haveSelectFile"
-        [color]="'#000000'"
-        [text]="'Remove'"
-        (buttonClick)="this.resetFileData()"></sp-btn-txt>
+  @if (this.isShowUpload && !this.isLoading) {
+    <mat-card class="upload-card">
+      <h3 class="text-font">Upload .csv file</h3>
+      <p class="text-font-p">Drag your .csv file containing the event log or choose it directly from your computer by clicking on upload</p>
+      <ngx-dropzone (change)="this.onSelectFile($event)">
+        <ngx-dropzone-label>Upload</ngx-dropzone-label>
+        <ngx-dropzone-preview
+          *ngFor="let f of files"
+          [removable]="false"
+          (removed)="this.removeFile(f)">
+          <ngx-dropzone-label>{{ f.name }} ({{ f.type }})</ngx-dropzone-label>
+        </ngx-dropzone-preview>
+      </ngx-dropzone>
+      @if (this.haveSelectFile) {
+        <div class="upload-buttons">
+          <sp-btn-txt
+            [color]="'#000000'"
+            [text]="'Remove'"
+            (buttonClick)="this.resetFileData()"></sp-btn-txt>
 
-      <sp-btn-txt
-        *ngIf="this.haveSelectFile"
-        [text]="'Done'"
-        (buttonClick)="this.parseFileData()"></sp-btn-txt>
-    </div>
-  </mat-card>
+          <sp-btn-txt
+            [text]="'Done'"
+            (buttonClick)="this.parseFileData()"></sp-btn-txt>
+        </div>
+      }
+    </mat-card>
+  }
 
   <!--Table card-->
-  <div
-    class="master-table"
-    *ngIf="isShowTable && !this.isLoading">
-    <div
-      class="master-table-content"
-      [ngClass]="{ 'table-full-screen': this.isShowFullScreen }">
-      <table class="table">
-        <thead class="table-dark">
-          <tr>
-            <th
-              scope="col"
-              [ngClass]="{ 'color-entity': checkSelectedEntity('RowIndex'), 'color-element': checkSelectedElement('RowIndex') }">
-              <i
-                *ngIf="!isShowFullScreen"
-                class="bi bi-arrows-fullscreen action-button"
-                style="cursor: pointer"
-                (click)="handleFullScreen()"></i>
-              <i
-                *ngIf="isShowFullScreen"
-                class="bi bi-x-lg action-button"
-                (click)="toggleFullScreen()"
-                title="Esci da tutto schermo"></i>
-            </th>
-            <th
-              *ngFor="let column of displayedColumns"
-              [ngClass]="{ 'color-entity': checkSelectedEntity(column), 'color-element': checkSelectedElement(column) }"
-              scope="col">
-              <div class="entity">
-                {{ column }}
-              </div>
-            </th>
-          </tr>
-        </thead>
-        <tbody>
-          <!-- Show 1000 rows -->
-          <tr *ngFor="let row of dataSource | slice: 0 : 1000; let i = index">
-            <th scope="row">{{ i + 1 }}</th>
-            <td *ngFor="let column of displayedColumns">{{ row[column] }}</td>
-          </tr>
+  @if (this.isShowTable && !this.isLoading) {
+    <div class="master-table">
+      <div
+        class="master-table-content"
+        [ngClass]="{ 'table-full-screen': this.isShowFullScreen }">
+        <table class="table">
+          <thead class="table-dark">
+            <tr>
+              <th
+                scope="col"
+                [ngClass]="{ 'color-entity': checkSelectedEntity('RowIndex'), 'color-element': checkSelectedElement('RowIndex') }">
+                @if (!this.isShowFullScreen) {
+                  <i
+                    class="bi bi-arrows-fullscreen action-button"
+                    style="cursor: pointer"
+                    (click)="handleFullScreen()"></i>
+                } @else if (this.isShowFullScreen) {
+                  <i
+                    class="bi bi-x-lg action-button"
+                    (click)="toggleFullScreen()"
+                    title="Esci da tutto schermo"></i>
+                }
+              </th>
 
-          <!-- Show the "..." if the rows are > 1000-->
-          <tr *ngIf="dataSource.length > 1000">
-            <th scope="row">...</th>
-            <td *ngFor="let column of displayedColumns">...</td>
-          </tr>
-        </tbody>
-      </table>
+              @for (column of this.displayedColumns; track $index) {
+                <th
+                  [ngClass]="{ 'color-entity': checkSelectedEntity(column), 'color-element': checkSelectedElement(column) }"
+                  scope="col">
+                  <div class="entity">
+                    {{ column }}
+                  </div>
+                </th>
+              }
+            </tr>
+          </thead>
+          <tbody>
+            <!-- Show 1000 rows -->
+            <tr *ngFor="let row of dataSource | slice: 0 : 1000; let i = index">
+              <th scope="row">{{ i + 1 }}</th>
+              <td *ngFor="let column of displayedColumns">{{ row[column] }}</td>
+            </tr>
+
+            <!-- Show the "..." if the rows are > 1000-->
+            @if (dataSource.length > 1000) {
+              <tr>
+                <th scope="row">...</th>
+                <td *ngFor="let column of displayedColumns">...</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
     </div>
-  </div>
+  }
 
   <!--UML Class diagram-->
-  <div *ngIf="this.isShowUML && this.umlNodes.length > 0 && this.umlEdges.length > 0 && !this.isLoading">
+  @if (this.isShowUML && this.umlNodes.length > 0 && this.umlEdges.length > 0 && !this.isLoading) {
     <div class="uml-class">
       <app-uml-diagram
         [umlClass]="umlNodes"
         [umlEdges]="umlEdges"></app-uml-diagram>
     </div>
-  </div>
+  }
 </div>
 
 <!--List of the sidebar-->
-<s-sidebar
-  *ngFor="let sidebarId of this.sidebarIds"
-  [sidebarId]="sidebarId"></s-sidebar>
+@for (sidebarId of this.sidebarIds; track $index) {
+  <s-sidebar [sidebarId]="sidebarId"></s-sidebar>
+}
 
 <!--Master sidebar template-->
 <ng-template #masterSidebarTemplate>
@@ -111,15 +118,16 @@
         <div>
           <div class="entities-list">Entities</div>
 
-          <div *ngFor="let check of this.allFileEntitiesSelected">
+          @for (check of this.allFileEntitiesSelected; track $index) {
             <mat-checkbox
               class="example-margin"
+              style="width: 100%"
               color="primary"
               [ngModel]="check.selected"
-              (ngModelChange)="submitEntity(check, $event)">
+              (ngModelChange)="this.submitEntity(check, $event)">
               {{ check.name }}
             </mat-checkbox>
-          </div>
+          }
         </div>
 
         <div>
@@ -129,17 +137,17 @@
             Properties
           </div>
 
-          <div
-            style="margin-left: 20px"
-            *ngFor="let check of this.allFileValuesSelected">
-            <mat-checkbox
-              class="example-margin"
-              color="primary"
-              [ngModel]="check.selected"
-              (ngModelChange)="submitValue(check, $event)">
-              {{ check.name }}
-            </mat-checkbox>
-          </div>
+          @for (check of this.allFileValuesSelected; track $index) {
+            <div style="margin-left: 20px">
+              <mat-checkbox
+                class="example-margin"
+                color="primary"
+                [ngModel]="check.selected"
+                (ngModelChange)="this.submitValue(check, $event)">
+                {{ check.name }}
+              </mat-checkbox>
+            </div>
+          }
         </div>
       </div>
     </div>
@@ -152,52 +160,53 @@
       style="font-size: 15px">
       Map the following information
     </p>
-    <div
-      class="column-selection"
-      *ngIf="allFileValuesSelected.length > 0">
-      <div class="form-group">
-        <label for="eventSelect">Event Id</label>
-        <select
-          id="eventSelect"
-          class="form-select"
-          style="width: 100%"
-          [(ngModel)]="eventIdColumn">
-          <option
-            *ngFor="let camp of getFilteredValuesColumn()"
-            [value]="camp">
-            {{ camp }}
-          </option>
-        </select>
-      </div>
 
-      <div class="form-group">
-        <label for="activitySelect">Activity Name</label>
-        <select
-          id="activitySelect"
-          class="form-select"
-          [(ngModel)]="activityNameColumn">
-          <option
-            *ngFor="let camp of getFilteredValuesColumn()"
-            [value]="camp">
-            {{ camp }}
-          </option>
-        </select>
-      </div>
+    @if (this.allFileValuesSelected.length > 0) {
+      <div class="column-selection">
+        <div class="form-group">
+          <label for="eventSelect">Event Id</label>
+          <select
+            id="eventSelect"
+            class="form-select"
+            style="width: 100%"
+            [(ngModel)]="eventIdColumn">
+            @for (camp of this.getFilteredValuesColumn(); track $index) {
+              <option [value]="camp">
+                {{ camp }}
+              </option>
+            }
+          </select>
+        </div>
 
-      <div class="form-group">
-        <label for="timeSelect">Timestamp</label>
-        <select
-          id="timeSelect"
-          class="form-select"
-          [(ngModel)]="timestampColumn">
-          <option
-            *ngFor="let camp of getFilteredValuesColumn()"
-            [value]="camp">
-            {{ camp }}
-          </option>
-        </select>
+        <div class="form-group">
+          <label for="activitySelect">Activity Name</label>
+          <select
+            id="activitySelect"
+            class="form-select"
+            [(ngModel)]="activityNameColumn">
+            @for (camp of this.getFilteredValuesColumn(); track $index) {
+              <option [value]="camp">
+                {{ camp }}
+              </option>
+            }
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="timeSelect">Timestamp</label>
+          <select
+            id="timeSelect"
+            class="form-select"
+            [(ngModel)]="timestampColumn">
+            @for (camp of this.getFilteredValuesColumn(); track $index) {
+              <option [value]="camp">
+                {{ camp }}
+              </option>
+            }
+          </select>
+        </div>
       </div>
-    </div>
+    }
   </div>
 </ng-template>
 
@@ -210,60 +219,61 @@
   </p>
 
   <!-- Trigger and Target columns -->
-  <div
-    *ngFor="let row of triggerTargetRows; let i = index"
-    class="column-selection">
-    <div
-      class="map-trigger"
-      style="height: 60px; display: flex; align-items: center; justify-content: space-between">
-      <!-- Select Trigger -->
-      <div class="form-group">
-        <label for="triggerSelect{{ i }}">Trigger</label>
-        <select
-          id="triggerSelect{{ i }}"
-          class="form-select custom-select"
-          [(ngModel)]="row.trigger">
-          <option
-            *ngFor="let camp of getAllTriggerEntities()"
-            [value]="camp">
-            {{ camp }}
-          </option>
-        </select>
-      </div>
+  @for (row of this.triggerTargetRows; track $index; let i = $index) {
+    <div class="column-selection">
+      <div
+        class="map-trigger"
+        style="height: 60px; display: flex; align-items: center; justify-content: space-between">
+        <!-- Select Trigger -->
+        <div class="form-group">
+          <label for="triggerSelect{{ i }}">Trigger</label>
+          <select
+            id="triggerSelect{{ i }}"
+            class="form-select custom-select"
+            [(ngModel)]="row.trigger">
+            @for (camp of this.getAllTriggerEntities(); track $index) {
+              <option [value]="camp">
+                {{ camp }}
+              </option>
+            }
+          </select>
+        </div>
 
-      <!-- Select Target -->
-      <div class="form-group">
-        <label for="targetSelect{{ i }}">Target</label>
-        <select
-          id="targetSelect{{ i }}"
-          class="form-select custom-select"
-          [(ngModel)]="row.target">
-          <option
-            *ngFor="let camp of getAllTriggerEntities()"
-            [value]="camp">
-            {{ camp }}
-          </option>
-        </select>
-      </div>
+        <!-- Select Target -->
+        <div class="form-group">
+          <label for="targetSelect{{ i }}">Target</label>
+          <select
+            id="targetSelect{{ i }}"
+            class="form-select custom-select"
+            [(ngModel)]="row.target">
+            @for (camp of this.getAllTriggerEntities(); track $index) {
+              <option [value]="camp">
+                {{ camp }}
+              </option>
+            }
+          </select>
+        </div>
 
-      <!-- Remove or add new trigger-target -->
-      <div style="margin-top: 35px">
-        <i
-          *ngIf="i === triggerTargetRows.length - 1"
-          style="justify-content: right"
-          (click)="this.addTriggerTargetRow()"
-          class="bi bi-plus-square action-icon"></i>
-        <i
-          *ngIf="i !== triggerTargetRows.length - 1"
-          (click)="this.removeTriggerTargetRow(i)"
-          class="bi bi-trash action-icon-delete"></i>
+        <!-- Remove or add new trigger-target -->
+        <div style="margin-top: 35px">
+          @if (i === triggerTargetRows.length - 1) {
+            <i
+              style="justify-content: right"
+              (click)="this.addTriggerTargetRow()"
+              class="bi bi-plus-square action-icon"></i>
+          } @else if (i !== triggerTargetRows.length - 1) {
+            <i
+              (click)="this.removeTriggerTargetRow(i)"
+              class="bi bi-trash action-icon-delete"></i>
+          }
+        </div>
       </div>
     </div>
-  </div>
+  }
 </ng-template>
 
 <!--Loading content-->
-<div *ngIf="this.isLoading">
+@if (this.isLoading) {
   <div class="process-div">
     <h3>
       Building the EKG
@@ -281,4 +291,4 @@
       <p style="font-weight: bold">Total : {{ progressData['total_relationships'] }} relationships</p>
     </div> -->
   </div>
-</div>
+}

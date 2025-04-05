@@ -1,180 +1,187 @@
 <!--The progress bar-->
-<sp-progressbar *ngIf="isCreatingDataset"></sp-progressbar>
+@if (this.isCreatingDataset) {
+  <sp-progressbar></sp-progressbar>
+}
 
 <!--Master Layout-->
-<div
-  class="master"
-  *ngIf="!this.isLoadingDatasets && !this.isCreatingDataset">
-  <!--Overlay sidebar open-->
-  <div
-    class="overlay"
-    *ngIf="this.sidebarService.isAnySidebarOpen()"></div>
+@if (!this.isLoadingDatasets && !this.isCreatingDataset) {
+  <div class="master">
+    <!--Overlay sidebar open-->
+    @if (this.sidebarService.isAnySidebarOpen()) {
+      <div class="overlay"></div>
+    }
 
-  <!--All Dataset-->
-  <div *ngIf="this.haveDatasets">
-    <div class="header">
-      <div style="display: flex; justify-content: space-between; align-items: center">
-        <h4>All Dataset</h4>
+    <!--All Dataset-->
+    @if (this.haveDatasets) {
+      <div class="header">
+        <div style="display: flex; justify-content: space-between; align-items: center">
+          <h4>All Dataset</h4>
 
-        <!--Icons operation-->
-        <div style="display: flex">
-          <i
-            class="bi bi-plus-lg"
-            style="font-size: 24px; cursor: pointer; color: var(--secondary-color)"
-            onmouseover="this.style.color='var(--primary-color)'"
-            onmouseout="this.style.color='var(--secondary-color)'"
-            (click)="this.newDataset()"></i>
-          <i
-            class="bi bi-arrow-clockwise"
-            style="font-size: 24px; margin-left: 10px; cursor: pointer; color: var(--secondary-color)"
-            onmouseover="this.style.color='var(--primary-color)'"
-            onmouseout="this.style.color='var(--secondary-color)'"
-            (click)="this.reloadDatasets()"></i>
+          <!--Icons operation-->
+          <div style="display: flex">
+            <i
+              class="bi bi-plus-lg"
+              style="font-size: 24px; cursor: pointer; color: var(--secondary-color)"
+              onmouseover="this.style.color='var(--primary-color)'"
+              onmouseout="this.style.color='var(--secondary-color)'"
+              (click)="this.newDataset()"></i>
+            <i
+              class="bi bi-arrow-clockwise"
+              style="font-size: 24px; margin-left: 10px; cursor: pointer; color: var(--secondary-color)"
+              onmouseover="this.style.color='var(--primary-color)'"
+              onmouseout="this.style.color='var(--secondary-color)'"
+              (click)="this.reloadDatasets()"></i>
+          </div>
+        </div>
+        <sp-divider></sp-divider>
+      </div>
+
+      <div class="search-dataset">
+        <input
+          class="form-control form-control-sm"
+          style="margin-top: 10px"
+          type="text"
+          placeholder="Search dataset"
+          [(ngModel)]="searchTerm" />
+      </div>
+
+      <div class="dataset-grid">
+        @for (item of this.filteredDatasets(); track $index) {
+          <app-dataset-tile
+            [dataset]="item"
+            (selectedDataset)="this.onSelectedDataset($event)"
+            (manageDataset)="this.onManageDataset($event, manageDatasetSidebarTemplate)"
+            (deleteDataset)="this.onDeleteDataset($event)"></app-dataset-tile>
+        }
+      </div>
+    }
+
+    <!--No dataset-->
+    @if (!this.haveDatasets) {
+      <div class="no-dataset">
+        <img src="/images/graph2.svg" />
+        <p>
+          You do not have any Datasets
+          <br />
+          within your Memgraph database
+        </p>
+        <sp-btn
+          [text]="'New Dataset'"
+          (buttonClick)="this.newDataset()"></sp-btn>
+      </div>
+    }
+
+    <!--List of the sidebar-->
+    @for (sidebarId of this.sidebarIds; track $index) {
+      <s-sidebar [sidebarId]="sidebarId"></s-sidebar>
+    }
+
+    <!--Manage dataset sidebar template-->
+    <ng-template #manageDatasetSidebarTemplate>
+      <form>
+        <!--Name-->
+        <div
+          class="mb-2"
+          style="margin-top: 20px">
+          <label
+            class="form-label"
+            for="datasetName">
+            Name
+          </label>
+          <input
+            id="datasetName"
+            class="form-control form-control-sm"
+            disabled="true"
+            type="text"
+            name="datasetName"
+            [(ngModel)]="currentDataset!.name" />
+        </div>
+
+        <!--Description-->
+        <div
+          class="mb-2"
+          style="margin-top: 20px">
+          <label
+            class="form-label"
+            for="datasetDescription">
+            Description
+          </label>
+          <textarea
+            id="datasetDescription"
+            class="form-control"
+            style="max-height: 150px"
+            name="datasetDescription"
+            rows="3"
+            [(ngModel)]="currentDataset!.description"
+            (blur)="this.checkForModelChange()"></textarea>
+        </div>
+      </form>
+
+      <!--Graph previe-->
+      @if (this.currentDataset!.svg != null) {
+        <div style="margin-top: 20px; max-height: 300px; max-width: 100%; overflow: hidden">
+          <p class="form-label">Original graph preview</p>
+          @if (this.checkIfSvgIsValid(currentDataset?.svg)) {
+            <div
+              #svgContainer
+              style="max-height: 300px; max-width: 100%; display: flex; justify-content: center; align-items: center">
+              <div [innerHTML]="currentDataset!.svg"></div>
+            </div>
+          }
+        </div>
+      }
+
+      <!--Column sidebar-->
+      <div style="margin-top: 30px">
+        <p class="form-label">CSV Columns</p>
+      </div>
+
+      <!--Button-->
+      <div style="display: flex">
+        <p
+          style="color: var(--primary-color); text-decoration: underline; cursor: pointer"
+          (click)="this.onManageColumn(columnSidebarTemplate)">
+          View
+        </p>
+        <p style="margin-left: 3px">the csv and filtered columns for this Dataset</p>
+      </div>
+    </ng-template>
+
+    <!--Column csv sidebar template-->
+    <ng-template #columnSidebarTemplate>
+      <!--Columns-->
+      <div class="dataset-columns">
+        <div class="value-columns">
+          <p style="font-weight: bold">Dataset csv columns</p>
+          @for (column of this.currentDataset!.allColumns; track $index) {
+            <div class="column">
+              {{ column }}
+            </div>
+          }
+        </div>
+        <div class="filtered-columns">
+          <p style="font-weight: bold">Filtered columns</p>
+          @for (column of this.currentDataset!.filteredColumns; track $index) {
+            <div class="column">
+              {{ column }}
+            </div>
+          }
         </div>
       </div>
-      <sp-divider></sp-divider>
-    </div>
-
-    <div class="search-dataset">
-      <input
-        class="form-control form-control-sm"
-        style="margin-top: 10px"
-        type="text"
-        placeholder="Search dataset"
-        [(ngModel)]="searchTerm" />
-    </div>
-
-    <div class="dataset-grid">
-      <ng-container *ngFor="let item of this.filteredDatasets()">
-        <app-dataset-tile
-          [dataset]="item"
-          (selectedDataset)="this.onSelectedDataset($event)"
-          (manageDataset)="this.onManageDataset($event, manageDatasetSidebarTemplate)"
-          (deleteDataset)="this.onDeleteDataset($event)"></app-dataset-tile>
-      </ng-container>
-    </div>
+    </ng-template>
   </div>
-
-  <!--No dataset-->
-  <div
-    class="no-dataset"
-    *ngIf="!this.haveDatasets">
-    <img src="/images/graph2.svg" />
-    <p>
-      You do not have any Datasets
-      <br />
-      within your Memgraph database
-    </p>
-    <sp-btn
-      [text]="'New Dataset'"
-      (buttonClick)="this.newDataset()"></sp-btn>
-  </div>
-
-  <!--List of the sidebar-->
-  <s-sidebar
-    *ngFor="let sidebarId of this.sidebarIds"
-    [sidebarId]="sidebarId"></s-sidebar>
-
-  <!--Manage dataset sidebar template-->
-  <ng-template #manageDatasetSidebarTemplate>
-    <form>
-      <div
-        class="mb-2"
-        style="margin-top: 20px">
-        <label
-          for="datasetName"
-          class="form-label">
-          Name
-        </label>
-        <input
-          disabled="true   "
-          class="form-control form-control-sm"
-          id="datasetName"
-          type="text"
-          name="datasetName"
-          [(ngModel)]="currentDataset!.name" />
-      </div>
-
-      <div
-        class="mb-2"
-        style="margin-top: 20px">
-        <label
-          for="datasetDescription"
-          class="form-label">
-          Description
-        </label>
-        <textarea
-          class="form-control"
-          id="datasetDescription"
-          style="max-height: 150px"
-          name="datasetDescription"
-          rows="3"
-          [(ngModel)]="currentDataset!.description"
-          (blur)="this.checkForModelChange()"></textarea>
-      </div>
-    </form>
-
-    <div
-      *ngIf="this.currentDataset!.svg != null"
-      style="margin-top: 20px; max-height: 300px; max-width: 100%; overflow: hidden">
-      <p class="form-label">Original graph preview</p>
-      <div
-        *ngIf="checkIfSvgIsValid(currentDataset?.svg)"
-        #svgContainer
-        style="max-height: 300px; max-width: 100%; display: flex; justify-content: center; align-items: center">
-        <div [innerHTML]="currentDataset!.svg"></div>
-      </div>
-    </div>
-
-    <!--Column sidebar-->
-    <div style="margin-top: 30px">
-      <p class="form-label">CSV Columns</p>
-    </div>
-
-    <div style="display: flex">
-      <p
-        style="color: var(--primary-color); text-decoration: underline; cursor: pointer"
-        (click)="this.onManageColumn(columnSidebarTemplate)">
-        View
-      </p>
-      <p style="margin-left: 3px">the csv and filtered columns for this Dataset</p>
-    </div>
-  </ng-template>
-
-  <!--Column csv sidebar template-->
-  <ng-template #columnSidebarTemplate>
-    <!--Columns-->
-    <div class="dataset-columns">
-      <div class="value-columns">
-        <p style="font-weight: bold">Dataset csv columns</p>
-        @for (column of this.currentDataset!.allColumns; track $index) {
-          <div class="column">
-            {{ column }}
-          </div>
-        }
-      </div>
-      <div class="filtered-columns">
-        <p style="font-weight: bold">Filtered columns</p>
-        @for (column of this.currentDataset!.filteredColumns; track $index) {
-          <div class="column">
-            {{ column }}
-          </div>
-        }
-      </div>
-    </div>
-  </ng-template>
-</div>
+}
 
 <!--Loading status-->
-<div
-  class="loading-datasets"
-  *ngIf="this.isLoadingDatasets">
-  <sp-spinner></sp-spinner>
-  <h4>Loading datasets...</h4>
-</div>
+@if (this.isLoadingDatasets) {
+  <div class="loading-datasets">
+    <sp-spinner></sp-spinner>
+    <h4>Loading datasets...</h4>
+  </div>
+}
 
 <!--Loading content-->
-<div *ngIf="this.isCreatingDataset">
+@if (this.isCreatingDataset) {
   <div class="process-div">
     <h3>
       Building the EKG
@@ -182,4 +189,4 @@
       This operation may take a few minutes...
     </h3>
   </div>
-</div>
+}

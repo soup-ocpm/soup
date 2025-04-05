@@ -1,6 +1,12 @@
 import { Injectable } from '@angular/core';
 import { BehaviorSubject, Observable } from 'rxjs';
 
+/**
+ * Modals service
+ * @version 1.0
+ * @since 2.0.0
+ * @author Alessio Giacché
+ */
 @Injectable({
   providedIn: 'root'
 })
@@ -27,7 +33,7 @@ export class ModalService {
   constructor() {}
 
   /**
-   * Show the Modal
+   * Show the generic modal
    * @param title the title of the modal
    * @param message the message of the modal
    * @param doubleButton if modal has two buttons
@@ -72,7 +78,7 @@ export class ModalService {
   }
 
   /**
-   * Show the Modal
+   * Show the delete dataset or analysis modal
    * @param title the title of the modal
    * @param message the message of the modal
    * @param datasetName the dataset name
@@ -110,7 +116,7 @@ export class ModalService {
   }
 
   /**
-   * Show the Modal
+   * Show the input generic modal
    * @param title the title of the modal
    * @param message the message of the modal
    * @param doubleButton if modal has two buttons

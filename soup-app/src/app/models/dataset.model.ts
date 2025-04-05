@@ -4,6 +4,8 @@ import { DatasetProcessInfo } from './dataset_process_info.model';
 /**
  * Dataset model class
  * @version 1.0
+ * @since 1.0.0
+ * @author Alessio Giacché
  */
 export class Dataset {
   // The dataset name

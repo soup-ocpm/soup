@@ -7,7 +7,7 @@
   aria-hidden="false">
   <div class="entity-body">
     <!--Checkbox-->
-    <div *ngFor="let check of this.allDatasetActivities">
+    @for (check of this.allDatasetActivities; track $index) {
       <mat-checkbox
         class="example-margin"
         color="primary"
@@ -15,7 +15,7 @@
         (ngModelChange)="this.submitEntity(check, $event)">
         {{ check.name }}
       </mat-checkbox>
-    </div>
+    }
   </div>
 
   <!-- Buttons -->

@@ -1,13 +1,12 @@
 import { SpDividerComponent, SpProgressbarComponent, SpSpinnerComponent } from '@aledevsharp/sp-lib';
 import { CommonModule } from '@angular/common';
+import { HttpClient } from '@angular/common/http';
 import { AfterViewInit, Component, ElementRef, OnInit, TemplateRef, ViewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { ActivatedRoute, Router } from '@angular/router';
-import { Chart, registerables } from 'chart.js';
-
-import { HttpClient } from '@angular/common/http';
 import { MatDialog } from '@angular/material/dialog';
+import { ActivatedRoute, Router } from '@angular/router';
 import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
+import { Chart, registerables } from 'chart.js';
 import { ActivityFilterDialogComponent } from 'src/app/components/filters-components/activity-filter-dialog/activity-filter-dialog.component';
 import { ActivityFilter } from 'src/app/components/filters-components/activity-filter-dialog/activity-filter.model';
 import { AnalysisDialogComponent } from 'src/app/components/filters-components/analysis-dialog/analysis-dialog.component';
@@ -24,6 +23,7 @@ import { ModalService } from 'src/app/shared/components/s-modals/modal.service';
 import { SidebarComponent } from 'src/app/shared/components/s-sidebar/s-sidebar.component';
 import { SidebarService } from 'src/app/shared/components/s-sidebar/sidebar.service';
 import { NotificationService } from 'src/app/shared/components/s-toast/toast.service';
+
 import { SideOperationComponent } from '../../components/side-operation/side-operation.component';
 import { LoggerService } from '../../core/services/logger.service';
 import { GraphData } from '../../enums/graph_data.enum';
@@ -76,6 +76,12 @@ export class JsonObject {
   }
 }
 
+/**
+ * Detail dataset component
+ * @version 1.0
+ * @since 2.0.0
+ * @author Alessio Giacché
+ */
 @Component({
   selector: 'app-details-dataset',
   standalone: true,
@@ -140,16 +146,16 @@ export class DetailsDatasetComponent implements OnInit, AfterViewInit {
   public excludeActivitiesFilters: ActivityFilter[] = [];
 
   // If the user uploaded the file configuration for new analysis
-  public jsonConfiguration: boolean = false;
+  public jsonConfiguration = false;
 
   // If the tiles was created by uploading the configuration json file
-  public createTilesByFile: boolean = false;
+  public createTilesByFile = false;
 
   // The json configuration example for the info
   public exampleJSONConfiguration: any;
 
   // If there is loading for map configuration json file to tiles
-  public isLoadingConfiguration: boolean = false;
+  public isLoadingConfiguration = false;
 
   // Retrieve all analysis
   public allAnalyses: Analysis[] = [];
@@ -158,7 +164,7 @@ export class DetailsDatasetComponent implements OnInit, AfterViewInit {
   public selectedAnalysis: Analysis | undefined;
 
   // If we have already add buttons
-  public alreadyAddButtons: boolean = false;
+  public alreadyAddButtons = false;
 
   // The search
   public searchTerm = '';
@@ -352,7 +358,7 @@ export class DetailsDatasetComponent implements OnInit, AfterViewInit {
    * Open the master sidebar template
    */
   public openMasterSidebar(): void {
-    const sidebarId: string = 'master-sidebar';
+    const sidebarId = 'master-sidebar';
 
     if (!this.sidebarIds.includes(sidebarId)) {
       this.sidebarIds.push(sidebarId);
@@ -377,7 +383,7 @@ export class DetailsDatasetComponent implements OnInit, AfterViewInit {
    * Open the master sidebar template
    */
   public openGraphVisualizationSidebar(): void {
-    const sidebarId: string = 'graph-visualization-sidebar';
+    const sidebarId = 'graph-visualization-sidebar';
 
     if (!this.sidebarIds.includes(sidebarId)) {
       this.sidebarIds.push(sidebarId);
@@ -437,7 +443,7 @@ export class DetailsDatasetComponent implements OnInit, AfterViewInit {
    * Open the new analysis sidebar
    */
   public openNewAnalysisSidebar(): void {
-    const sidebarId: string = 'new-analysis';
+    const sidebarId = 'new-analysis';
 
     if (!this.sidebarIds.includes(sidebarId)) {
       this.sidebarIds.push(sidebarId);
@@ -462,7 +468,7 @@ export class DetailsDatasetComponent implements OnInit, AfterViewInit {
    * Open the info json configuration sidebar
    */
   public openInfoJSONConfigurationSidebar(): void {
-    const sidebarId: string = 'json-configuration';
+    const sidebarId = 'json-configuration';
 
     if (!this.sidebarIds.includes(sidebarId)) {
       this.sidebarIds.push(sidebarId);
@@ -655,7 +661,7 @@ export class DetailsDatasetComponent implements OnInit, AfterViewInit {
    * @param addButtons if we want to add the footer buttons
    */
   public updateNewAnalysisSidebar(addButtons: boolean): void {
-    const sidebarId: string = 'new-analysis';
+    const sidebarId = 'new-analysis';
 
     if (addButtons) {
       this.sidebarService.updateConfig(sidebarId, {
@@ -852,8 +858,8 @@ export class DetailsDatasetComponent implements OnInit, AfterViewInit {
       'var(--primary-color)',
       'Close',
       '#6c757d',
-      (datasetName: string, datasetDescription: string, saveProcessExecution: boolean) => {
-        return this.retrieveModalData(datasetName, datasetDescription, saveProcessExecution);
+      (datasetName: string, datasetDescription: string) => {
+        return this.retrieveModalData(datasetName, datasetDescription);
       },
       () => {
         this.modal.hideInputModal();
@@ -865,10 +871,9 @@ export class DetailsDatasetComponent implements OnInit, AfterViewInit {
    * Catch the dataset input information
    * @param analysisName the dataset name
    * @param analysisDescription the dataset informaton
-   * @param saveProcessExecution if the user want to save the
    * timestamp execution
    */
-  private retrieveModalData(analysisName: string, analysisDescription: string, saveProcessExecution: boolean): Promise<void> {
+  private retrieveModalData(analysisName: string, analysisDescription: string): Promise<void> {
     this.buildAnalysis(analysisName, analysisDescription);
     return Promise.resolve();
   }
@@ -934,7 +939,7 @@ export class DetailsDatasetComponent implements OnInit, AfterViewInit {
    * Open the analysis history sidebar
    */
   public openHistoryAnalysisSidebar(): void {
-    const sidebarId: string = 'analyses';
+    const sidebarId = 'analyses';
 
     if (!this.sidebarIds.includes(sidebarId)) {
       this.sidebarIds.push(sidebarId);
@@ -1136,7 +1141,7 @@ export class DetailsDatasetComponent implements OnInit, AfterViewInit {
    * Open the master sidebar template
    */
   public openAggregateSidebar(): void {
-    const sidebarId: string = 'aggregate-sidebar';
+    const sidebarId = 'aggregate-sidebar';
 
     if (!this.sidebarIds.includes(sidebarId)) {
       this.sidebarIds.push(sidebarId);
@@ -1162,7 +1167,7 @@ export class DetailsDatasetComponent implements OnInit, AfterViewInit {
    * @param addButtons if we want to add the footer buttons
    */
   public updateAggregateSidebar(addButtons: boolean): void {
-    const sidebarId: string = 'aggregate-sidebar';
+    const sidebarId = 'aggregate-sidebar';
 
     // Update the sidebar configuration
     if (addButtons) {

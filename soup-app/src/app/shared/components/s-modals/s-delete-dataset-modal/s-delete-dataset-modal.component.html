@@ -1,73 +1,76 @@
-<div
-  class="overlay"
-  *ngIf="this.isVisible"
-  (click)="this.isVisible = false"></div>
+@if (this.isVisible) {
+  <div
+    class="overlay"
+    (click)="this.closeVisible()"></div>
 
-<!--The header and description-->
-<div
-  class="card"
-  *ngIf="this.isVisible"
-  [ngClass]="{ show: this.isVisible }"
-  [@slideInOut]>
-  <div class="header">
-    <h4 class="card-title">{{ this.title }}</h4>
-    <i
-      class="bi bi-x-lg"
-      (click)="this.isVisible = false"></i>
-  </div>
-  <p style="color: #666; margin-top: 15px">{{ this.message }}</p>
+  <!--The header and description-->
+  <div
+    class="card"
+    [ngClass]="{ show: this.isVisible }"
+    [@slideInOut]>
+    <div class="header">
+      <h4 class="card-title">{{ this.title }}</h4>
+      <i
+        class="bi bi-x-lg"
+        (click)="this.closeVisible()"></i>
+    </div>
+    <p class="message">{{ this.message }}</p>
 
-  <!--The input label-->
-  <div class="mb-1">
-    <label
-      *ngIf="this.isForDataset"
-      for="name"
-      class="form-label"
-      style="color: var(--secondary-color)">
-      Please insert
-      <strong style="color: black">{{ this.datasetName }}</strong>
-      for delete the Dataset
-    </label>
-    <label
-      *ngIf="!this.isForDataset"
-      for="name"
-      class="form-label"
-      style="color: var(--secondary-color)">
-      Please insert
-      <strong style="color: black">{{ this.datasetName }}</strong>
-      for delete the Analysis
-    </label>
-    <input
-      class="form-control form-control-sm"
-      id="name"
-      type="text"
-      [(ngModel)]="this.name" />
-  </div>
+    <!--The input label-->
+    <div class="mb-1">
+      @if (this.isForDataset) {
+        <label
+          class="form-label"
+          style="color: var(--secondary-color)"
+          for="name">
+          Please insert
+          <strong>{{ this.datasetName }}</strong>
+          for delete the Dataset
+        </label>
+      }
 
-  <!--Footer-->
-  <div style="margin-top: 25px">
-    <!--Single button-->
-    <div *ngIf="!this.nameMatched()">
-      <sp-btn
-        [text]="this.secondaryButtonText"
-        [color]="this.secondaryButtonColor"
-        (buttonClick)="this.onClickSecondaryButton()"></sp-btn>
+      @if (!this.isForDataset) {
+        <label
+          class="form-label"
+          style="color: var(--secondary-color)"
+          for="name">
+          Please insert
+          <strong>{{ this.datasetName }}</strong>
+          for delete the Analysis
+        </label>
+      }
+
+      <input
+        id="name"
+        class="form-control form-control-sm"
+        type="text"
+        [(ngModel)]="this.name" />
     </div>
 
-    <!--Double buttons-->
-    <div
-      class="footer"
-      *ngIf="this.nameMatched()"
-      style="display: flex">
-      <sp-btn
-        [text]="this.primaryButtonText"
-        [color]="this.primaryButtonColor"
-        (buttonClick)="onClickPrimaryButton()"></sp-btn>
-      <sp-btn
-        [text]="this.secondaryButtonText"
-        [color]="this.secondaryButtonColor"
-        style="margin-left: 25px"
-        (buttonClick)="onClickSecondaryButton()"></sp-btn>
+    <!--Footer-->
+    <div style="margin-top: 25px">
+      <!--Single button-->
+      @if (!this.nameMatched()) {
+        <sp-btn
+          [text]="this.secondaryButtonText"
+          [color]="this.secondaryButtonColor"
+          (buttonClick)="this.onClickSecondaryButton()"></sp-btn>
+      }
+
+      <!--Double buttons-->
+      @if (this.nameMatched()) {
+        <div class="footer">
+          <sp-btn
+            [text]="this.primaryButtonText"
+            [color]="this.primaryButtonColor"
+            (buttonClick)="this.onClickPrimaryButton()"></sp-btn>
+          <sp-btn
+            style="margin-left: 25px"
+            [text]="this.secondaryButtonText"
+            [color]="this.secondaryButtonColor"
+            (buttonClick)="this.onClickSecondaryButton()"></sp-btn>
+        </div>
+      }
     </div>
   </div>
-</div>
+}

@@ -4,7 +4,7 @@
     <h3
       class="dataset-name"
       (click)="this.openDataset()">
-      {{ this.dataset?.name }}
+      {{ this.dataset().name }}
     </h3>
     <i
       class="bi bi-three-dots-vertical"
@@ -41,29 +41,29 @@
       <p class="info-title">Graph Data</p>
       <p>
         <strong>Event nodes:</strong>
-        {{ this.dataset?.eventNodes }}
+        {{ this.dataset().eventNodes }}
       </p>
       <p>
         <strong>Entity nodes:</strong>
-        {{ this.dataset?.entityNodes }}
+        {{ this.dataset().entityNodes }}
       </p>
       <p>
         <strong>Corr relationships:</strong>
-        {{ this.dataset?.corrRel }}
+        {{ this.dataset().corrRel }}
       </p>
       <p>
         <strong>Df relationships:</strong>
-        {{ this.dataset?.dfRel }}
+        {{ this.dataset().dfRel }}
       </p>
 
       <div style="margin-top: 20px">
         <p>
           <strong>Date created:</strong>
-          {{ this.dataset?.dateCreated }}
+          {{ this.dataset().dateCreated }}
         </p>
         <p>
           <strong>Date modified:</strong>
-          {{ this.dataset?.dateModified }}
+          {{ this.dataset().dateModified }}
         </p>
       </div>
     </div>
@@ -72,11 +72,11 @@
       <p class="info-title">Total data</p>
       <p>
         <strong>Total nodes:</strong>
-        {{ this.dataset?.totalNodes }}
+        {{ this.dataset().totalNodes }}
       </p>
       <p>
         <strong>Total relationships:</strong>
-        {{ this.dataset?.totalRelationships }}
+        {{ this.dataset().totalRelationships }}
       </p>
     </div>
   </div>

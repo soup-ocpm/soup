@@ -16,11 +16,11 @@
         class="form-select"
         name="startActivity"
         [(ngModel)]="this.startActivityModel">
-        <option
-          *ngFor="let camp of this.getFilteredValuesColumn()"
-          [value]="camp">
-          {{ camp }}
-        </option>
+        @for (camp of this.getFilteredValuesColumn(); track $index) {
+          <option [value]="camp">
+            {{ camp }}
+          </option>
+        }
       </select>
     </div>
 
@@ -36,11 +36,11 @@
         class="form-select"
         name="endActivity"
         [(ngModel)]="this.endActivityName">
-        <option
-          *ngFor="let camp of this.getFilteredValuesColumn()"
-          [value]="camp">
-          {{ camp }}
-        </option>
+        @for (camp of this.getFilteredValuesColumn(); track $index) {
+          <option [value]="camp">
+            {{ camp }}
+          </option>
+        }
       </select>
     </div>
 
@@ -52,10 +52,10 @@
         Seconds
       </label>
       <input
-        class="form-control form-control-sm"
         id="seconds"
-        type="number"
+        class="form-control form-control-sm"
         name="seconds"
+        type="number"
         [(ngModel)]="this.seconds"
         style="height: 2rem; font-size: 1rem; padding: 0.375rem 0.75rem; line-height: 1.2" />
     </div>

@@ -6,8 +6,15 @@ import { NgbActiveModal } from '@ng-bootstrap/ng-bootstrap';
 import { Dataset } from 'src/app/models/dataset.model';
 import { Entity } from 'src/app/models/entity.mode';
 import { LocalDataService } from 'src/app/shared/services/support.service';
+
 import { PerformanceFilter } from './performance-filter.model';
 
+/**
+ * Performance Filter Component
+ * @version 1.0.0
+ * @since 2.0.0
+ * @author Alessio Giacché
+ */
 @Component({
   selector: 'app-performance-filter-dialog',
   standalone: true,

@@ -1,13 +1,13 @@
+import { SpBtnComponent, SpDividerComponent, SpProgressbarComponent, SpSpinnerComponent } from '@aledevsharp/sp-lib';
 import { CommonModule } from '@angular/common';
 import { AfterViewChecked, Component, OnInit, TemplateRef, ViewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
-
-import { SpBtnComponent, SpDividerComponent, SpProgressbarComponent, SpSpinnerComponent } from '@aledevsharp/sp-lib';
 import { ModalService } from 'src/app/shared/components/s-modals/modal.service';
 import { SidebarComponent } from 'src/app/shared/components/s-sidebar/s-sidebar.component';
 import { SidebarService } from 'src/app/shared/components/s-sidebar/sidebar.service';
 import { NotificationService } from 'src/app/shared/components/s-toast/toast.service';
+
 import { environment } from '../../../environments/environment';
 import { DatasetTileComponent } from '../../components/dataset-tile/dataset-tile.component';
 import { ApiResponse } from '../../core/models/api_response.model';
@@ -19,6 +19,12 @@ import { ToastLevel } from '../../shared/components/s-toast/toast_type.enum';
 import { MaterialModule } from '../../shared/modules/materlal.module';
 import { LocalDataService } from '../../shared/services/support.service';
 
+/**
+ * Manage Dataset component
+ * @version 1.0
+ * @since 2.0.0
+ * @author Alessio Giacché
+ */
 @Component({
   selector: 'app-retrive-dataset',
   standalone: true,
@@ -266,7 +272,7 @@ export class RetriveDatasetComponent implements OnInit, AfterViewChecked {
     this.datasetDescriptionBak = this.currentDataset.description;
     this.modelChange = false;
 
-    const sidebarId: string = 'manage-dataset-sidebar';
+    const sidebarId = 'manage-dataset-sidebar';
 
     if (!this.sidebarIds.includes(sidebarId)) {
       this.sidebarIds.push(sidebarId);
@@ -403,7 +409,7 @@ export class RetriveDatasetComponent implements OnInit, AfterViewChecked {
    * @param content the template ref for the sidebar
    */
   public onManageColumn(content: TemplateRef<any>): void {
-    const sidebarId: string = 'manage-column-sidebar';
+    const sidebarId = 'manage-column-sidebar';
 
     if (!this.sidebarIds.includes(sidebarId)) {
       this.sidebarIds.push(sidebarId);

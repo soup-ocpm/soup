@@ -1,10 +1,17 @@
 import { SpBtnTxtComponent } from '@aledevsharp/sp-lib';
 import { animate, style, transition, trigger } from '@angular/animations';
 import { CommonModule } from '@angular/common';
-import { Component, Input, OnInit, Output } from '@angular/core';
+import { Component, OnInit, Output } from '@angular/core';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
+
 import { ModalService } from '../modal.service';
 
+/**
+ * Generic modal component
+ * @version 1.0
+ * @since 2.0.0
+ * @author Alessio Giacché
+ */
 @Component({
   selector: 'app-s-generic-modal',
   standalone: true,
@@ -26,31 +33,31 @@ import { ModalService } from '../modal.service';
 })
 export class GenericModalComponent implements OnInit {
   // The modal title
-  @Input() title = '';
+  public title = '';
 
   // The modal message
-  @Input() message = '';
+  public message = '';
 
   // If the modal is composed by two button actions
-  @Input() doubleButton = false;
+  public doubleButton = false;
 
   // The principal button text
-  @Input() primaryButtonText = '';
+  public primaryButtonText = '';
 
   // The principal button color
-  @Input() primaryButtonColor = '';
+  public primaryButtonColor = '';
 
   // The secondary button text
-  @Input() secondaryButtonText = '';
+  public secondaryButtonText = '';
 
   // The secondary button color
-  @Input() secondaryButtonColor = '';
+  public secondaryButtonColor = '';
 
   // If we want to include a generic input
-  @Input() showInput = false;
+  public showInput = false;
 
   // The input label
-  @Input() inputLabel = '';
+  public inputLabel = '';
 
   // Handle the output
   @Output() primaryButtonClick!: () => void;
@@ -105,12 +112,12 @@ export class GenericModalComponent implements OnInit {
     } else {
       if (typeof this.primaryButtonClickWithInput === 'function') {
         this.primaryButtonClickWithInput(this.inputValue).then(() => {
-          this.isVisible = false;
+          this.closeVisible();
         });
       }
     }
 
-    this.isVisible = false;
+    this.closeVisible();
   }
 
   /**
@@ -120,6 +127,14 @@ export class GenericModalComponent implements OnInit {
     if (typeof this.secondaryButtonClick === 'function') {
       this.secondaryButtonClick();
     }
+
+    this.closeVisible();
+  }
+
+  /**
+   * Set the visible flag to false
+   */
+  public closeVisible(): void {
     this.isVisible = false;
   }
 }

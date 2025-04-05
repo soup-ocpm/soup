@@ -5,6 +5,12 @@ import * as dagreD3 from 'dagre-d3';
 import { UMLEdge } from './models/uml_edge';
 import { UMLNode } from './models/uml_node';
 
+/**
+ * UML Dialog Component
+ * @version 1.0.0
+ * @since 2.0.0
+ * @author Alessio Giacché
+ */
 @Component({
   selector: 'app-uml-diagram',
   standalone: true,

@@ -1,14 +1,21 @@
 import { SpBtnTxtComponent } from '@aledevsharp/sp-lib';
 import { animate, style, transition, trigger } from '@angular/animations';
 import { CommonModule } from '@angular/common';
-import { Component, Input, OnInit, Output } from '@angular/core';
+import { Component, OnInit, Output } from '@angular/core';
 import { FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { LoggerService } from 'src/app/core/services/logger.service';
 import { AnalysisService } from 'src/app/services/analysis.service';
+
 import { DatasetService } from '../../../../services/datasets.service';
 import { MaterialModule } from '../../../../shared/modules/materlal.module';
 import { ModalService } from '../modal.service';
 
+/**
+ * Input modal component
+ * @version 1.0
+ * @since 2.0.0
+ * @author Alessio Giacché
+ */
 @Component({
   selector: 'app-s-input-modal',
   standalone: true,
@@ -31,34 +38,34 @@ import { ModalService } from '../modal.service';
 })
 export class InputModalComponent implements OnInit {
   // The modal title
-  @Input() title = '';
+  public title = '';
 
   // The modal message
-  @Input() message = '';
+  public message = '';
 
   // If the modal is composed by two button actions
-  @Input() doubleButton = false;
+  public doubleButton = false;
 
   // The dataset name
-  @Input() datasetName = '';
+  public datasetName = '';
 
   // If the modal is for create dataset or analysis
-  @Input() isForDataset = true;
+  public isForDataset = true;
 
   // The principal button text
-  @Input() primaryButtonText = '';
+  public primaryButtonText = '';
 
   // The principal button color
-  @Input() primaryButtonColor = '';
+  public primaryButtonColor = '';
 
   // The secondary button text
-  @Input() secondaryButtonText = '';
+  public secondaryButtonText = '';
 
   // The secondary button color
-  @Input() secondaryButtonColor = '';
+  public secondaryButtonColor = '';
 
   // The container id
-  @Input() containerId = '';
+  public containerId = '';
 
   // Handle the output
   @Output() primaryButtonClick!: (name: string, description: string, saveProcessExecution: boolean) => Promise<any>;

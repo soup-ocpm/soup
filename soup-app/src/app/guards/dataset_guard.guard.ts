@@ -3,6 +3,12 @@ import { CanActivate, CanActivateChild, Router } from '@angular/router';
 
 import { LocalDataService } from '../shared/services/support.service';
 
+/**
+ * Dataset auth guard
+ * @version 1.0.0
+ * @since 1.0.0
+ * @author Alessio Giacché
+ */
 @Injectable({
   providedIn: 'root'
 })

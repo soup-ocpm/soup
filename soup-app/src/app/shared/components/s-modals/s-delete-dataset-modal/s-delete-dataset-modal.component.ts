@@ -1,11 +1,18 @@
 import { SpBtnComponent } from '@aledevsharp/sp-lib';
 import { animate, style, transition, trigger } from '@angular/animations';
 import { CommonModule } from '@angular/common';
-import { Component, Input, Output } from '@angular/core';
+import { Component, OnInit, Output } from '@angular/core';
 import { FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MaterialModule } from 'src/app/shared/modules/materlal.module';
+
 import { ModalService } from '../modal.service';
 
+/**
+ * Delete modal component
+ * @version 1.0
+ * @since 2.0.0
+ * @author Alessio Giacché
+ */
 @Component({
   selector: 'app-s-delete-dataset-modal',
   standalone: true,
@@ -26,30 +33,30 @@ import { ModalService } from '../modal.service';
   templateUrl: './s-delete-dataset-modal.component.html',
   styleUrl: './s-delete-dataset-modal.component.scss'
 })
-export class DeleteDatasetModalComponent {
+export class DeleteDatasetModalComponent implements OnInit {
   // The modal title
-  @Input() title = '';
+  public title = '';
 
   // The modal message
-  @Input() message = '';
+  public message = '';
 
   // The dataset name
-  @Input() datasetName = '';
+  public datasetName = '';
 
   // If the modal is fot delete dataset or analysis
-  @Input() isForDataset = false;
+  public isForDataset = false;
 
   // The principal button text
-  @Input() primaryButtonText = '';
+  public primaryButtonText = '';
 
   // The principal button color
-  @Input() primaryButtonColor = '';
+  public primaryButtonColor = '';
 
   // The secondary button text
-  @Input() secondaryButtonText = '';
+  public secondaryButtonText = '';
 
   // The secondary button color
-  @Input() secondaryButtonColor = '';
+  public secondaryButtonColor = '';
 
   // Handle the output
   @Output() primaryButtonClick!: (name: string) => Promise<any>;
@@ -78,10 +85,12 @@ export class DeleteDatasetModalComponent {
 
   // NgOnInit implementation
   public ngOnInit(): void {
+    // The form builder
     this.genericInputForm = this.formBuilder.group({
       name: ['', Validators.required]
     });
 
+    // Subscription to the modal
     this.modalService.deleteDatasetModalState.subscribe((modal) => {
       if (modal) {
         this.title = modal.title;
@@ -110,7 +119,7 @@ export class DeleteDatasetModalComponent {
       this.primaryButtonClick(nameSelected);
     }
 
-    this.isVisible = false;
+    this.closeVisible();
     this.genericInputForm.reset();
   }
 
@@ -123,7 +132,7 @@ export class DeleteDatasetModalComponent {
       this.secondaryButtonClick();
     }
 
-    this.isVisible = false;
+    this.closeVisible();
     this.genericInputForm.reset();
   }
 
@@ -132,5 +141,12 @@ export class DeleteDatasetModalComponent {
    */
   public nameMatched(): boolean {
     return this.name === this.datasetName;
+  }
+
+  /**
+   * Set the visible flag to false
+   */
+  public closeVisible(): void {
+    this.isVisible = false;
   }
 }

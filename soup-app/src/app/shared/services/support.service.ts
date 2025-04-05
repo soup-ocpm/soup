@@ -1,10 +1,16 @@
 import { Injectable } from '@angular/core';
 import { DomSanitizer } from '@angular/platform-browser';
-
 import { GraphType } from 'src/app/enums/graph_type.enum';
+
 import { Dataset } from '../../models/dataset.model';
 import { DatasetProcessInfo } from '../../models/dataset_process_info.model';
 
+/**
+ * Support service
+ * @version 1.0
+ * @since 2.0.0
+ * @author Alessio Giacché
+ */
 @Injectable({
   providedIn: 'root'
 })

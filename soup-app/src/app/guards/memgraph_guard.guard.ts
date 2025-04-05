@@ -7,6 +7,12 @@ import { LoggerService } from '../core/services/logger.service';
 import { NotificationService } from '../shared/components/s-toast/toast.service';
 import { ToastLevel } from '../shared/components/s-toast/toast_type.enum';
 
+/**
+ * Memgraph auth guard
+ * @version 1.0.0
+ * @since 1.0.0
+ * @author Alessio Giacché
+ */
 @Injectable({
   providedIn: 'root'
 })
