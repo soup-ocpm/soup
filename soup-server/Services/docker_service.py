@@ -254,6 +254,7 @@ class DockerService:
     @staticmethod
     def get_container_id_s(container_name="soup-database"):
         try:
+            '''
             result = subprocess.run(
                 ["docker", "ps", "--filter", f"name={container_name}", "--format", "{{.ID}}"],
                 stdout=subprocess.PIPE,
@@ -261,6 +262,10 @@ class DockerService:
                 check=True
             )
             container_id = result.stdout.decode('utf-8').strip()
+            '''
+            client = docker.from_env()
+            container = client.containers.get(container_name)
+            container_id = container.id
             return container_id
         except subprocess.CalledProcessError as e:
             logger.error(f'Error while retrieving docker container id: {e}')

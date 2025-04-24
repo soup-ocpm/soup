@@ -602,6 +602,9 @@ class OperationGraphService:
             # Delete event nodes
             query = delete_event_graph_query()
             database_connector.run_query_memgraph(query)
+            
+            query = drop_event_index()
+            database_connector.run_query_memgraph(query)
 
             verification_query = get_count_nodes_event_query()
             result_event = database_connector.run_query_memgraph(verification_query)

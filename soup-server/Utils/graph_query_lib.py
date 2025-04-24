@@ -47,6 +47,32 @@ def load_entity_node_query(container_csv_path):
     return (f"LOAD CSV FROM '{container_csv_path}' WITH HEADER AS row "
             f"MERGE (e:Entity {{Value: row.value, Type: row.type}})")
 
+def create_event_index():
+    """
+    Create activity index for event nodes
+    :return: the query
+    """
+    return """
+        CREATE INDEX ON :Event(ActivityName);
+    """
+    
+def create_event_index_time():
+    """
+    Create time index for event nodes
+    :return: the query
+    """
+    return """
+        CREATE INDEX ON :Event(Timestamp);
+    """
+    
+def create_event_index_id():
+    """
+    Create id index for event nodes
+    :return: the query
+    """
+    return """
+        CREATE INDEX ON :Event(Event_Id);
+    """
 
 def create_entity_index():
     """

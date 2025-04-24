@@ -98,7 +98,11 @@ class GenericGraphService:
 
                 # 5. Create entities index to optimize :CORR creation
                 database_connector.run_query_memgraph(create_entity_index())
-
+                # + Create event index to optimize search and manipulation
+                database_connector.run_query_memgraph(create_event_index())
+                #database_connector.run_query_memgraph(create_event_index_time())
+                #database_connector.run_query_memgraph(create_event_index_id())                
+    
                 # 6. Create :CORR relationships
                 process_info.init_corr_time = datetime.now().strftime('%Y-%m-%dT%H:%M:%S.%f')[:-3]
 

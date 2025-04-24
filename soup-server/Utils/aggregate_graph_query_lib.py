@@ -19,27 +19,34 @@ def create_class_multi_query(matching_perspectives):
     :param matching_perspectives: the perspectives to match
     :return: the complete query
     """
-    class_type = 'Class'
-    main_query = f'MATCH (e:Event) \n'
+    class_type = "Class"
+    
+    # Event_Id based on matching_perspectives
+    event_id_parts = [f'{p.lower()}' for p in matching_perspectives]
+    event_id = '"c_" + ' + ' + "_" + '.join(event_id_parts)
 
-    perspectives_dict = {}
-    event_id = '"c_" + '
+    perspectives_dict = {p: f"{p.lower()}" for p in matching_perspectives}
+    perspectives_dict["Event_Id"] = event_id
+    perspectives_dict["Type"] = f'"{class_type}"'
 
-    for i, p in enumerate(matching_perspectives):
-        p_val = f'e.{p}'
-        event_id += f' {p_val}'
-        perspectives_dict[p] = p_val
-        if i != len(matching_perspectives) - 1:
-            event_id += ' + "_" +'
+    # get unique vlaues / p.lower() is the variable name
+    class_properties = ", ".join([f"{key}: {value}" for key, value in perspectives_dict.items()])
+    with_distinct = "WITH DISTINCT " + ", ".join([f"e.{p} AS {p.lower()}" for p in matching_perspectives])
 
-    perspectives_dict['Event_Id'] = event_id
-    perspectives_dict['Type'] = f'"{class_type}"'
+    # MERGE class nodes
+    class_creation = f"MERGE (c:Class {{{class_properties}}})"
 
-    res_dict = str(perspectives_dict).replace("'", "")
+    # retrieve events 
+    match_events = "MATCH (e:Event {" + ", ".join([f"{p}: {p.lower()}" for p in matching_perspectives]) + "})"
 
-    class_creation = f'MERGE (c:Class {res_dict})'
+    # infer OBS relationship 
+    merge_relationship = "MERGE (e)-[:OBSERVED]->(c)"
 
-    main_query += class_creation + '\n WITH c, e' + '\n MERGE (e) -[:OBSERVED]-> (c)'
+    # create final query
+    main_query = f"MATCH (e:Event)\n{with_distinct}\n{class_creation}\nWITH c, " + ", ".join([f"{p.lower()}" for p in matching_perspectives]) + "\n"
+    main_query += f"{match_events}\n{merge_relationship}"
+
+    #print(main_query)  
 
     return main_query
 

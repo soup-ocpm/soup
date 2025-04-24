@@ -36,6 +36,12 @@ def drop_entity_index():
     """
     return "DROP INDEX ON :Entity(Value)"
 
+def drop_event_index():
+    """
+    Drop event index
+    :return: the query
+    """
+    return "DROP INDEX ON :Event(Event_Id)"
 
 def delete_all_data_query():
     """
