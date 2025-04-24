@@ -20,22 +20,22 @@
           <p>
             Generated
             <span class="bold">{{ this.currentDataset?.eventNodes }}</span>
-            event nodes
+            Event nodes
           </p>
           <p>
             Generated
             <span class="bold">{{ this.currentDataset?.entityNodes }}</span>
-            entity nodes
+            Entity nodes
           </p>
           <p>
             Generated
             <span class="bold">{{ this.currentDataset?.corrRel }}</span>
-            :CORR links
+            CORR relationships
           </p>
           <p>
             Generated
             <span class="bold">{{ this.currentDataset?.dfRel }}</span>
-            :DF links
+            DF relationships
           </p>
         </div>
 
@@ -72,12 +72,12 @@
             seconds
           </p>
           <p>
-            :CORR links execution time:
+            CORR relationships execution time:
             <span class="bold-two">{{ this.currentDataset?.processInfo?.durationCorrExecution }}</span>
             seconds
           </p>
           <p>
-            :DF links execution time:
+            DF relationships execution time:
             <span class="bold-two">{{ this.currentDataset?.processInfo?.durationDfExecution }}</span>
             seconds
           </p>
@@ -111,12 +111,12 @@
             <p>
               Generated
               <span class="bold">{{ this.currentDataset?.obsRel }}</span>
-              :OBS links
+              OBS relationships
             </p>
             <p>
               Generated
               <span class="bold">{{ this.currentDataset?.dfcRel }}</span>
-              :DFC links
+              DF_C relationships
             </p>
           </div>
 
@@ -148,12 +148,12 @@
               seconds
             </p>
             <p>
-              :OBS links execution time:
+              OBS relationships execution time:
               <span class="bold-two">{{ this.currentDataset?.processInfo?.durationObsExecution }}</span>
               seconds
             </p>
             <p>
-              :DF_C links execution time:
+              DF_C relationships execution time:
               <span class="bold-two">{{ this.currentDataset?.processInfo?.durationDfCExecution }}</span>
               seconds
             </p>
@@ -230,7 +230,7 @@
   </li>
 
   <li class="list-group-item">
-    <span style="margin-top: 5px">Aggregate Graph</span>
+    <span style="margin-top: 5px">Aggregated Graph</span>
 
     <div class="group">
       <i

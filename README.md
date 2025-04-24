@@ -104,9 +104,19 @@ Once the .csv file is loaded, the user has the possibility to filter the data an
 Once this operation has been done (optional) the Server will begin to create the Graph of interest through queries to the Memgraph Database and will return the generated graph as a result. Obviously, the user has the possibility to download his graph in .svg format, as the possibility of eliminating it, but above all grouping the entities by Classes, in such a way as to obtain a new graph of interest.
 All this achieved thanks to the Memgraph, Python and Angular libraries and documentation.
 
-## Additional Features
-### Causal Event Relationships
-Soup supports the creation of EKGs considering event-to-event causal relationships.
-Indeed, causal relationships allow to retrieve 1:n or n:1 relationships between events.
+## Note
+> Our tool is called _Soup_, with a logo showcasing a mix of rainbow noodles, symbolizing the dynamic and interconnected flow of object-centric process mining, much like the iconic image of rainbow spaghetti.
 
-Revealing of such a relationship has been conducted in two case studies. Please refer to the corresponding [wiki](https://bitbucket.org/proslabteam/soup/wiki/CausalRelationships) page for more details.
+## Contact
+* **Development support**: Alessio Giacché ✉️ ale.giacc.dev@gmail.com
+
+* **Research activities**: Sara Pettinari ✉️ sara.pettinari@gssi.it & Lorenzo Rossi ✉️ lorenzo.rossi@unicam.it
+
+
+## Feedback
+We'd love to hear from you! Please share your feedback by filling out our form ➡️ [here](https://forms.gle/nBgZTeaDefTaYYkk9)
+
+
+## Additional Features
+More exciting features coming soon...🫕
+

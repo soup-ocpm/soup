@@ -1450,7 +1450,7 @@ export class DetailsDatasetComponent implements OnInit, AfterViewInit {
       this.dataPieChartInstance = new Chart(ctx, {
         type: 'pie',
         data: {
-          labels: ['Event', 'Entity', ':CORR', ':DF'],
+          labels: ['Event', 'Entity', 'CORR', 'DF'],
           datasets: [
             {
               label: 'number',
@@ -1475,7 +1475,7 @@ export class DetailsDatasetComponent implements OnInit, AfterViewInit {
             },
             title: {
               display: true,
-              text: 'Data'
+              text: 'Occurrencies'
             }
           }
         }
@@ -1496,12 +1496,13 @@ export class DetailsDatasetComponent implements OnInit, AfterViewInit {
       this.processPieChartInstance = new Chart(ctx, {
         type: 'pie',
         data: {
-          labels: ['Total', 'Event queries', 'Entity queries', ':Corr queries', ':DF queries'], // Etichette
+          //labels: ['Total', 'Event queries', 'Entity queries', ':CORR queries', ':DF queries'], // Etichette
+          labels: ['Event', 'Entity', 'CORR', 'DF'], // Etichette
           datasets: [
             {
               label: 'seconds',
               data: [
-                this.currentDataset!.processInfo.durationNormalExecution,
+                //this.currentDataset!.processInfo.durationNormalExecution,
                 this.currentDataset!.processInfo.durationEventExecution,
                 this.currentDataset!.processInfo.durationEntityExecution,
                 this.currentDataset!.processInfo.durationCorrExecution,
@@ -1544,7 +1545,7 @@ export class DetailsDatasetComponent implements OnInit, AfterViewInit {
       this.aggregateDataPieChartInstance = new Chart(ctx, {
         type: 'pie',
         data: {
-          labels: ['Class Nodes', ':OBS', ':DFC'],
+          labels: ['Class Nodes', 'OBS', 'DF_C'],
           datasets: [
             {
               label: 'number',
@@ -1583,7 +1584,8 @@ export class DetailsDatasetComponent implements OnInit, AfterViewInit {
       this.aggregateProcessPieChartInstance = new Chart(ctx, {
         type: 'pie',
         data: {
-          labels: ['Total', 'Class queries', ':OBS queries', ':DFC queries'],
+          //labels: ['Total', 'Class queries', ':OBS queries', ':DFC queries'],
+          labels: ['Class queries', 'OBS queries', 'DF_C queries'],
           datasets: [
             {
               label: 'seconds',

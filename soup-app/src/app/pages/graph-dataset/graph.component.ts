@@ -1515,20 +1515,20 @@ export class GraphComponent implements OnInit, AfterViewInit {
         case 'Entity nodes':
           requests.push({ name: 'Entity nodes', observable: this.jsonDataService.entityNodeJSON() });
           break;
-        case ':CORR links':
-          requests.push({ name: ':CORR links', observable: this.jsonDataService.corrLinkJSON() });
+        case 'CORR relationships':
+          requests.push({ name: 'CORR relationships', observable: this.jsonDataService.corrLinkJSON() });
           break;
-        case ':DF links':
-          requests.push({ name: ':DF links', observable: this.jsonDataService.dfLinkJSON() });
+        case 'DF relationships':
+          requests.push({ name: 'DF relationships', observable: this.jsonDataService.dfLinkJSON() });
           break;
         case 'Class nodes':
           requests.push({ name: 'Class nodes', observable: this.jsonDataService.classNodeJSON() });
           break;
-        case ':OBS links':
-          requests.push({ name: ':CORR links', observable: this.jsonDataService.corrLinkJSON() });
+        case 'OBS relationships':
+          requests.push({ name: 'CORR relationships', observable: this.jsonDataService.corrLinkJSON() });
           break;
-        case ':DFC links':
-          requests.push({ name: ':CORR links', observable: this.jsonDataService.corrLinkJSON() });
+        case 'DF_C relationships':
+          requests.push({ name: 'CORR relationships', observable: this.jsonDataService.corrLinkJSON() });
           break;
       }
     });
@@ -1769,13 +1769,13 @@ export class GraphComponent implements OnInit, AfterViewInit {
   private populateJsonContent(): void {
     if (this.supportService.graphType === GraphType.Aggregate) {
       this.jsonList.push(new JsonObject('Class nodes', false));
-      this.jsonList.push(new JsonObject(':OBS links', false));
-      this.jsonList.push(new JsonObject(':DFC links', false));
+      this.jsonList.push(new JsonObject('OBS relationships', false));
+      this.jsonList.push(new JsonObject('DFC relationships', false));
     } else {
       this.jsonList.push(new JsonObject('Event nodes', false));
       this.jsonList.push(new JsonObject('Entity nodes', false));
-      this.jsonList.push(new JsonObject(':CORR links', false));
-      this.jsonList.push(new JsonObject(':DF links', false));
+      this.jsonList.push(new JsonObject('CORR relationships', false));
+      this.jsonList.push(new JsonObject('DF relationships', false));
     }
   }
 
