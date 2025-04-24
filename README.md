@@ -13,39 +13,39 @@ Starting from an event log, saved in a .csv file, the user is guided in the crea
 ## Tecnhnologies
 ### 1. Memgraph Database
 As a Graph database for storing and manipulated event data.
-Useful links : 
-- [Memgraph](https://memgraph.com/)
-- [Chyper Query Language](https://neo4j.com/product/cypher-graph-query-language/?utm_source=google&utm_medium=PaidSearch&utm_campaign=GDB&utm_content=EMEA-X-Awareness-GDB-Text&utm_term=cypher%20query%20language&gad_source=1&gclid=CjwKCAiA9ourBhAVEiwA3L5RFhfAegfrPme8ND2NcBymbz8fhWHLrDI-HbSaK5lhBIA0kp-iR8ZZgRoC47wQAvD_BwE)
+
+Useful links: 
+* [Memgraph](https://memgraph.com/) 
+* [Chyper Query Language](https://neo4j.com/product/cypher-graph-query-language/?utm_source=google&utm_medium=PaidSearch&utm_campaign=GDB&utm_content=EMEA-X-Awareness-GDB-Text&utm_term=cypher%20query%20language&gad_source=1&gclid=CjwKCAiA9ourBhAVEiwA3L5RFhfAegfrPme8ND2NcBymbz8fhWHLrDI-HbSaK5lhBIA0kp-iR8ZZgRoC47wQAvD_BwE)
 
 ### 2. Python
 The Backend is based on the Python programming language and the Flask library.
-Useful links : 
-- [Python](https://www.python.org/)
-- [Flask](https://flask.palletsprojects.com/en/3.0.x/)
-- [Neo4j Python library](https://neo4j.com/developer/python/)
+
+Useful links: 
+* [Python](https://www.python.org/)
+* [Flask](https://flask.palletsprojects.com/en/3.0.x/)
+* [Neo4j Python library](https://neo4j.com/developer/python/)
 
 ### 3. Angular
-The Angular framework is used as a frontend. 
-Within Angular, the dagre-d3 library has been used to create graphs based on nodes and relations.
-Useful links: 
-- [Angular](https://angular.io/)
-- [Dagre-d3](https://www.npmjs.com/package/dagre-d3)
-and other library visible in package.json.
+The Angular framework is used as a frontend.  Within Angular, the dagre-d3 library has been used to create graphs based on nodes and relations.
 
-## Tool Setup - Instruction
+Useful links: 
+* [Angular](https://angular.io/)
+* [Dagre-d3](https://www.npmjs.com/package/dagre-d3)
+
+and other libraries in package.json.
+
+## Tool Setup - Instructions
 
 The first step is to clone the project. <br> ([Clone a Git repository](https://support.atlassian.com/bitbucket-cloud/docs/clone-a-git-repository/))<br>
 
 Make sure Git is installed on your computer. If Git is not installed, you will encounter an error message.
 
-To download Git, visit the following page:
-
-[Download Git](https://git-scm.com/downloads)
+To download Git, visit the following page: [Download Git](https://git-scm.com/downloads)
 
 ### Start tool by Docker
-First, install Docker inside your computer.
 
-[Download Docker](https://www.docker.com/get-started/)
+First, install Docker inside your computer: [Download Docker](https://www.docker.com/get-started/)
 
 After successfully installing Docker, open the terminal in the main folder of the cloned project.
 
@@ -56,9 +56,9 @@ docker-compose -p soup-tool up --build
 ```
 
 Once the command is completed, Docker Compose automatically creates a container that includes the following sub-containers, all of which are already running:
-- Angular container: represents the web tool, contactable at the <h4>localhost:4200</h4>
-- Python container (Backend): represents the Backend and Engine of the system, contactable at the <h4>localhost:8080</h4>
-- Memgraph container: in this container, the Memgraph database runs which offers 3 different ports.The most important is <h4>localhost:3000</h4>which will open Memgraph Lab.
+* Angular container: represents the web tool, contactable at the `localhost:4200`
+* Python container (Backend): represents the Backend and Engine of the system, contactable at the `localhost:8080`
+* Memgraph container: in this container, the Memgraph database runs which offers 3 different ports.The most important is `localhost:3000` which will open Memgraph Lab.
 
 
 
