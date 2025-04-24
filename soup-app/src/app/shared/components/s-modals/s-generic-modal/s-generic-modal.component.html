@@ -1,44 +1,63 @@
-<div
-  class="overlay"
-  *ngIf="this.isVisible"
-  (click)="this.isVisible = false"></div>
-<div
-  class="card"
-  *ngIf="this.isVisible"
-  [ngClass]="{ show: this.isVisible }"
-  [@slideInOut]>
-  <!--Header and description-->
-  <div class="header">
-    <h4 class="card-title">{{ this.title }}</h4>
-    <i
-      class="bi bi-x-lg"
-      (click)="this.isVisible = false"></i>
-  </div>
-  <p style="color: #666; margin-top: 15px">{{ this.message }}</p>
-
-  <!--Footer-->
-  <div style="margin-top: 25px">
-    <!--Single button-->
-    <div *ngIf="!this.doubleButton">
-      <sp-btn-txt
-        [text]="this.primaryButtonText"
-        [color]="this.primaryButtonColor"
-        (buttonClick)="this.onClickPrimaryButton()"></sp-btn-txt>
+@if (this.isVisible) {
+  <div
+    class="overlay"
+    (click)="this.closeVisible()"></div>
+  <div
+    class="card"
+    [ngClass]="{ show: this.isVisible }"
+    [@slideInOut]>
+    <!--Header and description-->
+    <div class="header">
+      <h4 class="card-title">{{ this.title }}</h4>
+      <i
+        class="bi bi-x-lg"
+        (click)="this.closeVisible()"></i>
     </div>
+    <p class="message">{{ this.message }}</p>
 
-    <!--Double buttons-->
-    <div
-      class="footer"
-      *ngIf="this.doubleButton">
-      <sp-btn-txt
-        [text]="this.primaryButtonText"
-        [color]="this.primaryButtonColor"
-        (buttonClick)="this.onClickPrimaryButton()"></sp-btn-txt>
-      <sp-btn-txt
-        [text]="this.secondaryButtonText"
-        [color]="this.secondaryButtonColor"
-        style="margin-left: 25px"
-        (buttonClick)="this.onClickSecondaryButton()"></sp-btn-txt>
+    <!--Input-->
+    @if (this.showInput) {
+      <div class="mb-1">
+        @if (this.inputLabel) {
+          <label
+            class="form-label"
+            style="color: black"
+            for="inputValue">
+            {{ this.inputLabel }}
+          </label>
+        }
+        <input
+          id="inputValue"
+          class="form-control form-control-sm"
+          type="text"
+          [(ngModel)]="this.inputValue" />
+      </div>
+    }
+
+    <!--Footer-->
+    <div style="margin-top: 25px">
+      <!--Single button-->
+      @if (!this.doubleButton) {
+        <sp-btn-txt
+          [text]="this.primaryButtonText"
+          [color]="this.primaryButtonColor"
+          (buttonClick)="this.onClickPrimaryButton()"></sp-btn-txt>
+      }
+
+      <!--Double buttons-->
+      @if (this.doubleButton) {
+        <div class="footer">
+          <sp-btn-txt
+            [text]="this.primaryButtonText"
+            [color]="this.primaryButtonColor"
+            (buttonClick)="this.onClickPrimaryButton()"></sp-btn-txt>
+          <sp-btn-txt
+            [text]="this.secondaryButtonText"
+            [color]="this.secondaryButtonColor"
+            style="margin-left: 25px"
+            (buttonClick)="this.onClickSecondaryButton()"></sp-btn-txt>
+        </div>
+      }
     </div>
   </div>
-</div>
+}

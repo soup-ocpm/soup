@@ -11,6 +11,12 @@ import { GenericModalComponent } from './shared/components/s-modals/s-generic-mo
 import { InputModalComponent } from './shared/components/s-modals/s-input-modal/s-input-modal.component';
 import { SToastComponent } from './shared/components/s-toast/s-toast.component';
 
+/**
+ * Main application component
+ * @version 1.0
+ * @since 2.0.0
+ * @author Alessio Giacché
+ */
 @Component({
   selector: 'app-root',
   standalone: true,

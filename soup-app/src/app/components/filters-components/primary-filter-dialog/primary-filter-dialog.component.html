@@ -7,12 +7,13 @@
 <div class="modal-body">
   <p>Select one of the filters:</p>
   <ul class="filter-list">
-    <li
-      *ngFor="let filter of filters"
-      class="filter-option"
-      (click)="this.onSelectFilter(filter)">
-      {{ filter }}
-    </li>
+    @for (filter of this.filters; track $index) {
+      <li
+        class="filter-option"
+        (click)="this.onSelectFilter(filter)">
+        {{ filter }}
+      </li>
+    }
   </ul>
 </div>
 

@@ -15,6 +15,7 @@ import io
 import json
 import tarfile
 import docker
+import shutil
 
 from pathlib import Path
 from typing import Optional
@@ -301,3 +302,39 @@ class DockerFileManager:
             file_path = result.output.decode('utf-8').strip()
             return file_path if file_path else None
         return None
+
+    @staticmethod
+    def export_soup_folder_to_backend(container_id, backup_name):
+        """
+        Export the entire /soup folder from the docker container
+        :param container_id: the container unique id
+        :param backup_name: the name of the backup file
+        :return: success or error message
+        """
+        try:
+            client = docker.from_env()
+            container = client.containers.get(container_id)
+
+            # 1. Define the source folder in the container and the backup path
+            container_directory = '/soup'
+            backup_directory = f'/tmp/{backup_name}.tar.gz'
+
+            # 2. Create a tar archive of the /soup directory in the container
+            tarstream = io.BytesIO()
+            result = container.get_archive(container_directory)
+            with tarfile.open(fileobj=tarstream, mode='w:gz') as tar:
+                # Get the tar data from the container's directory
+                for member in result[0]:
+                    tar.addfile(member, fileobj=result[1].read())
+
+            tarstream.seek(0)
+            # Save the tarball to the backend system
+            with open(backup_directory, 'wb') as f:
+                shutil.copyfileobj(tarstream, f)
+
+            return 'success', backup_directory  # Return the path to the backup file created
+
+        except Exception as e:
+            import traceback
+            traceback.print_exc()
+            return f"Error during export: {e}"

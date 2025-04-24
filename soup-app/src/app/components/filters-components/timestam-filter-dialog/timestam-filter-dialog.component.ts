@@ -3,8 +3,15 @@ import { Component, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { NgbActiveModal, NgbDateStruct, NgbModule, NgbTimeStruct } from '@ng-bootstrap/ng-bootstrap';
 import { LocalDataService } from 'src/app/shared/services/support.service';
+
 import { TimestampFilter } from './timestamp-filter.model';
 
+/**
+ * Timestamp Filter Component
+ * @version 1.0.0
+ * @since 2.0.0
+ * @author Alessio Giacché
+ */
 @Component({
   selector: 'app-timestam-filter-dialog',
   standalone: true,

@@ -1,10 +1,16 @@
 import { CommonModule } from '@angular/common';
-import { Component, EventEmitter, Input, Output } from '@angular/core';
+import { Component, model, output } from '@angular/core';
 
 import { Dataset } from '../../models/dataset.model';
 import { StandardGraphService } from '../../services/standard_graph.service';
 import { MaterialModule } from '../../shared/modules/materlal.module';
 
+/**
+ * The Dataset tile component
+ * @version 1.0.0
+ * @since 2.0.0
+ * @author Alessio Giacché
+ */
 @Component({
   selector: 'app-dataset-tile',
   standalone: true,
@@ -14,16 +20,16 @@ import { MaterialModule } from '../../shared/modules/materlal.module';
 })
 export class DatasetTileComponent {
   // The dataset name
-  @Input() dataset: Dataset | undefined;
+  public dataset = model.required<Dataset>();
 
   // Handle the click to dataset tile
-  @Output() selectedDataset = new EventEmitter<Dataset>();
+  public selectedDataset = output<Dataset>();
 
   // Output event for dataset details navigation
-  @Output() manageDataset = new EventEmitter<Dataset>();
+  public manageDataset = output<Dataset>();
 
   // Output event for delete dataset
-  @Output() deleteDataset = new EventEmitter<Dataset>();
+  public deleteDataset = output<Dataset>();
 
   /**
    * Constructor for DatasetCardComponent component
@@ -50,7 +56,7 @@ export class DatasetTileComponent {
    */
   public goToDetails(): void {
     if (this.dataset != null) {
-      this.selectedDataset.emit(this.dataset);
+      this.selectedDataset.emit(this.dataset());
     }
   }
 
@@ -58,13 +64,13 @@ export class DatasetTileComponent {
    * Manage the Dataset
    */
   public onManageDataset(): void {
-    this.manageDataset.emit(this.dataset);
+    this.manageDataset.emit(this.dataset());
   }
 
   /**
    * Delete dataset
    */
   public onDeleteDataset(): void {
-    this.deleteDataset.emit(this.dataset);
+    this.deleteDataset.emit(this.dataset());
   }
 }

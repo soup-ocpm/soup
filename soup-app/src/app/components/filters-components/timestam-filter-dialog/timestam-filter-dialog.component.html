@@ -16,17 +16,17 @@
           <!-- Date Picker -->
           <div class="input-wrapper">
             <input
-              type="text"
+              #startDate="ngbDatepicker"
               id="startDate"
               class="form-control"
-              ngbDatepicker
-              #startDate="ngbDatepicker"
+              name="startDate"
+              type="text"
               [(ngModel)]="startDateModel"
               [minDate]="this.minDateModel!"
               [maxDate]="this.maxDateModel!"
-              name="startDate"
-              required
-              (dateSelect)="this.onDateSelect('start', $event)" />
+              (dateSelect)="this.onDateSelect('start', $event)"
+              ngbDatepicker
+              required />
             <button
               class="calendar-btn"
               (click)="startDate.toggle()"
@@ -36,8 +36,8 @@
           </div>
           <!-- Time Picker -->
           <ngb-timepicker
-            [(ngModel)]="startTimeModel"
             name="startTime"
+            [(ngModel)]="startTimeModel"
             [spinners]="true"
             [seconds]="true"
             [meridian]="false"
@@ -48,24 +48,24 @@
       <!-- End date and time -->
       <div class="form-group">
         <label
-          for="endDate"
-          style="color: var(--secondary-color); font-size: 15px">
+          style="color: var(--secondary-color); font-size: 15px"
+          for="endDate">
           End Date and Time
         </label>
         <div class="input-container">
           <div class="input-wrapper">
             <input
-              type="text"
+              #endDate="ngbDatepicker"
               id="endDate"
               class="form-control"
-              ngbDatepicker
-              #endDate="ngbDatepicker"
+              name="endDate"
+              type="text"
               [(ngModel)]="endDateModel"
               [minDate]="this.minDateModel!"
               [maxDate]="this.maxDateModel!"
-              name="endDate"
-              required
-              (dateSelect)="this.onDateSelect('end', $event)" />
+              (dateSelect)="this.onDateSelect('end', $event)"
+              ngbDatepicker
+              required />
             <button
               class="calendar-btn"
               (click)="endDate.toggle()"
@@ -75,8 +75,8 @@
           </div>
           <!-- Time Picker -->
           <ngb-timepicker
-            [(ngModel)]="this.endTimeModel"
             name="endTime"
+            [(ngModel)]="this.endTimeModel"
             [spinners]="true"
             [seconds]="true"
             [meridian]="false"

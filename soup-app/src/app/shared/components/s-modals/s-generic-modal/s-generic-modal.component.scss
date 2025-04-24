@@ -56,9 +56,14 @@ span.close {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  color: #666;
+  color: var(--secondary-color);
 
   i {
     cursor: pointer;
   }
+}
+
+.message {
+  color: var(--secondary-color);
+  margin-top: 15px;
 }

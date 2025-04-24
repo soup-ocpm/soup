@@ -1,11 +1,20 @@
 <div class="operation-card">
   <div class="operation-header">
-    <mat-icon class="operation-icon">{{ icon }}</mat-icon>
+    <mat-icon class="operation-icon">{{ icon() }}</mat-icon>
     <h5
       class="operation-title underline-h"
       (click)="action()">
-      {{ title }}
+      {{ title() }}
     </h5>
   </div>
-  <p class="operation-description">{{ description }}</p>
+  <p class="operation-description">{{ description() }}</p>
+
+  <!--Loading status-->
+  @if (this.loading()) {
+    <div class="loading">
+      <sp-spinner
+        [size]="25"
+        [primaryColor]="'var(--secondary-color)'"></sp-spinner>
+    </div>
+  }
 </div>

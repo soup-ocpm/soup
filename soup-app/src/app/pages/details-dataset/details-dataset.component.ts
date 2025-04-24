@@ -1,23 +1,20 @@
 import { SpDividerComponent, SpProgressbarComponent, SpSpinnerComponent } from '@aledevsharp/sp-lib';
 import { CommonModule } from '@angular/common';
+import { HttpClient } from '@angular/common/http';
 import { AfterViewInit, Component, ElementRef, OnInit, TemplateRef, ViewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { ActivatedRoute, Router } from '@angular/router';
-import { Chart, registerables } from 'chart.js';
-
-import { HttpClient } from '@angular/common/http';
 import { MatDialog } from '@angular/material/dialog';
+import { ActivatedRoute, Router } from '@angular/router';
 import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
+import { Chart, registerables } from 'chart.js';
 import { ActivityFilterDialogComponent } from 'src/app/components/filters-components/activity-filter-dialog/activity-filter-dialog.component';
 import { ActivityFilter } from 'src/app/components/filters-components/activity-filter-dialog/activity-filter.model';
 import { AnalysisDialogComponent } from 'src/app/components/filters-components/analysis-dialog/analysis-dialog.component';
-import { FrequenceFilterDialogComponent } from 'src/app/components/filters-components/frequence-filter-dialog/frequence-filter-dialog.component';
 import { PerformanceFilterDialogComponent } from 'src/app/components/filters-components/performance-filter-dialog/performance-filter-dialog.component';
 import { PerformanceFilter } from 'src/app/components/filters-components/performance-filter-dialog/performance-filter.model';
 import { PrimaryFilterDialogComponent } from 'src/app/components/filters-components/primary-filter-dialog/primary-filter-dialog.component';
 import { TimestamFilterDialogComponent } from 'src/app/components/filters-components/timestam-filter-dialog/timestam-filter-dialog.component';
 import { TimestampFilter } from 'src/app/components/filters-components/timestam-filter-dialog/timestamp-filter.model';
-import { VariationFilterDialogComponent } from 'src/app/components/filters-components/variation-filter-dialog/variation-filter-dialog.component';
 import { GraphType } from 'src/app/enums/graph_type.enum';
 import { Analysis } from 'src/app/models/analysis.mdel';
 import { AnalysisService } from 'src/app/services/analysis.service';
@@ -26,6 +23,7 @@ import { ModalService } from 'src/app/shared/components/s-modals/modal.service';
 import { SidebarComponent } from 'src/app/shared/components/s-sidebar/s-sidebar.component';
 import { SidebarService } from 'src/app/shared/components/s-sidebar/sidebar.service';
 import { NotificationService } from 'src/app/shared/components/s-toast/toast.service';
+
 import { SideOperationComponent } from '../../components/side-operation/side-operation.component';
 import { LoggerService } from '../../core/services/logger.service';
 import { GraphData } from '../../enums/graph_data.enum';
@@ -78,6 +76,12 @@ export class JsonObject {
   }
 }
 
+/**
+ * Detail dataset component
+ * @version 1.0
+ * @since 2.0.0
+ * @author Alessio Giacché
+ */
 @Component({
   selector: 'app-details-dataset',
   standalone: true,
@@ -124,7 +128,7 @@ export class DetailsDatasetComponent implements OnInit, AfterViewInit {
   public sidebarIds: string[] = [];
 
   // List of the filters for the analysis
-  public filters = ['Timestamp', 'Performance', 'Include Activities', 'Exclude Activities', 'Frequence', 'Variation'];
+  public filters = ['Timestamp', 'Performance', 'Include Activities', 'Exclude Activities'];
 
   // List of the tiles
   public tiles: any[] = [];
@@ -142,16 +146,16 @@ export class DetailsDatasetComponent implements OnInit, AfterViewInit {
   public excludeActivitiesFilters: ActivityFilter[] = [];
 
   // If the user uploaded the file configuration for new analysis
-  public jsonConfiguration: boolean = false;
+  public jsonConfiguration = false;
 
   // If the tiles was created by uploading the configuration json file
-  public createTilesByFile: boolean = false;
+  public createTilesByFile = false;
 
   // The json configuration example for the info
   public exampleJSONConfiguration: any;
 
   // If there is loading for map configuration json file to tiles
-  public isLoadingConfiguration: boolean = false;
+  public isLoadingConfiguration = false;
 
   // Retrieve all analysis
   public allAnalyses: Analysis[] = [];
@@ -160,7 +164,7 @@ export class DetailsDatasetComponent implements OnInit, AfterViewInit {
   public selectedAnalysis: Analysis | undefined;
 
   // If we have already add buttons
-  public alreadyAddButtons: boolean = false;
+  public alreadyAddButtons = false;
 
   // The search
   public searchTerm = '';
@@ -171,6 +175,7 @@ export class DetailsDatasetComponent implements OnInit, AfterViewInit {
       title: 'Graph Visualization',
       description: 'View the complete graph. Maximum of 200 nodes and relationships displayed',
       icon: 'analytics',
+      loading: false,
       action: () =>
         this.currentDataset?.classNodes === 0 || this.currentDataset?.classNodes === undefined
           ? this.goToGraphVisualization(GraphType.Standard, null, null)
@@ -180,24 +185,28 @@ export class DetailsDatasetComponent implements OnInit, AfterViewInit {
       title: 'Aggregate Graph',
       description: 'Aggregate graph by grouping nodes into chosen classes',
       icon: 'group_work',
+      loading: false,
       action: () => this.openAggregateSidebar()
     },
     {
       title: 'New Analysis',
       description: 'Create new analysis for this dataset',
       icon: 'add_chart',
+      loading: false,
       action: () => this.requestFileConfiguration()
     },
     {
       title: 'Manage Datasets',
       description: 'View all datasets',
       icon: 'dashboard',
+      loading: false,
       action: () => this.goToDatasetsPage()
     },
     {
       title: 'Delete Dataset',
       description: 'This operation is not reversible',
       icon: 'delete_forever',
+      loading: false,
       action: () => this.openModalDeleteDataset()
     }
   ];
@@ -349,7 +358,7 @@ export class DetailsDatasetComponent implements OnInit, AfterViewInit {
    * Open the master sidebar template
    */
   public openMasterSidebar(): void {
-    const sidebarId: string = 'master-sidebar';
+    const sidebarId = 'master-sidebar';
 
     if (!this.sidebarIds.includes(sidebarId)) {
       this.sidebarIds.push(sidebarId);
@@ -374,7 +383,7 @@ export class DetailsDatasetComponent implements OnInit, AfterViewInit {
    * Open the master sidebar template
    */
   public openGraphVisualizationSidebar(): void {
-    const sidebarId: string = 'graph-visualization-sidebar';
+    const sidebarId = 'graph-visualization-sidebar';
 
     if (!this.sidebarIds.includes(sidebarId)) {
       this.sidebarIds.push(sidebarId);
@@ -409,11 +418,14 @@ export class DetailsDatasetComponent implements OnInit, AfterViewInit {
       'JSON Configuration?',
       'Do you want to import a json configuration file containing filters?',
       true,
+      false,
+      '',
       'Yes',
       'var(--primary-color)',
       'No, create manually',
       '#000000',
       () => this.preOpenNewAnalysisSidebar(true),
+      () => null,
       () => this.preOpenNewAnalysisSidebar(false)
     );
   }
@@ -431,7 +443,7 @@ export class DetailsDatasetComponent implements OnInit, AfterViewInit {
    * Open the new analysis sidebar
    */
   public openNewAnalysisSidebar(): void {
-    const sidebarId: string = 'new-analysis';
+    const sidebarId = 'new-analysis';
 
     if (!this.sidebarIds.includes(sidebarId)) {
       this.sidebarIds.push(sidebarId);
@@ -456,7 +468,7 @@ export class DetailsDatasetComponent implements OnInit, AfterViewInit {
    * Open the info json configuration sidebar
    */
   public openInfoJSONConfigurationSidebar(): void {
-    const sidebarId: string = 'json-configuration';
+    const sidebarId = 'json-configuration';
 
     if (!this.sidebarIds.includes(sidebarId)) {
       this.sidebarIds.push(sidebarId);
@@ -649,7 +661,7 @@ export class DetailsDatasetComponent implements OnInit, AfterViewInit {
    * @param addButtons if we want to add the footer buttons
    */
   public updateNewAnalysisSidebar(addButtons: boolean): void {
-    const sidebarId: string = 'new-analysis';
+    const sidebarId = 'new-analysis';
 
     if (addButtons) {
       this.sidebarService.updateConfig(sidebarId, {
@@ -703,14 +715,6 @@ export class DetailsDatasetComponent implements OnInit, AfterViewInit {
       case 'Exclude Activities':
         filterModal = this.ngbModalService.open(ActivityFilterDialogComponent);
         filterModal.componentInstance.inputData = false;
-        break;
-
-      case 'Frequence':
-        filterModal = this.ngbModalService.open(FrequenceFilterDialogComponent);
-        break;
-
-      case 'Variation':
-        filterModal = this.ngbModalService.open(VariationFilterDialogComponent);
         break;
 
       default:
@@ -854,8 +858,8 @@ export class DetailsDatasetComponent implements OnInit, AfterViewInit {
       'var(--primary-color)',
       'Close',
       '#6c757d',
-      (datasetName: string, datasetDescription: string, saveProcessExecution: boolean) => {
-        return this.retrieveModalData(datasetName, datasetDescription, saveProcessExecution);
+      (datasetName: string, datasetDescription: string) => {
+        return this.retrieveModalData(datasetName, datasetDescription);
       },
       () => {
         this.modal.hideInputModal();
@@ -867,10 +871,9 @@ export class DetailsDatasetComponent implements OnInit, AfterViewInit {
    * Catch the dataset input information
    * @param analysisName the dataset name
    * @param analysisDescription the dataset informaton
-   * @param saveProcessExecution if the user want to save the
    * timestamp execution
    */
-  private retrieveModalData(analysisName: string, analysisDescription: string, saveProcessExecution: boolean): Promise<void> {
+  private retrieveModalData(analysisName: string, analysisDescription: string): Promise<void> {
     this.buildAnalysis(analysisName, analysisDescription);
     return Promise.resolve();
   }
@@ -882,17 +885,52 @@ export class DetailsDatasetComponent implements OnInit, AfterViewInit {
     const payload = this.buildFiltersPayload();
 
     if (payload != null) {
+      this.isLoadingAnalysis = true;
+
+      // Create payload
       payload['dataset_name'] = this.currentDataset?.name;
       payload['analysis_name'] = analysisName;
       payload['analysis_description'] = analysisDescription;
 
+      // Update sidebar configuration
+      this.updateNewAnalysisSidebar(false);
+
       // Call the API
       this.analysisService.createAnalysis(payload).subscribe({
         next: (response) => {
-          console.log(response);
-          // TODO: implementare
+          if ((response.statusCode == 200 || response.statusCode == 201) && response.responseData != null) {
+            const data = response.responseData;
+            this.isLoadingAnalysis = false;
+            this.sidebarService.close('new-analysis');
+            this.toast.show('Analysis created successfully.', ToastLevel.Success, 3000);
+            this.goToGraphVisualization(GraphType.Filtered, analysisName, data);
+          } else if (response.statusCode == 204) {
+            this.isLoadingAnalysis = false;
+            this.updateNewAnalysisSidebar(true);
+            // We can remove the analysis
+            this.deleteAnalysis(analysisName, false);
+
+            this.logService.warn('No content with these filters.');
+            this.toast.show('No content with these filters. Try applying different filters.', ToastLevel.Warning, 3000);
+          } else {
+            this.isLoadingAnalysis = false;
+            this.updateNewAnalysisSidebar(true);
+            // We can remove the analysis
+            this.deleteAnalysis(analysisName, false);
+
+            this.logService.error('Unable to create the analysis.' + response.statusCode);
+            this.toast.show('Unable to create the analysis due an error. Retry', ToastLevel.Error, 3000);
+          }
         },
-        error: (error) => {}
+        error: (error) => {
+          this.isLoadingAnalysis = false;
+          this.updateNewAnalysisSidebar(true);
+          // We can remove the analysis
+          this.deleteAnalysis(analysisName, false);
+
+          this.logService.error(error);
+          this.toast.show('Unable to create the analysis due an error. Retry', ToastLevel.Error, 3000);
+        }
       });
     }
   }
@@ -901,7 +939,7 @@ export class DetailsDatasetComponent implements OnInit, AfterViewInit {
    * Open the analysis history sidebar
    */
   public openHistoryAnalysisSidebar(): void {
-    const sidebarId: string = 'analyses';
+    const sidebarId = 'analyses';
 
     if (!this.sidebarIds.includes(sidebarId)) {
       this.sidebarIds.push(sidebarId);
@@ -941,16 +979,17 @@ export class DetailsDatasetComponent implements OnInit, AfterViewInit {
       this.analysisService.processAnalysis(this.currentDataset!.name, analysis.analysisName).subscribe({
         next: (response) => {
           if (response.statusCode === 201 && response.responseData != null) {
+            const data = response.responseData;
             this.isLoadingAnalysis = false;
             this.sidebarService.close('analyses');
             this.toast.show('Analysis created successfully.', ToastLevel.Success, 3000);
-            this.goToGraphVisualization(GraphType.Filtered, analysis.analysisName, response.responseData);
+            this.goToGraphVisualization(GraphType.Filtered, analysis.analysisName, data);
           } else if (response.statusCode === 204) {
             this.isLoadingAnalysis = false;
             this.sidebarService.reOpen('master-sidebar');
             this.sidebarService.reOpen('analyses');
 
-            this.toast.show('No content for this Analysis. Try applying different filters', ToastLevel.Warning, 3000);
+            this.toast.show('No content with these filters. Try applying different filters', ToastLevel.Warning, 3000);
           }
         },
         error: (error) => {
@@ -971,31 +1010,76 @@ export class DetailsDatasetComponent implements OnInit, AfterViewInit {
   }
 
   /**
+   * Open the modal for delete the analysis
+   * @param analysis the analysis to remove
+   */
+  public openModalDeleteAnalysis(analysis: Analysis): void {
+    if (this.currentDataset != null) {
+      const title = 'Delete' + ' ' + analysis.analysisName + ' ' + 'analysis?';
+
+      this.modalService.showDeleteDatasetModal(
+        title,
+        'Are you sure you want to delete this Analysis? This operation is not reversible',
+        analysis.analysisName,
+        false,
+        'Delete',
+        '#FF0000',
+        'Cancel',
+        '#555',
+        (name: string) => {
+          return this.preDeleteAnalysis(name);
+        },
+        () => {
+          this.modalService.hideDeleteDatasetModal();
+        }
+      );
+    }
+  }
+
+  /**
+   * Catch the promise and data from modal
+   * @param analysisName the analysis name
+   */
+  public preDeleteAnalysis(analysisName: string): Promise<void> {
+    if (analysisName !== null && analysisName != '') {
+      this.deleteAnalysis(analysisName, true);
+    }
+
+    return Promise.resolve();
+  }
+
+  /**
    * Delete specific analysis
    * @param analysis the analysis to remove
    */
-  public deleteAnalysis(analysis: Analysis): void {
-    this.analysisService.deleteAnalysis(this.currentDataset!.name, analysis.analysisName).subscribe({
+  public deleteAnalysis(analysisName: string, includeToast: boolean): void {
+    this.analysisService.deleteAnalysis(this.currentDataset!.name, analysisName).subscribe({
       next: (response) => {
         if (response.statusCode === 200) {
-          this.currentDataset!.analyses = this.currentDataset!.analyses.filter((item) => item.analysisName !== analysis.analysisName);
+          this.currentDataset!.analyses = this.currentDataset!.analyses.filter((item) => item.analysisName !== analysisName);
 
           if (this.currentDataset!.analyses.length == 0) {
             this.updateOperationList('remove');
             this.closeHistoryAnalysisSidebar();
           }
-          this.toast.show('Analysis deleted successfully', ToastLevel.Success, 3000);
+
+          if (includeToast) {
+            this.toast.show(analysisName + ' ' + 'analysis deleted successfully', ToastLevel.Success, 3000);
+          }
         } else {
-          this.toast.show('Unable to delete analysis. Please retry.', ToastLevel.Error, 3000);
+          if (includeToast) {
+            this.toast.show('Unable to delete analysis. Please retry.', ToastLevel.Error, 3000);
+          }
         }
       },
       error: (error) => {
         const errorData: any = error;
         this.logService.error(errorData.message);
 
-        this.toast.show('Unable to delete analysis. Please retry.', ToastLevel.Error, 3000);
-      },
-      complete: () => {}
+        if (includeToast) {
+          this.toast.show('Unable to delete analysis. Please retry.', ToastLevel.Error, 3000);
+        }
+      }
     });
   }
 
@@ -1057,7 +1141,7 @@ export class DetailsDatasetComponent implements OnInit, AfterViewInit {
    * Open the master sidebar template
    */
   public openAggregateSidebar(): void {
-    const sidebarId: string = 'aggregate-sidebar';
+    const sidebarId = 'aggregate-sidebar';
 
     if (!this.sidebarIds.includes(sidebarId)) {
       this.sidebarIds.push(sidebarId);
@@ -1083,7 +1167,7 @@ export class DetailsDatasetComponent implements OnInit, AfterViewInit {
    * @param addButtons if we want to add the footer buttons
    */
   public updateAggregateSidebar(addButtons: boolean): void {
-    const sidebarId: string = 'aggregate-sidebar';
+    const sidebarId = 'aggregate-sidebar';
 
     // Update the sidebar configuration
     if (addButtons) {
@@ -1224,6 +1308,10 @@ export class DetailsDatasetComponent implements OnInit, AfterViewInit {
    * Load the different activities
    */
   private loadDatasetActivities(): void {
+    // Reset the previous analysis
+    this.currentDataset!.analyses = [];
+
+    // Get the analysis
     this.standardGraphService.getActivitiesName().subscribe({
       next: (response) => {
         if (response.statusCode == 200 || response.statusCode == 202 || response.statusCode == 204) {
@@ -1252,7 +1340,6 @@ export class DetailsDatasetComponent implements OnInit, AfterViewInit {
   private loadEntityKey(): void {
     this.standardGraphService.getEntityKey().subscribe({
       next: (response) => {
-        console.log(response);
         if (response.statusCode == 200 && response.responseData != null) {
           const data = response.responseData;
           data.forEach((item: any) => {
@@ -1326,7 +1413,6 @@ export class DetailsDatasetComponent implements OnInit, AfterViewInit {
           if (minTimestampDate != null && maxTimestampDate != null) {
             this.currentDataset!.minEventDateTime = minTimestampDate;
             this.currentDataset!.maxEventDateTime = maxTimestampDate;
-            console.log(this.currentDataset);
           }
         }
       },
@@ -1593,6 +1679,7 @@ export class DetailsDatasetComponent implements OnInit, AfterViewInit {
             title: 'Manage Analysis',
             description: 'Manage the analysis.',
             icon: 'history',
+            loading: false,
             action: () => this.openHistoryAnalysisSidebar()
           });
         }
@@ -1738,6 +1825,7 @@ export class DetailsDatasetComponent implements OnInit, AfterViewInit {
         title,
         'Are you sure you want to delete this Dataset? This operation is not reversible',
         this.currentDataset!.name,
+        true,
         'Delete',
         '#FF0000',
         'Cancel',

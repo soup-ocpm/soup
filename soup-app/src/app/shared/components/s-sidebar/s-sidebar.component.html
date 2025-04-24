@@ -9,10 +9,11 @@
   <!-- Sidebar header -->
   <div class="sidebar-header">
     <h4>{{ config?.title }}</h4>
-    <i
-      *ngIf="config?.closeIcon"
-      class="bi bi-x-lg"
-      (click)="closeSidebar()"></i>
+    @if (this.config?.closeIcon) {
+      <i
+        class="bi bi-x-lg"
+        (click)="closeSidebar()"></i>
+    }
   </div>
 
   <!-- Sidebar content -->
@@ -21,14 +22,15 @@
   </div>
 
   <!-- Sidebar footer -->
-  <div
-    class="master-footer"
-    [ngClass]="{ 'sticky-footer': config?.stickyFooter }"
-    *ngIf="config?.footerButtons?.length">
-    <sp-btn
-      *ngFor="let button of config?.footerButtons"
-      [text]="button.label"
-      [color]="button.color"
-      (buttonClick)="button.action()"></sp-btn>
-  </div>
+  @if (this.config?.footerButtons?.length) {
+    <div
+      class="master-footer"
+      [ngClass]="{ 'sticky-footer': config?.stickyFooter }">
+      <sp-btn
+        *ngFor="let button of config?.footerButtons"
+        [text]="button.label"
+        [color]="button.color"
+        (buttonClick)="button.action()"></sp-btn>
+    </div>
+  }
 </div>

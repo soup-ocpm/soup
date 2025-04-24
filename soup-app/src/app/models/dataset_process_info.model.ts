@@ -1,6 +1,8 @@
 /**
  * Dataset process information model class
  * @version 1.0
+ * @since 1.0.0
+ * @author Alessio Giacché
  */
 export class DatasetProcessInfo {
   // Start execution process time for standard graph

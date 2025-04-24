@@ -1,6 +1,12 @@
 import { Component } from '@angular/core';
 import { Router } from '@angular/router';
 
+/**
+ * Navigation bar component
+ * @version 1.0
+ * @since 1.0.0
+ * @author Alessio Giacché
+ */
 @Component({
   selector: 'app-navbar',
   standalone: true,

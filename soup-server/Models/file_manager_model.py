@@ -34,7 +34,7 @@ class FileManager:
     def copy_csv_file(file, file_name, entity_folder):
         """
         Copy specific file on the engine
-        :param file: the file
+        :param file: the complete file
         :param file_name: file name
         :param entity_folder: if the file is entity
         :return: success or error message with content

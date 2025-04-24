@@ -6,6 +6,12 @@ import { environment } from '../../environments/environment';
 import { ApiResponse } from '../core/models/api_response.model';
 import { ApiService } from '../core/services/api_response.service';
 
+/**
+ * Dataset service
+ * @version 1.0
+ * @since 2.0.0
+ * @author Alessio Giacché
+ */
 @Injectable({
   providedIn: 'root'
 })

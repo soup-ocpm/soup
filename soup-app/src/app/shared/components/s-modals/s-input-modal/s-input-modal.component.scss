@@ -67,6 +67,16 @@ span.close {
   border-color: red;
 }
 
+.message {
+  color: var(--secondary-color);
+  margin-top: 15px;
+}
+
+.error-message {
+  color: red;
+  margin-top: 5px;
+}
+
 // ================================
 // Region: Process query
 // ================================

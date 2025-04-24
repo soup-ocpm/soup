@@ -1,10 +1,16 @@
 import { animate, style, transition, trigger } from '@angular/animations';
 import { CommonModule } from '@angular/common';
+import { Component, OnInit } from '@angular/core';
 
-import { Component, Input, OnInit } from '@angular/core';
 import { NotificationService } from './toast.service';
 import { ToastLevel } from './toast_type.enum';
 
+/**
+ * Toast message component
+ * @version 1.0
+ * @since 1.0.0
+ * @author Alessio Giacché
+ */
 @Component({
   selector: 'app-s-toast',
   standalone: true,
@@ -20,19 +26,19 @@ import { ToastLevel } from './toast_type.enum';
 })
 export class SToastComponent implements OnInit {
   // Input the title for Toast
-  @Input() title = '';
+  public title = '';
 
   // Input the message for Toast
-  @Input() message = '';
+  public message = '';
 
   // If it is success or danger message
-  @Input() toastLevel: ToastLevel = ToastLevel.Success;
+  public toastLevel: ToastLevel = ToastLevel.Success;
 
   // The time for hide
-  @Input() hideTime = 3000;
+  public hideTime = 3000;
 
   // Move the Toast outside the Sidebar
-  @Input() isSidebarOpens = false;
+  public isSidebarOpens = false;
 
   /**
    * Constructor for ToastComponent component
@@ -60,6 +66,7 @@ export class SToastComponent implements OnInit {
     const toastElement: Element | null = document.querySelector('.toast');
     if (toastElement) {
       toastElement.classList.add('show');
+
       setTimeout(() => {
         this.hide();
       }, this.hideTime);
@@ -71,6 +78,7 @@ export class SToastComponent implements OnInit {
    */
   public hide() {
     const toastElement: Element | null = document.querySelector('.toast');
+
     if (toastElement) {
       toastElement.classList.remove('show');
     }

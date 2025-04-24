@@ -1,10 +1,16 @@
 import { Injectable } from '@angular/core';
-
 import { Observable } from 'rxjs';
 import { environment } from 'src/environments/environment';
+
 import { ApiResponse } from '../core/models/api_response.model';
 import { ApiService } from '../core/services/api_response.service';
 
+/**
+ * Analysis service
+ * @version 1.0
+ * @since 2.0.0
+ * @author Alessio Giacché
+ */
 @Injectable({
   providedIn: 'root'
 })
@@ -54,6 +60,28 @@ export class AnalysisService {
     };
 
     return this.apiService.post(`${environment.baseUrl}/analyses/unique`, bodyRequest);
+  }
+
+  /**
+   * Calculate the frequency
+   * @param frequency the frequency
+   * @returns an Observable of ApiResponse object
+   */
+  public calculateFrequencyFilter(frequency: number): Observable<ApiResponse<any>> {
+    // Create body object
+    const bodyRequest = {
+      frequency: frequency
+    };
+
+    return this.apiService.post(`${environment.baseUrl}/analyses/frequency`, bodyRequest);
+  }
+
+  /**
+   * Calculate the variation
+   * @returns an Observable of ApiResponse object
+   */
+  public calculateVariationFilter(): Observable<ApiResponse<any>> {
+    return this.apiService.get(`${environment.baseUrl}/analyses/variation`);
   }
 
   /**

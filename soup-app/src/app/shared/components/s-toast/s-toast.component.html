@@ -6,12 +6,12 @@
     error: this.toastLevel === 3
   }"
   [@toastAnimation]>
-  <div
-    *ngIf="title"
-    class="toast-title">
-    <strong>{{ title }}</strong>
-    <hr class="toast-divider" />
-  </div>
+  @if (this.title) {
+    <div class="toast-title">
+      <strong>{{ title }}</strong>
+      <hr class="toast-divider" />
+    </div>
+  }
 
   <span>{{ message }}</span>
 </div>

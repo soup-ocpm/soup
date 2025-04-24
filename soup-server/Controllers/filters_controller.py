@@ -128,6 +128,38 @@ def check_unique_analysis_name():
     return FiltersService.check_unique_analysis_name(dataset_name, analysis_name)
 
 
+@filters_controller_bp.route('/api/v2/analyses/frequency', methods=['POST'])
+def process_frequency_filter():
+    """
+    Process frequency filter
+    :return: ApiResponse model
+    """
+    response = ApiResponse()
+
+    frequency = request.get_json()['frequency']
+
+    # Check the name
+    if not frequency:
+        response.http_status_code = 400
+        response.message = "Bad request. Name not provided"
+        response.response_data = None
+
+        logger.error("Bad Request: Name not provided")
+        return jsonify(response.to_dict()), 400
+
+    return FiltersService.process_frequency(database_connector, frequency)
+
+
+@filters_controller_bp.route('/api/v2/analyses/variation', methods=['GET'])
+def process_variation_filter():
+    """
+    Process variation filter
+    :return: ApiResponse model
+    """
+
+    return FiltersService.process_variation(database_connector)
+
+
 @filters_controller_bp.route('/api/v2/analyses/delete', methods=['POST'])
 def remove_analyses():
     """

@@ -9,58 +9,64 @@
     <div id="myGraphContainer">
       <svg #graphSvg></svg>
 
-      <div class="graph-spinner">
-        <sp-spinner *ngIf="this.isLoadingNewNodes"></sp-spinner>
-      </div>
+      @if (this.isLoadingNewNodes) {
+        <div class="graph-spinner">
+          <sp-spinner></sp-spinner>
+        </div>
+      }
     </div>
   </div>
 
   <!--Right Action buttons-->
   <div class="right-actions">
     <i
-      matTooltip="Menu"
       class="bi bi-card-list"
       style="margin-right: 7px"
-      (click)="this.openMasterSidebar()"></i>
+      (click)="this.openMasterSidebar()"
+      matTooltip="Menu"></i>
     <i
-      matTooltip="Search"
       class="bi bi-search"
       style="margin-top: 10px; margin-right: 7px"
+      matTooltip="Search"
       (click)="this.openSearchSidebar()"></i>
   </div>
 
   <!--Left Action buttons-->
-  <div
-    class="left-actions"
-    *ngIf="!this.sidebarService.isSidebarOpen('master-sidebar') && !this.sidebarService.isSidebarOpen('search-sidebar')">
-    <i
-      matTooltip="Leave"
-      class="bi bi-arrow-left-square"
-      (click)="this.leavePage()"></i>
-  </div>
+  @if (
+    !this.sidebarService.isSidebarOpen('master-sidebar') &&
+    !this.sidebarService.isSidebarOpen('search-sidebar') &&
+    this.supportService.graphType != 3
+  ) {
+    <div class="left-actions">
+      <i
+        matTooltip="Leave"
+        class="bi bi-arrow-left-square"
+        (click)="this.leavePage()"></i>
+    </div>
+  }
 
   <!--Card for selected node-->
-  <div
-    *ngIf="this.isShowCardProperties"
-    class="node-properties-card">
-    <h4>Node Properties</h4>
-    <div
-      *ngFor="let property of this.propertiesSelectedNode"
-      class="property-item">
-      <strong>{{ property[0] }}:</strong>
-      <span>{{ property[1] || 'N/A' }}</span>
+  @if (this.isShowCardProperties) {
+    <div class="node-properties-card">
+      <h4>Node Properties</h4>
+      @for (property of this.propertiesSelectedNode; track $index) {
+        <div class="property-item">
+          <strong>{{ property[0] }}:</strong>
+          <span>{{ property[1] || 'N/A' }}</span>
+        </div>
+      }
+      <button
+        class="close-btn"
+        (click)="this.closeNodeSearched()">
+        Close
+      </button>
     </div>
-    <button
-      class="close-btn"
-      (click)="this.closeNodeSearched()">
-      Close
-    </button>
-  </div>
+  }
 
   <!--List of the sidebar-->
-  <s-sidebar
-    *ngFor="let sidebarId of this.sidebarIds"
-    [sidebarId]="sidebarId"></s-sidebar>
+  @for (sidebarId of this.sidebarIds; track $index) {
+    <s-sidebar [sidebarId]="sidebarId"></s-sidebar>
+  }
 
   <!--Menu Sidebar-->
   <ng-template #masterSidebarTemplate>
@@ -68,13 +74,15 @@
 
     <!-- Operations Section -->
     <div class="operation-container">
-      <app-side-operation
-        *ngFor="let operation of this.operations"
-        [title]="operation.title"
-        [description]="operation.description"
-        [icon]="operation.icon"
-        [action]="operation.action"
-        (operationSelected)="this.onOperationSelected(operation)"></app-side-operation>
+      @for (operation of this.operations; track $index) {
+        <app-side-operation
+          [title]="operation.title"
+          [description]="operation.description"
+          [icon]="operation.icon"
+          [action]="operation.action"
+          [loading]="operation.loading"
+          (operationSelected)="this.onOperationSelected(operation)"></app-side-operation>
+      }
     </div>
   </ng-template>
 
@@ -105,40 +113,42 @@
         label="Nodes"
         class="tabber">
         <div
+          #scrollNodeContainer
           class="master-search"
-          (scroll)="onScrollNodes()"
           style="margin-top: 15px"
-          #scrollNodeContainer>
-          <div
-            class="search-term"
-            *ngFor="let item of displayedNodes">
-            <div class="item-details">
-              <p>
-                <strong>Activity:</strong>
-                <span style="color: var(--primary-color)">{{ item['ActivityName'] }}</span>
-              </p>
-              <p>
-                <strong>Event id:</strong>
-                {{ item['Event_Id'] }}
-              </p>
-              <p *ngIf="this.supportService.graphType == 1">
-                <strong>Timestamp:</strong>
-                {{ item['Timestamp'] }}
-              </p>
+          (scroll)="onScrollNodes()">
+          @for (item of this.displayedNodes; track $index) {
+            <div class="search-term">
+              <div class="item-details">
+                <p>
+                  <strong>Activity:</strong>
+                  <span style="color: var(--primary-color)">{{ item['ActivityName'] }}</span>
+                </p>
+                <p>
+                  <strong>Event id:</strong>
+                  {{ item['Event_Id'] }}
+                </p>
+                @if (this.supportService.graphType == 1) {
+                  <p>
+                    <strong>Timestamp:</strong>
+                    {{ item['Timestamp'] }}
+                  </p>
+                }
+              </div>
+              <div class="icon-section">
+                <i
+                  class="bi bi-arrow-right-circle"
+                  (click)="this.selectNodeSearched(item)"></i>
+              </div>
             </div>
-            <div class="icon-section">
-              <i
-                class="bi bi-arrow-right-circle"
-                (click)="this.selectNodeSearched(item)"></i>
-            </div>
-          </div>
+          }
 
           <!-- Loading -->
-          <div
-            class="loading-indicator"
-            *ngIf="isLoading">
-            <p>Loading more data...</p>
-          </div>
+          @if (this.isLoading) {
+            <div class="loading-indicator">
+              <p>Loading more data...</p>
+            </div>
+          }
         </div>
       </mat-tab>
 
@@ -147,36 +157,119 @@
         label="Links"
         class="tabber">
         <div
+          #scrollEdgesContainer
           class="master-search"
-          (scroll)="onScrollEdges()"
           style="margin-top: 15px"
-          #scrollEdgesContainer>
-          <div
-            class="search-term"
-            *ngFor="let item of displayedEdges"
-            (click)="this.selectEdgeSearched(item)">
-            <div class="item-details">
-              <h5 style="color: var(--primary-color)">{{ item['label'] }}</h5>
-              <p>
-                <strong>From:</strong>
-                {{ getNodeName(item.source.id) }} [{{ item.source.id }}]
-              </p>
-              <p>
-                <strong>To:</strong>
-                {{ getNodeName(item.target.id) }} [{{ item.target.id }}]
-              </p>
+          (scroll)="this.onScrollEdges()">
+          @for (item of this.displayedEdges; track $index) {
+            <div
+              class="search-term"
+              (mouseenter)="this.hoverEdge(item)"
+              (mouseleave)="this.leaveHoverEdge(item)">
+              <div class="item-details">
+                <h5 style="color: var(--primary-color)">{{ item['label'] }}</h5>
+                <p>
+                  <strong>From:</strong>
+                  {{ this.getNodeName(item.source.id) }} [{{ item.source.id }}]
+                </p>
+                <p>
+                  <strong>To:</strong>
+                  {{ this.getNodeName(item.target.id) }} [{{ item.target.id }}]
+                </p>
+              </div>
             </div>
-          </div>
+          }
 
           <!-- Loading-->
-          <div
-            class="loading-indicator"
-            *ngIf="isLoading">
-            <p>Loading more data...</p>
-          </div>
+          @if (this.isLoading) {
+            <div class="loading-indicator">
+              <p>Loading more data...</p>
+            </div>
+          }
         </div>
       </mat-tab>
     </mat-tab-group>
+  </ng-template>
+
+  <!--Frequency Sidebar-->
+  <ng-template #frequencySidebarTemplate>
+    <p style="margin-top: 15px; font-size: 16px">Here are the calculated frequencies for the activities</p>
+
+    <sp-divider></sp-divider>
+
+    <!--List of the frequencies-->
+    <ul class="frequency-list">
+      @for (item of this.frequencyResults; track $index) {
+        <li class="frequency-card">
+          <div class="card-content">
+            <span class="activity-name">{{ item.activity }}</span>
+            <span class="activity-frequency">{{ item.frequency | number: '1.0-0' }} occurrences</span>
+          </div>
+        </li>
+      }
+    </ul>
+  </ng-template>
+
+  <!--Variation Sidebar-->
+  <ng-template #variationSidebarTemplate>
+    <div class="activity-summary">
+      <!-- Iterate over all variationResults to show the details for each one -->
+      <p>
+        Sequence of maximum
+        <strong>5</strong>
+        consecutive steps based on the complete Dataset
+      </p>
+      @for (variation of this.variationResults; track $index) {
+        <div class="details-summary">
+          <p>
+            <strong>Involved Activities:</strong>
+            The combination of events that produced this case includes
+            <strong>{{ variation.activities.length }}</strong>
+            activities, some of which are repeated.
+          </p>
+
+          <p>
+            <strong>Distinct Activities:</strong>
+            There are
+            <strong>{{ variation.distinctActivities.length }}</strong>
+            distinct activities in your dataset. Some events are repeated within the cycle.
+          </p>
+
+          <p>
+            <strong>Average Duration:</strong>
+            The average duration of the event cycle is
+            <strong>{{ variation.avgDuration }}</strong>
+            seconds (about
+            <strong>{{ this.convertVariationTimeDuraiton(variation.avgDuration) }}</strong>
+            ).
+          </p>
+
+          <p>
+            <strong>Frequency:</strong>
+            This specific case of activities has been observed
+            <strong>{{ variation.frequency }}</strong>
+            times.
+          </p>
+        </div>
+      }
+    </div>
+
+    <!-- List of distinct activities for each variation -->
+    @for (variation of this.variationResults; track $index) {
+      <!-- Bold text for the section heading -->
+      <p style="font-weight: bold; margin-bottom: 8px">List of distinct activities</p>
+
+      <ul>
+        <!-- List of distinct activities -->
+        @for (activity of variation.distinctActivities; track $index) {
+          <li class="activity-item">
+            <div class="activity-info">
+              <span class="activity-name">{{ activity }}</span>
+            </div>
+          </li>
+        }
+      </ul>
+    }
   </ng-template>
 
   <!--Json Sidebar-->
@@ -190,19 +283,19 @@
 
     <sp-divider></sp-divider>
 
-    <li
-      *ngFor="let object of this.jsonList"
-      class="list-group-item">
-      <span style="margin-top: 5px">{{ object.name }}</span>
+    @for (object of this.jsonList; track $index) {
+      <li class="list-group-item">
+        <span style="margin-top: 5px">{{ object.name }}</span>
 
-      <div class="group">
-        <mat-slide-toggle
-          style="margin-top: 3px"
-          [(ngModel)]="object.isSelected"
-          (change)="this.selectionJson(object)"
-          color="primary"></mat-slide-toggle>
-      </div>
-    </li>
+        <div class="group">
+          <mat-slide-toggle
+            style="margin-top: 3px"
+            color="primary"
+            [(ngModel)]="object.isSelected"
+            (change)="this.selectionJson(object)"></mat-slide-toggle>
+        </div>
+      </li>
+    }
   </ng-template>
 
   <!--Manage graph Sidebar-->
@@ -210,70 +303,74 @@
     <p>A list of operations available for this section</p>
 
     <!--Node showed slider-->
-    <div style="margin-top: 35px"></div>
-    <div class="double-flex">
-      <h5>Data displayed</h5>
-      <mat-icon
-        *ngIf="this.totalUniqueNodeShowed > 300"
-        [matTooltip]="'More than 300 nodes may cause rendering delays'">
-        warning
-      </mat-icon>
-    </div>
-    <div style="width: 100%">
-      <mat-slider
-        class="example-margin"
-        [max]="this.currentDataset!.eventNodes"
-        [min]="2"
-        [step]="1"
-        [discrete]="true"
-        [showTickMarks]="true">
-        <input
-          matSliderThumb
-          [(ngModel)]="this.totalUniqueNodeShowed"
-          (ngModelChange)="this.onSliderValueChanged($event)"
-          #slider />
-      </mat-slider>
-    </div>
-
-    <div style="margin-top: 35px">
-      <!--Node view-->
-      <div style="margin-top: 35px"></div>
-      <div class="double-flex">
-        <h5>Nodes</h5>
-        <mat-icon [matTooltip]="'The size of the circle does not correspond to node weight'">warning</mat-icon>
+    @if (this.supportService.graphType !== 3) {
+      <div>
+        <div style="margin-top: 35px"></div>
+        <div class="double-flex">
+          <h5>Data displayed</h5>
+          @if (this.totalUniqueNodeShowed > 300) {
+            <mat-icon [matTooltip]="'More than 300 nodes may cause rendering delays'">warning</mat-icon>
+          }
+        </div>
+        <div style="width: 100%">
+          <mat-slider
+            class="example-margin"
+            [max]="this.currentDataset!.eventNodes"
+            [min]="2"
+            [step]="1"
+            [discrete]="true"
+            [showTickMarks]="true">
+            <input
+              #slider
+              matSliderThumb
+              [(ngModel)]="this.totalUniqueNodeShowed"
+              (ngModelChange)="this.onSliderValueChanged($event)" />
+          </mat-slider>
+        </div>
       </div>
-      <p>Change the view of your nodes</p>
-      <div style="margin-top: 15px"></div>
-      <mat-radio-group
-        aria-labelledby="example-radio-group-label"
-        class="example-radio-group"
-        [(ngModel)]="nodeViewType"
-        (ngModelChange)="this.onChangeNodeView($event)">
-        @for (type of allNodesViewType; track type) {
-          <mat-radio-button
-            class="example-radio-button"
+    }
+
+    <!--Node view-->
+    <div>
+      <div style="margin-top: 35px">
+        <div style="margin-top: 35px"></div>
+        <div class="double-flex">
+          <h5>Nodes</h5>
+          <mat-icon [matTooltip]="'The size of the circle does not correspond to node weight'">warning</mat-icon>
+        </div>
+        <p>Change the view of your nodes</p>
+        <div style="margin-top: 15px"></div>
+        <mat-radio-group
+          aria-labelledby="example-radio-group-label"
+          class="example-radio-group"
+          [(ngModel)]="nodeViewType"
+          (ngModelChange)="this.onChangeNodeView($event)">
+          @for (type of allNodesViewType; track type) {
+            <mat-radio-button
+              class="example-radio-button"
+              color="primary"
+              [value]="type">
+              {{ type }}
+            </mat-radio-button>
+          }
+        </mat-radio-group>
+
+        <!--Edges view-->
+        <div style="margin-top: 35px"></div>
+        <div class="double-flex">
+          <h5>Edges</h5>
+        </div>
+
+        <p>Select the relationships you want to see</p>
+
+        @for (rel of this.allRelationships; track $index) {
+          <mat-checkbox
             color="primary"
-            [value]="type">
-            {{ type }}
-          </mat-radio-button>
+            [ngModel]="rel.selected"
+            (ngModelChange)="this.onChangeRelationshipsView(rel, $event)">
+            {{ rel.name }}
+          </mat-checkbox>
         }
-      </mat-radio-group>
-
-      <!--Edges view-->
-      <div style="margin-top: 35px"></div>
-      <div class="double-flex">
-        <h5>Edges</h5>
-      </div>
-
-      <p>Select the relationships you want to see</p>
-
-      <div *ngFor="let rel of this.allRelationships">
-        <mat-checkbox
-          color="primary"
-          [ngModel]="rel.selected"
-          (ngModelChange)="this.onChangeRelationshipsView(rel, $event)">
-          {{ rel.name }}
-        </mat-checkbox>
       </div>
     </div>
   </ng-template>

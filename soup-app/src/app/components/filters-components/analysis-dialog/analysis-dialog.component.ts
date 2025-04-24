@@ -4,10 +4,17 @@ import { Component, Inject } from '@angular/core';
 import { MAT_DIALOG_DATA } from '@angular/material/dialog';
 import { Analysis } from 'src/app/models/analysis.mdel';
 import { MaterialModule } from 'src/app/shared/modules/materlal.module';
+
 import { ActivityFilter } from '../activity-filter-dialog/activity-filter.model';
 import { PerformanceFilter } from '../performance-filter-dialog/performance-filter.model';
 import { TimestampFilter } from '../timestam-filter-dialog/timestamp-filter.model';
 
+/**
+ * Analysis Filter Component
+ * @version 1.0.0
+ * @since 2.0.0
+ * @author Alessio Giacché
+ */
 @Component({
   selector: 'app-analysis-dialog',
   standalone: true,

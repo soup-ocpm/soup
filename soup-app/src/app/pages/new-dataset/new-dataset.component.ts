@@ -42,6 +42,12 @@ class Multiplicity {
   globalMultiplicity = '';
 }
 
+/**
+ * New dataset component
+ * @version 1.0
+ * @since 1.0.0
+ * @author Alessio Giacché
+ */
 @Component({
   selector: 'app-new-dataset',
   standalone: true,
@@ -164,7 +170,7 @@ export class NewDatasetComponent implements OnInit {
     private sidebarService: SidebarService,
     private supportService: LocalDataService,
     private graphService: StandardGraphService
-  ) { }
+  ) {}
 
   // NgOnInit implementation
   public ngOnInit(): void {
@@ -236,7 +242,7 @@ export class NewDatasetComponent implements OnInit {
           this.parser.parse(csvData, {
             header: true,
             dynamicTyping: true,
-            chunk: (results, parser) => {
+            chunk: (results) => {
               this.processChunk(results.data);
             },
             complete: () => {
@@ -274,10 +280,10 @@ export class NewDatasetComponent implements OnInit {
       this.allFileValuesSelected = allColumn.map((columnName) => ({ name: columnName, selected: false }));
 
       // Process each row, replace spaces with underscores in the values
-      chunkData.forEach((row: any, rowIndex: number) => {
+      chunkData.forEach((row: any) => {
         // Loop through each cell in the row
         for (const key in row) {
-          if (row.hasOwnProperty(key)) {
+          if (Object.prototype.hasOwnProperty.call(row, key)) {
             if (typeof row[key] === 'string') {
               row[key] = row[key].replace(/\s+/g, '_').trim();
 
@@ -299,7 +305,7 @@ export class NewDatasetComponent implements OnInit {
    * @param content the template ref for the sidebar
    */
   public onManageMasterSidebar(): void {
-    const sidebarId: string = 'master-sidebar';
+    const sidebarId = 'master-sidebar';
 
     if (!this.sidebarIds.includes(sidebarId)) {
       this.sidebarIds.push(sidebarId);
@@ -479,11 +485,14 @@ export class NewDatasetComponent implements OnInit {
       'Trigger and Target?',
       'Do you want to map information about trigger and target',
       true,
+      false,
+      '',
       'Yes',
       'var(--primary-color)',
       'No',
       '#000000',
       () => this.createUMLDiagram(),
+      () => null,
       () => {
         this.modalService.hideGenericModal();
         this.inputDatasetName();
@@ -515,28 +524,28 @@ export class NewDatasetComponent implements OnInit {
     // Create the map
     this.dataSource.forEach((row: any) => {
       // handle multiple entities values
-      const values1 = typeof row[column1] === 'string' ? row[column1].split(',').map(item => item.trim()) : [row[column1]];
-      const values2 = typeof row[column2] === 'string' ? row[column2].split(',').map(item => item.trim()) : [row[column2]];
+      const values1 = typeof row[column1] === 'string' ? row[column1].split(',').map((item) => item.trim()) : [row[column1]];
+      const values2 = typeof row[column2] === 'string' ? row[column2].split(',').map((item) => item.trim()) : [row[column2]];
 
       const updateMap = (map: Record<string, Set<any>>, key: any, values: any[]) => {
         if (key === null || key === 'null') return; // Skip null keys
         if (!map[key]) {
           map[key] = new Set();
         }
-        values.forEach(value => {
+        values.forEach((value) => {
           if (value !== null && value !== 'null') {
             map[key].add(value);
           }
         });
       };
 
-      values1.forEach(v1 => updateMap(mapColumn1ToColumn2, v1, values2));
-      values2.forEach(v2 => updateMap(mapColumn2ToColumn1, v2, values1));
+      values1.forEach((v1) => updateMap(mapColumn1ToColumn2, v1, values2));
+      values2.forEach((v2) => updateMap(mapColumn2ToColumn1, v2, values1));
     });
 
     // Determine the multiplicity
     const determineMultiplicity = (map: Record<string, Set<any>>): '0' | '1' | 'N' =>
-      Object.keys(map).length === 0 ? '0' : Object.values(map).some(set => set.size > 1) ? 'N' : '1';
+      Object.keys(map).length === 0 ? '0' : Object.values(map).some((set) => set.size > 1) ? 'N' : '1';
 
     // determineMultiplicity(mapColumnXToColumnY) checks on the size of the list in col Y, so to assign the correct
     // cardinality the multiplicity of col one has to be calculated based on mapColumn2ToColumn1 and viceversa
@@ -690,7 +699,7 @@ export class NewDatasetComponent implements OnInit {
    * Manage the UML Sidebar
    */
   public onManageUMLSidebar(): void {
-    const sidebarId: string = 'master-uml';
+    const sidebarId = 'master-uml';
 
     if (!this.sidebarIds.includes(sidebarId)) {
       this.sidebarIds.push(sidebarId);
@@ -947,7 +956,7 @@ export class NewDatasetComponent implements OnInit {
               this.sidebarService.reOpen('master-uml');
             }
           },
-          complete: () => { }
+          complete: () => {}
         });
     } catch (error) {
       this.toast.show(`Internal Server Error: ${error}`, ToastLevel.Error, 2000);

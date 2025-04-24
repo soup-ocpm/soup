@@ -1,3 +1,4 @@
+import { SpDividerComponent, SpSpinnerComponent } from '@aledevsharp/sp-lib';
 import { CommonModule, Location } from '@angular/common';
 import { AfterViewInit, Component, ElementRef, OnInit, TemplateRef, ViewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
@@ -6,13 +7,15 @@ import * as d3 from 'd3';
 import * as dagreD3 from 'dagre-d3';
 import saveAs from 'file-saver';
 import { concatMap, from, map, Observable, toArray } from 'rxjs';
-
-import { SpDividerComponent, SpSpinnerComponent } from '@aledevsharp/sp-lib';
 import { GraphType } from 'src/app/enums/graph_type.enum';
+import { FrequencyFilter } from 'src/app/models/frequency_filter.model';
+import { VariationFilter } from 'src/app/models/variation_filter.model';
+import { AnalysisService } from 'src/app/services/analysis.service';
 import { ClassGraphService } from 'src/app/services/class_graph.service';
 import { ModalService } from 'src/app/shared/components/s-modals/modal.service';
 import { SidebarService } from 'src/app/shared/components/s-sidebar/sidebar.service';
 import { NotificationService } from 'src/app/shared/components/s-toast/toast.service';
+
 import { SideOperationComponent } from '../../components/side-operation/side-operation.component';
 import { ApiResponse } from '../../core/models/api_response.model';
 import { LoggerService } from '../../core/services/logger.service';
@@ -27,6 +30,12 @@ import { MaterialModule } from '../../shared/modules/materlal.module';
 import { LocalDataService } from '../../shared/services/support.service';
 import { JsonObject } from '../details-dataset/details-dataset.component';
 
+/**
+ * Graph visualization component
+ * @version 1.0
+ * @since 1.0.0
+ * @author Alessio Giacché
+ */
 @Component({
   selector: 'app-graph',
   standalone: true,
@@ -66,7 +75,7 @@ export class GraphComponent implements OnInit, AfterViewInit {
   public edges: any = [];
 
   // Map id to name node
-  private nodeNameMap: { [id: string]: string } = {};
+  private nodeNameMap: Record<string, string> = {};
 
   // All type of relationships
   public allRelationships: { name: string; selected: boolean }[] = [];
@@ -111,19 +120,19 @@ export class GraphComponent implements OnInit, AfterViewInit {
   public displayedEdges: any[] = [];
 
   // The total unique node showed on the ekg
-  public totalUniqueNodeShowed: number = 0;
+  public totalUniqueNodeShowed = 0;
 
   // The total unique node showed on the ekg bak
-  public totalUniqueNodeShowedBak: number = 0;
+  public totalUniqueNodeShowedBak = 0;
 
   // The total unique rel showed on the ekg
-  public totalUniqueRelShowed: number = 0;
+  public totalUniqueRelShowed = 0;
 
   // Loading nodes for scrollbar
   public loadingFewData = false;
 
   // Loading new nodes
-  public isLoadingNewNodes: boolean = false;
+  public isLoadingNewNodes = false;
 
   // Selected the researched node
   public selectedNode: any;
@@ -146,11 +155,11 @@ export class GraphComponent implements OnInit, AfterViewInit {
   // List of the sidebar ids
   public sidebarIds: string[] = [];
 
-  // If the user attend download the json
-  public isLoadingJsonDownload = false;
+  // The calculated frequency
+  public frequencyResults: FrequencyFilter[] = [];
 
-  // The loading state
-  public isLoading = false;
+  // The calculated variations
+  public variationResults: VariationFilter[] = [];
 
   // The json object list
   public jsonList: JsonObject[] = [];
@@ -158,24 +167,36 @@ export class GraphComponent implements OnInit, AfterViewInit {
   // List of the selected json content
   public selectedJson: string[] = [];
 
+  // The analysis name if we watch filtered ekg
+  public analysisName = '';
+
+  // If the user attend download the json
+  public isLoadingJsonDownload = false;
+
+  // The loading state
+  public isLoading = false;
+
   // List of the operations
   public operations = [
     {
       title: 'Manage Graph View',
       description: 'Change the view of your graph',
       icon: 'view_quilt',
+      loading: false,
       action: () => this.openGraphManager()
     },
     {
       title: 'Export JSON',
       description: 'Export and save the full JSON of the nodes and edges',
       icon: 'file_download',
+      loading: false,
       action: () => this.openJSONSidebar()
     },
     {
       title: 'Export SVG',
       description: 'Export and save the SVG of the graph',
       icon: 'picture_as_pdf',
+      loading: false,
       action: () => this.exportSvg()
     }
   ];
@@ -194,6 +215,12 @@ export class GraphComponent implements OnInit, AfterViewInit {
 
   // View child template ref for search sidebar
   @ViewChild('searchSidebarTemplate', { read: TemplateRef }) searchSidebarTemplate: TemplateRef<unknown> | undefined;
+
+  // View child template ref for json sidebar
+  @ViewChild('frequencySidebarTemplate', { read: TemplateRef }) frequencySidebarTemplate: TemplateRef<unknown> | undefined;
+
+  // View child template ref for json sidebar
+  @ViewChild('variationSidebarTemplate', { read: TemplateRef }) variationSidebarTemplate: TemplateRef<unknown> | undefined;
 
   // View child template ref for json sidebar
   @ViewChild('jsonSidebarTemplate', { read: TemplateRef }) jsonSidebarTemplate: TemplateRef<unknown> | undefined;
@@ -233,6 +260,7 @@ export class GraphComponent implements OnInit, AfterViewInit {
    * @param standardGraphService  the StandardGraphService service
    * @param aggregateGraphService the ClassGraphService service
    * @param genericGraphService the GenericGraphService service
+   * @param analysisService the AnalysisService service
    * @param supportService the LocalDataService service
    */
   constructor(
@@ -248,6 +276,7 @@ export class GraphComponent implements OnInit, AfterViewInit {
     private standardGraphService: StandardGraphService,
     private aggregateGraphService: ClassGraphService,
     private genericGraphService: GenericGraphService,
+    private analysisService: AnalysisService,
     public supportService: LocalDataService
   ) {}
 
@@ -264,11 +293,18 @@ export class GraphComponent implements OnInit, AfterViewInit {
       return;
     }
 
+    // Create the dagre d3 g object
     this.g = new dagreD3.graphlib.Graph().setGraph({ rankdir: 'LR' });
 
     if (this.supportService.graphType != GraphType.Filtered) {
       this.getGraphDetails(200);
     } else {
+      // Get the analysis name
+      this.activatedRoute.paramMap.subscribe((params) => {
+        this.analysisName = params.get('analysisName')!;
+      });
+
+      // Get the state content
       const state = this.location.getState();
 
       if (state && (state as any).customData) {
@@ -277,7 +313,7 @@ export class GraphComponent implements OnInit, AfterViewInit {
       }
     }
 
-    // Add json content options
+    // Add json content options and operations
     this.populateJsonContent();
     this.updateOperations();
   }
@@ -312,11 +348,9 @@ export class GraphComponent implements OnInit, AfterViewInit {
           const graphData = data['graph_data'];
           this.totalUniqueNodeShowed = data['unique_nodes_count'];
           this.totalUniqueRelShowed = data['unique_edges_count'];
-
           this.totalUniqueNodeShowedBak = this.totalUniqueNodeShowed;
 
-          console.log(this.currentDataset);
-          console.log(this.totalUniqueNodeShowed);
+          // Now we can inject data
           this.injectData(graphData);
         } else {
           this.isLoading = false;
@@ -406,7 +440,6 @@ export class GraphComponent implements OnInit, AfterViewInit {
   private createGraphVisualization(graphContainer: ElementRef, htmlId: string): void {
     const container = document.getElementById(htmlId);
     if (container) {
-      console.log('Sono dentro al create');
       const width: number = container.clientWidth;
       const height: number = container.clientHeight;
 
@@ -415,14 +448,14 @@ export class GraphComponent implements OnInit, AfterViewInit {
 
       // Add nodes
       this.nodes.forEach((node: any): void => {
-        let nodeId = node.id;
-        let nodeName = node.ActivityName;
-        let nodeProperties: any = {
+        const nodeId = node.id;
+        const nodeName = node.ActivityName;
+        const nodeProperties: any = {
           label: nodeName
         };
 
         for (const prop in node) {
-          if (node.hasOwnProperty(prop)) {
+          if (Object.prototype.hasOwnProperty.call(node, prop)) {
             nodeProperties[prop] = node[prop];
           }
         }
@@ -496,9 +529,16 @@ export class GraphComponent implements OnInit, AfterViewInit {
       const render: dagreD3.Render = new dagreD3.render();
       render(svgGroup as any, this.g as any);
 
+      const graphWidth = this.g.graph().width;
+      const graphHeight = this.g.graph().height;
+      const firstNodeId = this.nodes[0].id;
+      const firstNode = this.g.node(firstNodeId);
+      const firstNodeX = firstNode.x;
+      const firstNodeY = firstNode.y;
+
       // Calcola l'offset per centrare il grafo
-      const xCenterOffset = (width - this.g.graph().width) / 2;
-      const yCenterOffset = (height - this.g.graph().height) / 2;
+      const xCenterOffset = (width - graphWidth) / 2 - firstNodeX + width / 2;
+      const yCenterOffset = (height - graphHeight) / 2 - firstNodeY + height / 2;
 
       // Trasla il gruppo per centrarlo orizzontalmente e verticalmente
       svgGroup.attr('transform', `translate(${xCenterOffset}, ${yCenterOffset})`);
@@ -612,16 +652,34 @@ export class GraphComponent implements OnInit, AfterViewInit {
 
     this.zoom = zoomBehavior;
     svg.call(zoomBehavior);
+
+    if (this.supportService.graphType == GraphType.Filtered) {
+      this.showWarningAnalysisModal();
+    }
   }
 
   /**
    * Open the master sidebar
    */
   public openMasterSidebar(): void {
-    const sidebarId: string = 'master-sidebar';
+    const sidebarId = 'master-sidebar';
 
     if (!this.sidebarIds.includes(sidebarId)) {
       this.sidebarIds.push(sidebarId);
+    }
+
+    // Create the sidebar title
+    let title = '';
+
+    switch (this.supportService.graphType) {
+      case GraphType.Standard:
+        title = 'Manage Graph';
+        break;
+      case GraphType.Aggregate:
+        title = 'Manage Aggregate Graph';
+        break;
+      case GraphType.Filtered:
+        title = 'Manage Analysis';
     }
 
     // Open the sidebar
@@ -629,7 +687,7 @@ export class GraphComponent implements OnInit, AfterViewInit {
       {
         width: '500px',
         backgroundColor: '#fff',
-        title: 'Manage Graph',
+        title: title,
         closeIcon: true,
         stickyFooter: true,
         footerButtons: []
@@ -651,7 +709,7 @@ export class GraphComponent implements OnInit, AfterViewInit {
    * Open the master sidebar
    */
   public openSearchSidebar(): void {
-    const sidebarId: string = 'search-sidebar';
+    const sidebarId = 'search-sidebar';
 
     if (!this.sidebarIds.includes(sidebarId)) {
       this.sidebarIds.push(sidebarId);
@@ -676,7 +734,7 @@ export class GraphComponent implements OnInit, AfterViewInit {
    * Open the graph manager sidebar
    */
   public openGraphManager(): void {
-    const sidebarId: string = 'manage-graph-sidebar';
+    const sidebarId = 'manage-graph-sidebar';
 
     if (!this.sidebarIds.includes(sidebarId)) {
       this.sidebarIds.push(sidebarId);
@@ -701,7 +759,7 @@ export class GraphComponent implements OnInit, AfterViewInit {
    * Open the graph manager sidebar
    */
   public openJSONSidebar(): void {
-    const sidebarId: string = 'json-sidebar';
+    const sidebarId = 'json-sidebar';
 
     if (!this.sidebarIds.includes(sidebarId)) {
       this.sidebarIds.push(sidebarId);
@@ -727,7 +785,7 @@ export class GraphComponent implements OnInit, AfterViewInit {
    * @param addButtons if we want to include the footer buttons
    */
   public updateJSONSidebar(addButtons: boolean): void {
-    const sidebarId: string = 'json-sidebar';
+    const sidebarId = 'json-sidebar';
 
     if (addButtons) {
       this.sidebarService.updateConfig(sidebarId, {
@@ -864,6 +922,50 @@ export class GraphComponent implements OnInit, AfterViewInit {
   }
 
   /**
+   * Hover to specific edge
+   * @param item the edge
+   */
+  public hoverEdge(item: any): void {
+    setTimeout(() => {}, 500);
+    if (item != null && item.source.id != null && item.target.id != null) {
+      const nodeSource = this.g.node(item.source.id);
+      const nodeTarget = this.g.node(item.target.id);
+
+      // Change node style
+      if (nodeSource && nodeTarget) {
+        const style = 'fill: #ffac1c; stroke: #faa614; stroke-width: 2px; cursor:pointer;';
+        nodeSource.style = style;
+        nodeTarget.style = style;
+
+        // Renderer
+        const render = new dagreD3.render();
+        render(this.svg, this.g);
+      }
+    }
+  }
+
+  /**
+   * Leave the hover to specific edge
+   * @param item the edge
+   */
+  public leaveHoverEdge(item: any): void {
+    if (item != null && item.source.id != null && item.target.id != null) {
+      const nodeSource = this.g.node(item.source.id);
+      const nodeTarget = this.g.node(item.target.id);
+
+      if (nodeSource && nodeTarget) {
+        const style = 'fill: #fff; stroke: #000; stroke-width: 2px';
+        nodeSource.style = style;
+        nodeTarget.style = style;
+
+        // Renderer
+        const render = new dagreD3.render();
+        render(this.svg, this.g);
+      }
+    }
+  }
+
+  /**
    * Select class node
    * @param searched the searched node
    */
@@ -882,7 +984,7 @@ export class GraphComponent implements OnInit, AfterViewInit {
     if (node) {
       this.selectedResult = searched;
       this.selectedNode = node;
-      node.style = 'fill: #ffac1c;; stroke: #faa614; stroke-width: 2px; cursor:pointer; ';
+      node.style = 'fill: #ffac1c; stroke: #faa614; stroke-width: 2px; cursor:pointer;';
 
       // Node properties
       this.nodes.forEach((nodeStandard: any) => {
@@ -893,36 +995,6 @@ export class GraphComponent implements OnInit, AfterViewInit {
       });
 
       // Renderer
-      const render = new dagreD3.render();
-      render(this.svg, this.g);
-    }
-  }
-
-  /**
-   * Select and highlight an edge
-   * @param edgeId the ID of the edge to be highlighted
-   */
-  public selectEdgeSearched(edgeId: string): void {
-    if (this.selectedEdge) {
-      return;
-    }
-
-    const edge = this.g.edge(edgeId);
-
-    if (edge) {
-      this.selectedEdge = edge;
-
-      edge.style = 'stroke: #FF6347; stroke-width: 3px;';
-
-      const sourceNode = this.g.node(edge.source);
-      const targetNode = this.g.node(edge.target);
-
-      const centerX = (sourceNode.x + targetNode.x) / 2;
-      const centerY = (sourceNode.y + targetNode.y) / 2;
-
-      const zoomTransform = d3.zoomIdentity.translate(-centerX, -centerY).scale(2);
-      this.svg.call(this.zoom.transform, zoomTransform);
-
       const render = new dagreD3.render();
       render(this.svg, this.g);
     }
@@ -1108,7 +1180,7 @@ export class GraphComponent implements OnInit, AfterViewInit {
    * @param addButtons if we want to include the footer buttons
    */
   public updateManageSidebar(addButtons: boolean): void {
-    const sidebarId: string = 'manage-graph-sidebar';
+    const sidebarId = 'manage-graph-sidebar';
 
     if (addButtons) {
       this.sidebarService.updateConfig(sidebarId, {
@@ -1195,6 +1267,204 @@ export class GraphComponent implements OnInit, AfterViewInit {
   private resetNodeShowed(): void {
     this.updateManageSidebar(false);
     this.totalUniqueNodeShowed = this.totalUniqueNodeShowedBak;
+  }
+
+  /**
+   * Open the modal for calculate the frequency
+   */
+  public openFrequencyModal(): void {
+    // Clear the oldest frequency
+    this.frequencyResults = [];
+
+    // Show the generic modal
+    this.modalService.showGenericModal(
+      'Frequency Calculation',
+      'Please enter the frequency value that you would like to calculate for the given dataset. This will help determine how often specific events or activities occur in the dataset. Make sure the frequency is relevant to your analysis.',
+      true,
+      true,
+      'Frequency',
+      'Calculate',
+      'var(--primary-color)',
+      'Cancel',
+      '#555',
+      () => {},
+      (frequency: any) => {
+        // Handle input frequency
+        return this.preCalculateFrequency(frequency);
+      },
+      () => {
+        // Secondary button action
+        this.modalService.hideDeleteDatasetModal();
+      }
+    );
+  }
+
+  /**
+   * Catch and calculate the frequency and then resolve the promise
+   * @param frequency the frequency
+   */
+  private preCalculateFrequency(frequency: any) {
+    if (frequency != null && frequency > 0) {
+      this.analysisService.calculateFrequencyFilter(frequency).subscribe({
+        next: (response) => {
+          if (response.statusCode == 200 && response.responseData != null) {
+            const data = response.responseData;
+
+            // Add frequency results
+            data.forEach((item: any) => {
+              const freq = new FrequencyFilter();
+              freq.activity = item.activity;
+              freq.frequency = item.frequency;
+
+              this.frequencyResults.push(freq);
+            });
+
+            if (this.frequencyResults.length > 0) {
+              this.openFrequencySidebar();
+            } else {
+              this.toast.show('No content for this frequency', ToastLevel.Warning, 3000);
+            }
+          } else if (response.statusCode == 204) {
+            this.toast.show('No content for this frequency', ToastLevel.Warning, 3000);
+          } else {
+            this.logService.error(response.message);
+            this.toast.show('Error while calculate the frequency. Retry', ToastLevel.Error, 3000);
+          }
+        },
+        error: (error) => {
+          this.logService.error(error);
+          this.toast.show('Error while calculate the frequency. Retry', ToastLevel.Error, 3000);
+        }
+      });
+    }
+
+    return Promise.resolve();
+  }
+
+  /**
+   * Open the sidebar for show the frequency result
+   */
+  private openFrequencySidebar(): void {
+    const sidebarId = 'frequency-sidebar';
+
+    if (!this.sidebarIds.includes(sidebarId)) {
+      this.sidebarIds.push(sidebarId);
+    }
+
+    // Open the sidebar
+    this.sidebarService.open(
+      {
+        width: '500px',
+        backgroundColor: '#fff',
+        title: this.frequencyResults.length + ' ' + 'Frequency Result',
+        closeIcon: true,
+        stickyFooter: true,
+        footerButtons: []
+      },
+      this.frequencySidebarTemplate,
+      sidebarId
+    );
+  }
+
+  /**
+   * Calculate the variation
+   */
+  private calculateGraphVariation(): void {
+    // Add the loading status
+    this.updateCalculateVariationOperation(true);
+    this.variationResults = [];
+
+    this.analysisService.calculateVariationFilter().subscribe({
+      next: (response) => {
+        if (response.statusCode == 200 && response.responseData != null) {
+          const data = response.responseData;
+
+          data.forEach((item: any) => {
+            const variation = new VariationFilter();
+            variation.activities = item.activities;
+            variation.distinctActivities = item.distinct_activities;
+            variation.avgDuration = item.avg_duration;
+            variation.frequency = item.frequency;
+
+            this.variationResults.push(variation);
+          });
+
+          // Remove the loading status
+          this.updateCalculateVariationOperation(false);
+
+          if (this.variationResults.length > 0) {
+            this.openVariationSidebar();
+          } else {
+            // Remove the loading status
+            this.updateCalculateVariationOperation(false);
+            this.toast.show('No content for the variation', ToastLevel.Warning, 3000);
+          }
+        } else if (response.statusCode == 204) {
+          // Remove the loading status
+          this.updateCalculateVariationOperation(false);
+          this.toast.show('No content for the variation', ToastLevel.Warning, 3000);
+        } else {
+          // Remove the loading status
+          this.updateCalculateVariationOperation(false);
+          this.logService.error(response.message);
+          this.toast.show('Error while calculate the variation. Retry', ToastLevel.Error, 3000);
+        }
+      },
+      error: (error) => {
+        // Remove the loading status
+        this.updateCalculateVariationOperation(false);
+        this.logService.error(error);
+        this.toast.show('Error while calculate the variation. Retry', ToastLevel.Error, 3000);
+      }
+    });
+  }
+
+  /**
+   * Open the sidebar for show the variation result
+   */
+  private openVariationSidebar(): void {
+    const sidebarId = 'variation-sidebar';
+
+    if (!this.sidebarIds.includes(sidebarId)) {
+      this.sidebarIds.push(sidebarId);
+    }
+
+    // Open the sidebar
+    this.sidebarService.open(
+      {
+        width: '500px',
+        backgroundColor: '#fff',
+        title: 'Variation Result',
+        closeIcon: true,
+        stickyFooter: true,
+        footerButtons: []
+      },
+      this.variationSidebarTemplate,
+      sidebarId
+    );
+  }
+
+  /**
+   * Calculate timestamp duration by seconds
+   * @param duration the seconds
+   * @returns a formatted string
+   */
+  public convertVariationTimeDuraiton(duration: number): string {
+    const hours = Math.floor(duration / 3600);
+    const minutes = Math.floor((duration % 3600) / 60);
+    const seconds = duration % 60;
+
+    let result = '';
+    if (hours > 0) {
+      result += `${hours} hr `;
+    }
+    if (minutes > 0 || hours > 0) {
+      // Include minutes only if there are hours or minutes
+      result += `${minutes} min `;
+    }
+    result += `${seconds} sec`;
+
+    return result.trim();
   }
 
   /**
@@ -1321,6 +1591,7 @@ export class GraphComponent implements OnInit, AfterViewInit {
         title,
         'Are you sure you want to delete this Dataset? This operation is not reversible',
         this.currentDataset!.name,
+        true,
         'Delete',
         '#FF0000',
         'Cancel',
@@ -1336,12 +1607,50 @@ export class GraphComponent implements OnInit, AfterViewInit {
   }
 
   /**
+   * Open the modal for delete the analysis
+   */
+  public openModalDeleteAnalysis(): void {
+    if (this.currentDataset != null) {
+      const title = 'Delete' + ' ' + this.analysisName + ' ' + 'analysis?';
+
+      this.modalService.showDeleteDatasetModal(
+        title,
+        'Are you sure you want to delete this Analysis? This operation is not reversible',
+        this.analysisName,
+        false,
+        'Delete',
+        '#FF0000',
+        'Cancel',
+        '#555',
+        (name: string) => {
+          return this.preDeleteAnalysis(name);
+        },
+        () => {
+          this.modalService.hideDeleteDatasetModal();
+        }
+      );
+    }
+  }
+
+  /**
    * Catch the promise and data from modal
-   * @param name the name
+   * @param name the dataset name
    */
   public preDeleteDataset(name: string): Promise<void> {
     if (name !== null && name != '') {
       this.deleteDataset();
+    }
+
+    return Promise.resolve();
+  }
+
+  /**
+   * Catch the promise and data from modal
+   * @param name the analysis name
+   */
+  public preDeleteAnalysis(name: string): Promise<void> {
+    if (name !== null && name != '') {
+      this.deleteAnalysis();
     }
 
     return Promise.resolve();
@@ -1356,7 +1665,7 @@ export class GraphComponent implements OnInit, AfterViewInit {
         next: (response) => {
           if (response.statusCode == 200) {
             // Now we can remove the Memgraph data
-            this.deleteMemgraphData();
+            this.deleteMemgraphData(true);
           } else {
             this.logService.error('Unable to delete the Dataset. Please retry');
             this.toast.show('Unable to delete the Dataset. Please retry', ToastLevel.Error, 3000);
@@ -1373,15 +1682,45 @@ export class GraphComponent implements OnInit, AfterViewInit {
   }
 
   /**
+   * Delete the analysis
+   */
+  private deleteAnalysis(): void {
+    if (this.currentDataset != null) {
+      this.analysisService.deleteAnalysis(this.currentDataset!.name, this.analysisName).subscribe({
+        next: (response) => {
+          if (response.statusCode == 200 || response.statusCode == 202) {
+            // Now we can remove the Memgraph data
+            this.deleteMemgraphData(false);
+          } else {
+            this.logService.error('Unable to delete the Analysis. Please retry');
+            this.toast.show('Unable to delete the Dataset. Please retry', ToastLevel.Error, 3000);
+          }
+        },
+        error: (error) => {
+          const errorData: any = error;
+          this.logService.error(errorData);
+
+          this.toast.show('Unable to delete the Analysis. Please retry', ToastLevel.Error, 3000);
+        }
+      });
+    }
+  }
+
+  /**
    * Remove the current content inside memgraph database
    */
-  private deleteMemgraphData(): void {
+  private deleteMemgraphData(returnHome: boolean): void {
     this.standardGraphService.deleteGraph().subscribe({
       next: (response) => {
         if (response.statusCode == 200) {
           this.toast.show('Dataset deleted successfully', ToastLevel.Success, 3000);
           this.supportService.removeCurrentDataset();
-          this.router.navigate(['/welcome']);
+
+          if (returnHome) {
+            this.router.navigate(['/welcome']);
+          } else {
+            this.router.navigate(['/datasets']);
+          }
         } else {
           this.logService.error('Unable to delete the Memgraph Data. Please retry');
           this.toast.show('Unable to delete the Memgraph Data. Please retry', ToastLevel.Error, 3000);
@@ -1444,20 +1783,82 @@ export class GraphComponent implements OnInit, AfterViewInit {
    * Update the operation sidebar with some content
    */
   private updateOperations(): void {
-    if (this.supportService.graphType === GraphType.Aggregate) {
-      this.operations.push({
-        title: 'Delete Aggregation',
-        description: 'This operation is not reversible',
-        icon: 'delete_forever',
-        action: () => this.deleteAggregateGraph()
-      });
+    if (this.supportService.graphType !== GraphType.Filtered) {
+      if (this.supportService.graphType === GraphType.Aggregate) {
+        this.operations.push({
+          title: 'Delete Aggregation',
+          description: 'This operation is not reversible',
+          icon: 'delete_forever',
+          loading: false,
+          action: () => this.deleteAggregateGraph()
+        });
+      } else {
+        const manageGraphViewIndex = this.operations.findIndex((op) => op.title === 'Manage Graph View');
+
+        // Add the operations
+        if (manageGraphViewIndex !== -1) {
+          this.operations.splice(
+            manageGraphViewIndex + 1,
+            0,
+            {
+              title: 'Calculate Frequency',
+              description: 'Calculate the frequency based on the full Dataset data',
+              icon: 'analytics',
+              loading: false,
+              action: () => this.openFrequencyModal()
+            },
+            {
+              title: 'Calculate Variation',
+              description: 'Calculate the variation based on the full Dataset data',
+              icon: 'analytics',
+              loading: false,
+              action: () => this.calculateGraphVariation()
+            }
+          );
+        }
+
+        this.operations.push({
+          title: 'Delete Dataset',
+          description: 'This operation is not reversible',
+          icon: 'delete_forever',
+          loading: false,
+          action: () => this.openModalDeleteDataset()
+        });
+      }
     } else {
       this.operations.push({
-        title: 'Delete Dataset',
-        description: 'This operation is not reversible',
-        icon: 'delete_forever',
-        action: () => this.openModalDeleteDataset()
+        title: 'Manage Datasets',
+        description: 'View all datasets',
+        icon: 'dashboard',
+        loading: false,
+        action: () => this.goToDatasetsPage()
       });
+
+      if (this.analysisName != '') {
+        this.operations.push({
+          title: 'Delete Analysis',
+          description: 'This operation is not reversible',
+          icon: 'delete_forever',
+          loading: false,
+          action: () => this.openModalDeleteAnalysis()
+        });
+      }
+    }
+  }
+
+  /**
+   * Update the calculate variation sider operation
+   * @param add if we want to add the loading or not
+   */
+  public updateCalculateVariationOperation(add: boolean): void {
+    const calculateVariationIndex = this.operations.findIndex((op) => op.title === 'Calculate Variation');
+
+    if (calculateVariationIndex !== -1) {
+      // Change the loading attribute
+      this.operations[calculateVariationIndex] = {
+        ...this.operations[calculateVariationIndex],
+        loading: add
+      };
     }
   }
 
@@ -1471,5 +1872,34 @@ export class GraphComponent implements OnInit, AfterViewInit {
       next: () => {},
       error: () => {}
     });
+  }
+
+  /**
+   * Show modal for warning message
+   */
+  private showWarningAnalysisModal(): void {
+    this.modalService.showGenericModal(
+      'Warning',
+      'Filters applied successfully. Data in Memgraph is updated. To reload the original dataset, please reopen it from the dedicated page',
+      false,
+      false,
+      '',
+      'Done',
+      'var(--primary-color)',
+      '',
+      '',
+      () => {},
+      () => {
+        return Promise.resolve();
+      },
+      () => {}
+    );
+  }
+
+  /**
+   * Go to de Datasets page
+   */
+  private goToDatasetsPage(): void {
+    this.router.navigate(['datasets']);
   }
 }
