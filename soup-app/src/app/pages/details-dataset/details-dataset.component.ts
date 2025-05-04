@@ -1,7 +1,8 @@
+// eslint-disable-next-line simple-import-sort/imports
 import { SpDividerComponent, SpProgressbarComponent, SpSpinnerComponent } from '@aledevsharp/sp-lib';
 import { CommonModule } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
-import { AfterViewInit, Component, ElementRef, OnInit, TemplateRef, ViewChild } from '@angular/core';
+import { AfterViewInit, ChangeDetectorRef, Component, ElementRef, OnInit, TemplateRef, ViewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MatDialog } from '@angular/material/dialog';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -24,6 +25,9 @@ import { SidebarComponent } from 'src/app/shared/components/s-sidebar/s-sidebar.
 import { SidebarService } from 'src/app/shared/components/s-sidebar/sidebar.service';
 import { NotificationService } from 'src/app/shared/components/s-toast/toast.service';
 
+import { ApiResponse } from 'src/app/core/models/api_response.model';
+import { EntityObjectList } from 'src/app/models/entity.model';
+import { OnBoardingService } from 'src/app/services/onboarding.service';
 import { SideOperationComponent } from '../../components/side-operation/side-operation.component';
 import { LoggerService } from '../../core/services/logger.service';
 import { GraphData } from '../../enums/graph_data.enum';
@@ -35,51 +39,10 @@ import { ToastLevel } from '../../shared/components/s-toast/toast_type.enum';
 import { MaterialModule } from '../../shared/modules/materlal.module';
 import { LocalDataService } from '../../shared/services/support.service';
 
-// The entity object for the list
-class EntityObject {
-  // Name
-  name = '';
-
-  // Number of NaN nodes
-  numberOfNanNodes = 0;
-
-  // Is selected or not
-  isSelected = false;
-
-  /**
-   * Initialize a new instance of EntityObject model
-   * @param name the name
-   * @param numberOfNanNodes number of NaN nodes
-   */
-  constructor(name: string, numberOfNanNodes: number) {
-    this.name = name;
-    this.numberOfNanNodes = numberOfNanNodes;
-  }
-}
-
-// Json object structure
-export class JsonObject {
-  // Name
-  name = '';
-
-  // If the object is selected
-  isSelected = false;
-
-  /**
-   * Initialize a new instance of JsonObject model
-   * @param name the name
-   * @param isSelected if it is selected
-   */
-  constructor(name: string, isSelected: boolean) {
-    this.name = name;
-    this.isSelected = isSelected;
-  }
-}
-
 /**
  * Detail dataset component
  * @version 1.0
- * @since 2.0.0
+ * @since 1.0.0
  * @author Alessio Giacché
  */
 @Component({
@@ -107,7 +70,7 @@ export class DetailsDatasetComponent implements OnInit, AfterViewInit {
   public detailGraphDataList: DetailGraphData[] = [];
 
   // The entity list
-  public entityList: EntityObject[] = [];
+  public entityList: EntityObjectList[] = [];
 
   // List of selected entities
   public selectedEntities: string[] = [];
@@ -259,7 +222,7 @@ export class DetailsDatasetComponent implements OnInit, AfterViewInit {
    * @param modalService the ModalService service
    * @param activatedRoute the ActivatedRoute
    * @param supportService the LocalDataService service
-   * @param logService the LoggerService service
+   * @param logger the LoggerService service
    * @param jsonDataService the JSONDataService service
    * @param classGraphService the ClassGraphService service
    * @param analysisService the AnalysisService service
@@ -269,6 +232,7 @@ export class DetailsDatasetComponent implements OnInit, AfterViewInit {
   constructor(
     private router: Router,
     private httpClient: HttpClient,
+    private cdRef: ChangeDetectorRef,
     private dialog: MatDialog,
     private modal: ModalService,
     private toast: NotificationService,
@@ -276,11 +240,12 @@ export class DetailsDatasetComponent implements OnInit, AfterViewInit {
     private ngbModalService: NgbModal,
     private activatedRoute: ActivatedRoute,
     private supportService: LocalDataService,
-    private logService: LoggerService,
+    private logger: LoggerService,
     private classGraphService: ClassGraphService,
     public sidebarService: SidebarService,
     private analysisService: AnalysisService,
     private datasetService: DatasetService,
+    private onBoardingService: OnBoardingService,
     private standardGraphService: StandardGraphService
   ) {
     Chart.register(...registerables);
@@ -311,6 +276,10 @@ export class DetailsDatasetComponent implements OnInit, AfterViewInit {
       setTimeout(() => {
         this.createDataPieChart();
         this.createProcessPieChart();
+      }, 200);
+
+      setTimeout(() => {
+        this.getFirstTimeUsage();
       }, 200);
     } else {
       this.toast.show('Unable to retrieve Dataset. Retry', ToastLevel.Error, 3000);
@@ -718,7 +687,7 @@ export class DetailsDatasetComponent implements OnInit, AfterViewInit {
         break;
 
       default:
-        this.logService.error('Filter not found.', filter);
+        this.logger.error('Filter not found.', filter);
         return;
     }
 
@@ -910,7 +879,7 @@ export class DetailsDatasetComponent implements OnInit, AfterViewInit {
             // We can remove the analysis
             this.deleteAnalysis(analysisName, false);
 
-            this.logService.warn('No content with these filters.');
+            this.logger.warn('No content with these filters.');
             this.toast.show('No content with these filters. Try applying different filters.', ToastLevel.Warning, 3000);
           } else {
             this.isLoadingAnalysis = false;
@@ -918,17 +887,17 @@ export class DetailsDatasetComponent implements OnInit, AfterViewInit {
             // We can remove the analysis
             this.deleteAnalysis(analysisName, false);
 
-            this.logService.error('Unable to create the analysis.' + response.statusCode);
+            this.logger.error('Unable to create the analysis' + response.statusCode);
             this.toast.show('Unable to create the analysis due an error. Retry', ToastLevel.Error, 3000);
           }
         },
-        error: (error) => {
+        error: (errorData: ApiResponse<any>) => {
           this.isLoadingAnalysis = false;
           this.updateNewAnalysisSidebar(true);
           // We can remove the analysis
           this.deleteAnalysis(analysisName, false);
 
-          this.logService.error(error);
+          this.logger.error('Unable to create the analysis' + errorData.statusCode);
           this.toast.show('Unable to create the analysis due an error. Retry', ToastLevel.Error, 3000);
         }
       });
@@ -979,32 +948,43 @@ export class DetailsDatasetComponent implements OnInit, AfterViewInit {
       this.analysisService.processAnalysis(this.currentDataset!.name, analysis.analysisName).subscribe({
         next: (response) => {
           if (response.statusCode === 201 && response.responseData != null) {
+            // Get the response
             const data = response.responseData;
             this.isLoadingAnalysis = false;
             this.sidebarService.close('analyses');
             this.toast.show('Analysis created successfully.', ToastLevel.Success, 3000);
+
+            // Restore the class graph
+            this.currentDataset!.classNodes = 0;
+            this.currentDataset!.obsRel = 0;
+            this.currentDataset!.dfcRel = 0;
+            this.supportService.setCurrentDataset(this.currentDataset!);
+
+            // Go to graph visualization
             this.goToGraphVisualization(GraphType.Filtered, analysis.analysisName, data);
           } else if (response.statusCode === 204) {
             this.isLoadingAnalysis = false;
             this.sidebarService.reOpen('master-sidebar');
             this.sidebarService.reOpen('analyses');
 
+            this.logger.warn('No content with these filters');
             this.toast.show('No content with these filters. Try applying different filters', ToastLevel.Warning, 3000);
+          } else {
+            this.sidebarService.reOpen('master-sidebar');
+            this.sidebarService.reOpen('analyses');
+
+            this.logger.error('Error while applying the filter analysis', response.message);
+            this.toast.show('Error while applying the filter analysis. Retry', ToastLevel.Error, 3000);
           }
         },
-        error: (error) => {
+        error: (errorData: ApiResponse<any>) => {
           this.isLoadingAnalysis = false;
-          this.logService.error(error.message || 'Unknown error');
           this.sidebarService.reOpen('master-sidebar');
           this.sidebarService.reOpen('analyses');
 
-          if (error.statusCode === 400) {
-            this.toast.show(error.message, ToastLevel.Error, 3000);
-          } else {
-            this.toast.show('Error while applying the filter analysis', ToastLevel.Error, 3000);
-          }
-        },
-        complete: () => {}
+          this.logger.error('Error while applying the filter analysis', errorData.message);
+          this.toast.show('Error while applying the filter analysis. Retry', ToastLevel.Error, 3000);
+        }
       });
     }
   }
@@ -1068,13 +1048,13 @@ export class DetailsDatasetComponent implements OnInit, AfterViewInit {
           }
         } else {
           if (includeToast) {
+            this.logger.error('Unable to delete analysis', response.message);
             this.toast.show('Unable to delete analysis. Please retry.', ToastLevel.Error, 3000);
           }
         }
       },
-      error: (error) => {
-        const errorData: any = error;
-        this.logService.error(errorData.message);
+      error: (errorData: ApiResponse<any>) => {
+        this.logger.error('Unable to delete analysis', errorData.message);
 
         if (includeToast) {
           this.toast.show('Unable to delete analysis. Please retry.', ToastLevel.Error, 3000);
@@ -1193,16 +1173,14 @@ export class DetailsDatasetComponent implements OnInit, AfterViewInit {
         if (response.statusCode == 200 && response.responseData != null) {
           this.buildClassGraph();
         } else {
-          this.toast.show('Unable to create the aggregate graph. Check the info and retry.', ToastLevel.Error, 3000);
+          this.logger.error('Unable to create the aggregate graph', response.message);
+          this.toast.show('Unable to create the aggregate graph.', ToastLevel.Error, 3000);
         }
       },
-      error: (error) => {
-        const errorData: any = error;
-        this.logService.error(errorData.message);
-
-        this.toast.show('Unable to create the aggregate graph. Check the info and retry.', ToastLevel.Error, 3000);
-      },
-      complete: () => {}
+      error: (errorData: ApiResponse<any>) => {
+        this.logger.error('Unable to create the aggregate graph', errorData.message);
+        this.toast.show('Unable to create the aggregate graph.', ToastLevel.Error, 3000);
+      }
     });
   }
 
@@ -1230,26 +1208,30 @@ export class DetailsDatasetComponent implements OnInit, AfterViewInit {
             setTimeout(() => {
               this.createCharts();
             }, 300);
+
+            this.toast.show('Class graph created successfully', ToastLevel.Success, 3000);
           } else {
+            this.isLoading = false;
+
             this.sidebarService.reOpen('master-sidebar');
             this.sidebarService.reOpen('aggregate-sidebar');
-            this.isLoading = false;
-            this.toast.show('Error while creating Class Graph. Retry', ToastLevel.Error, 3000);
+
+            this.logger.error('Error while creating aggregate Graph', response.message);
+            this.toast.show('Error while creating aggregate Graph. Check the info and retry', ToastLevel.Error, 3000);
           }
         },
-        error: (error) => {
-          const errorData: any = error;
-          this.logService.error(errorData.message);
+        error: (errorData: ApiResponse<any>) => {
+          this.isLoading = false;
 
           this.sidebarService.reOpen('master-sidebar');
           this.sidebarService.reOpen('aggregate-sidebar');
-          this.isLoading = false;
 
-          this.toast.show('Error while creating Class Graph. Retry', ToastLevel.Error, 3000);
-        },
-        complete: () => {}
+          this.logger.error('Error while creating aggregate Graph', errorData.message);
+          this.toast.show('Error while creating aggregate Graph. Check the info and retry', ToastLevel.Error, 3000);
+        }
       });
     } catch (error) {
+      this.logger.error('Internal Server Error', error);
       this.toast.show(`Internal Server Error: ${error}`, ToastLevel.Error, 3000);
     }
   }
@@ -1317,20 +1299,16 @@ export class DetailsDatasetComponent implements OnInit, AfterViewInit {
         if (response.statusCode == 200 || response.statusCode == 202 || response.statusCode == 204) {
           this.currentDataset!.allActivities = response.responseData as string[];
         } else {
-          this.logService.error(response.message);
-
-          this.toast.show('Unable to load some Dataset data. Please retry.', ToastLevel.Error, 3000);
+          this.logger.error('Unable to load Dataset distinct activities', response.message);
+          this.toast.show('Unable to load Dataset distinct activities. Please retry.', ToastLevel.Error, 3000);
         }
 
         this.loadDatasetAnalyses();
       },
-      error: (error) => {
-        const errorData: any = error;
-        this.logService.error(errorData.message);
-
-        this.toast.show('Unable to load some Dataset data. Please retry.', ToastLevel.Error, 3000);
-      },
-      complete: () => {}
+      error: (errorData: ApiResponse<any>) => {
+        this.logger.error('Unable to load Dataset distinct activities', errorData.message);
+        this.toast.show('Unable to load Dataset distinct activities. Please retry.', ToastLevel.Error, 3000);
+      }
     });
   }
 
@@ -1343,21 +1321,19 @@ export class DetailsDatasetComponent implements OnInit, AfterViewInit {
         if (response.statusCode == 200 && response.responseData != null) {
           const data = response.responseData;
           data.forEach((item: any) => {
-            this.entityList.push(new EntityObject(item, 0));
+            this.entityList.push(new EntityObjectList(item, 0));
           });
 
           this.retrieveNaNEntity();
         } else {
-          this.toast.show('Unable to load the entities key of the Dataset', ToastLevel.Error, 3000);
+          this.logger.error('Unable to load the Dataset entity keys', response.message);
+          this.toast.show('Unable to load the Dataset entity keys', ToastLevel.Error, 3000);
         }
       },
-      error: (error) => {
-        const errorData: any = error;
-        this.logService.error(errorData.message);
-
-        this.toast.show('Unable to load the entities key of the Dataset', ToastLevel.Error, 3000);
-      },
-      complete: () => {}
+      error: (errorData: ApiResponse<any>) => {
+        this.logger.error('Unable to load the Dataset entity keys', errorData.message);
+        this.toast.show('Unable to load the Dataset entity keys', ToastLevel.Error, 3000);
+      }
     });
   }
 
@@ -1376,7 +1352,7 @@ export class DetailsDatasetComponent implements OnInit, AfterViewInit {
             nullEntities.push(item);
           });
 
-          this.entityList.forEach((entity: EntityObject) => {
+          this.entityList.forEach((entity: EntityObjectList) => {
             nullEntities.forEach((item: any) => {
               if (item.property_name == entity.name) {
                 entity.numberOfNanNodes = item.count_nodes;
@@ -1384,16 +1360,14 @@ export class DetailsDatasetComponent implements OnInit, AfterViewInit {
             });
           });
         } else {
-          this.toast.show('Unable to load the entities key of the Dataset', ToastLevel.Error, 3000);
+          this.logger.error('Unable to load the Dataset NaN keys', response.message);
+          this.toast.show('Unable to load the Dataset NaN keys', ToastLevel.Error, 3000);
         }
       },
-      error: (error) => {
-        const errorData: any = error;
-        this.logService.error(errorData.message);
-
-        this.toast.show('Unable to load the entities key of the Dataset', ToastLevel.Error, 3000);
-      },
-      complete: () => {}
+      error: (errorData: ApiResponse<any>) => {
+        this.logger.error('Unable to load the Dataset NaN keys', errorData.message);
+        this.toast.show('Unable to load the Dataset NaN keys', ToastLevel.Error, 3000);
+      }
     });
   }
 
@@ -1416,8 +1390,8 @@ export class DetailsDatasetComponent implements OnInit, AfterViewInit {
           }
         }
       },
-      error: (error) => {
-        this.logService.error(error);
+      error: (errorData: ApiResponse<any>) => {
+        this.logger.error('Unable to load min and max Dataset timestamp activities', errorData.message);
       }
     });
   }
@@ -1655,13 +1629,10 @@ export class DetailsDatasetComponent implements OnInit, AfterViewInit {
           }
         }
       },
-      error: (error) => {
-        const errorData: any = error;
-        this.logService.error(errorData.message);
-
+      error: (errorData: ApiResponse<any>) => {
+        this.logger.error('Unable to retrieve the Dataset Analyses', errorData.message);
         this.toast.show('Unable to retrieve the Dataset Analyses. Retry', ToastLevel.Error, 3000);
-      },
-      complete: () => {}
+      }
     });
   }
 
@@ -1683,6 +1654,10 @@ export class DetailsDatasetComponent implements OnInit, AfterViewInit {
             icon: 'history',
             loading: false,
             action: () => this.openHistoryAnalysisSidebar()
+          });
+
+          setTimeout(() => {
+            this.cdRef.detectChanges();
           });
         }
       }
@@ -1805,13 +1780,12 @@ export class DetailsDatasetComponent implements OnInit, AfterViewInit {
    * Load the example json configuration
    */
   private loadJSONConfigurationExample(): void {
-    this.httpClient.get<any>('file_configuration_example.json').subscribe({
+    this.httpClient.get<any>('help/file_configuration_example.json').subscribe({
       next: (response) => {
         this.exampleJSONConfiguration = response;
       },
-      error: (error) => {
-        const errorData: any = error;
-        this.logService.error('Unable to load the json configuration example' + errorData.message);
+      error: (errorData: ApiResponse<any>) => {
+        this.logger.error('Unable to load the example json configuration' + errorData.message);
       }
     });
   }
@@ -1865,14 +1839,12 @@ export class DetailsDatasetComponent implements OnInit, AfterViewInit {
             // Now we can remove the Memgraph data
             this.deleteMemgraphData();
           } else {
-            this.logService.error('Unable to delete the Dataset. Please retry');
+            this.logger.error('Unable to delete the Dataset', response.message);
             this.toast.show('Unable to delete the Dataset. Please retry', ToastLevel.Error, 3000);
           }
         },
-        error: (error) => {
-          const errorData: any = error;
-          this.logService.error(errorData);
-
+        error: (errorData: ApiResponse<any>) => {
+          this.logger.error('Unable to delete the Dataset', errorData.message);
           this.toast.show('Unable to delete the Dataset. Please retry', ToastLevel.Error, 3000);
         }
       });
@@ -1890,14 +1862,12 @@ export class DetailsDatasetComponent implements OnInit, AfterViewInit {
           this.supportService.removeCurrentDataset();
           this.router.navigate(['/welcome']);
         } else {
-          this.logService.error('Unable to delete the Memgraph Data. Please retry');
+          this.logger.error('Unable to delete the Memgraph Data', response.message);
           this.toast.show('Unable to delete the Memgraph Data. Please retry', ToastLevel.Error, 3000);
         }
       },
-      error: (error) => {
-        const errorData: any = error;
-        this.logService.error(errorData);
-
+      error: (errorData: ApiResponse<any>) => {
+        this.logger.error('Unable to delete the Memgraph Data', errorData.message);
         this.toast.show('Unable to delete the Memgraph Data. Please retry', ToastLevel.Error, 3000);
       }
     });
@@ -1908,5 +1878,64 @@ export class DetailsDatasetComponent implements OnInit, AfterViewInit {
    */
   public getExampleJSON(): any {
     return this.exampleJSONConfiguration;
+  }
+
+  /**
+   * Check the first time usage
+   */
+  private getFirstTimeUsage(): void {
+    this.onBoardingService.getFirstTimeUsage().subscribe({
+      next: (response) => {
+        if (response.statusCode === 200 && response.responseData != null) {
+          const firstTime = response.responseData;
+
+          // Is the first time, so we need to show the modal
+          if (firstTime) {
+            this.modalService.showGenericModal(
+              'Welcome to SOuP!',
+              `Thanks for using SOuP. We're happy to have you on board! 🎉
+
+              If you’d like to share your thoughts, you can leave feedback using the button at the top right of the Home Page.`,
+              false,
+              false,
+              '',
+              'Got it!',
+              'var(--primary-color)',
+              '',
+              '',
+              () => {},
+              () => {
+                return Promise.resolve();
+              },
+              () => {}
+            );
+
+            // Create the first time usage node
+            setTimeout(() => {
+              this.setFirstTimeUsage();
+            }, 200);
+          }
+        }
+      },
+      error: (error) => {
+        this.logger.error('Unable to load the first time usage.', error.toString());
+      }
+    });
+  }
+
+  /**
+   * Set the first time usage
+   */
+  private setFirstTimeUsage(): void {
+    this.onBoardingService.setFirstTimeUsage().subscribe({
+      next: (response) => {
+        if (response.statusCode === 200 && response.responseData != null) {
+          this.logger.info('Set the first time usage');
+        }
+      },
+      error: (errorData: ApiResponse<any>) => {
+        this.logger.error('Unable to set the first time usage', errorData.message);
+      }
+    });
   }
 }

@@ -190,8 +190,10 @@
 }
 
 <!--List of the sidebar-->
-@for (sidebarId of this.sidebarIds; track $index) {
-  <s-sidebar [sidebarId]="sidebarId"></s-sidebar>
+@if (this.sidebarIds != null && this.sidebarIds.length > 0) {
+  @for (sidebarId of this.sidebarIds; track $index) {
+    <s-sidebar [sidebarId]="sidebarId"></s-sidebar>
+  }
 }
 
 <!-- Master Sidebar template-->

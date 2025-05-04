@@ -21,7 +21,7 @@ from Services.AggregateGraph.class_graph_service import *
 class_graph_controller_bp = Blueprint('class_graph_controller_bp', __name__)
 
 # Engine database setup setup
-database_connector = get_db_connector(debug=False)
+database_connector = get_db_connector(debug=True)
 
 
 @class_graph_controller_bp.route('/api/v2/graph/class', methods=['POST'])

@@ -1,20 +1,22 @@
-// eslint-disable-next-line simple-import-sort/imports
+import { SpBtnTxtComponent, SpProgressbarComponent } from '@aledevsharp/sp-lib';
 import { CommonModule } from '@angular/common';
+import { HttpClient } from '@angular/common/http';
 import { Component, OnInit, TemplateRef, ViewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MatRadioModule } from '@angular/material/radio';
-import { MatStepper } from '@angular/material/stepper';
 import { Router } from '@angular/router';
 import { NgxDropzoneModule } from 'ngx-dropzone';
 import { Papa } from 'ngx-papaparse';
-
-import { SpBtnTxtComponent, SpProgressbarComponent } from '@aledevsharp/sp-lib';
+import { ApiResponse } from 'src/app/core/models/api_response.model';
+import { Multiplicity } from 'src/app/models/multiplicity.model';
 import { ModalService } from 'src/app/shared/components/s-modals/modal.service';
 import { SidebarComponent } from 'src/app/shared/components/s-sidebar/s-sidebar.component';
 import { SidebarService } from 'src/app/shared/components/s-sidebar/sidebar.service';
 import { NotificationService } from 'src/app/shared/components/s-toast/toast.service';
-import { UMLEdge } from '../../components/uml-diagram/models/uml_edge';
-import { UMLNode } from '../../components/uml-diagram/models/uml_node';
+import { environment } from 'src/environments/environment';
+
+import { UMLEdge } from '../../components/uml-diagram/models/uml_edge.model';
+import { UMLNode } from '../../components/uml-diagram/models/uml_node.model';
 import { UmlDiagramComponent } from '../../components/uml-diagram/uml-diagram.component';
 import { LoggerService } from '../../core/services/logger.service';
 import { Entity } from '../../models/entity.mode';
@@ -24,26 +26,8 @@ import { ToastLevel } from '../../shared/components/s-toast/toast_type.enum';
 import { MaterialModule } from '../../shared/modules/materlal.module';
 import { LocalDataService } from '../../shared/services/support.service';
 
-// Multiplicity model
-class Multiplicity {
-  // The column one
-  columnOne = '';
-
-  // The multiplicity
-  multiplicityOne = '';
-
-  // The column two
-  columnTwo = '';
-
-  // The multiplicity
-  multiplicityTwo = '';
-
-  // The global and final multiplicity
-  globalMultiplicity = '';
-}
-
 /**
- * New dataset component
+ * New Dataset component
  * @version 1.0
  * @since 1.0.0
  * @author Alessio Giacché
@@ -104,9 +88,6 @@ export class NewDatasetComponent implements OnInit {
   // The trigger and target rows
   public triggerTargetRows: { trigger: string; target: string }[] = [{ trigger: '', target: '' }];
 
-  // The search container
-  public searchTerm = '';
-
   // If the user upload his file
   public haveSelectFile = false;
 
@@ -134,12 +115,6 @@ export class NewDatasetComponent implements OnInit {
   // If the progress bar is show or not
   public isLoading = false;
 
-  // The creation methods for graph (standard or LOAD)
-  public creationMethod = '2';
-
-  // The progress data
-  public progressData: any;
-
   // View child template ref for master sidebar
   @ViewChild('masterSidebarTemplate', { read: TemplateRef }) masterSidebarTemplate: TemplateRef<unknown> | undefined;
 
@@ -150,6 +125,7 @@ export class NewDatasetComponent implements OnInit {
    * Constructor for NewDatasetComponent component
    * @param parser the Papa parser
    * @param router the Router
+   * @param http the HttpClient
    * @param modal the ModalService service
    * @param logger the LoggerService service
    * @param modalService the ModalService service
@@ -162,6 +138,7 @@ export class NewDatasetComponent implements OnInit {
   constructor(
     private parser: Papa,
     private router: Router,
+    private http: HttpClient,
     private modal: ModalService,
     private logger: LoggerService,
     private modalService: ModalService,
@@ -175,6 +152,42 @@ export class NewDatasetComponent implements OnInit {
   // NgOnInit implementation
   public ngOnInit(): void {
     this.sidebarService.clearAllSidebars();
+  }
+
+  /**
+   * Load example csv
+   */
+  public loadExampleCsv(): void {
+    this.http.get('help/order_process.csv', { responseType: 'text' }).subscribe({
+      next: (csvData: string) => {
+        // Simulate the upload
+        const fakeFile = new File([csvData], 'order_process.csv', { type: 'text/csv' });
+
+        this.files = [fakeFile];
+        this.selectedFile = fakeFile;
+        this.haveSelectFile = true;
+
+        // Process the upload
+        this.parser.parse(csvData, {
+          header: true,
+          dynamicTyping: true,
+          chunk: (results) => {
+            this.processChunk(results.data);
+          },
+          complete: () => {
+            this.isShowUpload = false;
+            this.isShowTable = true;
+            this.onManageMasterSidebar();
+          },
+          error: (error) => {
+            this.toast.show(`Error processing example CSV: ${error.message}`, ToastLevel.Error, 3000);
+          }
+        });
+      },
+      error: () => {
+        this.toast.show('Error while loading example csv from HTTP', ToastLevel.Error, 3000);
+      }
+    });
   }
 
   /**
@@ -202,24 +215,6 @@ export class NewDatasetComponent implements OnInit {
 
     this.selectedFile = this.files[0];
     this.haveSelectFile = true;
-  }
-
-  /**
-   * Convert timestamp format
-   * @param value the value
-   */
-  private convertTimestampFormat(value: string): string {
-    return value.replace(/(\d{2}:\d{2}:\d{2}),(\d{3})/, '$1.$2');
-  }
-
-  /**
-   * Check if a string matches the timestamp format
-   * @param value the string to check
-   */
-  private isTimestamp(value: string): boolean {
-    const timestampRegex = /^(?:\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(:\d{2})?(\.\d{3})?|(\d{8})T\d{6}(\.\d{3})?)$/;
-
-    return timestampRegex.test(value);
   }
 
   /**
@@ -262,6 +257,46 @@ export class NewDatasetComponent implements OnInit {
     } else {
       this.toast.show('Upload the csv file', ToastLevel.Error, 2000);
     }
+  }
+
+  /**
+   * Reset the csv file data
+   */
+  public resetFileData(): void {
+    this.files = [];
+    this.selectedFile = undefined;
+    this.haveSelectFile = false;
+  }
+
+  /**
+   * Remove the file
+   * @param event the event
+   */
+  public removeFile(event: any): void {
+    this.files.splice(this.files.indexOf(event), 1);
+    if (this.files.length == 0) {
+      this.haveSelectFile = false;
+    }
+
+    this.selectedFile = undefined;
+  }
+
+  /**
+   * Convert timestamp format
+   * @param value the value
+   */
+  private convertTimestampFormat(value: string): string {
+    return value.replace(/(\d{2}:\d{2}:\d{2}),(\d{3})/, '$1.$2');
+  }
+
+  /**
+   * Check if a string matches the timestamp format
+   * @param value the string to check
+   */
+  private isTimestamp(value: string): boolean {
+    const timestampRegex = /^(?:\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(:\d{2})?(\.\d{3})?|(\d{8})T\d{6}(\.\d{3})?)$/;
+
+    return timestampRegex.test(value);
   }
 
   /**
@@ -319,33 +354,11 @@ export class NewDatasetComponent implements OnInit {
         title: 'Filter Data',
         closeIcon: false,
         stickyFooter: false,
-        footerButtons: [{ label: 'Continue', action: () => this.requestTriggerAndTarget(), color: 'var(--primary-color)' }]
+        footerButtons: [{ label: 'Continue', action: () => this.inputDatasetName(), color: 'var(--primary-color)' }]
       },
       this.masterSidebarTemplate,
       sidebarId
     );
-  }
-
-  /**
-   * Reset the csv file data
-   */
-  public resetFileData(): void {
-    this.files = [];
-    this.selectedFile = undefined;
-    this.haveSelectFile = false;
-  }
-
-  /**
-   * Remove the file
-   * @param event the event
-   */
-  public removeFile(event: any): void {
-    this.files.splice(this.files.indexOf(event), 1);
-    if (this.files.length == 0) {
-      this.haveSelectFile = false;
-    }
-
-    this.selectedFile = undefined;
   }
 
   /**
@@ -365,6 +378,15 @@ export class NewDatasetComponent implements OnInit {
   }
 
   /**
+   * Check the selected entity
+   * @param entity the entity
+   * @return the seleted entities if exist
+   */
+  public checkSelectedEntity(entity: string): boolean {
+    return this.allFileEntitiesSelected.some((e: Entity) => e.name === entity && e.selected);
+  }
+
+  /**
    * Submit the selected entity value
    * @param entity the entity value
    * @param event the event (boolean value)
@@ -378,15 +400,6 @@ export class NewDatasetComponent implements OnInit {
         }
       });
     }
-  }
-
-  /**
-   * Check the selected entity
-   * @param entity the entity
-   * @return the seleted entities if exist
-   */
-  public checkSelectedEntity(entity: string): boolean {
-    return this.allFileEntitiesSelected.some((e: Entity) => e.name === entity && e.selected);
   }
 
   /**
@@ -458,22 +471,6 @@ export class NewDatasetComponent implements OnInit {
    */
   public getAllTriggerEntities(): string[] {
     return this.umlNodes.filter((node) => node.label).map((node) => node.label);
-  }
-
-  /**
-   * Handle the back button on Stepper
-   * @param stepper the MatStepper stepper
-   */
-  public goBackStepper(stepper: MatStepper): void {
-    stepper.previous();
-  }
-
-  /**
-   * Handle the next button on Stepper
-   * @param stepper the MatStepper stepper
-   */
-  public goForwardStepper(stepper: MatStepper): void {
-    stepper.next();
   }
 
   /**
@@ -921,7 +918,6 @@ export class NewDatasetComponent implements OnInit {
           datasetName,
           datasetDescription,
           saveProcessExecution,
-          this.creationMethod,
           this.allColumns,
           standardColumn,
           allFilteredColumn,
@@ -945,18 +941,58 @@ export class NewDatasetComponent implements OnInit {
               }
             }
           },
-          error: () => {
-            this.toast.show('Error while creatin the Graph. Retry', ToastLevel.Error, 3000);
+          error: (errorData: ApiResponse<any>) => {
+            const message = errorData.message;
+
+            // Check the null columns
+            const nullColumnMatch = message?.match(/\$'([^']+)'/);
+
+            // Check the timestamp format
+            const responseData = errorData.responseData;
+            const responseString = typeof responseData === 'string' ? responseData : JSON.stringify(responseData);
+            const isDateTimeError = responseString?.includes('Invalid LocalDateTime format');
+
+            if (nullColumnMatch != null) {
+              const extractedValue = nullColumnMatch[1];
+              console.log(extractedValue);
+              this.toast.showWithTitle(
+                'Null Columns',
+                `Some columns contain null values: [${extractedValue}]. Please review your data.`,
+                false,
+                true,
+                environment.prosLabUrl,
+                ToastLevel.Error,
+                5000
+              );
+
+              this.logger.error('One or more column not valid');
+            } else if (isDateTimeError) {
+              const helpLink =
+                'https://memgraph.com/docs/fundamentals/data-types#:~:text=different%20time%20points.-,Strings,-For%20strings%2C%20the';
+              this.toast.showWithTitle(
+                'Invalid Timestamp Format',
+                'One or more timestamps are not in a valid format. Please use formats like YYYY-MM-DDThh:mm[:ss].',
+                true,
+                true,
+                helpLink,
+                ToastLevel.Error,
+                5000
+              );
+
+              this.logger.error('Invalid Timestamp format');
+            } else {
+              // Generic error
+              this.toast.show('Error while creating the Graph. Please check the information and retry.', ToastLevel.Error, 3000);
+            }
+
             this.isLoading = false;
 
-            // Re-open the sidebars
             this.sidebarService.reOpen('master-sidebar');
             if (isShowUML) {
               this.isShowUML = true;
               this.sidebarService.reOpen('master-uml');
             }
-          },
-          complete: () => {}
+          }
         });
     } catch (error) {
       this.toast.show(`Internal Server Error: ${error}`, ToastLevel.Error, 2000);
@@ -982,14 +1018,16 @@ export class NewDatasetComponent implements OnInit {
           }
         } else {
           this.isLoading = false;
-          this.toast.show('Unable to retrieve the Dataset. Retry', ToastLevel.Error, 3000);
+
+          this.logger.error('Unable to retrieve the new Dataset.', response.responseData);
+          this.toast.show('Unable to retrieve the new Dataset. Please check on the Datasets page', ToastLevel.Error, 3000);
         }
       },
-      error: (error) => {
-        const errorData: any = error;
-        this.logger.error(errorData);
+      error: (errorData: ApiResponse<any>) => {
         this.isLoading = false;
-        this.toast.show('Unable to retrieve the Dataset. Retry', ToastLevel.Error, 3000);
+
+        this.logger.error('Unable to retrieve the new Dataset.', errorData.message);
+        this.toast.show('Unable to retrieve the new Dataset. Please check on the Datasets page.', ToastLevel.Error, 3000);
       }
     });
   }
@@ -1004,23 +1042,19 @@ export class NewDatasetComponent implements OnInit {
   }
 
   /**
-   * Close the tutorial
-   */
-  public toggleTutorial(): void {
-    this.isShowUpload = true;
-  }
-
-  /**
    * Close the Sidebar
    */
   public toggleSidebar(): void {
     this.sidebarService.close('master-sidebar');
+
     this.allFileValuesSelected.forEach((e: Entity): void => {
       e.selected = false;
     });
+
     this.allFileEntitiesSelected.forEach((e: Entity): void => {
       e.selected = false;
     });
+
     this.eventIdColumn = '';
     this.timestampColumn = '';
     this.activityNameColumn = '';
@@ -1040,19 +1074,5 @@ export class NewDatasetComponent implements OnInit {
   public toggleFullScreen(): void {
     this.isShowFullScreen = false;
     this.onManageMasterSidebar();
-  }
-
-  /**
-   * Open the Help dialog
-   */
-  public openHelpDialog(): void {
-    // TODO: implement
-  }
-
-  /**
-   * Open the second help dialog
-   */
-  public openHelpCreationMethods(): void {
-    // TODO: implement
   }
 }

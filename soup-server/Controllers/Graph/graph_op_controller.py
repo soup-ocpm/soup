@@ -21,7 +21,7 @@ from Models.logger_model import Logger
 op_graph_controller_bp = Blueprint('op_graph_controller_bp', __name__)
 
 # Engine database setup
-database_connector = get_db_connector(debug=False)
+database_connector = get_db_connector(debug=True)
 
 # Engine logger setup
 logger = Logger()

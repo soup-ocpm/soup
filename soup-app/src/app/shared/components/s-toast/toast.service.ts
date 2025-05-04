@@ -36,10 +36,21 @@ export class NotificationService {
    * Show the Toast message with title
    * @param title the title
    * @param message the message
+   * @param closeIcon the icon close
+   * @param helpIcon the icon for help
+   * @param externalLink the external link for the help
    * @param success the success or danger status
    * @param time the time for show message
    */
-  public showWithTitle(title: string, message: string, toastLevel: ToastLevel, time: number): void {
-    this.toastSubject.next({ title, message, toastLevel, time });
+  public showWithTitle(
+    title: string,
+    message: string,
+    closeIcon: boolean,
+    helpIcon: boolean,
+    externalLink: string | null,
+    toastLevel: ToastLevel,
+    time: number
+  ): void {
+    this.toastSubject.next({ title, message, closeIcon, helpIcon, externalLink, toastLevel, time });
   }
 }

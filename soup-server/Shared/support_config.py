@@ -1,7 +1,7 @@
 """
 ------------------------------------------------------------------------
 File : graph_config.py
-Description: Graph configuration functions
+Description: Graph configuration support functions
 Date creation: 00-00-0000
 Project : soup-server
 Author: Sara Pettinari

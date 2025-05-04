@@ -15,7 +15,7 @@ import math
 
 from typing import Iterable
 from flask import jsonify
-from Controllers.graph_config import memgraph_datetime_to_string
+from Shared.support_config import memgraph_datetime_to_string
 from Services.support_service import SupportService
 from Models.api_response_model import ApiResponse
 from Models.logger_model import Logger

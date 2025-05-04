@@ -24,7 +24,7 @@ export const routes: Routes = [
   },
   {
     path: 'datasets',
-    loadComponent: () => import('./pages/retrive-dataset/retrive-dataset.component').then((c) => c.RetriveDatasetComponent),
+    loadComponent: () => import('./pages/manage-datasets/manage-datasets.component').then((c) => c.ManageDatasetsComponent),
     data: { animation: 'DatasetsPage' },
     canActivate: [EngineAuthGuard, MemgraphAuthGuard]
   },

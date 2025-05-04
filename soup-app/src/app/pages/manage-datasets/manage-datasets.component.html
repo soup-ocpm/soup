@@ -12,9 +12,9 @@
     }
 
     <!--All Dataset-->
-    @if (this.haveDatasets) {
+    @if (this.allDataset != null && this.allDataset.length > 0) {
       <div class="header">
-        <div style="display: flex; justify-content: space-between; align-items: center">
+        <div class="header-content">
           <h4>All Dataset</h4>
 
           <!--Icons operation-->
@@ -39,7 +39,6 @@
       <div class="search-dataset">
         <input
           class="form-control form-control-sm"
-          style="margin-top: 10px"
           type="text"
           placeholder="Search dataset"
           [(ngModel)]="searchTerm" />
@@ -48,6 +47,7 @@
       <div class="dataset-grid">
         @for (item of this.filteredDatasets(); track $index) {
           <app-dataset-tile
+            style="margin-top: 5px"
             [dataset]="item"
             (selectedDataset)="this.onSelectedDataset($event)"
             (manageDataset)="this.onManageDataset($event, manageDatasetSidebarTemplate)"
@@ -57,7 +57,7 @@
     }
 
     <!--No dataset-->
-    @if (!this.haveDatasets) {
+    @if (this.allDataset == null || this.allDataset.length === 0) {
       <div class="no-dataset">
         <img src="/images/graph2.svg" />
         <p>
@@ -112,19 +112,19 @@
             style="max-height: 150px"
             name="datasetDescription"
             rows="3"
-            [(ngModel)]="currentDataset!.description"
-            (blur)="this.checkForModelChange()"></textarea>
+            [(ngModel)]="this.currentDataset!.description"
+            (blur)="this.checkForModelChange(this.currentDataset!)"></textarea>
         </div>
       </form>
 
-      <!--Graph previe-->
+      <!--Graph previr-->
       @if (this.currentDataset!.svg != null) {
-        <div style="margin-top: 20px; max-height: 300px; max-width: 100%; overflow: hidden">
+        <div class="graph-preview">
           <p class="form-label">Original graph preview</p>
           @if (this.checkIfSvgIsValid(currentDataset?.svg)) {
             <div
               #svgContainer
-              style="max-height: 300px; max-width: 100%; display: flex; justify-content: center; align-items: center">
+              class="graph-preview-svg">
               <div [innerHTML]="currentDataset!.svg"></div>
             </div>
           }
@@ -139,7 +139,8 @@
       <!--Button-->
       <div style="display: flex">
         <p
-          style="color: var(--primary-color); text-decoration: underline; cursor: pointer"
+          class="underline-h"
+          style="color: var(--primary-color)"
           (click)="this.onManageColumn(columnSidebarTemplate)">
           View
         </p>

@@ -1,6 +1,6 @@
 import { SpDividerComponent, SpSpinnerComponent } from '@aledevsharp/sp-lib';
 import { CommonModule, Location } from '@angular/common';
-import { AfterViewInit, Component, ElementRef, OnInit, TemplateRef, ViewChild } from '@angular/core';
+import { AfterViewInit, ChangeDetectorRef, Component, ElementRef, OnInit, TemplateRef, ViewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import * as d3 from 'd3';
@@ -8,7 +8,9 @@ import * as dagreD3 from 'dagre-d3';
 import saveAs from 'file-saver';
 import { concatMap, from, map, Observable, toArray } from 'rxjs';
 import { GraphType } from 'src/app/enums/graph_type.enum';
+import { EntityObjectList } from 'src/app/models/entity.model';
 import { FrequencyFilter } from 'src/app/models/frequency_filter.model';
+import { JsonObject } from 'src/app/models/json.model';
 import { VariationFilter } from 'src/app/models/variation_filter.model';
 import { AnalysisService } from 'src/app/services/analysis.service';
 import { ClassGraphService } from 'src/app/services/class_graph.service';
@@ -28,7 +30,6 @@ import { SidebarComponent } from '../../shared/components/s-sidebar/s-sidebar.co
 import { ToastLevel } from '../../shared/components/s-toast/toast_type.enum';
 import { MaterialModule } from '../../shared/modules/materlal.module';
 import { LocalDataService } from '../../shared/services/support.service';
-import { JsonObject } from '../details-dataset/details-dataset.component';
 
 /**
  * Graph visualization component
@@ -128,11 +129,8 @@ export class GraphComponent implements OnInit, AfterViewInit {
   // The total unique rel showed on the ekg
   public totalUniqueRelShowed = 0;
 
-  // Loading nodes for scrollbar
-  public loadingFewData = false;
-
-  // Loading new nodes
-  public isLoadingNewNodes = false;
+  // The max data to show  on the graph
+  public maxDataToShow = 0;
 
   // Selected the researched node
   public selectedNode: any;
@@ -167,14 +165,29 @@ export class GraphComponent implements OnInit, AfterViewInit {
   // List of the selected json content
   public selectedJson: string[] = [];
 
+  // The entity list for aggregated graph
+  public entityList: EntityObjectList[] = [];
+
+  // List of selected entities
+  public selectedEntities: string[] = [];
+
   // The analysis name if we watch filtered ekg
   public analysisName = '';
+
+  // The loading state
+  public isLoading = false;
+
+  // Loading nodes for scrollbar
+  public loadingFewData = false;
+
+  // Loading new nodes
+  public isLoadingNewNodes = false;
 
   // If the user attend download the json
   public isLoadingJsonDownload = false;
 
-  // The loading state
-  public isLoading = false;
+  // Should show arrow back
+  public shouldShowArrowBack = false;
 
   // List of the operations
   public operations = [
@@ -216,6 +229,9 @@ export class GraphComponent implements OnInit, AfterViewInit {
   // View child template ref for search sidebar
   @ViewChild('searchSidebarTemplate', { read: TemplateRef }) searchSidebarTemplate: TemplateRef<unknown> | undefined;
 
+  // View child template ref for aggregation sidebar
+  @ViewChild('aggregateSidebarTemplate', { read: TemplateRef }) aggregateSidebarTemplate: TemplateRef<unknown> | undefined;
+
   // View child template ref for json sidebar
   @ViewChild('frequencySidebarTemplate', { read: TemplateRef }) frequencySidebarTemplate: TemplateRef<unknown> | undefined;
 
@@ -250,12 +266,14 @@ export class GraphComponent implements OnInit, AfterViewInit {
   /**
    * Constructor for GraphComponent component
    * @param router the Router
+   * @param location the Location
+   * @param cdt the ChangeDetectorRef changeDetector
    * @param toast the NotificationService service
    * @param activatedRoute the ActivatedRoute
    * @param modalService the ModalService service
    * @param datasetService the DatasetService service
    * @param jsonDataService the JSONDataService service
-   * @param logService the LoggerService service
+   * @param logger the LoggerService service
    * @param sidebarService the SidebarService service
    * @param standardGraphService  the StandardGraphService service
    * @param aggregateGraphService the ClassGraphService service
@@ -266,12 +284,13 @@ export class GraphComponent implements OnInit, AfterViewInit {
   constructor(
     private router: Router,
     private location: Location,
+    private cdt: ChangeDetectorRef,
     private toast: NotificationService,
     private activatedRoute: ActivatedRoute,
     private modalService: ModalService,
     private datasetService: DatasetService,
     private jsonDataService: JSONDataService,
-    private logService: LoggerService,
+    private logger: LoggerService,
     public sidebarService: SidebarService,
     private standardGraphService: StandardGraphService,
     private aggregateGraphService: ClassGraphService,
@@ -297,7 +316,8 @@ export class GraphComponent implements OnInit, AfterViewInit {
     this.g = new dagreD3.graphlib.Graph().setGraph({ rankdir: 'LR' });
 
     if (this.supportService.graphType != GraphType.Filtered) {
-      this.getGraphDetails(200);
+      this.shouldShowArrowBack = true;
+      this.getGraphDetails(200, false);
     } else {
       // Get the analysis name
       this.activatedRoute.paramMap.subscribe((params) => {
@@ -316,6 +336,10 @@ export class GraphComponent implements OnInit, AfterViewInit {
     // Add json content options and operations
     this.populateJsonContent();
     this.updateOperations();
+
+    setTimeout(() => {
+      this.getMaxDataToShow();
+    }, 1000);
   }
 
   // NgAfterViewInit implementation
@@ -338,7 +362,7 @@ export class GraphComponent implements OnInit, AfterViewInit {
   /**
    * Get the graph details
    */
-  private getGraphDetails(node: number): void {
+  private getGraphDetails(node: number, updateMaxDataShow: boolean): void {
     const standardGraph = this.supportService.graphType == GraphType.Standard ? '1' : '0';
 
     this.genericGraphService.getGraph(node, standardGraph).subscribe({
@@ -346,27 +370,31 @@ export class GraphComponent implements OnInit, AfterViewInit {
         if (response.statusCode == 200 && response.responseData != null) {
           const data = response.responseData;
           const graphData = data['graph_data'];
-          this.totalUniqueNodeShowed = data['unique_nodes_count'];
-          this.totalUniqueRelShowed = data['unique_edges_count'];
           this.totalUniqueNodeShowedBak = this.totalUniqueNodeShowed;
+
+          if (updateMaxDataShow) {
+            setTimeout(() => {
+              this.getMaxDataToShow();
+            }, 1000);
+          }
 
           // Now we can inject data
           this.injectData(graphData);
         } else {
           this.isLoading = false;
-          this.toast.show('Unable to retrieve Graph. Retry', ToastLevel.Error, 3000);
+
+          this.logger.error('Unable to retrieve Graph data', response.message);
+          this.toast.show('Unable to retrieve Graph data. Retry', ToastLevel.Error, 3000);
           this.router.navigate(['/datasets', this.currentDataset!.name]);
         }
       },
-      error: (error) => {
-        const errorData: any = error;
-        this.logService.error(errorData);
+      error: (errorData: ApiResponse<any>) => {
         this.isLoading = false;
 
-        this.toast.show('Unable to retrieve Graph. Retry', ToastLevel.Error, 3000);
+        this.logger.error('Unable to retrieve Graph data', errorData.message);
+        this.toast.show('Unable to retrieve Graph data. Retry', ToastLevel.Error, 3000);
         this.router.navigate(['/datasets', this.currentDataset!.name]);
-      },
-      complete: () => {}
+      }
     });
   }
 
@@ -516,7 +544,7 @@ export class GraphComponent implements OnInit, AfterViewInit {
       });
 
       this.isLoadingNewNodes = false;
-
+      this.cdt.detectChanges();
       // Configure the SVG
       const svg = d3
         .select(graphContainer.nativeElement)
@@ -548,12 +576,6 @@ export class GraphComponent implements OnInit, AfterViewInit {
 
       // Inizializza lo zoom
       this.initializePanZoom(svg, svgGroup);
-
-      // Send the svg to the backend
-      if (this.currentDataset!.svg === null) {
-        const svgContent = svg.node().outerHTML;
-        this.publishSVG(svgContent, this.currentDataset!.name);
-      }
 
       // Add listener for nodes
       svgGroup
@@ -637,7 +659,7 @@ export class GraphComponent implements OnInit, AfterViewInit {
       return;
     }
 
-    const zoomBehavior = d3.zoom().on('zoom', (event) => {
+    const zoomBehavior = d3.zoom().on('zoom', (event: any) => {
       if (event && event.transform) {
         const translateX = event.transform.x;
         const translateY = event.transform.y;
@@ -695,6 +717,247 @@ export class GraphComponent implements OnInit, AfterViewInit {
       this.masterSidebarTemplate,
       sidebarId
     );
+  }
+
+  /**
+   * Retrieve entities from the Dataset
+   */
+  private loadEntityKey(): void {
+    this.standardGraphService.getEntityKey().subscribe({
+      next: (response) => {
+        if (response.statusCode == 200 && response.responseData != null) {
+          const data = response.responseData;
+          data.forEach((item: any) => {
+            this.entityList.push(new EntityObjectList(item, 0));
+          });
+
+          this.retrieveNaNEntity();
+        } else {
+          this.logger.error('Unable to load the entities key of the Dataset', response.message);
+          this.toast.show('Unable to load the entities key of the Dataset. Retry', ToastLevel.Error, 3000);
+        }
+      },
+      error: (errorData: ApiResponse<any>) => {
+        this.logger.error('Unable to load the entities key of the Dataset', errorData.message);
+        this.toast.show('Unable to load the entities key of the Dataset. Retry', ToastLevel.Error, 3000);
+      }
+    });
+  }
+
+  /**
+   * Retrieve NaN entity from the Dataset
+   */
+  private retrieveNaNEntity(): void {
+    const nullEntities: string[] = [];
+
+    this.standardGraphService.getNullEntities().subscribe({
+      next: (response) => {
+        if (response.statusCode == 200 && response.responseData != null) {
+          const data = response.responseData;
+
+          data.forEach((item: any) => {
+            nullEntities.push(item);
+          });
+
+          this.entityList.forEach((entity: EntityObjectList) => {
+            nullEntities.forEach((item: any) => {
+              if (item.property_name == entity.name) {
+                entity.numberOfNanNodes = item.count_nodes;
+              }
+            });
+          });
+        } else {
+          this.logger.error('Unable to load the NaN entities of the Dataset', response.message);
+          this.toast.show('Unable to load the NaN entities of the Dataset. Retry', ToastLevel.Error, 3000);
+        }
+      },
+      error: (errorData: ApiResponse<any>) => {
+        this.logger.error('Unable to load the NaN entities of the Dataset', errorData.message);
+        this.toast.show('Unable to load the NaN entities of the Dataset. Retry', ToastLevel.Error, 3000);
+      }
+    });
+  }
+
+  /**
+   * Open the master sidebar template
+   */
+  public openAggregateSidebar(): void {
+    const sidebarId = 'aggregate-sidebar';
+
+    if (!this.sidebarIds.includes(sidebarId)) {
+      this.sidebarIds.push(sidebarId);
+    }
+
+    // Open the sidebar
+    this.sidebarService.open(
+      {
+        width: '500px',
+        backgroundColor: '#f9f9f9',
+        title: 'Group by class',
+        closeIcon: true,
+        stickyFooter: true,
+        footerButtons: [{ label: 'Build', action: () => this.deletePreviousClassGraph(), color: 'var(--primary-color)' }]
+      },
+      this.aggregateSidebarTemplate,
+      sidebarId
+    );
+  }
+
+  /**
+   * Get the entity tooltip label
+   */
+  public getEntityWarningLabel(entity: any) {
+    return `${entity.numberOfNanNodes} nodes have NaN value.`;
+  }
+
+  /**
+   * Method that allow to get the toggle entities for
+   * build the Class Graph.
+   * @param entity the selected entity
+   */
+  public selectionEntity(entity: any): void {
+    if (entity.isSelected) {
+      this.selectedEntities.push(entity.name);
+    } else {
+      this.selectedEntities = this.selectedEntities.filter((item) => item !== entity.name);
+    }
+
+    // Update the sidebar configuration
+    if (this.selectedEntities.length > 0) {
+      this.updateAggregateSidebar(true);
+    } else {
+      this.updateAggregateSidebar(false);
+    }
+  }
+
+  /**
+   * Reset the entity choice
+   */
+  public resetSelection(): void {
+    this.selectedEntities = [];
+
+    this.entityList.forEach((entity) => {
+      entity.isSelected = false;
+    });
+
+    this.updateAggregateSidebar(false);
+  }
+
+  /**
+   * Update the aggregation sidebar
+   * @param addButtons if we want to add the footer buttons
+   */
+  public updateAggregateSidebar(addButtons: boolean): void {
+    const sidebarId = 'aggregate-sidebar';
+
+    // Update the sidebar configuration
+    if (addButtons) {
+      this.sidebarService.updateConfig(sidebarId, {
+        footerButtons: [
+          { label: 'Build', action: () => this.deletePreviousClassGraph(), color: 'var(--primary-color)' },
+          { label: 'Restore', action: () => this.resetSelection(), color: '#6c757d' }
+        ]
+      });
+    } else {
+      this.sidebarService.updateConfig(sidebarId, {
+        footerButtons: [{ label: 'Build', action: () => this.deletePreviousClassGraph(), color: 'var(--primary-color)' }]
+      });
+    }
+  }
+
+  /**
+   * Delete the previous class graph
+   */
+  public deletePreviousClassGraph(): void {
+    this.aggregateGraphService.deleteGraph().subscribe({
+      next: (response) => {
+        if (response.statusCode == 200) {
+          this.buildClassGraph();
+        } else {
+          this.logger.error('Unable to create the aggregate graph', response.message);
+          this.toast.show('Unable to create the aggregate graph.', ToastLevel.Error, 3000);
+        }
+      },
+      error: (errorData: ApiResponse<any>) => {
+        this.logger.error('Unable to create the aggregate graph', errorData.message);
+        this.toast.show('Unable to create the aggregate graph.', ToastLevel.Error, 3000);
+      }
+    });
+  }
+
+  /**
+   * Build the aggregate EKG
+   */
+  public buildClassGraph(): void {
+    this.isLoading = true;
+    this.sidebarService.close('aggregate-sidebar');
+    this.sidebarService.close('master-sidebar');
+
+    const formData: FormData = new FormData();
+    formData.append('dataset_name', this.currentDataset!.name);
+
+    try {
+      this.aggregateGraphService.createClassGraph(formData, this.selectedEntities, this.currentDataset!.name).subscribe({
+        next: (response) => {
+          if (response.statusCode === 201 && response.responseData != null) {
+            // Show the aggregated graph
+            this.currentDataset = this.supportService.updateDatasetInfo(response.responseData);
+            this.supportService.graphType = GraphType.Aggregate;
+            this.isLoading = false;
+
+            this.sidebarService.close('aggregate-sidebar');
+            this.sidebarService.close('master-sidebar');
+
+            // Reset all data and create the new graph
+            this.resetSelection();
+            this.clearActualGraphs();
+            this.populateJsonContent();
+            this.shouldShowArrowBack = false;
+            setTimeout(() => {
+              this.g = new dagreD3.graphlib.Graph({ multigraph: true, compound: true }).setGraph({
+                rankdir: 'LR',
+                nodesep: 25,
+                multiedgesep: 10
+              });
+              this.nodes = [];
+              this.edges = [];
+              this.nodeNameMap = {};
+              this.allRelationships = [];
+
+              // Update the graph with new data
+              setTimeout(() => {
+                this.isLoadingNewNodes = true;
+                this.getGraphDetails(200, true);
+              }, 300);
+            }, 1000);
+          } else {
+            this.isLoading = false;
+
+            this.sidebarService.reOpen('master-sidebar');
+            this.sidebarService.reOpen('aggregate-sidebar');
+
+            this.logger.error('Error while creating Class Graph', response.message);
+            this.toast.show('Error while creating Class Graph. Retry', ToastLevel.Error, 3000);
+          }
+        },
+        error: (errorData: ApiResponse<any>) => {
+          this.isLoading = false;
+
+          this.sidebarService.reOpen('master-sidebar');
+          this.sidebarService.reOpen('aggregate-sidebar');
+
+          this.logger.error('Error while creating Class Graph', errorData.message);
+          this.toast.show('Error while creating Class Graph. Retry', ToastLevel.Error, 3000);
+        }
+      });
+    } catch (error) {
+      this.isLoading = false;
+      this.sidebarService.reOpen('master-sidebar');
+      this.sidebarService.reOpen('aggregate-sidebar');
+
+      this.logger.error('Internal Server Error');
+      this.toast.show(`Internal Server Error: ${error}`, ToastLevel.Error, 3000);
+    }
   }
 
   /**
@@ -1205,6 +1468,28 @@ export class GraphComponent implements OnInit, AfterViewInit {
     this.sidebarService.close('manage-graph-sidebar');
     this.sidebarService.close('master-sidebar');
 
+    this.clearActualGraphs();
+
+    // Reset all data and create the new graph
+    setTimeout(() => {
+      this.g = new dagreD3.graphlib.Graph({ multigraph: true, compound: true }).setGraph({ rankdir: 'LR', nodesep: 25, multiedgesep: 10 });
+      this.nodes = [];
+      this.edges = [];
+      this.nodeNameMap = {};
+      this.allRelationships = [];
+
+      // Update the graph with new data
+      setTimeout(() => {
+        this.isLoadingNewNodes = true;
+        this.getGraphDetails(this.totalUniqueNodeShowed, false);
+      }, 300);
+    }, 1000);
+  }
+
+  /**
+   * Reset the actual graphs
+   */
+  public clearActualGraphs(): void {
     // Clear the graph
     this.clearGraphSVG();
 
@@ -1222,21 +1507,6 @@ export class GraphComponent implements OnInit, AfterViewInit {
       const render = new dagreD3.render();
       render(this.svg, this.g);
     }, 600);
-
-    // Reset all data and create the new graph
-    setTimeout(() => {
-      this.g = new dagreD3.graphlib.Graph({ multigraph: true, compound: true }).setGraph({ rankdir: 'LR', nodesep: 25, multiedgesep: 10 });
-      this.nodes = [];
-      this.edges = [];
-      this.nodeNameMap = {};
-      this.allRelationships = [];
-
-      // Update the graph with new data
-      setTimeout(() => {
-        this.isLoadingNewNodes = true;
-        this.getGraphDetails(this.totalUniqueNodeShowed);
-      }, 300);
-    }, 1000);
   }
 
   /**
@@ -1327,12 +1597,12 @@ export class GraphComponent implements OnInit, AfterViewInit {
           } else if (response.statusCode == 204) {
             this.toast.show('No content for this frequency', ToastLevel.Warning, 3000);
           } else {
-            this.logService.error(response.message);
+            this.logger.error('Error while calculate the frequency', response.message);
             this.toast.show('Error while calculate the frequency. Retry', ToastLevel.Error, 3000);
           }
         },
-        error: (error) => {
-          this.logService.error(error);
+        error: (errorData: ApiResponse<any>) => {
+          this.logger.error('Error while calculate the frequency', errorData.message);
           this.toast.show('Error while calculate the frequency. Retry', ToastLevel.Error, 3000);
         }
       });
@@ -1406,14 +1676,16 @@ export class GraphComponent implements OnInit, AfterViewInit {
         } else {
           // Remove the loading status
           this.updateCalculateVariationOperation(false);
-          this.logService.error(response.message);
+
+          this.logger.error('Error while calculate the variation', response.message);
           this.toast.show('Error while calculate the variation. Retry', ToastLevel.Error, 3000);
         }
       },
-      error: (error) => {
+      error: (errorData: ApiResponse<any>) => {
         // Remove the loading status
         this.updateCalculateVariationOperation(false);
-        this.logService.error(error);
+
+        this.logger.error('Error while calculate the variation', errorData.message);
         this.toast.show('Error while calculate the variation. Retry', ToastLevel.Error, 3000);
       }
     });
@@ -1553,10 +1825,12 @@ export class GraphComponent implements OnInit, AfterViewInit {
           this.isLoadingJsonDownload = false;
           this.sidebarService.close('json-sidebar');
           this.resetJsonSelection();
+
           this.toast.show('Json files downloaded successfully', ToastLevel.Success, 3000);
         },
-        error: (err) => {
-          console.error('Error during download:', err);
+        error: (errorData: ApiResponse<any>) => {
+          this.logger.error('Error while downloading json content', errorData.message);
+          this.toast.show('Error while downloading json content. Retry', ToastLevel.Error, 3000);
         }
       });
   }
@@ -1565,11 +1839,22 @@ export class GraphComponent implements OnInit, AfterViewInit {
    * Export the SVG
    */
   public exportSvg(): void {
-    const svgContent = document.querySelector('#myGraphContainer svg');
+    const svgElement = document.querySelector('#myGraphContainer svg');
 
-    if (svgContent != null) {
-      const svgBlob = new Blob([svgContent.outerHTML], { type: 'image/svg+xml' });
+    if (svgElement && this.currentDataset) {
+      const svgContent = svgElement.outerHTML;
+
+      // Save to the browser
+      const svgBlob = new Blob([svgContent], { type: 'image/svg+xml' });
       saveAs(svgBlob, 'graph.svg');
+
+      // Save to the backend as a preview
+      if (this.currentDataset!.svg == null) {
+        this.standardGraphService.sendSVG(svgContent, this.currentDataset.name).subscribe({
+          next: () => {},
+          error: () => {}
+        });
+      }
     }
   }
 
@@ -1667,14 +1952,12 @@ export class GraphComponent implements OnInit, AfterViewInit {
             // Now we can remove the Memgraph data
             this.deleteMemgraphData(true);
           } else {
-            this.logService.error('Unable to delete the Dataset. Please retry');
+            this.logger.error('Unable to delete the Dataset', response.message);
             this.toast.show('Unable to delete the Dataset. Please retry', ToastLevel.Error, 3000);
           }
         },
-        error: (error) => {
-          const errorData: any = error;
-          this.logService.error(errorData);
-
+        error: (errorData: ApiResponse<any>) => {
+          this.logger.error('Unable to delete the Dataset', errorData.message);
           this.toast.show('Unable to delete the Dataset. Please retry', ToastLevel.Error, 3000);
         }
       });
@@ -1692,14 +1975,12 @@ export class GraphComponent implements OnInit, AfterViewInit {
             // Now we can remove the Memgraph data
             this.deleteMemgraphData(false);
           } else {
-            this.logService.error('Unable to delete the Analysis. Please retry');
+            this.logger.error('Unable to delete the Analysis', response.message);
             this.toast.show('Unable to delete the Dataset. Please retry', ToastLevel.Error, 3000);
           }
         },
-        error: (error) => {
-          const errorData: any = error;
-          this.logService.error(errorData);
-
+        error: (errorData: ApiResponse<any>) => {
+          this.logger.error('Unable to delete the Analysis', errorData.message);
           this.toast.show('Unable to delete the Analysis. Please retry', ToastLevel.Error, 3000);
         }
       });
@@ -1722,14 +2003,12 @@ export class GraphComponent implements OnInit, AfterViewInit {
             this.router.navigate(['/datasets']);
           }
         } else {
-          this.logService.error('Unable to delete the Memgraph Data. Please retry');
+          this.logger.error('Unable to delete the Memgraph Data', response.message);
           this.toast.show('Unable to delete the Memgraph Data. Please retry', ToastLevel.Error, 3000);
         }
       },
-      error: (error) => {
-        const errorData: any = error;
-        this.logService.error(errorData);
-
+      error: (errorData: ApiResponse<any>) => {
+        this.logger.error('Unable to delete the Memgraph Data', errorData.message);
         this.toast.show('Unable to delete the Memgraph Data. Please retry', ToastLevel.Error, 3000);
       }
     });
@@ -1750,14 +2029,12 @@ export class GraphComponent implements OnInit, AfterViewInit {
           this.toast.show('Aggregate graph deleted successfully', ToastLevel.Success, 3000);
           this.leavePage();
         } else {
-          this.logService.error('Unable to delete aggregate graph Please retry');
+          this.logger.error('Unable to delete aggregate graph', response.message);
           this.toast.show('Unable to delete the aggregate graph. Please retry', ToastLevel.Error, 3000);
         }
       },
-      error: (error) => {
-        const errorData: any = error;
-        this.logService.error(errorData);
-
+      error: (errorData: ApiResponse<any>) => {
+        this.logger.error('Unable to delete aggregate graph', errorData.message);
         this.toast.show('Unable to delete the aggregate graph. Please retry', ToastLevel.Error, 3000);
       }
     });
@@ -1767,6 +2044,7 @@ export class GraphComponent implements OnInit, AfterViewInit {
    * Add the json object
    */
   private populateJsonContent(): void {
+    this.jsonList = [];
     if (this.supportService.graphType === GraphType.Aggregate) {
       this.jsonList.push(new JsonObject('Class nodes', false));
       this.jsonList.push(new JsonObject('OBS relationships', false));
@@ -1826,22 +2104,49 @@ export class GraphComponent implements OnInit, AfterViewInit {
         });
       }
     } else {
-      this.operations.push({
+      // Load the entity key
+      this.loadEntityKey();
+
+      const aggregateOperation = {
+        title: 'Aggregate Graph',
+        description: 'Aggregate graph by grouping nodes into chosen classes',
+        icon: 'group_work',
+        loading: false,
+        action: () => this.openAggregateSidebar()
+      };
+
+      const manageDatasetsOperation = {
         title: 'Manage Datasets',
         description: 'View all datasets',
         icon: 'dashboard',
         loading: false,
         action: () => this.goToDatasetsPage()
-      });
+      };
 
+      const deleteAnalysisOperation = {
+        title: 'Delete Analysis',
+        description: 'This operation is not reversible',
+        icon: 'delete_forever',
+        loading: false,
+        action: () => this.openModalDeleteAnalysis()
+      };
+
+      // Update the operations positions
+      const originalOperations = [...this.operations];
+      this.operations = [];
+      if (originalOperations.length > 0) {
+        this.operations.push(originalOperations[0]);
+      }
+
+      this.operations.push(aggregateOperation);
+
+      if (originalOperations.length > 1) {
+        this.operations.push(...originalOperations.slice(1));
+      }
+
+      this.operations.push(manageDatasetsOperation);
       if (this.analysisName != '') {
-        this.operations.push({
-          title: 'Delete Analysis',
-          description: 'This operation is not reversible',
-          icon: 'delete_forever',
-          loading: false,
-          action: () => this.openModalDeleteAnalysis()
-        });
+        this.operations.push(deleteAnalysisOperation);
       }
     }
   }
@@ -1860,18 +2165,6 @@ export class GraphComponent implements OnInit, AfterViewInit {
         loading: add
       };
     }
-  }
-
-  /**
-   * Send the svg to the engine
-   * @param svg the svg
-   */
-  private publishSVG(svg: string, datasetName: string): void {
-    // Do nothing
-    this.standardGraphService.sendSVG(svg, datasetName).subscribe({
-      next: () => {},
-      error: () => {}
-    });
   }
 
   /**
@@ -1894,6 +2187,39 @@ export class GraphComponent implements OnInit, AfterViewInit {
       },
       () => {}
     );
+  }
+
+  /**
+   * Get max data to show
+   */
+  private getMaxDataToShow(): void {
+    let request = this.supportService.graphType;
+
+    if (this.supportService.graphType == 3) {
+      request = GraphType.Standard;
+    }
+
+    this.genericGraphService.getMaxDataGraphToShow(request).subscribe({
+      next: (response) => {
+        if (response != null && response.statusCode === 200 && response.responseData != null) {
+          const data = response.responseData;
+          this.maxDataToShow = data;
+
+          if (this.maxDataToShow < 200) {
+            this.totalUniqueNodeShowed = data;
+          } else {
+            this.totalUniqueNodeShowed = 200;
+          }
+        } else {
+          this.logger.error('Unable to load the max data to show', response.message);
+          this.toast.show('Unable to load the max data to show. Retry', ToastLevel.Error, 3000);
+        }
+      },
+      error: (errorData: ApiResponse<any>) => {
+        this.logger.error('Unable to load the max data to show', errorData.message);
+        this.toast.show('Unable to load the max data to show. Retry', ToastLevel.Error, 3000);
+      }
+    });
   }
 
   /**

@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { CanActivate, CanActivateChild, Router } from '@angular/router';
 import { catchError, map, Observable, of } from 'rxjs';
+import { environment } from 'src/environments/environment';
 
 import { EngineService } from '../core/services/engine.service';
 import { LoggerService } from '../core/services/logger.service';
@@ -56,17 +57,34 @@ export class MemgraphAuthGuard implements CanActivate, CanActivateChild {
           this.engineService.setMemgraphConnection(true);
           return true;
         } else {
-          this.logger.warn('SOuP Database is down');
+          this.logger.warn('SOuP Database is offline or does not exist');
           this.engineService.setMemgraphConnection(false);
-          this.toast.showWithTitle('Database down', 'The Database is down. Please start the SOuP Database', ToastLevel.Warning, 4000);
+
+          this.toast.showWithTitle(
+            'Database offline',
+            'SOuP Database is offline or does not exist',
+            false,
+            true,
+            environment.prosLabUrl,
+            ToastLevel.Warning,
+            4000
+          );
           this.router.navigate(['/welcome']);
           return false;
         }
       }),
       catchError(() => {
-        this.logger.warn('SOuP Database is down');
+        this.logger.warn('SOuP Database is offline or does not exist');
         this.engineService.setMemgraphConnection(false);
-        this.toast.showWithTitle('Database down', 'The Database is down. Please start the SOuP Database', ToastLevel.Warning, 4000);
+        this.toast.showWithTitle(
+          'Database offline',
+          'SOuP Database is offline or does not exist',
+          false,
+          true,
+          environment.prosLabUrl,
+          ToastLevel.Warning,
+          4000
+        );
         this.router.navigate(['/welcome']);
         return of(false);
       })

@@ -36,7 +36,6 @@ export class StandardGraphService {
     datasetName: string,
     datasetDescription: string,
     saveProcessExecution: boolean,
-    standardCreation: string,
     allColumns: string[],
     standardColumn: string[],
     filteredColumn: string[],
@@ -47,7 +46,6 @@ export class StandardGraphService {
     formData.append('dataset_description', datasetDescription);
     formData.append('process_execution', saveProcessExecution.toString());
     formData.append('all_columns', JSON.stringify(allColumns));
-    formData.append('standardCreation', standardCreation);
     formData.append('standardColumn', JSON.stringify(standardColumn));
     formData.append('filteredColumn', JSON.stringify(filteredColumn));
     formData.append('valuesColumn', JSON.stringify(valuesColumn));

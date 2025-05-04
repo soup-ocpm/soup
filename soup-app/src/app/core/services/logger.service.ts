@@ -27,7 +27,7 @@ export class LoggerService {
    */
   public info(message: string, ...optionalParams: any[]) {
     if (this.logLevel <= LogLevel.Info) {
-      console.info(`INFO: ${message}`, ...optionalParams);
+      console.info(`[LOGGER-INFO]: ${message}`, ...optionalParams);
     }
   }
 
@@ -38,7 +38,7 @@ export class LoggerService {
    */
   public warn(message: string, ...optionalParams: any[]) {
     if (this.logLevel <= LogLevel.Warn) {
-      console.warn(`WARN: ${message}`, ...optionalParams);
+      console.warn(`[LOGGER-WARN]: ${message}`, ...optionalParams);
     }
   }
 
@@ -49,7 +49,7 @@ export class LoggerService {
    */
   public error(message: string, ...optionalParams: any[]) {
     if (this.logLevel <= LogLevel.Error) {
-      console.error(`ERROR: ${message}`, ...optionalParams);
+      console.error(`[LOGGER-ERROR]: ${message}`, ...optionalParams);
     }
   }
 
@@ -60,7 +60,7 @@ export class LoggerService {
    */
   public debug(message: string, ...optionalParams: any[]) {
     if (this.logLevel <= LogLevel.Debug) {
-      console.debug(`DEBUG: ${message}`, ...optionalParams);
+      console.debug(`[LOGGER-DEBUG]: ${message}`, ...optionalParams);
     }
   }
 }

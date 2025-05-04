@@ -1,9 +1,9 @@
-import { UMLMultiplicity } from './uml_multiplicity';
+import { UMLMultiplicity } from './uml_multiplicity.model';
 
 /**
  * Uml edge model
  * @version 1.0
- * @since 2.0.0
+ * @since 1.0.0
  * @author Alessio Giacché
  */
 export class UMLEdge {

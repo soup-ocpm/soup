@@ -8,7 +8,7 @@ import { MaterialModule } from '../../shared/modules/materlal.module';
 /**
  * The Dataset tile component
  * @version 1.0.0
- * @since 2.0.0
+ * @since 1.0.0
  * @author Alessio Giacché
  */
 @Component({

@@ -16,4 +16,14 @@
     <p (click)="this.goToManageDatasets()">Datasets</p>
     <p (click)="this.goToNewDataset()">New Dataset</p>
   </div>
+
+  <!--Soup feedback link-->
+  @if (this.isWelcomePage()) {
+    <a
+      class="soup-feedback"
+      href="https://forms.gle/EoxJVvuXofh8oBku7"
+      target="_blank">
+      Feedback
+    </a>
+  }
 </div>

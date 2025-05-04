@@ -22,11 +22,11 @@ import { LocalDataService } from '../../shared/services/support.service';
 /**
  * Manage Dataset component
  * @version 1.0
- * @since 2.0.0
+ * @since 1.0.0
  * @author Alessio Giacché
  */
 @Component({
-  selector: 'app-retrive-dataset',
+  selector: 'app-manage-datasets',
   standalone: true,
   imports: [
     CommonModule,
@@ -40,10 +40,10 @@ import { LocalDataService } from '../../shared/services/support.service';
     SidebarComponent,
     SpBtnComponent
   ],
-  templateUrl: './retrive-dataset.component.html',
-  styleUrl: './retrive-dataset.component.scss'
+  templateUrl: './manage-datasets.component.html',
+  styleUrl: './manage-datasets.component.scss'
 })
-export class RetriveDatasetComponent implements OnInit, AfterViewChecked {
+export class ManageDatasetsComponent implements OnInit, AfterViewChecked {
   // All the user datasets
   public allDataset: Dataset[] = [];
 
@@ -58,9 +58,6 @@ export class RetriveDatasetComponent implements OnInit, AfterViewChecked {
 
   // The model change
   public modelChange = false;
-
-  // If the user have dataset
-  public haveDatasets = false;
 
   // List of the sidebar ids
   public sidebarIds: string[] = [];
@@ -86,7 +83,7 @@ export class RetriveDatasetComponent implements OnInit, AfterViewChecked {
    * @param genericGraphService the GenericGraphService service
    * @param sidebarService the SidebarService service
    * @param supportService the LocalDataService service
-   * @param loggerService the LoggerService service
+   * @param logger the LoggerService service
    * @param localDataService the LocalDataService service
    */
   constructor(
@@ -97,7 +94,7 @@ export class RetriveDatasetComponent implements OnInit, AfterViewChecked {
     private genericGraphService: GenericGraphService,
     public sidebarService: SidebarService,
     private supportService: LocalDataService,
-    private loggerService: LoggerService,
+    private logger: LoggerService,
     private localDataService: LocalDataService
   ) {}
 
@@ -116,6 +113,17 @@ export class RetriveDatasetComponent implements OnInit, AfterViewChecked {
     if (this.svgContainer) {
       this.resizeSvg();
     }
+  }
+
+  /**
+   * Reload the datasets
+   */
+  public reloadDatasets(): void {
+    this.isLoadingDatasets = true;
+
+    setTimeout(() => {
+      this.getAllDatasets();
+    }, 1000);
   }
 
   /**
@@ -139,14 +147,9 @@ export class RetriveDatasetComponent implements OnInit, AfterViewChecked {
               }
             });
 
-            if (this.allDataset.length > 0) {
-              this.haveDatasets = true;
-            }
-
             this.isLoadingDatasets = false;
           } else {
             this.isLoadingDatasets = false;
-            this.haveDatasets = false;
           }
         },
         error: (errorData: ApiResponse<any>) => {
@@ -155,33 +158,25 @@ export class RetriveDatasetComponent implements OnInit, AfterViewChecked {
           // Gestione errore di connessione rifiutata
           if (apiResponse['statusText'] === 'Unknown Error' || errorData.message.includes('ERR_ConnectionRefused')) {
             this.toast.show(`Unable to load Datasets. Please start the Engine`, ToastLevel.Error, 5000);
+            this.logger.error('Unable to load Datasets. Please start the Engine.');
           } else if (apiResponse['status'] === 500) {
-            this.toast.show(`Internal Server Error. Retry`, ToastLevel.Error, 5000);
+            this.toast.show(`Internal Server Error while retrieving datasets`, ToastLevel.Error, 5000);
+            this.logger.error('Internal Server Error while retrieving datasets.');
           } else {
             this.toast.show(`Unexpected error occurred: ${errorData.message}`, ToastLevel.Error, 5000);
+            this.logger.error(`Unexpected error occurred: ${errorData.message}`);
           }
 
           this.isLoadingDatasets = false;
-          this.haveDatasets = false;
-        },
-        complete: () => {}
+          this.logger.error(errorData.message);
+          this.logger.error(errorData.responseData);
+        }
       });
     } catch {
       this.isLoadingDatasets = false;
-      this.haveDatasets = false;
+      this.logger.error('Internal Server Error while retrieving datasets');
       this.toast.show(`Internal Server Error. Retry`, ToastLevel.Error, 5000);
     }
-  }
-
-  /**
-   * Reload the datasets
-   */
-  public reloadDatasets(): void {
-    this.isLoadingDatasets = true;
-
-    setTimeout(() => {
-      this.getAllDatasets();
-    }, 1000);
   }
 
   /**
@@ -222,16 +217,17 @@ export class RetriveDatasetComponent implements OnInit, AfterViewChecked {
             this.getUpdateDataset(dataset);
           } else {
             this.isCreatingDataset = false;
-            this.toast.show('Error while retrieving the Dataset', ToastLevel.Error, 3000);
+
+            this.logger.error('Error while retrieving the Dataset.', response.message);
+            this.toast.show('Error while retrieving the Dataset. Retry', ToastLevel.Error, 3000);
           }
         },
-        error: (errorData) => {
-          const apiResponse: any = errorData;
-          this.loggerService.error(apiResponse);
+        error: (errorData: ApiResponse<any>) => {
           this.isCreatingDataset = false;
-          this.toast.show('Error while retrieving the Dataset', ToastLevel.Error, 3000);
-        },
-        complete: () => {}
+
+          this.logger.error('Error while retrieving the Dataset', errorData.message);
+          this.toast.show('Error while retrieving the Dataset. Retry', ToastLevel.Error, 3000);
+        }
       });
     }
   }
@@ -244,21 +240,23 @@ export class RetriveDatasetComponent implements OnInit, AfterViewChecked {
       next: (response) => {
         if (response.statusCode == 200 && response.responseData != null) {
           const parsetDataset = this.supportService.parseItemToDataset(response.responseData);
+
           this.supportService.setCurrentDataset(parsetDataset!);
           this.router.navigate(['/datasets', parsetDataset!.name]);
           this.isCreatingDataset = false;
         } else {
           this.isCreatingDataset = false;
-          this.toast.show('Unable to retrieve the Dataset. Retry', ToastLevel.Error, 2000);
+
+          this.logger.error('Error while retrieving the updated Dataset', response.message);
+          this.toast.show('Error while retrieving the updated Dataset. Retry', ToastLevel.Error, 2000);
         }
       },
-      error: (errorData) => {
-        const apiResponse: any = errorData;
-        this.loggerService.error(apiResponse);
+      error: (errorData: ApiResponse<any>) => {
         this.isCreatingDataset = false;
-        this.toast.show('Unable to retrieve the Dataset. Retry', ToastLevel.Error, 2000);
-      },
-      complete: () => {}
+
+        this.logger.error('Error while retrieving the updated Dataset', errorData.message);
+        this.toast.show('Error while retrieving the updated Dataset. Retry', ToastLevel.Error, 2000);
+      }
     });
   }
 
@@ -312,7 +310,7 @@ export class RetriveDatasetComponent implements OnInit, AfterViewChecked {
   /**
    * Check the model change
    */
-  public checkForModelChange(): void {
+  public checkForModelChange(event: Dataset): void {
     const sidebarId = 'manage-dataset-sidebar';
     const hasChanged = this.currentDataset!.description !== this.datasetDescriptionBak;
 
@@ -324,7 +322,7 @@ export class RetriveDatasetComponent implements OnInit, AfterViewChecked {
         footerButtons: [
           { label: 'Save', action: () => this.onSaveUpdate(), color: 'var(--primary-color)' },
           { label: 'Restore', action: () => this.restoreModel(), color: '#6c757d' },
-          { label: 'Delete', action: () => this.deleteDataset(), color: '#ff0000' }
+          { label: 'Delete', action: () => this.onDeleteDataset(event), color: '#ff0000' }
         ]
       });
     } else {
@@ -379,17 +377,20 @@ export class RetriveDatasetComponent implements OnInit, AfterViewChecked {
               }
               this.toast.show('Dataset update successfully', ToastLevel.Success, 2000);
             } else {
-              this.toast.show('Unable to update Dataset. Please retry', ToastLevel.Error, 3000);
               this.sidebarService.close('manage-dataset-sidebar');
+
+              this.logger.error('Error while update the Dataset', response.responseData);
+              this.toast.show('Error while update the Dataset. Please retry', ToastLevel.Error, 3000);
             }
 
             this.isLoadingUpdate = false;
           },
-          error: () => {
+          error: (errorData: ApiResponse<any>) => {
             this.isLoadingUpdate = false;
-            this.toast.show('Unable to update Dataset. Please retry', ToastLevel.Error, 3000);
-          },
-          complete: () => {}
+
+            this.logger.error('Error while update the Dataset', errorData.message);
+            this.toast.show('Error while update the Dataset. Please retry', ToastLevel.Error, 3000);
+          }
         });
       }, 1000);
     }
@@ -485,16 +486,16 @@ export class RetriveDatasetComponent implements OnInit, AfterViewChecked {
           if (response.statusCode === 200) {
             // Remove the dataset
             this.allDataset = this.allDataset.filter((item) => item.name !== this.currentDataset!.name);
-            this.haveDatasets = this.allDataset.length > 0;
-
-            // Chiudi la sidebar
             this.sidebarService.close('manage-dataset-sidebar');
-            this.currentDataset = undefined;
             this.toast.show('Dataset deleted successfully', ToastLevel.Success, 3000);
+          } else {
+            this.logger.error('Error while deleting the dataset', response.message);
+            this.toast.show('Error while deleting the dataset. Retry', ToastLevel.Error, 3000);
           }
         },
-        error: () => {
-          this.toast.show('Unable to delete the Dataset. Please retry', ToastLevel.Error, 3000);
+        error: (errorData: ApiResponse<any>) => {
+          this.logger.error('Error while deleting the dataset', errorData.message);
+          this.toast.show('Error while deleting the dataset. Please retry', ToastLevel.Error, 3000);
         }
       });
     }
