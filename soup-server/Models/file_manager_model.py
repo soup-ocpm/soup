@@ -16,7 +16,7 @@ import json
 from pathlib import Path
 
 
-# File Manager model class (csv file, json and other)
+# File Manager model class
 class FileManager:
     # The folder name for the csv files
     csv_folder_name = 'FileData/temp_csv'
@@ -39,6 +39,7 @@ class FileManager:
         :param entity_folder: if the file is entity
         :return: success or error message with content
         """
+
         project_dir = Path(__file__).parent.parent
         folder_name = FileManager.csv_folder_name
 
@@ -79,6 +80,7 @@ class FileManager:
         :param entity_folder: if the file is entity
         :return: success or error message with content
         """
+
         try:
             project_dir = Path(__file__).parent.parent
 
@@ -114,6 +116,7 @@ class FileManager:
         :param file_name: the file name
         :return: success or error message with content
         """
+
         project_dir = Path(__file__).parent.parent
         temp_dir = project_dir / FileManager.json_folder_name
 
@@ -143,6 +146,7 @@ class FileManager:
         :param svg_content: the svg content
         :return: success or error message with content
         """
+
         project_dir = Path(__file__).parent.parent
         folder_name = FileManager.svg_folder_name
 
@@ -172,6 +176,7 @@ class FileManager:
         :param file_name: the file name
         :return: success or error message with content
         """
+
         project_dir = Path(__file__).parent.parent
         temp_dir = project_dir / FileManager.svg_folder_name
 
@@ -266,6 +271,7 @@ class FileManager:
         :param json_content: the json content
         :return: success or error message with content
         """
+
         try:
             # 1. Convert JSON in a dictionary
             json_data = json.loads(json_content)

@@ -16,7 +16,7 @@ import { ApiService } from '../core/services/api_response.service';
 })
 export class JSONDataService {
   /**
-   * Initialize a new instance of StandardGraphService service
+   * Initialize a new instance of JSONDataService service
    * @param apiService the ApiService service
    */
   constructor(private apiService: ApiService) {}

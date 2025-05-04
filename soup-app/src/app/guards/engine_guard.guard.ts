@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { CanActivate, CanActivateChild, Router } from '@angular/router';
 import { catchError, map, Observable, of } from 'rxjs';
+import { environment } from 'src/environments/environment';
 
 import { EngineService } from '../core/services/engine.service';
 import { LoggerService } from '../core/services/logger.service';
@@ -58,7 +59,15 @@ export class EngineAuthGuard implements CanActivate, CanActivateChild {
         } else {
           this.logger.warn('SOuP Engine down');
           this.engineService.setEngineConnection(false);
-          this.toast.showWithTitle('Engine Off', 'The Engine is down. Please start the SOuP Engine', ToastLevel.Warning, 4000);
+          this.toast.showWithTitle(
+            'Engine Off',
+            'The Engine is down. Please start the SOuP Engine',
+            false,
+            true,
+            environment.prosLabUrl,
+            ToastLevel.Warning,
+            4000
+          );
           this.router.navigate(['/welcome']);
           return false;
         }
@@ -66,7 +75,15 @@ export class EngineAuthGuard implements CanActivate, CanActivateChild {
       catchError(() => {
         this.logger.warn('SOuP Engine down');
         this.engineService.setEngineConnection(false);
-        this.toast.showWithTitle('Engine Off', 'The Engine is down. Please start the SOuP Engine', ToastLevel.Warning, 4000);
+        this.toast.showWithTitle(
+          'Engine Off',
+          'The Engine is down. Please start the SOuP Engine',
+          false,
+          true,
+          environment.prosLabUrl,
+          ToastLevel.Warning,
+          4000
+        );
         this.router.navigate(['/welcome']);
         return of(false);
       })

@@ -1,7 +1,7 @@
 """
 ------------------------------------------------------------------------
 File : op_graph_service.py
-Description: Service for operation graph controller
+Description: Service for standard graph operations
 Date creation: 07-07-2024
 Project : soup-server
 Author: Alessio Giacché
@@ -15,7 +15,7 @@ import math
 
 from flask import jsonify
 from collections.abc import Iterable
-from Controllers.graph_config import memgraph_datetime_to_string
+from Shared.support_config import memgraph_datetime_to_string
 from Services.docker_service import DockerService
 from Services.support_service import SupportService
 from Models.api_response_model import ApiResponse
@@ -29,9 +29,10 @@ from Utils.graph_query_lib import *
 logger = Logger()
 
 
-# The Service for operation graph controller
+# The Service for standard graph operations
 class OperationGraphService:
 
+    # Get event nodes
     @staticmethod
     def get_event_nodes_s(database_connector):
         response = ApiResponse()
@@ -458,6 +459,7 @@ class OperationGraphService:
         finally:
             database_connector.close()
 
+    # Get the distinct graph activities
     @staticmethod
     def get_activities_s(database_connector):
         response = ApiResponse()
@@ -496,6 +498,7 @@ class OperationGraphService:
         finally:
             database_connector.close()
 
+    # Get the min and max timestamp of the nodes
     @staticmethod
     def get_min_max_timestamp(database_connector):
         response = ApiResponse()
@@ -545,6 +548,7 @@ class OperationGraphService:
         finally:
             database_connector.close()
 
+    # Download the svg
     @staticmethod
     def download_svg_s(dataset_name, svg_content):
         response = ApiResponse()
@@ -554,9 +558,9 @@ class OperationGraphService:
         if not container_id or container_id == '':
             response.http_status_code = 404
             response.response_data = None
-            response.message = 'Container not found'
+            response.message = 'SOuP Database is offline or does not exist'
 
-            logger.error('Container id not found')
+            logger.error('SOuP Database is offline or does not exist')
             return jsonify(response.to_dict()), 404
 
         # Create svg
@@ -602,7 +606,7 @@ class OperationGraphService:
             # Delete event nodes
             query = delete_event_graph_query()
             database_connector.run_query_memgraph(query)
-            
+
             query = drop_event_index()
             database_connector.run_query_memgraph(query)
 

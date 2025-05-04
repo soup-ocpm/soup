@@ -2,13 +2,13 @@ import { Component, ElementRef, Input, OnInit, ViewChild } from '@angular/core';
 import * as d3 from 'd3';
 import * as dagreD3 from 'dagre-d3';
 
-import { UMLEdge } from './models/uml_edge';
-import { UMLNode } from './models/uml_node';
+import { UMLEdge } from './models/uml_edge.model';
+import { UMLNode } from './models/uml_node.model';
 
 /**
  * UML Dialog Component
  * @version 1.0.0
- * @since 2.0.0
+ * @since 1.0.0
  * @author Alessio Giacché
  */
 @Component({
@@ -116,7 +116,7 @@ export class UmlDiagramComponent implements OnInit {
       return;
     }
 
-    const zoomBehavior = d3.zoom().on('zoom', (event) => {
+    const zoomBehavior = d3.zoom().on('zoom', (event: any) => {
       if (event && event.transform) {
         this.currentZoomEvent = event;
         svgGroup.attr('transform', event.transform);

@@ -1,7 +1,7 @@
 """
 -------------------------------
-File : class_graph_service.py
-Description: Service for class graph
+File : aggregate_graph_service.py
+Description: Service for aggregate (class) graph
 Date creation: 07-07-2024
 Project : soup-server
 Author: Alessio Giacché
@@ -13,7 +13,7 @@ License : MIT
 # Import
 from flask import jsonify
 from datetime import datetime
-from Services.AggregateGraph.op_class_graph_service import OperationClassGraphService
+from Services.AggregateGraph.aggregate_graph_op_service import OperationClassGraphService
 from Models.dataset_process_info_model import DatasetProcessInformation
 from Models.api_response_model import ApiResponse
 from Models.logger_model import Logger
@@ -24,7 +24,7 @@ from Utils.aggregate_graph_query_lib import *
 logger = Logger()
 
 
-# The Service for class graph
+# The Service for aggregate (class) graph
 class ClassGraphService:
 
     # Create Class Graph function
@@ -75,6 +75,7 @@ class ClassGraphService:
         finally:
             database_connector.close()
 
+    # Process the aggregate graph creation
     @staticmethod
     def class_process_query(database_connector, filtered_columns):
         process_info = DatasetProcessInformation()

@@ -1,7 +1,7 @@
 """
 ------------------------------------------------------------------------
 File : docker_service.py
-Description: Service for Generic graph controller
+Description: Service generic graph operations
 Date creation: 20-07-2024
 Project : soup-server
 Author: Alessio Giacché
@@ -32,9 +32,10 @@ from Utils.causal_query_lib import *
 logger = Logger()
 
 
-# The Service for generic graph controller
+# The Service generic graph operations
 class GenericGraphService:
 
+    # Create complete graph
     @staticmethod
     def create_complete_graphs_s(container_id, database_connector, dataset_name):
         process_info = DatasetProcessInformation()
@@ -100,9 +101,9 @@ class GenericGraphService:
                 database_connector.run_query_memgraph(create_entity_index())
                 # + Create event index to optimize search and manipulation
                 database_connector.run_query_memgraph(create_event_index())
-                #database_connector.run_query_memgraph(create_event_index_time())
-                #database_connector.run_query_memgraph(create_event_index_id())                
-    
+                # database_connector.run_query_memgraph(create_event_index_time())
+                # database_connector.run_query_memgraph(create_event_index_id())
+
                 # 6. Create :CORR relationships
                 process_info.init_corr_time = datetime.now().strftime('%Y-%m-%dT%H:%M:%S.%f')[:-3]
 
@@ -150,7 +151,7 @@ class GenericGraphService:
             corr_rel = OperationGraphService.get_count_corr_relationships_s(database_connector)
             df_rel = OperationGraphService.get_count_df_relationships_s(database_connector)
 
-            if date_created is None or date_created is 0:
+            if date_created is None or date_created == 0:
                 date_created = datetime.now().strftime('%Y-%m-%dT%H:%M:%S.%f')[:-3]
                 date_modified = datetime.now().strftime('%Y-%m-%dT%H:%M:%S.%f')[:-3]
 
@@ -261,7 +262,39 @@ class GenericGraphService:
         finally:
             database_connector.close()
 
-    # Delete all inside the database
+    @staticmethod
+    def get_max_data_to_show(database_connector, standard_graph):
+        response = ApiResponse()
+
+        try:
+            database_connector.connect()
+
+            if standard_graph == "1":
+                query_result = get_max_standard_graph_data()
+            else:
+                query_result = get_max_aggregate_graph_data()
+
+            result = database_connector.run_query_memgraph(query_result)
+            max_data = result[0]['totalNodes'] + result[0]['totalRels']
+
+            response.http_status_code = 200
+            response.response_data = max_data
+            response.message = "Retrieve max data to show"
+
+            logger.info('Retrieve maximum data to show')
+            return jsonify(response.to_dict()), 200
+        except Exception as e:
+            response.http_status_code = 500
+            response.response_data = None
+            response.message = f'Internal Server Error : {str(e)}'
+
+            logger.error(f'Internal Server Error : {str(e)}')
+            return jsonify(response.to_dict()), 500
+
+        finally:
+            database_connector.close()
+
+    # Delete all graphs inside the database
     @staticmethod
     def delete_memgraph_graph_s(database_connector):
         response = ApiResponse()

@@ -8,13 +8,13 @@
     }">
     <div id="myGraphContainer">
       <svg #graphSvg></svg>
-
-      @if (this.isLoadingNewNodes) {
-        <div class="graph-spinner">
-          <sp-spinner></sp-spinner>
-        </div>
-      }
     </div>
+
+    @if (this.isLoadingNewNodes) {
+      <div class="graph-spinner">
+        <sp-spinner></sp-spinner>
+      </div>
+    }
   </div>
 
   <!--Right Action buttons-->
@@ -33,9 +33,7 @@
 
   <!--Left Action buttons-->
   @if (
-    !this.sidebarService.isSidebarOpen('master-sidebar') &&
-    !this.sidebarService.isSidebarOpen('search-sidebar') &&
-    this.supportService.graphType != 3
+    !this.sidebarService.isSidebarOpen('master-sidebar') && !this.sidebarService.isSidebarOpen('search-sidebar') && this.shouldShowArrowBack
   ) {
     <div class="left-actions">
       <i
@@ -84,6 +82,44 @@
           (operationSelected)="this.onOperationSelected(operation)"></app-side-operation>
       }
     </div>
+  </ng-template>
+
+  <!--Aggregate Sidebar template-->
+  <ng-template #aggregateSidebarTemplate>
+    <p style="margin-top: 15px">
+      This operation allows to group nodes into classes. The default aggregation considers the Activity property. Moreover, here you can
+      select the desired entities that will be also taken into account when creating Class nodes
+    </p>
+
+    <sp-divider></sp-divider>
+
+    @for (entity of this.entityList; track $index) {
+      <li class="list-group-item">
+        <span style="margin-top: 5px">{{ entity.name }}</span>
+
+        <div class="group">
+          @if (entity.numberOfNanNodes > 0) {
+            <mat-icon [matTooltip]="getEntityWarningLabel(entity)">warning</mat-icon>
+          }
+          <mat-slide-toggle
+            style="margin-top: 3px"
+            color="primary"
+            [(ngModel)]="entity.isSelected"
+            (change)="selectionEntity(entity)"></mat-slide-toggle>
+        </div>
+      </li>
+    }
+
+    <div style="margin-top: 13px"></div>
+    <sp-divider></sp-divider>
+
+    @if (this.currentDataset!.classNodes > 0) {
+      <p style="color: #ff0000; margin-top: 10px">Warning</p>
+      <p>
+        Aggregate class graph is already present inside the Memgraph Database. This operation will remove the present graph to make new
+        aggregation
+      </p>
+    }
   </ng-template>
 
   <!--Search Sidebar-->
@@ -303,32 +339,30 @@
     <p>A list of operations available for this section</p>
 
     <!--Node showed slider-->
-    @if (this.supportService.graphType !== 3) {
-      <div>
-        <div style="margin-top: 35px"></div>
-        <div class="double-flex">
-          <h5>Data displayed</h5>
-          @if (this.totalUniqueNodeShowed > 300) {
-            <mat-icon [matTooltip]="'More than 300 nodes may cause rendering delays'">warning</mat-icon>
-          }
-        </div>
-        <div style="width: 100%">
-          <mat-slider
-            class="example-margin"
-            [max]="this.currentDataset!.eventNodes"
-            [min]="2"
-            [step]="1"
-            [discrete]="true"
-            [showTickMarks]="true">
-            <input
-              #slider
-              matSliderThumb
-              [(ngModel)]="this.totalUniqueNodeShowed"
-              (ngModelChange)="this.onSliderValueChanged($event)" />
-          </mat-slider>
-        </div>
+    <div>
+      <div style="margin-top: 35px"></div>
+      <div class="double-flex">
+        <h5>Data displayed</h5>
+        @if (this.totalUniqueNodeShowed > 300) {
+          <mat-icon [matTooltip]="'More than 300 nodes may cause rendering delays'">warning</mat-icon>
+        }
       </div>
-    }
+      <div style="width: 100%">
+        <mat-slider
+          class="example-margin"
+          [max]="this.maxDataToShow"
+          [min]="2"
+          [step]="1"
+          [discrete]="true"
+          [showTickMarks]="true">
+          <input
+            #slider
+            matSliderThumb
+            [(ngModel)]="this.totalUniqueNodeShowed"
+            (ngModelChange)="this.onSliderValueChanged($event)" />
+        </mat-slider>
+      </div>
+    </div>
 
     <!--Node view-->
     <div>

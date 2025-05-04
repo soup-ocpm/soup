@@ -19,7 +19,6 @@ import { environment } from '../../../environments/environment';
 export class WelcomeComponent {
   /**
    * Constructor for WelcomeComponent component
-   * @param standardGraphService the StandardGraphService service
    */
   constructor() {}
 

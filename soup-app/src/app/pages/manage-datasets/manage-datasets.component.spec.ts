@@ -1,17 +1,17 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
-import { RetriveDatasetComponent } from './retrive-dataset.component';
+import { ManageDatasetsComponent } from './manage-datasets.component';
 
-describe('RetriveDatasetComponent', () => {
-  let component: RetriveDatasetComponent;
-  let fixture: ComponentFixture<RetriveDatasetComponent>;
+describe('ManageDatasetsComponent', () => {
+  let component: ManageDatasetsComponent;
+  let fixture: ComponentFixture<ManageDatasetsComponent>;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [RetriveDatasetComponent]
+      imports: [ManageDatasetsComponent]
     }).compileComponents();
 
-    fixture = TestBed.createComponent(RetriveDatasetComponent);
+    fixture = TestBed.createComponent(ManageDatasetsComponent);
     component = fixture.componentInstance;
     fixture.detectChanges();
   });

@@ -28,3 +28,12 @@
 .link p:hover {
   color: var(--primary-color);
 }
+
+.soup-feedback {
+  position: absolute;
+  right: 30px;
+  top: 16px;
+  cursor: pointer;
+  font-family: 'Times New Roman', Times, serif;
+  color: var(--primary-color);
+}

@@ -81,11 +81,17 @@ mat-stepper {
 }
 
 .upload-buttons {
-  width: 94%;
   position: absolute;
-  bottom: 30px;
   display: flex;
   justify-content: space-between;
+  width: 94%;
+  bottom: 30px;
+}
+
+.example-link {
+  color: var(--primary-color);
+  text-decoration: underline;
+  cursor: pointer;
 }
 
 // ================================
@@ -192,17 +198,6 @@ mat-stepper {
 
 .scrollable-sidebar {
   overflow: auto;
-}
-
-.text-font {
-  color: var(--secondary-color);
-  font-family: 'Times New Roman', Times, serif;
-}
-
-.text-font-p {
-  font-size: 17px;
-  color: var(--secondary-color);
-  font-family: 'Times New Roman', Times, serif;
 }
 
 mat-divider {

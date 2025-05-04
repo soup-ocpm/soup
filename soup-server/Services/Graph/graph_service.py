@@ -1,7 +1,7 @@
 """
 ------------------------------------------------------------------------
 File : graph_service.py
-Description: Service for graph controller
+Description: Service for standard graph
 Date creation: 07-07-2024
 Project : soup-server
 Author: Alessio Giacché
@@ -26,9 +26,10 @@ from Models.logger_model import Logger
 logger = Logger()
 
 
-# The Service for graph controller
+# The Service for standard graph
 class GraphService:
 
+    # Create new dataset
     @staticmethod
     def create_new_dataset_s(file, copy_file, dataset_name, dataset_description, all_columns, standard_column,
                              filtered_column, values_column, trigger_target_rows, database_connector):
@@ -45,10 +46,10 @@ class GraphService:
 
             if container_id is None or container_id == '':
                 response.http_status_code = 400
-                response.message = 'Container not found'
+                response.message = 'SOuP Database is offline or does not exist'
                 response.response_data = []
 
-                logger.error('Container not found')
+                logger.error('SOuP Database is offline or does not exist')
                 return jsonify(response.to_dict()), 400
 
             # 1. Process the csv file on Docker Container
@@ -95,13 +96,14 @@ class GraphService:
             database_connector.close()
 
 
-# 1. Process the file new Dataset file
+# Process the file new Dataset file
 def process_new_dataset_files(container_id, file, df, dataset_name, dataset_description, all_columns, standard_columns,
                               filtered_columns, values_columns, trigger_target_rows):
     try:
         # 1. Original csv file processes
         result, new_file_path = FileManager.copy_csv_file(file, dataset_name, False)
-        if result is not "success" or new_file_path is None:
+
+        if result != "success" or new_file_path is None:
             return 'Error while copy the file on the Engine'
 
         result, new_docker_file_path = DockerFileManager.copy_file_to_container(container_id, dataset_name,

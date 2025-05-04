@@ -14,7 +14,7 @@ import { SToastComponent } from './shared/components/s-toast/s-toast.component';
 /**
  * Main application component
  * @version 1.0
- * @since 2.0.0
+ * @since 1.0.0
  * @author Alessio Giacché
  */
 @Component({

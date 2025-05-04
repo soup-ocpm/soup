@@ -8,8 +8,15 @@
   <!--Upload card-->
   @if (this.isShowUpload && !this.isLoading) {
     <mat-card class="upload-card">
-      <h3 class="text-font">Upload .csv file</h3>
-      <p class="text-font-p">Drag your .csv file containing the event log or choose it directly from your computer by clicking on upload</p>
+      <h3>Upload .csv file</h3>
+      <p>
+        Drag your .csv file containing the event log or choose it directly from your computer by clicking on upload.
+        <span
+          class="example-link"
+          (click)="this.loadExampleCsv()">
+          Or try an example .csv file
+        </span>
+      </p>
       <ngx-dropzone (change)="this.onSelectFile($event)">
         <ngx-dropzone-label>Upload</ngx-dropzone-label>
         <ngx-dropzone-preview
@@ -107,11 +114,7 @@
 
 <!--Master sidebar template-->
 <ng-template #masterSidebarTemplate>
-  <p
-    class="text-font"
-    style="font-size: 15px">
-    Choose the desired fields
-  </p>
+  <p>Choose the desired fields</p>
   <ul class="list-group list-group-light">
     <div class="master-values">
       <div class="entities-container">
@@ -155,11 +158,7 @@
 
   <!--Map the information-->
   <div class="map-information">
-    <p
-      class="text-font"
-      style="font-size: 15px">
-      Map the following information
-    </p>
+    <p>Map the following information</p>
 
     @if (this.allFileValuesSelected.length > 0) {
       <div class="column-selection">
@@ -212,11 +211,7 @@
 
 <!--UML Sidebar-->
 <ng-template #umlSidebarTemplate>
-  <p
-    class="text-font"
-    style="font-size: 15px">
-    Here you can select trigger and target values for the Graph (optional).
-  </p>
+  <p>Here you can select trigger and target values for the Graph (optional).</p>
 
   <!-- Trigger and Target columns -->
   @for (row of this.triggerTargetRows; track $index; let i = $index) {
@@ -280,15 +275,5 @@
       <br />
       This operation may take a few minutes...
     </h3>
-    <!-- <div
-      class="progress-terminal"
-      *ngIf="this.progressData['total_nodes'] != null && this.progressData['total_relationships'] != null">
-      <p>Created {{ progressData['event_nodes'] }} event nodes</p>
-      <p>Created {{ progressData['entity_nodes'] }} entity nodes</p>
-      <p>Created {{ progressData['corr_relationships'] }} :CORR relationships</p>
-      <p>Created {{ progressData['df_relationships'] }} :DF relationships</p>
-      <p style="font-weight: bold">Total : {{ progressData['total_nodes'] }} nodes</p>
-      <p style="font-weight: bold">Total : {{ progressData['total_relationships'] }} relationships</p>
-    </div> -->
   </div>
 }

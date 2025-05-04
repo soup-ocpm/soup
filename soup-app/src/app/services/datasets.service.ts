@@ -9,7 +9,7 @@ import { ApiService } from '../core/services/api_response.service';
 /**
  * Dataset service
  * @version 1.0
- * @since 2.0.0
+ * @since 1.0.0
  * @author Alessio Giacché
  */
 @Injectable({
@@ -17,7 +17,7 @@ import { ApiService } from '../core/services/api_response.service';
 })
 export class DatasetService {
   /**
-   * Initialize a new instance of StandardGraphService service
+   * Initialize a new instance of DatasetService service
    * @param apiService the ApiService service
    */
   constructor(private apiService: ApiService) {}

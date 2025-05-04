@@ -1,5 +1,5 @@
 # Build phase
-FROM node:18-alpine as build
+FROM node:20-alpine AS build
 
 # Set the working directory inside the container
 WORKDIR /usr/src/app
@@ -15,6 +15,9 @@ RUN npm install -g @angular/cli@18.2.0
 
 # Copy the rest of the application code
 COPY . .
+
+# Run npm linting
+RUN npm run lint
 
 # Build the Angular application in production mode
 RUN ng build --configuration production

@@ -41,4 +41,12 @@ export class NavbarComponent {
   public goToManageDatasets(): void {
     this.router.navigate(['/datasets']);
   }
+
+  /**
+   * Return true if the user stay in the welcome
+   * page
+   */
+  public isWelcomePage(): boolean {
+    return this.router.url === '/welcome';
+  }
 }

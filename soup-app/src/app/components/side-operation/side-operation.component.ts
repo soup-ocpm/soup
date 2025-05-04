@@ -6,7 +6,7 @@ import { MaterialModule } from 'src/app/shared/modules/materlal.module';
 /**
  * Side operation Component
  * @version 1.0.0
- * @since 2.0.0
+ * @since 1.0.0
  * @author Alessio Giacché
  */
 @Component({

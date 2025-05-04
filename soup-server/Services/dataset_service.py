@@ -1,7 +1,7 @@
 """
 -------------------------------
-File : class_graph_service.py
-Description: Service for class graph
+File : aggregate_graph_service.py
+Description: Service for dataset
 Date creation: 07-07-2024
 Project : soup-server
 Author: Alessio Giacché
@@ -28,8 +28,9 @@ logger = Logger()
 # The Service for dataset
 class DatasetService:
 
+    # Get specific dataset
     @staticmethod
-    def get_dataset_info_s(dataset_name):
+    def get_dataset_s(dataset_name):
         response = ApiResponse()
 
         try:
@@ -38,10 +39,10 @@ class DatasetService:
 
             if container_id is None or container_id == '':
                 response.http_status_code = 400
-                response.message = 'Container not found'
+                response.message = 'SOuP Database is offline or does not exist'
                 response.response_data = None
 
-                logger.error('Container not found')
+                logger.error('SOuP Database is offline or does not exist')
                 return jsonify(response.to_dict()), 400
 
             result, exec_config_file = DockerFileManager.read_json_file_from_container(container_id, dataset_name)
@@ -79,8 +80,9 @@ class DatasetService:
             logger.error(f'Internal Server Error : {str(e)}')
             return jsonify(response.to_dict()), 500
 
+    # Get all dataset
     @staticmethod
-    def get_all_dataset_info_s():
+    def get_all_dataset_s():
         response = ApiResponse()
 
         try:
@@ -89,10 +91,10 @@ class DatasetService:
 
             if container_id is None or container_id == '':
                 response.http_status_code = 400
-                response.message = 'Container not found'
+                response.message = 'SOuP Database is offline or does not exist'
                 response.response_data = None
 
-                logger.error('Container not found')
+                logger.error('SOuP Database is offline or does not exist')
                 return jsonify(response.to_dict()), 400
 
             # 1. Get all datasets folder name
@@ -151,8 +153,9 @@ class DatasetService:
             logger.error(f'Internal Server Error : {str(e)}')
             return jsonify(response.to_dict()), 500
 
+    # Update dataset standard information
     @staticmethod
-    def update_dataset_info_s(dataset_name, dataset_description):
+    def update_dataset_s(dataset_name, dataset_description):
         response = ApiResponse()
 
         try:
@@ -161,10 +164,10 @@ class DatasetService:
 
             if container_id is None or container_id == '':
                 response.http_status_code = 400
-                response.message = 'Container not found'
+                response.message = 'SOuP Database is offline or does not exist'
                 response.response_data = None
 
-                logger.error('Container not found')
+                logger.error('SOuP Database is offline or does not exist')
                 return jsonify(response.to_dict()), 400
 
             result, exec_config_file = DockerFileManager.read_json_file_from_container(container_id, dataset_name)
@@ -224,6 +227,7 @@ class DatasetService:
             logger.error(f'Internal Server Error: {str(e)}')
             return jsonify(response.to_dict()), 500
 
+    # Delete specific dataset
     @staticmethod
     def delete_dataset_s(dataset_name):
         response = ApiResponse()
@@ -234,10 +238,10 @@ class DatasetService:
 
             if container_id is None or container_id == '':
                 response.http_status_code = 400
-                response.message = 'Container not found'
+                response.message = 'SOuP Database is offline or does not exist'
                 response.response_data = None
 
-                logger.error('Container not found')
+                logger.error('SOuP Database is offline or does not exist')
                 return jsonify(response.to_dict()), 400
 
             # 1. Delete the folder
@@ -277,6 +281,7 @@ class DatasetService:
             logger.error(f'Internal Server Error : {str(e)}')
             return jsonify(response.to_dict()), 500
 
+    # Check the unique dataset name
     @staticmethod
     def check_unique_dataset_name_s(dataset_name):
         response = ApiResponse()
@@ -287,10 +292,10 @@ class DatasetService:
 
             if container_id is None or container_id == '':
                 response.http_status_code = 400
-                response.message = 'Container not found'
+                response.message = 'SOuP Database is offline or does not exist'
                 response.response_data = None
 
-                logger.error('Container not found')
+                logger.error('SOuP Database is offline or does not exist')
                 return jsonify(response.to_dict()), 400
 
             result, container_folders = DockerFileManager.get_folder_files(container_id, '/soup')

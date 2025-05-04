@@ -1,7 +1,7 @@
 """
 ------------------------------------------------------------------------
 File : dataset_process_info_model.py
-Description: Dataset information data model
+Description: Dataset process information model class
 Date creation: 17-10-2024
 Project : soup_server
 Author: Alessio Giacché

@@ -17,7 +17,7 @@ import { ApiService } from '../core/services/api_response.service';
 })
 export class DockerService {
   /**
-   * Initialize a new instance of ClassGraphService service
+   * Initialize a new instance of DockerService service
    * @param apiService the ApiService service
    */
   constructor(private apiService: ApiService) {}

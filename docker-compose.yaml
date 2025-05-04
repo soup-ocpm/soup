@@ -2,9 +2,9 @@ services:
   angular:
     build:
       context: ./soup-app
-    container_name: soup
+    container_name: soup-app
     ports:
-      - "4200:80"  # Expose port 4200 on the host to port 80 in the container (where Nginx is serving)
+      - "4200:80" # Expose port 4200 on the host to port 80 in the container (where Nginx is serving)
     depends_on:
       - flask
     networks:
@@ -13,9 +13,9 @@ services:
   flask:
     build:
       context: ./soup-server
-    container_name: engine
+    container_name: soup-engine
     ports:
-      - "8080:8080"  # Expose Flask API on port 8080
+      - "8080:8080" # Expose Flask API on port 8080
     networks:
       - app-network
     environment:
@@ -25,21 +25,21 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
 
   memgraph:
-    image: memgraph/memgraph-platform 
+    image: memgraph/memgraph-platform
     container_name: soup-database
     ports:
-      - "7687:7687"  # Expose Memgraph Bolt protocol port
-      - "7444:7444"  # Expose Memgraph HTTP protocol port
-      - "3000:3000"  # Expose Memgraph's web interface port
+      - "7687:7687" # Expose Memgraph Bolt protocol port
+      - "7444:7444" # Expose Memgraph HTTP protocol port
+      - "3000:3000" # Expose Memgraph's web interface port
     networks:
       - app-network
     volumes:
       - soup-volume:/soup
 
 volumes:
-  soup-volume:  # Define persistent volume to /soup memgraph folder
+  soup-volume: # Define persistent volume to /soup memgraph folder
     driver: local
-    
+
 networks:
   app-network:
-    driver: bridge  # Use a bridge network for communication between services
+    driver: bridge # Use a bridge network for communication between services

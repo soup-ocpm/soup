@@ -31,6 +31,15 @@ export class SToastComponent implements OnInit {
   // Input the message for Toast
   public message = '';
 
+  // If we want to include the close icon
+  public closeIcon = false;
+
+  // If we want to include the help icon
+  public helpIcon = false;
+
+  // The external link for help icon
+  public externalLink = '';
+
   // If it is success or danger message
   public toastLevel: ToastLevel = ToastLevel.Success;
 
@@ -52,6 +61,9 @@ export class SToastComponent implements OnInit {
       if (toast) {
         this.title = toast.title;
         this.message = toast.message;
+        this.closeIcon = toast.closeIcon;
+        this.helpIcon = toast.helpIcon;
+        this.externalLink = toast.externalLink;
         this.toastLevel = toast.toastLevel;
         this.hideTime = toast.time;
         this.show();
@@ -62,21 +74,37 @@ export class SToastComponent implements OnInit {
   /**
    * Show the toast
    */
-  public show() {
+  public show(): void {
     const toastElement: Element | null = document.querySelector('.toast');
     if (toastElement) {
       toastElement.classList.add('show');
 
-      setTimeout(() => {
-        this.hide();
-      }, this.hideTime);
+      if (!this.closeIcon) {
+        setTimeout(() => {
+          this.hide();
+        }, this.hideTime);
+      }
     }
+  }
+
+  /**
+   * Close the toast with the button
+   */
+  public closeToast(): void {
+    this.hide();
+  }
+
+  /**
+   * Open the external link
+   */
+  public openLink(): void {
+    window.open(this.externalLink, '_blank', 'noopener');
   }
 
   /**
    * Hide the toast
    */
-  public hide() {
+  public hide(): void {
     const toastElement: Element | null = document.querySelector('.toast');
 
     if (toastElement) {

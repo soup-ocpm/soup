@@ -1,7 +1,7 @@
 """
 ------------------------------------------------------------------------
-File : graph_config.py
-Description: Graph configuration functions
+File : support_config.py
+Description: Graph configuration support functions
 Date creation: 00-00-0000
 Project : soup-server
 Author: Sara Pettinari
@@ -16,13 +16,16 @@ import datetime
 
 from Models.memgraph_connector_model import MemgraphConnector
 
+# Context variables
+debug = False
 
-# Get the database connector configuration
-def get_db_connector(debug=True):
+
+def get_db_connector():
     """
     Get the database configuration
     :return: ApiResponse model
     """
+
     if not debug:
         memgraph_host = os.getenv("MEMGRAPH_HOST", "memgraph")
         memgraph_port = int(os.getenv("MEMGRAPH_PORT", 7687))
@@ -37,13 +40,19 @@ def get_db_connector(debug=True):
     return database_connector
 
 
-# Convert string to datetime
 def string_to_datetime(timestamp_str):
+    """
+    Convert a string to datetime
+    """
+
     return datetime.datetime.fromisoformat(timestamp_str)
 
 
-# Convert string or Neo4j datetime to datetime object library
 def neo_datetime_conversion(time):
+    """
+    Convert string or Neo4j datetime to datetime object library
+    """
+
     if isinstance(time, str):
         time = string_to_datetime(time)
 
@@ -56,8 +65,11 @@ def neo_datetime_conversion(time):
         raise ValueError("Timestamp format is not valid")
 
 
-# Serialize datetime
 def serialize_datetime(obj):
+    """
+    Serialize datetime object
+    """
+
     if isinstance(obj, datetime.datetime):
         return obj.isoformat()
     raise TypeError("Type not serializable")
@@ -65,12 +77,19 @@ def serialize_datetime(obj):
 
 # Datetime object to json
 def datetime_to_json(time):
+    """
+    Datetime object to json
+    """
+
     timestamp = neo_datetime_conversion(time)
     return serialize_datetime(timestamp)
 
 
-# Convert memgraph datetime to string
 def memgraph_datetime_to_string(memgraph_datetime):
+    """
+    Convert memgraph datetime to string
+    """
+
     datetime_str = (f"{memgraph_datetime.year:04d}-{memgraph_datetime.month:02d}-{memgraph_datetime.day:02d}T"
                     f"{memgraph_datetime.hour:02d}:{memgraph_datetime.minute:02d}:{memgraph_datetime.second:02d}")
 

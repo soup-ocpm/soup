@@ -16,16 +16,16 @@ import logging
 from flask import Flask, jsonify
 from flask_cors import CORS
 from flask_socketio import SocketIO
-from Controllers.docker_controller import docker_controller_bp
 from Controllers.Graph.graph_controller import graph_controller_bp
-from Controllers.AggregateGraph.class_graph_controller import class_graph_controller_bp
+from Controllers.AggregateGraph.aggregate_graph_controller import aggregate_graph_controller_bp
 from Controllers.generic_graph_controller import generic_graph_controller_bp
-from Controllers.Graph.op_graph_controller import op_graph_controller_bp
-from Controllers.AggregateGraph.op_class_graph_controller import op_class_graph_controller_bp
+from Controllers.Graph.graph_op_controller import graph_op_controller_bp
+from Controllers.AggregateGraph.aggregate_graph_op_controller import aggregate_graph_op_controller_bp
 from Controllers.graph_json_controller import graph_json_controller_bp
 from Controllers.dataset_controller import dataset_controller_bp
 from Controllers.filters_controller import filters_controller_bp
-from Controllers.graph_config import get_db_connector
+from Controllers.onboarding_controller import onboarding_controller_bp
+from Shared.support_config import get_db_connector
 from Models.api_response_model import ApiResponse
 from Models.logger_model import Logger
 
@@ -33,15 +33,15 @@ from Models.logger_model import Logger
 app = Flask(__name__)
 
 # Register the App Blueprint
-app.register_blueprint(docker_controller_bp)
-app.register_blueprint(dataset_controller_bp)
 app.register_blueprint(graph_controller_bp)
-app.register_blueprint(class_graph_controller_bp)
+app.register_blueprint(graph_op_controller_bp)
+app.register_blueprint(aggregate_graph_controller_bp)
+app.register_blueprint(aggregate_graph_op_controller_bp)
 app.register_blueprint(generic_graph_controller_bp)
-app.register_blueprint(op_graph_controller_bp)
-app.register_blueprint(op_class_graph_controller_bp)
 app.register_blueprint(graph_json_controller_bp)
+app.register_blueprint(dataset_controller_bp)
 app.register_blueprint(filters_controller_bp)
+app.register_blueprint(onboarding_controller_bp)
 
 # Init the Socket
 socketio = SocketIO(app, cors_allowed_origins="*")
@@ -70,6 +70,7 @@ def welcome_api():
     Test the connection with the Engine
     :return: ApiResponse model
     """
+
     response = ApiResponse()
     response.http_status_code = 200
     response.message = "Hello user, the Engine work :)"
@@ -83,11 +84,12 @@ def connect_database():
     Test the connection with Memgraph
     :return: ApiResponse model
     """
+
     response = ApiResponse()
 
     try:
         # Engine database setup
-        database_connector = get_db_connector(debug=False)
+        database_connector = get_db_connector()
         database_connector.connect()
 
         # Execute query test
@@ -107,8 +109,6 @@ def connect_database():
         response.message = "Success connect with Memgraph"
         response.response_data = result
         return jsonify(response.to_dict()), 200
-
-    # Catch exception
     except Exception as e:
         response.http_status_code = 500
         response.message = f"Internal Server Error: {e}"

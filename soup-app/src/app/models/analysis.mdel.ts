@@ -4,8 +4,8 @@ import { TimestampFilter } from '../components/filters-components/timestam-filte
 
 /**
  * Analysis model class
- * @version 2.0
- * @since 2.0.0
+ * @version 1.0
+ * @since 1.0.0
  * @author Alessio Giacché
  */
 export class Analysis {

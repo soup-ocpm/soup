@@ -1,3 +1,4 @@
+// eslint-disable-next-line simple-import-sort/imports
 import { Injectable, TemplateRef } from '@angular/core';
 import { Observable, of } from 'rxjs';
 
@@ -7,7 +8,7 @@ import { SidebarConfig } from './sidebar.interface';
 /**
  * Sidebar service
  * @version 1.0
- * @since 2.0.0
+ * @since 1.0.0
  * @author Alessio Giacché
  */
 @Injectable({

@@ -16,6 +16,7 @@ from neo4j import GraphDatabase
 
 # Memgraph Connector model class
 class MemgraphConnector:
+    # Init model
     def __init__(self, uri, auth):
         self._uri = uri
         self._auth = auth
@@ -24,11 +25,6 @@ class MemgraphConnector:
     # Connect function
     def connect(self):
         self._driver = GraphDatabase.driver(self._uri, auth=self._auth)
-
-    # Close connect function
-    def close(self):
-        if self._driver is not None:
-            self._driver.close()
 
     # Run specific query with parameters in Memgraph
     def run_query_memgraph(self, query: object, parameters: dict = None) -> object:
@@ -45,3 +41,8 @@ class MemgraphConnector:
             # Execute the query
             result = session.run(query, parameters, database="memgraph", metrics=True)
             return [record.data() for record in result]
+
+    # Close connect function
+    def close(self):
+        if self._driver is not None:
+            self._driver.close()

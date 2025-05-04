@@ -13,7 +13,7 @@ import { ModalService } from '../modal.service';
 /**
  * Input modal component
  * @version 1.0
- * @since 2.0.0
+ * @since 1.0.0
  * @author Alessio Giacché
  */
 @Component({
@@ -174,7 +174,12 @@ export class InputModalComponent implements OnInit {
     this.datasetService.checkUniqueDataset(this.name).subscribe({
       next: (response) => {
         if (response.statusCode === 202) {
-          this.primaryButtonClick(this.name, this.description, this.saveProcessExecution)
+          const name = this.name;
+          const description = this.description;
+
+          this.name = '';
+          this.description = '';
+          this.primaryButtonClick(name, description, this.saveProcessExecution)
             .then(() => {
               this.isVisible = false;
             })
@@ -202,7 +207,13 @@ export class InputModalComponent implements OnInit {
     this.analysisService.checkUniqueAnalysisName(this.datasetName, this.name).subscribe({
       next: (response) => {
         if (response.statusCode === 202) {
-          this.primaryButtonClick(this.name, this.description, this.saveProcessExecution)
+          const name = this.name;
+          const description = this.description;
+
+          this.name = '';
+          this.description = '';
+
+          this.primaryButtonClick(name, description, this.saveProcessExecution)
             .then(() => {
               this.isVisible = false;
             })

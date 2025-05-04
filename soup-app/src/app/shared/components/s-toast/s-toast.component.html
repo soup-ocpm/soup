@@ -1,3 +1,4 @@
+<!--Main content-->
 <div
   class="toast"
   [ngClass]="{
@@ -6,12 +7,30 @@
     error: this.toastLevel === 3
   }"
   [@toastAnimation]>
+  <!--Title-->
   @if (this.title) {
     <div class="toast-title">
       <strong>{{ title }}</strong>
       <hr class="toast-divider" />
     </div>
   }
+
+  <!--The icon-->
+  <div class="toast-icons">
+    @if (this.helpIcon && this.externalLink != null && this.externalLink !== '') {
+      <i
+        class="bi bi-question-circle"
+        title="Help"
+        (click)="this.openLink()"></i>
+    }
+
+    @if (this.closeIcon) {
+      <i
+        class="bi bi-x-lg"
+        title="Close"
+        (click)="this.closeToast()"></i>
+    }
+  </div>
 
   <span>{{ message }}</span>
 </div>
