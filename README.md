@@ -37,7 +37,11 @@ and other libraries in package.json.
 
 ## Tool Setup - Instructions
 
-The first step is to clone the project. <br> ([Clone a Git repository](https://support.atlassian.com/bitbucket-cloud/docs/clone-a-git-repository/))<br>
+The first step is to clone the project: 
+
+```
+git clone git@bitbucket.org:proslabteam/soup.git
+```
 
 Make sure Git is installed on your computer. If Git is not installed, you will encounter an error message.
 
