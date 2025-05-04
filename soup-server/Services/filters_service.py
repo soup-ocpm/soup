@@ -1,7 +1,7 @@
 """
 ------------------------------------------------------------------------
 File : filters_service.py
-Description: Service for Filters controller
+Description: Service for graph filters
 Date creation: 07-07-2024
 Project : soup-server
 Author: Alessio Giacché
@@ -23,15 +23,17 @@ from Models.file_manager_model import FileManager
 from Models.api_response_model import ApiResponse
 from Models.logger_model import Logger
 from Utils.filter_query_lib import *
+from Utils.aggregate_graph_query_lib import delete_class_graph_query
 from Utils.graph_query_lib import get_limit_standard_graph_query, delete_event_graph_query, delete_entity_graph_query
 
 # Engine logger setup
 logger = Logger()
 
 
-# The service for docker controller
+# The Service for graph filters
 class FiltersService:
 
+    # Process new analysis (list of filters)
     @staticmethod
     def process_new_analyses_s(database_connector, filters_data):
         response = ApiResponse()
@@ -42,10 +44,10 @@ class FiltersService:
 
             if container_id is None or container_id == '':
                 response.http_status_code = 400
-                response.message = 'Container not found'
+                response.message = 'SOuP Database is offline or does not exist'
                 response.response_data = []
 
-                logger.error('Container not found')
+                logger.error('SOuP Database is offline or does not exist')
                 return jsonify(response.to_dict()), 400
 
             # 1. Process the csv file on Docker Container
@@ -71,6 +73,7 @@ class FiltersService:
             logger.error(f'Internal Server Error: {str(e)}')
             return jsonify(response.to_dict()), 500
 
+    # Process specific analysis
     @staticmethod
     def process_analyses_s(database_connector, dataset_name, analyses_name):
         response = ApiResponse()
@@ -81,10 +84,10 @@ class FiltersService:
 
             if container_id is None or container_id == '':
                 response.http_status_code = 500
-                response.message = 'Container not found'
+                response.message = 'SOuP Database is offline or does not exist'
                 response.response_data = []
 
-                logger.error('Container not found')
+                logger.error('SOuP Database is offline or does not exist')
                 return jsonify(response.to_dict()), 500
 
             # 1. Process the analysis
@@ -149,6 +152,7 @@ class FiltersService:
             logger.error(f'Internal Server Error: {str(e)}')
             return jsonify(response.to_dict()), 500
 
+    # Get all dataset analysis
     @staticmethod
     def get_all_analyses_s(dataset_name):
         response = ApiResponse()
@@ -159,10 +163,10 @@ class FiltersService:
 
             if container_id is None or container_id == '':
                 response.http_status_code = 400
-                response.message = 'Container not found'
+                response.message = 'SOuP Database is offline or does not exist'
                 response.response_data = None
 
-                logger.error('Container not found')
+                logger.error('SOuP Database is offline or does not exist')
                 return jsonify(response.to_dict()), 400
 
             # 1. Get all analyses
@@ -215,6 +219,7 @@ class FiltersService:
             logger.error(f'Internal Server Error: {str(e)}')
             return jsonify(response.to_dict()), 500
 
+    # Check unique analysis name
     @staticmethod
     def check_unique_analysis_name(dataset_name, analysis_name):
         response = ApiResponse()
@@ -225,10 +230,10 @@ class FiltersService:
 
             if container_id is None or container_id == '':
                 response.http_status_code = 400
-                response.message = 'Container not found'
+                response.message = 'SOuP Database is offline or does not exist'
                 response.response_data = None
 
-                logger.error('Container not found')
+                logger.error('SOuP Database is offline or does not exist')
                 return jsonify(response.to_dict()), 400
 
             full_analysis_name = f'{analysis_name}.json'
@@ -259,6 +264,7 @@ class FiltersService:
             logger.error(f'Internal Server Error: {str(e)}')
             return jsonify(response.to_dict()), 500
 
+    # Process frequency filter
     @staticmethod
     def process_frequency(database_connector, frequency):
         response = ApiResponse()
@@ -307,6 +313,7 @@ class FiltersService:
         finally:
             database_connector.close()
 
+    # Process variation filter
     @staticmethod
     def process_variation(database_connector):
         response = ApiResponse()
@@ -361,6 +368,7 @@ class FiltersService:
         finally:
             database_connector.close()
 
+    # Delete analysis
     @staticmethod
     def delete_analyses_s(dataset_name, analyses_name):
         response = ApiResponse()
@@ -371,10 +379,10 @@ class FiltersService:
 
             if container_id is None or container_id == '':
                 response.http_status_code = 400
-                response.message = 'Container not found'
+                response.message = 'SOuP Database is offline or does not exist'
                 response.response_data = None
 
-                logger.error('Container not found')
+                logger.error('SOuP Database is offline or does not exist')
                 return jsonify(response.to_dict()), 400
 
             # 1. Delete the folder
@@ -481,6 +489,10 @@ def process_analysis(container_id, database_connector, dataset_name, analysis_na
 
         # 5. Connect to the Database and Run queries
         database_connector.connect()
+
+        # 5.0 Remove the class graph
+        query = delete_class_graph_query()
+        database_connector.run_query_memgraph(query)
 
         # 5.1 Timestamp filter queries
         for current_timestamp_filter in timestamp_filters:

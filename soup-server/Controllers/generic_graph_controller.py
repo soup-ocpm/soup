@@ -12,17 +12,17 @@ License : MIT
 
 # Import
 from flask import Blueprint, request, jsonify
-from Controllers.graph_config import get_db_connector
-from Services.generic_graph_service import GenericGraphService
 from Services.docker_service import DockerService
+from Services.generic_graph_service import GenericGraphService
 from Models.api_response_model import ApiResponse
 from Models.logger_model import Logger
+from Shared.support_config import get_db_connector
 
 # Init the bp
 generic_graph_controller_bp = Blueprint('generic_graph_controller_bp', __name__)
 
 # Engine database setup
-database_connector = get_db_connector(debug=False)
+database_connector = get_db_connector()
 
 # Engine logger setup
 logger = Logger()
@@ -34,22 +34,26 @@ def create_dataset_graphs():
     Create dataset graphs
     :return: ApiResponse model
     """
-    data = request.get_json()
-    dataset_name = data.get('dataset_name')
 
     response = ApiResponse()
 
     try:
+        # Retrieve data from request
+        data = request.get_json()
+        dataset_name = data.get('dataset_name')
+
+        # Retrieve docker container
         container_id = DockerService.get_container_id_s('soup-database')
 
         if not container_id or container_id == '':
             response.http_status_code = 404
             response.response_data = None
-            response.message = 'Container not found'
+            response.message = 'SOuP Database is offline or does not exist.'
 
-            logger.error("Container not found")
+            logger.error("SOuP Database is offline or does not exist.")
             return jsonify(response.to_dict()), 404
 
+        # Execute service
         result = GenericGraphService.create_complete_graphs_s(container_id, database_connector, dataset_name)
 
         if result != 'success':
@@ -82,12 +86,49 @@ def get_complete_graph():
     Retrieve complete graph
     :return: ApiResponse model
     """
-    data = request.get_json()
-    standard_graph = data.get('standard_graph')
 
-    limit = request.args.get('limit', type=int)
+    response = ApiResponse()
 
-    return GenericGraphService.get_graph_s(database_connector, standard_graph, limit)
+    try:
+        # Retrieve data from request
+        data = request.get_json()
+        standard_graph = data.get('standard_graph')
+        limit = request.args.get('limit', type=int)
+
+        # Execute service
+        return GenericGraphService.get_graph_s(database_connector, standard_graph, limit)
+    except Exception as e:
+        response.http_status_code = 500
+        response.response_data = None
+        response.message = f'Internal Server Error : {str(e)}'
+
+        logger.error(f"Internal Server Error : {str(e)}")
+        return jsonify(response.to_dict()), 500
+
+
+@generic_graph_controller_bp.route('/api/v2/complete-graph/max-data', methods=['POST'])
+def get_max_data_graph():
+    """
+    Retrieve the max data to show on the graph
+    :return: ApiResponse model
+    """
+
+    response = ApiResponse()
+
+    try:
+        # Retrieve data from request
+        data = request.get_json()
+        standard_graph = data.get('standard_graph')
+
+        # Execute service
+        return GenericGraphService.get_max_data_to_show(database_connector, standard_graph)
+    except Exception as e:
+        response.http_status_code = 500
+        response.response_data = None
+        response.message = f'Internal Server Error : {str(e)}'
+
+        logger.error(f"Internal Server Error : {str(e)}")
+        return jsonify(response.to_dict()), 500
 
 
 @generic_graph_controller_bp.route('/api/v2/complete-graph', methods=['DELETE'])
@@ -96,4 +137,16 @@ def remove_memgraph_data():
     Remove memory data inside the Memgraph database
     :return: ApiResponse model
     """
-    return GenericGraphService.delete_memgraph_graph_s(database_connector)
+
+    response = ApiResponse()
+
+    try:
+        # Execute service
+        return GenericGraphService.delete_memgraph_graph_s(database_connector)
+    except Exception as e:
+        response.http_status_code = 500
+        response.response_data = None
+        response.message = f'Internal Server Error : {str(e)}'
+
+        logger.error(f"Internal Server Error : {str(e)}")
+        return jsonify(response.to_dict()), 500

@@ -21,7 +21,7 @@ from pathlib import Path
 from typing import Optional
 
 
-# Docker File Manager model class (csv file, json and other)
+# Docker File Manager model class
 class DockerFileManager:
 
     @staticmethod
@@ -36,6 +36,7 @@ class DockerFileManager:
         :param is_svg: if the file is svg file
         :return: success or error message with content
         """
+
         # 1. Check the file
         temp_path = Path(file_path)
         if not temp_path.exists():
@@ -93,6 +94,7 @@ class DockerFileManager:
         :param analysis_name: the analysis name
         :return: success or error message with content
         """
+
         try:
             # 1. Check if the file exists
             analysis_file = Path(file_path)
@@ -142,6 +144,7 @@ class DockerFileManager:
         :param analyses_name: the analysis name
         :return: the content or an error
         """
+
         # 0. Create the path
         if analyses_name:
             json_file_path = f'/soup/{dataset_name}/Analyses/{analyses_name}'
@@ -182,6 +185,7 @@ class DockerFileManager:
         :param container_csv_path: the path for the file or folder to remove
         :return: success or error message
         """
+
         client = docker.from_env()
         container = client.containers.get(container_id)
 
@@ -201,6 +205,7 @@ class DockerFileManager:
         :param dataset_name: the dataset name
         :return: the content or an error
         """
+
         # Folder path
         dataset_folder_path = f'/soup/{dataset_name}/'
 
@@ -249,6 +254,7 @@ class DockerFileManager:
         :param dataset_name: the dataset name
         :return: the content or an error
         """
+
         try:
             client = docker.from_env()
             container = client.containers.get(container_id)
@@ -275,6 +281,7 @@ class DockerFileManager:
         :param directory: the directory path
         :return: content or an error
         """
+
         try:
             client = docker.from_env()
             container = client.containers.get(container_id)
@@ -297,6 +304,7 @@ class DockerFileManager:
         :param file_name: the file name
         :return: the content if exists
         """
+
         result = container.exec_run(['find', folder_path, '-name', file_name])
         if result.exit_code == 0:
             file_path = result.output.decode('utf-8').strip()
@@ -311,6 +319,7 @@ class DockerFileManager:
         :param backup_name: the name of the backup file
         :return: success or error message
         """
+
         try:
             client = docker.from_env()
             container = client.containers.get(container_id)

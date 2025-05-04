@@ -21,6 +21,7 @@ class Logger:
     # Singleton instance
     _instance = None
 
+    # Initialize a new instance of Logger
     def __new__(cls, log_level="INFO"):
         """
         Create new instance if not exists
@@ -31,6 +32,7 @@ class Logger:
             cls._instance._init_logger(log_level)
         return cls._instance
 
+    # Init the logger
     def _init_logger(self, log_level):
         """
         Initialize the instance
