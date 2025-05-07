@@ -1892,8 +1892,8 @@ export class DetailsDatasetComponent implements OnInit, AfterViewInit {
           // Is the first time, so we need to show the modal
           if (firstTime) {
             this.modalService.showGenericModal(
-              'Welcome to SOuP!',
-              `Thanks for using SOuP. We're happy to have you on board! 🎉
+              'Welcome to SOUP!',
+              `Thanks for using SOUP. We're happy to have you on board! 🎉
 
               If you’d like to share your thoughts, you can leave feedback using the button at the top right of the Home Page.`,
               false,

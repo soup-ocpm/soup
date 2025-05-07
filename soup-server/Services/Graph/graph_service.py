@@ -46,10 +46,10 @@ class GraphService:
 
             if container_id is None or container_id == '':
                 response.http_status_code = 400
-                response.message = 'SOuP Database is offline or does not exist'
+                response.message = 'SOUP Database is offline or does not exist'
                 response.response_data = []
 
-                logger.error('SOuP Database is offline or does not exist')
+                logger.error('SOUP Database is offline or does not exist')
                 return jsonify(response.to_dict()), 400
 
             # 1. Process the csv file on Docker Container

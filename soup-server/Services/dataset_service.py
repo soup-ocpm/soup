@@ -39,10 +39,10 @@ class DatasetService:
 
             if container_id is None or container_id == '':
                 response.http_status_code = 400
-                response.message = 'SOuP Database is offline or does not exist'
+                response.message = 'SOUP Database is offline or does not exist'
                 response.response_data = None
 
-                logger.error('SOuP Database is offline or does not exist')
+                logger.error('SOUP Database is offline or does not exist')
                 return jsonify(response.to_dict()), 400
 
             result, exec_config_file = DockerFileManager.read_json_file_from_container(container_id, dataset_name)
@@ -91,10 +91,10 @@ class DatasetService:
 
             if container_id is None or container_id == '':
                 response.http_status_code = 400
-                response.message = 'SOuP Database is offline or does not exist'
+                response.message = 'SOUP Database is offline or does not exist'
                 response.response_data = None
 
-                logger.error('SOuP Database is offline or does not exist')
+                logger.error('SOUP Database is offline or does not exist')
                 return jsonify(response.to_dict()), 400
 
             # 1. Get all datasets folder name
@@ -164,10 +164,10 @@ class DatasetService:
 
             if container_id is None or container_id == '':
                 response.http_status_code = 400
-                response.message = 'SOuP Database is offline or does not exist'
+                response.message = 'SOUP Database is offline or does not exist'
                 response.response_data = None
 
-                logger.error('SOuP Database is offline or does not exist')
+                logger.error('SOUP Database is offline or does not exist')
                 return jsonify(response.to_dict()), 400
 
             result, exec_config_file = DockerFileManager.read_json_file_from_container(container_id, dataset_name)
@@ -238,10 +238,10 @@ class DatasetService:
 
             if container_id is None or container_id == '':
                 response.http_status_code = 400
-                response.message = 'SOuP Database is offline or does not exist'
+                response.message = 'SOUP Database is offline or does not exist'
                 response.response_data = None
 
-                logger.error('SOuP Database is offline or does not exist')
+                logger.error('SOUP Database is offline or does not exist')
                 return jsonify(response.to_dict()), 400
 
             # 1. Delete the folder
@@ -292,10 +292,10 @@ class DatasetService:
 
             if container_id is None or container_id == '':
                 response.http_status_code = 400
-                response.message = 'SOuP Database is offline or does not exist'
+                response.message = 'SOUP Database is offline or does not exist'
                 response.response_data = None
 
-                logger.error('SOuP Database is offline or does not exist')
+                logger.error('SOUP Database is offline or does not exist')
                 return jsonify(response.to_dict()), 400
 
             result, container_folders = DockerFileManager.get_folder_files(container_id, '/soup')

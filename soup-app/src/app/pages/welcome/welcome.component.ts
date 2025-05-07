@@ -23,7 +23,7 @@ export class WelcomeComponent {
   constructor() {}
 
   /**
-   * Go to the documentation SOuP page
+   * Go to the documentation SOUP page
    */
   public onGoDocumentation(): void {
     window.open(environment.prosLabUrl, '_blank');

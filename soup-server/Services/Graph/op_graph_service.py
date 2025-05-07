@@ -558,9 +558,9 @@ class OperationGraphService:
         if not container_id or container_id == '':
             response.http_status_code = 404
             response.response_data = None
-            response.message = 'SOuP Database is offline or does not exist'
+            response.message = 'SOUP Database is offline or does not exist'
 
-            logger.error('SOuP Database is offline or does not exist')
+            logger.error('SOUP Database is offline or does not exist')
             return jsonify(response.to_dict()), 404
 
         # Create svg

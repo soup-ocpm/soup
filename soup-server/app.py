@@ -52,7 +52,7 @@ app.config['socketio'] = socketio
 # Add application CORS
 CORS(app)
 
-# Configure SOuP Docker folder and volume
+# Configure SOUP Docker folder and volume
 docker_soup_path = '/soup'
 
 # View only default error log

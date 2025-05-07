@@ -57,11 +57,11 @@ export class EngineAuthGuard implements CanActivate, CanActivateChild {
           this.engineService.setEngineConnection(true);
           return true;
         } else {
-          this.logger.warn('SOuP Engine down');
+          this.logger.warn('SOUP Engine down');
           this.engineService.setEngineConnection(false);
           this.toast.showWithTitle(
             'Engine Off',
-            'The Engine is down. Please start the SOuP Engine',
+            'The Engine is down. Please start the SOUP Engine',
             false,
             true,
             environment.prosLabUrl,
@@ -73,11 +73,11 @@ export class EngineAuthGuard implements CanActivate, CanActivateChild {
         }
       }),
       catchError(() => {
-        this.logger.warn('SOuP Engine down');
+        this.logger.warn('SOUP Engine down');
         this.engineService.setEngineConnection(false);
         this.toast.showWithTitle(
           'Engine Off',
-          'The Engine is down. Please start the SOuP Engine',
+          'The Engine is down. Please start the SOUP Engine',
           false,
           true,
           environment.prosLabUrl,

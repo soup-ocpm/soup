@@ -53,16 +53,16 @@ export class MemgraphAuthGuard implements CanActivate, CanActivateChild {
     return this.engineService.testMemgraphConnection().pipe(
       map((response) => {
         if (response.statusCode === 200) {
-          this.logger.info('Success connect with SOuP database...');
+          this.logger.info('Success connect with SOUP database...');
           this.engineService.setMemgraphConnection(true);
           return true;
         } else {
-          this.logger.warn('SOuP Database is offline or does not exist');
+          this.logger.warn('SOUP Database is offline or does not exist');
           this.engineService.setMemgraphConnection(false);
 
           this.toast.showWithTitle(
             'Database offline',
-            'SOuP Database is offline or does not exist',
+            'SOUP Database is offline or does not exist',
             false,
             true,
             environment.prosLabUrl,
@@ -74,11 +74,11 @@ export class MemgraphAuthGuard implements CanActivate, CanActivateChild {
         }
       }),
       catchError(() => {
-        this.logger.warn('SOuP Database is offline or does not exist');
+        this.logger.warn('SOUP Database is offline or does not exist');
         this.engineService.setMemgraphConnection(false);
         this.toast.showWithTitle(
           'Database offline',
-          'SOuP Database is offline or does not exist',
+          'SOUP Database is offline or does not exist',
           false,
           true,
           environment.prosLabUrl,

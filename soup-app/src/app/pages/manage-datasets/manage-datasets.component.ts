@@ -509,7 +509,7 @@ export class ManageDatasetsComponent implements OnInit, AfterViewChecked {
   }
 
   /**
-   * Go to Help SOuP page
+   * Go to Help SOUP page
    */
   public handleGoHelp() {
     window.open(environment.prosLabUrl, '_blank');
