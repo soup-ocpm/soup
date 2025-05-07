@@ -174,3 +174,125 @@ def clean_timestamp(timestamp):
         return timestamp.split("+")[0].split("-")[0]
 
     return timestamp
+
+
+
+
+########################## NEW FILTERS ##########################
+
+######## PERFORMANCE FILTERS ########
+def generic_trace_duration_query(ent_type):
+    return (f'''
+                MATCH (e:Event)-[:CORR]->(t:Entity {{Type: "{ent_type}"}})
+                WITH e, t.Value AS entity ORDER BY e.Timestamp ASC
+                WITH entity, COLLECT(e) AS events
+                WITH entity, HEAD(events) AS StartNode, LAST(events) AS EndNode
+                WITH entity, (EndNode.Timestamp - StartNode.Timestamp) AS duration
+                ''')
+    
+def get_entity_trace_duration(ent_type):
+    """
+    Calculate the duration of the trace for a specific entity type
+    :param ent_type: the entity type
+    :return: the cypher query
+    :query_returns: the entity and the duration (only in HH:M:SS format)
+    """
+    query = generic_trace_duration_query(ent_type)
+    return query + ('''\n
+            RETURN entity AS entity_id, duration AS iso_duration
+            ''')
+    
+def filter_entity_performance(ent_type, operator, duration):
+    """
+    Filter the trace for a specific entity type
+    :param ent_type: the entity type
+    :param operator: >, <, >=, <=, =, !=
+    :param duration: the duration
+    :return: the cypher query and a filtered EKG
+    """
+    query = generic_trace_duration_query(ent_type)
+    return query + (f'''\n
+            WHERE duration {operator} duration("{duration}")
+            WITH actor
+            MATCH (e:Event)-[:CORR]->(t:Entity  {{Type: "{ent_type}", Value: actor}})
+            DETACH DELETE e
+            ''')
+    
+
+######## FREQUENCY FILTERS ########
+
+def get_activity_frequency_query(ent_type):
+    """
+    Get the activity frequency query
+    :param ent_type: the entity type
+    :return: the cypher query
+    :query_returns: the activity and the frequency
+    """
+    return (f'''
+            MATCH (e:Event)-[:CORR]->(t:Entity {{Type: "{ent_type}"}})
+            RETURN e.ActivityName AS Activity, count(*) AS Occurrences
+            ORDER BY Occurrences DESC
+            ''')
+    
+def filter_activity_frequency(ent_type, operator, frequency):
+    """
+    Filter the activity frequency
+    :param ent_type: the entity type
+    :param operator: >, <, >=, <=, =, !=
+    :param frequency: the frequency
+    :return: the cypher query and a filtered EKG
+    """
+    return (f'''
+            MATCH (e:Event)-[:CORR]->(t:Entity {{Type: "{ent_type}"}})
+            WITH e.ActivityName AS Activity, count(*) AS Occurrences
+            WHERE Occurrences {operator} {frequency}
+            UNWIND Events AS e
+            // Find predecessors and successors of the event in the DF chain
+            OPTIONAL MATCH (prev)-[df1:DF]->(e)-[df2:DF]->(next)
+            // Create a new connection from the predecessor to the successor if both exist
+            FOREACH (_ IN CASE WHEN prev IS NOT NULL AND next IS NOT NULL THEN [1] ELSE [] END | 
+                MERGE (prev)-[:DF]->(next)
+            )
+            // Delete the original event and its DF relationships
+            DETACH DELETE e
+            ''')
+    
+    
+######## VARIANT FILTERS ########
+
+def get_variant_query(ent_type):
+    """
+    Get the variant query
+    :param ent_type: the entity type
+    :return: the cypher query
+    :query_returns: the activity and the frequency
+    """
+    return (f'''
+            MATCH (e:Event)-[:CORR]->(t:Entity {{Type: "{ent_type}"}})
+            WITH e, t.Value AS entity 
+            ORDER BY e.Timestamp ASC
+            WITH entity, COLLECT(e.ActivityName) AS events
+            WITH events, COUNT(*) AS event_count
+            RETURN events, event_count
+            ORDER BY event_count DESC
+            ''')
+    
+def filter_entity_variant(ent_type, operator, variant):
+    """
+    Filter the entity variant
+    :param ent_type: the entity type
+    :param operator: >, <, >=, <=, =, !=
+    :param variant: the variant expressed as a number of trace occurrences
+    """
+    return (f'''    
+            MATCH (e:Event)-[:CORR]->(t:Entity {{Type: {ent_type}}})
+            WITH e, t AS entity
+            ORDER BY e.Timestamp ASC
+            WITH entity, COLLECT(e.ActivityName) AS events
+            WITH events, COUNT(*) AS event_count, COLLECT(entity) AS entities
+            WHERE event_count {operator} {variant}  
+            MATCH (e2:Event)-[:CORR]->(t2:Entity {{Type: {ent_type}}})
+            WHERE t2 IN entities
+            DETACH DELETE e2
+            '''
+            )
