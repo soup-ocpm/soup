@@ -198,8 +198,6 @@ class GenericGraphService:
         response = ApiResponse()
 
         try:
-            database_connector.connect()
-
             if standard_graph == "1":
                 if not limit:
                     query_result = get_complete_standard_graph_query()
@@ -211,6 +209,8 @@ class GenericGraphService:
                 else:
                     query_result = get_limit_class_graph_query(limit)
 
+            # Open connection and run query
+            database_connector.connect()
             result = database_connector.run_query_memgraph(query_result)
 
             if len(result) == 0:

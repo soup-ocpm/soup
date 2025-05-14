@@ -215,6 +215,78 @@ def process_variation_filter():
         return jsonify(response.to_dict()), 500
 
 
+@filters_controller_bp.route('/api/v2/analyses/performance/avg', methods=['GET'])
+def get_performance_entity_avg_duration():
+    """
+    Retrieve the avg entity type for the performance filter
+    :return: ApiResponse model
+    """
+
+    response = ApiResponse()
+
+    try:
+        # Retrieve data from request
+        entity_type = request.args.get('entity', type=str)
+
+        # Execute service
+        return FiltersService.get_performance_entities_avg(database_connector, entity_type)
+    except Exception as e:
+        response.http_status_code = 500
+        response.response_data = None
+        response.message = f'Internal Server Error : {str(e)}'
+
+        logger.error(f'Internal Server Error : {str(e)}')
+        return jsonify(response.to_dict()), 500
+
+
+@filters_controller_bp.route('/api/v2/analyses/frequency/occurrences', methods=['GET'])
+def get_frequency_entity_occurrences():
+    """
+    Retrieve the entity activities occurrences
+    :return: ApiResponse model
+    """
+
+    response = ApiResponse()
+
+    try:
+        # Retrieve data from request
+        entity_type = request.args.get('entity', type=str)
+
+        # Execute service
+        return FiltersService.get_frequency_entities_activities_occurrences(database_connector, entity_type)
+    except Exception as e:
+        response.http_status_code = 500
+        response.response_data = None
+        response.message = f'Internal Server Error : {str(e)}'
+
+        logger.error(f'Internal Server Error : {str(e)}')
+        return jsonify(response.to_dict()), 500
+
+
+@filters_controller_bp.route('/api/v2/analyses/variation/occurrences', methods=['GET'])
+def get_variation_entity_occurrences():
+    """
+    Retrieve the variation entity list
+    :return: ApiResponse model
+    """
+
+    response = ApiResponse()
+
+    try:
+        # Retrieve data from request
+        entity_type = request.args.get('entity', type=str)
+
+        # Execute service
+        return FiltersService.get_variation_entities_occurrences(database_connector, entity_type)
+    except Exception as e:
+        response.http_status_code = 500
+        response.response_data = None
+        response.message = f'Internal Server Error : {str(e)}'
+
+        logger.error(f'Internal Server Error : {str(e)}')
+        return jsonify(response.to_dict()), 500
+
+
 @filters_controller_bp.route('/api/v2/analyses/delete', methods=['POST'])
 def remove_analyses():
     """

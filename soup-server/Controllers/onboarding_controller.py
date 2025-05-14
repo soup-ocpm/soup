@@ -12,10 +12,10 @@ License : MIT
 
 # Import
 from flask import Blueprint, jsonify
+from Shared.support_config import get_db_connector
 from Services.onboarding_service import OnBoardingService
 from Models.api_response_model import ApiResponse
 from Models.logger_model import Logger
-from Shared.support_config import get_db_connector
 
 # Init the bp
 onboarding_controller_bp = Blueprint('onboarding_controller_bp', __name__)

@@ -96,13 +96,17 @@ class OperationGraphService:
 
     # Get entity nodes
     @staticmethod
-    def get_entity_nodes_s(database_connector):
+    def get_entity_nodes_s(database_connector, distinct):
         response = ApiResponse()
 
         try:
             database_connector.connect()
 
             query = get_nodes_entity_query()
+
+            if distinct == 'true':
+                query = get_nodes_entity_query_distinct()
+
             result = database_connector.run_query_memgraph(query)
 
             if not isinstance(result, Iterable):
@@ -644,6 +648,7 @@ def reconstruct_datetime(timestamp):
     """
     Reconstruct the datetime components from a numerical timestamp.
     """
+
     # Extract the components
     year = timestamp // 10000000000
     month = (timestamp % 10000000000) // 100000000

@@ -47,6 +47,7 @@ def load_entity_node_query(container_csv_path):
     return (f"LOAD CSV FROM '{container_csv_path}' WITH HEADER AS row "
             f"MERGE (e:Entity {{Value: row.value, Type: row.type}})")
 
+
 def create_event_index():
     """
     Create activity index for event nodes
@@ -55,7 +56,8 @@ def create_event_index():
     return """
         CREATE INDEX ON :Event(ActivityName);
     """
-    
+
+
 def create_event_index_time():
     """
     Create time index for event nodes
@@ -64,7 +66,8 @@ def create_event_index_time():
     return """
         CREATE INDEX ON :Event(Timestamp);
     """
-    
+
+
 def create_event_index_id():
     """
     Create id index for event nodes
@@ -73,6 +76,7 @@ def create_event_index_id():
     return """
         CREATE INDEX ON :Event(Event_Id);
     """
+
 
 def create_entity_index():
     """
@@ -143,6 +147,19 @@ def get_nodes_entity_query():
     :return: the query
     """
     return " MATCH (e:Entity) RETURN e AS node"
+
+
+def get_nodes_entity_query_distinct():
+    """
+    Get distinct entity nodes
+    :return: the query
+    """
+
+    return """
+            MATCH (e:Entity)
+            WITH e.Type AS type, collect(e)[0] AS node
+            RETURN type, node
+            """
 
 
 def get_count_nodes_entity_query():

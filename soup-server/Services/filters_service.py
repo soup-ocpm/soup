@@ -14,6 +14,7 @@ License : MIT
 import json
 
 from collections.abc import *
+from datetime import timedelta
 from flask import jsonify
 from Services.docker_service import DockerService
 from Services.support_service import SupportService
@@ -277,12 +278,12 @@ class FiltersService:
             result = database_connector.run_query_memgraph(query)
 
             if len(result) == 0 or not isinstance(result, Iterable):
-                response.http_status_code = 204
+                response.http_status_code = 200
                 response.response_data = None
                 response.message = f"No content for {frequency} frequency"
 
                 logger.error(f'No content for {frequency} frequency')
-                return jsonify(response.to_dict()), 404
+                return jsonify(response.to_dict()), 200
 
             # Process the result and structure the data
             data = []
@@ -365,6 +366,173 @@ class FiltersService:
             logger.error(f"Internal Server Error : {str(e)}")
             return jsonify(response.to_dict()), 500
 
+        finally:
+            database_connector.close()
+
+    # Get entities avg for performance filter
+    @staticmethod
+    def get_performance_entities_avg(database_connector, entity_type):
+        response = ApiResponse()
+
+        try:
+            database_connector.connect()
+
+            # Execute the query
+            query = get_entity_trace_duration(entity_type)
+            result = database_connector.run_query_memgraph(query)
+
+            if not isinstance(result, Iterable) or not result:
+                response.http_status_code = 202
+                response.response_data = None
+                response.message = "No duration found for this entity type"
+
+                logger.error('No duration found for this entity type')
+                return jsonify(response.to_dict()), 404
+
+            # Calculate the avg
+            durations_in_seconds = []
+
+            for row in result:
+                duration = row.get('iso_duration')
+                if duration:
+                    total_seconds = (
+                            duration.months * 30 * 24 * 3600 +
+                            duration.days * 24 * 3600 +
+                            duration.seconds +
+                            duration.nanoseconds / 1_000_000_000
+                    )
+                    durations_in_seconds.append(total_seconds)
+
+            if not durations_in_seconds:
+                response.http_status_code = 202
+                response.response_data = None
+                response.message = "No valid durations found"
+                return jsonify(response.to_dict()), 404
+
+            average_seconds = sum(durations_in_seconds) / len(durations_in_seconds)
+
+            # To HH:MM:SS
+            avg_duration_hms = str(timedelta(seconds=int(average_seconds)))
+
+            response.http_status_code = 200
+            response.response_data = {
+                "average_seconds": round(average_seconds, 2),
+                "formatted": avg_duration_hms
+            }
+
+            response.message = "Successfully retrieved the average duration."
+
+            logger.info('Average duration calculated successfully')
+            return jsonify(response.to_dict()), 200
+
+        except Exception as e:
+            logger.exception('Error while calculating average duration')
+            response.http_status_code = 500
+            response.message = str(e)
+            return jsonify(response.to_dict()), 500
+        finally:
+            database_connector.close()
+
+    # Get entity activities occurrences for frequency filter
+    @staticmethod
+    def get_frequency_entities_activities_occurrences(database_connector, entity_type):
+        response = ApiResponse()
+
+        try:
+            database_connector.connect()
+
+            # Execute the query
+            query = get_activity_frequency_query(entity_type)
+            result = database_connector.run_query_memgraph(query)
+
+            if not isinstance(result, Iterable) or not result:
+                response.http_status_code = 202
+                response.response_data = None
+                response.message = "No activity occurrences found for this entity type"
+
+                logger.error('No activity occurrences found for this entity type')
+                return jsonify(response.to_dict()), 404
+
+            # Filter the data
+            activity_data = []
+            for row in result:
+                activity = row.get('Activity')
+                count = row.get('Occurrences')
+                if activity is not None and count is not None:
+                    activity_data.append({
+                        "activity": activity,
+                        "occurrences": count
+                    })
+
+            if not activity_data:
+                response.http_status_code = 202
+                response.response_data = None
+                response.message = "No valid activity data found"
+                return jsonify(response.to_dict()), 404
+
+            response.http_status_code = 200
+            response.response_data = activity_data
+            response.message = "Successfully retrieved activity frequencies."
+
+            logger.info('Activity frequency data retrieved successfully')
+            return jsonify(response.to_dict()), 200
+
+        except Exception as e:
+            logger.exception('Error while retrieving activity frequency data')
+            response.http_status_code = 500
+            response.message = str(e)
+            return jsonify(response.to_dict()), 500
+        finally:
+            database_connector.close()
+
+    # Get entity occurrences for variant filter
+    @staticmethod
+    def get_variation_entities_occurrences(database_connector, entity_type):
+        response = ApiResponse()
+
+        try:
+            database_connector.connect()
+
+            # Execute the query
+            query = get_variant_query(entity_type)
+            result = database_connector.run_query_memgraph(query)
+
+            if not isinstance(result, Iterable) or not result:
+                response.http_status_code = 202
+                response.response_data = None
+                response.message = "No event variants found for this entity type"
+
+                logger.error('No event variants found for this entity type')
+                return jsonify(response.to_dict()), 404
+
+            variants = []
+            for row in result:
+                events = row.get('events')
+                count = row.get('event_count')
+                if isinstance(events, list) and count is not None:
+                    variants.append({
+                        "variant": events,
+                        "occurrences": count
+                    })
+
+            if not variants:
+                response.http_status_code = 202
+                response.response_data = None
+                response.message = "No valid variant data found"
+                return jsonify(response.to_dict()), 404
+
+            response.http_status_code = 200
+            response.response_data = variants
+            response.message = "Successfully retrieved event variants."
+
+            logger.info('Event variants retrieved successfully')
+            return jsonify(response.to_dict()), 200
+
+        except Exception as e:
+            logger.exception('Error while retrieving event variants')
+            response.http_status_code = 500
+            response.message = str(e)
+            return jsonify(response.to_dict()), 500
         finally:
             database_connector.close()
 
@@ -483,6 +651,8 @@ def process_analysis(container_id, database_connector, dataset_name, analysis_na
         performance_filters = analysis_data['performance']
         include_filters = analysis_data['includeActivities']
         exclude_filters = analysis_data['excludeActivities']
+        frequence_filters = analysis_data['frequence']
+        variant_filters = analysis_data['variant']
 
         # 4. Save the current data from Memgraph
         node_counter, relationships_counter = get_node_and_relationship_count(database_connector)
@@ -505,20 +675,19 @@ def process_analysis(container_id, database_connector, dataset_name, analysis_na
                 database_connector.run_query_memgraph(query)
 
             except Exception as e:
-                logger.error(f'Timestmap Internal Server Error: {str(e)}')
+                logger.error(f'Timestamp Internal Server Error: {str(e)}')
                 return f'error {e}', []
 
         # 5.2 Performance filter queries
         for current_performance_filter in performance_filters:
-            start_activity = current_performance_filter['startActivity']
-            end_activity = current_performance_filter['endActivity']
+            entity = current_performance_filter['entity']
+            operator = current_performance_filter['operator']
             seconds = current_performance_filter['seconds']
-            query = performance_filter_delete_query(start_activity, end_activity, seconds)
+            query = filter_entity_performance(entity, operator, seconds)
 
             try:
                 # Execute the query
                 database_connector.run_query_memgraph(query)
-
             except Exception as e:
                 logger.error(f'Performance Internal Server Error: {str(e)}')
                 return f'error {e}', []
@@ -549,6 +718,34 @@ def process_analysis(container_id, database_connector, dataset_name, analysis_na
                 logger.error(f'Exclude Activities Internal Server Error: {str(e)}')
                 return f'error {e}', []
 
+        # 5.5 Frequency filter queries
+        for current_frequency_filter in frequence_filters:
+            entity = current_frequency_filter['entity']
+            operator = current_frequency_filter['operator']
+            frequency = current_frequency_filter['frequency']
+            query = filter_activity_frequency(entity, operator, frequency)
+
+            try:
+                # Execute the query
+                database_connector.run_query_memgraph(query)
+            except Exception as e:
+                logger.error(f'Frequency Internal Server Error: {str(e)}')
+                return f'error {e}', []
+
+        # 5.6 Variant filter queries
+        for current_variant_filter in variant_filters:
+            entity = current_variant_filter['entity']
+            operator = current_variant_filter['operator']
+            variant = current_variant_filter['variant']
+            query = filter_entity_variant(entity, operator, variant)
+
+            try:
+                # Execute the query
+                database_connector.run_query_memgraph(query)
+            except Exception as e:
+                logger.error(f'Variant Internal Server Error: {str(e)}')
+                return f'error {e}', []
+
         # 6. Check the counter difference
         node_counter_updated, relationships_counter_updated = get_node_and_relationship_count(database_connector)
 
@@ -556,7 +753,7 @@ def process_analysis(container_id, database_connector, dataset_name, analysis_na
             return 'nothing changed', []
 
         # 6. Get the updated and filtered EKG from the db
-        limit = 300
+        limit = 200
         query_result = get_limit_standard_graph_query(limit)
 
         result = database_connector.run_query_memgraph(query_result)

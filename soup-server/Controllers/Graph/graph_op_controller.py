@@ -92,8 +92,10 @@ def get_entity_nodes():
     response = ApiResponse()
 
     try:
+        distinct = request.args.get('distinct', type=str)
+
         # Execute service
-        return OperationGraphService.get_entity_nodes_s(database_connector)
+        return OperationGraphService.get_entity_nodes_s(database_connector, distinct)
     except Exception as e:
         response.http_status_code = 500
         response.response_data = None

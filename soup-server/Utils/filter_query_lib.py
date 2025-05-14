@@ -176,8 +176,6 @@ def clean_timestamp(timestamp):
     return timestamp
 
 
-
-
 ########################## NEW FILTERS ##########################
 
 ######## PERFORMANCE FILTERS ########
@@ -189,7 +187,8 @@ def generic_trace_duration_query(ent_type):
                 WITH entity, HEAD(events) AS StartNode, LAST(events) AS EndNode
                 WITH entity, (EndNode.Timestamp - StartNode.Timestamp) AS duration
                 ''')
-    
+
+
 def get_entity_trace_duration(ent_type):
     """
     Calculate the duration of the trace for a specific entity type
@@ -201,7 +200,8 @@ def get_entity_trace_duration(ent_type):
     return query + ('''\n
             RETURN entity AS entity_id, duration AS iso_duration
             ''')
-    
+
+
 def filter_entity_performance(ent_type, operator, duration):
     """
     Filter the trace for a specific entity type
@@ -211,13 +211,14 @@ def filter_entity_performance(ent_type, operator, duration):
     :return: the cypher query and a filtered EKG
     """
     query = generic_trace_duration_query(ent_type)
+    duration_iso = f"PT{duration}S"
     return query + (f'''\n
-            WHERE duration {operator} duration("{duration}")
-            WITH actor
-            MATCH (e:Event)-[:CORR]->(t:Entity  {{Type: "{ent_type}", Value: actor}})
+            WHERE duration {operator} duration("{duration_iso}")
+            WITH entity
+            MATCH (e:Event)-[:CORR]->(t:Entity  {{Type: "{ent_type}", Value: entity}})
             DETACH DELETE e
             ''')
-    
+
 
 ######## FREQUENCY FILTERS ########
 
@@ -233,7 +234,8 @@ def get_activity_frequency_query(ent_type):
             RETURN e.ActivityName AS Activity, count(*) AS Occurrences
             ORDER BY Occurrences DESC
             ''')
-    
+
+
 def filter_activity_frequency(ent_type, operator, frequency):
     """
     Filter the activity frequency
@@ -244,8 +246,8 @@ def filter_activity_frequency(ent_type, operator, frequency):
     """
     return (f'''
             MATCH (e:Event)-[:CORR]->(t:Entity {{Type: "{ent_type}"}})
-            WITH e.ActivityName AS Activity, count(*) AS Occurrences
-            WHERE Occurrences {operator} {frequency}
+            WITH e.ActivityName AS Activity, COLLECT(e) as Events
+            WHERE SIZE (Events) {operator} {frequency}
             UNWIND Events AS e
             // Find predecessors and successors of the event in the DF chain
             OPTIONAL MATCH (prev)-[df1:DF]->(e)-[df2:DF]->(next)
@@ -256,8 +258,8 @@ def filter_activity_frequency(ent_type, operator, frequency):
             // Delete the original event and its DF relationships
             DETACH DELETE e
             ''')
-    
-    
+
+
 ######## VARIANT FILTERS ########
 
 def get_variant_query(ent_type):
@@ -276,7 +278,8 @@ def get_variant_query(ent_type):
             RETURN events, event_count
             ORDER BY event_count DESC
             ''')
-    
+
+
 def filter_entity_variant(ent_type, operator, variant):
     """
     Filter the entity variant
@@ -285,14 +288,13 @@ def filter_entity_variant(ent_type, operator, variant):
     :param variant: the variant expressed as a number of trace occurrences
     """
     return (f'''    
-            MATCH (e:Event)-[:CORR]->(t:Entity {{Type: {ent_type}}})
+            MATCH (e:Event)-[:CORR]->(t:Entity {{Type: "{ent_type}"}})
             WITH e, t AS entity
             ORDER BY e.Timestamp ASC
             WITH entity, COLLECT(e.ActivityName) AS events
             WITH events, COUNT(*) AS event_count, COLLECT(entity) AS entities
             WHERE event_count {operator} {variant}  
-            MATCH (e2:Event)-[:CORR]->(t2:Entity {{Type: {ent_type}}})
+            MATCH (e2:Event)-[:CORR]->(t2:Entity {{Type: "{ent_type}"}})
             WHERE t2 IN entities
             DETACH DELETE e2
-            '''
-            )
+            ''')

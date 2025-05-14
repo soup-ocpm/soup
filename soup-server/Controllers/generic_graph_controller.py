@@ -12,11 +12,11 @@ License : MIT
 
 # Import
 from flask import Blueprint, request, jsonify
+from Shared.support_config import get_db_connector
 from Services.docker_service import DockerService
 from Services.generic_graph_service import GenericGraphService
 from Models.api_response_model import ApiResponse
 from Models.logger_model import Logger
-from Shared.support_config import get_db_connector
 
 # Init the bp
 generic_graph_controller_bp = Blueprint('generic_graph_controller_bp', __name__)
