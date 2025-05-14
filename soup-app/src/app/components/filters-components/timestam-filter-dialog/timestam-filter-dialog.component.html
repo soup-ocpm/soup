@@ -4,12 +4,13 @@
     <h4 class="modal-title">Select Date and Time Range</h4>
   </div>
   <div class="modal-body">
+    <p>Click the calendar button 📅 to select a date</p>
     <form (ngSubmit)="this.onSubmit()">
       <!-- Start date and time -->
       <div class="form-group">
         <label
-          for="endDate"
-          style="color: var(--secondary-color); font-size: 15px">
+          for="startDate"
+          class="form-group-label">
           Start Date and Time
         </label>
         <div class="input-container">
@@ -48,7 +49,7 @@
       <!-- End date and time -->
       <div class="form-group">
         <label
-          style="color: var(--secondary-color); font-size: 15px"
+          class="form-group-label"
           for="endDate">
           End Date and Time
         </label>

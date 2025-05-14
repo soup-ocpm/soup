@@ -19,9 +19,12 @@
 // Region: Entity list
 // ================================
 .entity-body {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
   width: 100%;
   height: 240px;
-  overflow: auto;
+  overflow-y: auto;
 }
 
 .entities-list {

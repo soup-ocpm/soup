@@ -203,7 +203,7 @@
 }
 
 .tile-details p strong {
-  min-width: 80px;
+  min-width: 10px;
   display: inline-block;
 }
 
@@ -245,9 +245,9 @@
 
 .upload-button {
   width: 60%;
-  height: 120px; /* Aumento l'altezza per dare spazio al testo */
+  height: 120px;
   display: flex;
-  flex-direction: column; /* Imposta l'orientamento della flexbox in colonna */
+  flex-direction: column;
   align-items: center;
   justify-content: center;
   background-color: transparent;
@@ -354,6 +354,15 @@
 .analysis-details p strong {
   min-width: 80px;
   display: inline-block;
+}
+
+.filter-text {
+  display: inline-block;
+  max-width: 400px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  vertical-align: bottom;
 }
 
 // ================================

@@ -8,12 +8,12 @@ import { MatDialog } from '@angular/material/dialog';
 import { ActivatedRoute, Router } from '@angular/router';
 import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
 import { Chart, registerables } from 'chart.js';
+import { AnalysisDialogComponent } from 'src/app/components/analysis-dialog/analysis-dialog.component';
 import { ActivityFilterDialogComponent } from 'src/app/components/filters-components/activity-filter-dialog/activity-filter-dialog.component';
 import { ActivityFilter } from 'src/app/components/filters-components/activity-filter-dialog/activity-filter.model';
-import { AnalysisDialogComponent } from 'src/app/components/filters-components/analysis-dialog/analysis-dialog.component';
+import { MasterFiltersDialogComponent } from 'src/app/components/filters-components/master-filters-dialog/master-filters-dialog.component';
 import { PerformanceFilterDialogComponent } from 'src/app/components/filters-components/performance-filter-dialog/performance-filter-dialog.component';
 import { PerformanceFilter } from 'src/app/components/filters-components/performance-filter-dialog/performance-filter.model';
-import { PrimaryFilterDialogComponent } from 'src/app/components/filters-components/primary-filter-dialog/primary-filter-dialog.component';
 import { TimestamFilterDialogComponent } from 'src/app/components/filters-components/timestam-filter-dialog/timestam-filter-dialog.component';
 import { TimestampFilter } from 'src/app/components/filters-components/timestam-filter-dialog/timestamp-filter.model';
 import { GraphType } from 'src/app/enums/graph_type.enum';
@@ -25,6 +25,10 @@ import { SidebarComponent } from 'src/app/shared/components/s-sidebar/s-sidebar.
 import { SidebarService } from 'src/app/shared/components/s-sidebar/sidebar.service';
 import { NotificationService } from 'src/app/shared/components/s-toast/toast.service';
 
+import { FrequenceFilterDialogComponent } from 'src/app/components/filters-components/frequence-filter-dialog/frequence-filter-dialog.component';
+import { FrequenceFilter } from 'src/app/components/filters-components/frequence-filter-dialog/frequence-filter.model';
+import { VariantFilterDialogComponent } from 'src/app/components/filters-components/variant-filter-dialog/variant-filter-dialog.component';
+import { VariantFilter } from 'src/app/components/filters-components/variant-filter-dialog/variant-filter.model';
 import { ApiResponse } from 'src/app/core/models/api_response.model';
 import { EntityObjectList } from 'src/app/models/entity.model';
 import { OnBoardingService } from 'src/app/services/onboarding.service';
@@ -90,6 +94,9 @@ export class DetailsDatasetComponent implements OnInit, AfterViewInit {
   // List of the sidebar ids
   public sidebarIds: string[] = [];
 
+  // All graph entities for the filters
+  public allGraphEntities: string[] = [];
+
   // List of the filters for the analysis
   public filters = ['Timestamp', 'Performance', 'Include Activities', 'Exclude Activities'];
 
@@ -108,6 +115,12 @@ export class DetailsDatasetComponent implements OnInit, AfterViewInit {
   // Exclude activities filters
   public excludeActivitiesFilters: ActivityFilter[] = [];
 
+  // Activity freqeyncy filters
+  public frequenceFilters: FrequenceFilter[] = [];
+
+  // Variant filters
+  public variantFilters: VariantFilter[] = [];
+
   // If the user uploaded the file configuration for new analysis
   public jsonConfiguration = false;
 
@@ -116,9 +129,6 @@ export class DetailsDatasetComponent implements OnInit, AfterViewInit {
 
   // The json configuration example for the info
   public exampleJSONConfiguration: any;
-
-  // If there is loading for map configuration json file to tiles
-  public isLoadingConfiguration = false;
 
   // Retrieve all analysis
   public allAnalyses: Analysis[] = [];
@@ -156,7 +166,7 @@ export class DetailsDatasetComponent implements OnInit, AfterViewInit {
       description: 'Create new analysis for this dataset',
       icon: 'add_chart',
       loading: false,
-      action: () => this.requestFileConfiguration()
+      action: () => this.getGraphEntities()
     },
     {
       title: 'Manage Datasets',
@@ -179,6 +189,9 @@ export class DetailsDatasetComponent implements OnInit, AfterViewInit {
 
   // If the analysis is applying
   public isLoadingAnalysis = false;
+
+  // If there is loading for map configuration json file to tiles
+  public isLoadingConfiguration = false;
 
   // Pie chart for dataset data
   @ViewChild('dataPieChart', { static: false }) dataPieChart: ElementRef | undefined;
@@ -227,7 +240,7 @@ export class DetailsDatasetComponent implements OnInit, AfterViewInit {
    * @param classGraphService the ClassGraphService service
    * @param analysisService the AnalysisService service
    * @param datasetService the DatasetService service
-   * @param standardGraphService the StandardGraphService service
+   * @param graphService the StandardGraphService service
    */
   constructor(
     private router: Router,
@@ -246,7 +259,7 @@ export class DetailsDatasetComponent implements OnInit, AfterViewInit {
     private analysisService: AnalysisService,
     private datasetService: DatasetService,
     private onBoardingService: OnBoardingService,
-    private standardGraphService: StandardGraphService
+    private graphService: StandardGraphService
   ) {
     Chart.register(...registerables);
   }
@@ -525,9 +538,15 @@ export class DetailsDatasetComponent implements OnInit, AfterViewInit {
     // Validate the performance filters
     analysis.performanceFilters = this.validateArray(json.performance, this.validatePerformanceFilter);
 
-    // Validate the activities filters
+    // Validate the activities filters (include and exclude)
     analysis.includeActivitiesFilters = this.validateArray(json.includeActivities, this.validateActivityFilter);
-    analysis.excludeActivitiesFilterss = this.validateArray(json.excludeActivities, this.validateActivityFilter);
+    analysis.excludeActivitiesFilters = this.validateArray(json.excludeActivities, this.validateActivityFilter);
+
+    // Validate the frequence filters
+    analysis.frequenceFilters = this.validateArray(json.frequence, this.validateFrequenceFilter);
+
+    // Validate the variant filters
+    analysis.variantFilters = this.validateArray(json.variant, this.validateVariantFilter);
 
     // Finally create the tiles
     this.createTiles(analysis);
@@ -540,6 +559,7 @@ export class DetailsDatasetComponent implements OnInit, AfterViewInit {
   private createTiles(analysis: Analysis): void {
     this.tiles = [];
 
+    // Timestamp filters
     if (analysis.timestampFilters && analysis.timestampFilters.length > 0) {
       analysis.timestampFilters.forEach((filter: any) => {
         // Add official filter
@@ -560,12 +580,13 @@ export class DetailsDatasetComponent implements OnInit, AfterViewInit {
       });
     }
 
+    // Performance filters
     if (analysis.performanceFilters && analysis.performanceFilters.length > 0) {
       analysis.performanceFilters.forEach((filter: any) => {
         // Add official filter
         const performanceFilter = new PerformanceFilter();
-        performanceFilter.startActivity = filter.startActivity;
-        performanceFilter.endActivity = filter.endActivity;
+        performanceFilter.entity = filter.entity;
+        performanceFilter.operator = filter.operator;
         performanceFilter.seconds = filter.seconds;
 
         this.performanceFilters.push(performanceFilter);
@@ -574,14 +595,15 @@ export class DetailsDatasetComponent implements OnInit, AfterViewInit {
         this.tiles.push({
           type: 'Performance',
           details: {
-            startActivity: filter.startActivity,
-            endActivity: filter.endActivity,
+            entity: filter.entity,
+            operator: filter.operator,
             seconds: filter.seconds
           }
         });
       });
     }
 
+    // Include activities filters
     if (analysis.includeActivitiesFilters && analysis.includeActivitiesFilters.length > 0) {
       analysis.includeActivitiesFilters.forEach((filter: any) => {
         // Add official filter
@@ -601,8 +623,9 @@ export class DetailsDatasetComponent implements OnInit, AfterViewInit {
       });
     }
 
-    if (analysis.excludeActivitiesFilterss && analysis.excludeActivitiesFilterss.length > 0) {
-      analysis.excludeActivitiesFilterss.forEach((filter: any) => {
+    // Exclude activities filter
+    if (analysis.excludeActivitiesFilters && analysis.excludeActivitiesFilters.length > 0) {
+      analysis.excludeActivitiesFilters.forEach((filter: any) => {
         // Add official filter
         const excludeActivitiesFilter = new ActivityFilter();
         excludeActivitiesFilter.activities = filter.activities;
@@ -615,6 +638,52 @@ export class DetailsDatasetComponent implements OnInit, AfterViewInit {
           type: 'Exclude Activities',
           details: {
             activities: filter.activities
+          }
+        });
+      });
+    }
+
+    // Frequence filters
+    if (analysis.frequenceFilters && analysis.frequenceFilters.length > 0) {
+      analysis.frequenceFilters.forEach((filter: any) => {
+        // Add official filter
+        const frequenceFilter = new FrequenceFilter();
+        frequenceFilter.entity = filter.entity;
+        frequenceFilter.operator = filter.operator;
+        frequenceFilter.frequency = filter.frequency;
+
+        this.frequenceFilters.push(frequenceFilter);
+
+        // Add tile
+        this.tiles.push({
+          type: 'Frequence',
+          details: {
+            entity: filter.entity,
+            operator: filter.operator,
+            frequency: filter.frequency
+          }
+        });
+      });
+    }
+
+    // Variant filters
+    if (analysis.variantFilters && analysis.variantFilters.length > 0) {
+      analysis.variantFilters.forEach((filter: any) => {
+        // Add official filter
+        const variantFilter = new VariantFilter();
+        variantFilter.entity = filter.entity;
+        variantFilter.operator = filter.operator;
+        variantFilter.variant = filter.variant;
+
+        this.variantFilters.push(variantFilter);
+
+        // Add tile
+        this.tiles.push({
+          type: 'Variant',
+          details: {
+            entity: filter.entity,
+            operator: filter.operator,
+            variant: filter.variant
           }
         });
       });
@@ -647,11 +716,104 @@ export class DetailsDatasetComponent implements OnInit, AfterViewInit {
   }
 
   /**
+   * Update the calculate variation sider operation
+   * @param add if we want to add the loading or not
+   */
+  public updateCalculateVariationOperation(add: boolean): void {
+    const newAnalysisIndex = this.operations.findIndex((op) => op.title === 'New Analysis');
+
+    if (newAnalysisIndex !== -1) {
+      // Change the loading attribute
+      this.operations[newAnalysisIndex] = {
+        ...this.operations[newAnalysisIndex],
+        loading: add
+      };
+    }
+  }
+
+  /**
+   * Retrieve all graph entities
+   */
+  public getGraphEntities(): void {
+    this.updateCalculateVariationOperation(true);
+    this.graphService.getEntityNodes(true).subscribe({
+      next: (response) => {
+        if (response != null && response.statusCode === 200 && response.responseData != null) {
+          const data = response.responseData;
+
+          if (data != null && data.length > 0) {
+            // Save the entity type
+            data.forEach((item: any) => {
+              const entity = item.Type;
+              if (entity != null && !this.allGraphEntities.includes(entity)) {
+                this.allGraphEntities.push(entity);
+              }
+            });
+
+            // Request new analysis type (file or manual)
+            this.updateCalculateVariationOperation(false);
+            this.requestFileConfiguration();
+          } else {
+            // No content
+            this.updateCalculateVariationOperation(false);
+            this.logger.error('No entities found.', response.message);
+            this.toast.showWithTitle(
+              'Missing Entity',
+              'No entities found. Please check data and retry.',
+              true,
+              false,
+              null,
+              ToastLevel.Error,
+              3000
+            );
+          }
+        } else if (response != null && response.statusCode === 202) {
+          // No content
+          this.updateCalculateVariationOperation(false);
+          this.logger.error('No entities found.', response.message);
+          this.toast.showWithTitle(
+            'Missing Entity',
+            'No entities found. Please check data and retry.',
+            true,
+            false,
+            null,
+            ToastLevel.Error,
+            3000
+          );
+        } else {
+          // Error
+          this.updateCalculateVariationOperation(false);
+          this.logger.error('Unable to load the entities', response.message);
+          this.toast.showWithTitle('Entities', 'Unable to load the entities. Please retry.', true, false, null, ToastLevel.Error, 3000);
+        }
+      },
+      error: (errorData: ApiResponse<any>) => {
+        // Error
+        this.updateCalculateVariationOperation(false);
+        this.logger.error('Unable to load the entities. Status code: ', errorData.statusCode + ' Message: ' + errorData.message);
+        this.toast.showWithTitle('Entities', 'Unable to load the entities. Please retry.', true, false, null, ToastLevel.Error, 3000);
+      }
+    });
+  }
+
+  /**
    * Add new analysisi
    */
   public addNewAnalysisTile(): void {
+    if (this.allGraphEntities == null || this.allGraphEntities.length === 0) {
+      this.toast.showWithTitle(
+        'Missing Entity',
+        'No entities found. Please check data and retry.',
+        true,
+        false,
+        null,
+        ToastLevel.Error,
+        3000
+      );
+      return;
+    }
     // Open the modal
-    const modalRef = this.ngbModalService.open(PrimaryFilterDialogComponent);
+    const modalRef = this.ngbModalService.open(MasterFiltersDialogComponent);
     modalRef.result
       .then((selectedFilter) => {
         if (selectedFilter) {
@@ -674,20 +836,30 @@ export class DetailsDatasetComponent implements OnInit, AfterViewInit {
 
       case 'Performance':
         filterModal = this.ngbModalService.open(PerformanceFilterDialogComponent);
+        filterModal.componentInstance.allEntities = this.allGraphEntities; // add data to component (entities)
         break;
 
       case 'Include Activities':
         filterModal = this.ngbModalService.open(ActivityFilterDialogComponent);
-        filterModal.componentInstance.inputData = true;
+        filterModal.componentInstance.inputData = true; // add data to component  (bool include)
         break;
 
       case 'Exclude Activities':
         filterModal = this.ngbModalService.open(ActivityFilterDialogComponent);
-        filterModal.componentInstance.inputData = false;
+        filterModal.componentInstance.inputData = false; // add data to component  (bool include)
+        break;
+
+      case 'Frequence':
+        filterModal = this.ngbModalService.open(FrequenceFilterDialogComponent);
+        filterModal.componentInstance.allEntities = this.allGraphEntities; // add data to component (entities)
+        break;
+
+      case 'Variant':
+        filterModal = this.ngbModalService.open(VariantFilterDialogComponent);
+        filterModal.componentInstance.allEntities = this.allGraphEntities; // add data to component (entities)
         break;
 
       default:
-        this.logger.error('Filter not found.', filter);
         return;
     }
 
@@ -697,7 +869,14 @@ export class DetailsDatasetComponent implements OnInit, AfterViewInit {
           this.addNewTile(filter, result);
         }
       })
-      .catch((error) => console.error('Modal error:', error));
+      .catch((reason) => {
+        if (reason === 'close-and-return') {
+          // Re-open the master modal
+          this.addNewAnalysisTile();
+        } else {
+          console.warn('Filter modal closed with reason:', reason);
+        }
+      });
   }
 
   /**
@@ -746,8 +925,33 @@ export class DetailsDatasetComponent implements OnInit, AfterViewInit {
           details: filterDetails.activities
         });
         break;
+
+      case 'Frequence':
+        // Add official filter
+        this.frequenceFilters.push(filterDetails.frequence);
+        console.log(this.frequenceFilters);
+
+        // Add tile
+        this.tiles.push({
+          type: filterType,
+          details: filterDetails.frequence
+        });
+        break;
+
+      case 'Variant':
+        // Add official filter
+        this.variantFilters.push(filterDetails.variant);
+        console.log(this.variantFilters);
+
+        // Add tile
+        this.tiles.push({
+          type: filterType,
+          details: filterDetails.variant
+        });
+        break;
+
       default:
-        console.error('Tipo di filtro non riconosciuto:', filterType);
+        console.error('Filter not found:', filterType);
         return;
     }
 
@@ -783,6 +987,8 @@ export class DetailsDatasetComponent implements OnInit, AfterViewInit {
     this.timestampFilters = [];
     this.includeActivitiesFilters = [];
     this.excludeActivitiesFilters = [];
+    this.frequenceFilters = [];
+    this.variantFilters = [];
     this.updateNewAnalysisSidebar(false);
     this.alreadyAddButtons = false;
   }
@@ -798,8 +1004,8 @@ export class DetailsDatasetComponent implements OnInit, AfterViewInit {
         endDate: filter.endDate
       })),
       performance: this.performanceFilters.map((filter: any) => ({
-        startActivity: filter.startActivity,
-        endActivity: filter.endActivity,
+        entity: filter.entity,
+        operator: filter.operator,
         seconds: filter.seconds
       })),
       includeActivities: this.includeActivitiesFilters.map((filter: any) => ({
@@ -807,6 +1013,16 @@ export class DetailsDatasetComponent implements OnInit, AfterViewInit {
       })),
       excludeActivities: this.excludeActivitiesFilters.map((filter: any) => ({
         activities: filter.activities
+      })),
+      frequence: this.frequenceFilters.map((filter: any) => ({
+        entity: filter.entity,
+        operator: filter.operator,
+        frequency: filter.frequency
+      })),
+      variant: this.variantFilters.map((filter: any) => ({
+        entity: filter.entity,
+        operator: filter.operator,
+        variant: filter.variant
       }))
     };
 
@@ -1090,34 +1306,6 @@ export class DetailsDatasetComponent implements OnInit, AfterViewInit {
   }
 
   /**
-   * Get the total number of filters
-   * @param analysis the analysis
-   * @returns the number of filters
-   */
-  public getTotalAnalysisFilter(analysis: Analysis): number {
-    return (
-      analysis.timestampFilters.length +
-      analysis.performanceFilters.length +
-      analysis.includeActivitiesFilters.length +
-      analysis.excludeActivitiesFilterss.length
-    );
-  }
-
-  /**
-   * Get the analysis filter in string format
-   */
-  public getAnalysisFiltersString(analysis: Analysis): string {
-    const filters = [];
-
-    if (analysis.timestampFilters.length > 0) filters.push('Timestamp');
-    if (analysis.performanceFilters.length > 0) filters.push('Performance');
-    if (analysis.includeActivitiesFilters.length > 0) filters.push('Include Activity');
-    if (analysis.excludeActivitiesFilterss.length > 0) filters.push('Exclude Activity');
-
-    return filters.join(', ');
-  }
-
-  /**
    * Open the master sidebar template
    */
   public openAggregateSidebar(): void {
@@ -1294,7 +1482,7 @@ export class DetailsDatasetComponent implements OnInit, AfterViewInit {
     this.currentDataset!.analyses = [];
 
     // Get the analysis
-    this.standardGraphService.getActivitiesName().subscribe({
+    this.graphService.getActivitiesName().subscribe({
       next: (response) => {
         if (response.statusCode == 200 || response.statusCode == 202 || response.statusCode == 204) {
           this.currentDataset!.allActivities = response.responseData as string[];
@@ -1316,7 +1504,7 @@ export class DetailsDatasetComponent implements OnInit, AfterViewInit {
    * Retrieve entities from the Dataset
    */
   private loadEntityKey(): void {
-    this.standardGraphService.getEntityKey().subscribe({
+    this.graphService.getEntityKey().subscribe({
       next: (response) => {
         if (response.statusCode == 200 && response.responseData != null) {
           const data = response.responseData;
@@ -1343,7 +1531,7 @@ export class DetailsDatasetComponent implements OnInit, AfterViewInit {
   private retrieveNaNEntity(): void {
     const nullEntities: string[] = [];
 
-    this.standardGraphService.getNullEntities().subscribe({
+    this.graphService.getNullEntities().subscribe({
       next: (response) => {
         if (response.statusCode == 200 && response.responseData != null) {
           const data = response.responseData;
@@ -1375,7 +1563,7 @@ export class DetailsDatasetComponent implements OnInit, AfterViewInit {
    * Load information about min and max event timestamp
    */
   private loadEventMinMaxTimestamp(): void {
-    this.standardGraphService.getMinMaxTimestamp().subscribe({
+    this.graphService.getMinMaxTimestamp().subscribe({
       next: (response) => {
         if (response.statusCode == 200 && response.responseData != null) {
           const timestampData = response.responseData;
@@ -1618,7 +1806,9 @@ export class DetailsDatasetComponent implements OnInit, AfterViewInit {
               newAnalysis.timestampFilters = item['timestamp'];
               newAnalysis.performanceFilters = item['performance'];
               newAnalysis.includeActivitiesFilters = item['includeActivities'];
-              newAnalysis.excludeActivitiesFilterss = item['excludeActivities'];
+              newAnalysis.excludeActivitiesFilters = item['excludeActivities'];
+              newAnalysis.frequenceFilters = item['frequence'];
+              newAnalysis.variantFilters = item['variant'];
 
               this.currentDataset!.analyses.push(newAnalysis);
             });
@@ -1747,13 +1937,13 @@ export class DetailsDatasetComponent implements OnInit, AfterViewInit {
    * @returns A validated PerformanceFilter object
    */
   private validatePerformanceFilter(filter: any): PerformanceFilter {
-    if (!filter.startActivity || !filter.endActivity || !filter.seconds) {
+    if (!filter.entity || !filter.operator || !filter.seconds) {
       throw new Error('Invalid PerformanceFilter');
     }
 
     const performanceFilter = new PerformanceFilter();
-    performanceFilter.startActivity = filter.startActivity;
-    performanceFilter.endActivity = filter.endActivity;
+    performanceFilter.entity = filter.entity;
+    performanceFilter.operator = filter.operator;
     performanceFilter.seconds = filter.seconds;
 
     return performanceFilter;
@@ -1774,6 +1964,42 @@ export class DetailsDatasetComponent implements OnInit, AfterViewInit {
     activityFilter.include = filter.include || false;
 
     return activityFilter;
+  }
+
+  /**
+   * Function to validate a FrequenceFilter
+   * @param filter The filter to be validated
+   * @returns A validated FrequenceFilter object
+   */
+  private validateFrequenceFilter(filter: any): FrequenceFilter {
+    if (!filter.entity || !filter.operator || !filter.frequency) {
+      throw new Error('Invalid FrequenceFilter');
+    }
+
+    const frequenceFilter = new FrequenceFilter();
+    frequenceFilter.entity = filter.entity;
+    frequenceFilter.operator = filter.operator;
+    frequenceFilter.frequency = filter.frequency;
+
+    return frequenceFilter;
+  }
+
+  /**
+   * Function to validate a VariantFilter
+   * @param filter The filter to be validated
+   * @returns A validated VariantFilter object
+   */
+  private validateVariantFilter(filter: any): VariantFilter {
+    if (!filter.entity || !filter.operator || !filter.variant) {
+      throw new Error('Invalid VariantFilter');
+    }
+
+    const variantFilter = new VariantFilter();
+    variantFilter.entity = filter.entity;
+    variantFilter.operator = filter.operator;
+    variantFilter.variant = filter.variant;
+
+    return variantFilter;
   }
 
   /**
@@ -1855,7 +2081,7 @@ export class DetailsDatasetComponent implements OnInit, AfterViewInit {
    * Remove the current content inside memgraph database
    */
   private deleteMemgraphData(): void {
-    this.standardGraphService.deleteGraph().subscribe({
+    this.graphService.deleteGraph().subscribe({
       next: (response) => {
         if (response.statusCode == 200) {
           this.toast.show('Dataset deleted successfully', ToastLevel.Success, 3000);

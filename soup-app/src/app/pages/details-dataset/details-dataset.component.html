@@ -325,17 +325,17 @@
                   <!-- Performance filter -->
                   <div style="display: flex">
                     <p>
-                      <strong>Start Activity:</strong>
-                      {{ tile.details.startActivity }}
+                      <strong>Entity:</strong>
+                      {{ tile.details.entity }}
                     </p>
                     <p>
-                      <strong>Metrics:</strong>
-                      {{ tile.details.seconds }} seconds
+                      <strong>Operator:</strong>
+                      {{ tile.details.operator }}
                     </p>
                   </div>
                   <p>
-                    <strong>End Activity:</strong>
-                    {{ tile.details.endActivity }}
+                    <strong>Seconds:</strong>
+                    {{ tile.details.seconds }}
                   </p>
                 }
                 @case ('Include Activities') {
@@ -353,22 +353,43 @@
                   </p>
                 }
                 @case ('Frequence') {
-                  <!--Frequence filter-->
+                  <!-- Frequence filter -->
+                  <div style="display: flex">
+                    <p>
+                      <strong>Entity:</strong>
+                      {{ tile.details.entity }}
+                    </p>
+                    <p>
+                      <strong>Operator:</strong>
+                      {{ tile.details.operator }}
+                    </p>
+                  </div>
                   <p>
                     <strong>Frequency:</strong>
                     {{ tile.details.frequency }}
                   </p>
                 }
-                @case ('Variation') {
-                  <!--Variation filter-->
+                @case ('Variant') {
+                  <!-- Variant filter -->
+                  <div style="display: flex">
+                    <p>
+                      <strong>Entity:</strong>
+                      {{ tile.details.entity }}
+                    </p>
+                    <p>
+                      <strong>Operator:</strong>
+                      {{ tile.details.operator }}
+                    </p>
+                  </div>
                   <p>
-                    <strong>Variation:</strong>
-                    {{ tile.details.variation }}
+                    <strong>Variant:</strong>
+                    {{ tile.details.variant }}
                   </p>
                 }
               }
             </div>
 
+            <!--Delete tile button-->
             <i
               class="bi bi-trash"
               (click)="this.deleteTile(tile)"></i>
@@ -454,11 +475,11 @@
               <!--Timestamp filter-->
               <p>
                 <strong>Total filters:</strong>
-                {{ this.getTotalAnalysisFilter(analysis) }}
+                {{ analysis.getTotalFilters() }}
               </p>
               <p>
                 <strong>Filters:</strong>
-                [{{ this.getAnalysisFiltersString(analysis) }}]
+                <span class="filter-text">{{ analysis.getAnalysisFiltersString() }}</span>
               </p>
             </div>
 

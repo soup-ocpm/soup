@@ -12,18 +12,18 @@
         }
         <p>
           Total filters :
-          <strong>{{ this.getTotalFilter() }}</strong>
+          <strong>{{ this.analysis.getTotalFilters() }}</strong>
         </p>
 
         <p class="ellipsis">
           Filters :
-          <strong>[{{ this.getActiveFiltersString() }}]</strong>
+          <strong>{{ this.analysis.getAnalysisFiltersString() }}</strong>
         </p>
       </div>
       <div class="master-content">
         <h5>Json Configuration</h5>
       </div>
-      <pre>{{ this.getJSONFormat() | json }}</pre>
+      <pre>{{ this.analysis.getJSONFormat() | json }}</pre>
     </div>
 
     <sp-btn-txt

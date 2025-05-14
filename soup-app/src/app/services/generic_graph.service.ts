@@ -26,7 +26,7 @@ export class GenericGraphService {
    * Create the dataset graphs (standard and graph it exists )
    * @param containerId the container id
    * @param datasetName the dataset name
-   * @returns Observale of Http request
+   * @returns an Observable of ApiResponse object
    */
   public createDatasetGraphs(datasetName: string): Observable<ApiResponse<any>> {
     // Create the body object
@@ -41,7 +41,7 @@ export class GenericGraphService {
    * Get graph data
    * @param limit the limit
    * @param standardGraph if we want to retrieve the standard graph
-   * @returns Observale of Http request
+   * @returns an Observable of ApiResponse object
    */
   public getGraph(limit: number, standardGraph: string): Observable<ApiResponse<any>> {
     // Create the body object
@@ -67,7 +67,7 @@ export class GenericGraphService {
 
   /**
    * Remove the memgraph data
-   * @returns Observale of Http request
+   * @returns an Observable of ApiResponse object
    */
   public removeMemgraphData(): Observable<ApiResponse<any>> {
     return this.apiService.delete(`${environment.baseUrl}/complete-graph`);

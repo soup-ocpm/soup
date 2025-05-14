@@ -1,7 +1,6 @@
 import { SpBtnComponent } from '@aledevsharp/sp-lib';
 import { Component } from '@angular/core';
-
-import { environment } from '../../../environments/environment';
+import { environment } from 'src/environments/environment';
 
 /**
  * Home page  component

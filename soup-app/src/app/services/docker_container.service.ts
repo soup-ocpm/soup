@@ -24,7 +24,7 @@ export class DockerService {
 
   /**
    * Get all available container
-   * @returns Observable of ApiResponse object
+   * @returns an Observable of ApiResponse object
    */
   public containers(): Observable<ApiResponse<any>> {
     return this.apiService.get(`${environment.baseUrl}/docker`);
@@ -32,7 +32,7 @@ export class DockerService {
 
   /**
    * Get all active containers
-   * @returns Observable of ApiResponse object
+   * @returns an Observable of ApiResponse object
    */
   public activeContainers(): Observable<ApiResponse<any>> {
     return this.apiService.get(`${environment.baseUrl}/docker/active`);
@@ -40,7 +40,7 @@ export class DockerService {
 
   /**
    * Get all exited containers
-   * @returns Observable of ApiResponse object
+   * @returns an Observable of ApiResponse object
    */
   public exitedContainers(): Observable<ApiResponse<any>> {
     return this.apiService.get(`${environment.baseUrl}/docker/exited`);
@@ -49,7 +49,7 @@ export class DockerService {
   /**
    * Start specific container
    * @param containerId the container id
-   * @returns Observable of ApiResponse object
+   * @returns an Observable of ApiResponse object
    */
   public startContainer(containerId: string): Observable<ApiResponse<any>> {
     // Create body object
@@ -61,7 +61,7 @@ export class DockerService {
   /**
    * Stop specific container
    * @param containerId the container id
-   * @returns Observable of ApiResponse object
+   * @returns an Observable of ApiResponse object
    */
   public stopContainer(containerId: string): Observable<ApiResponse<any>> {
     // Create body object

@@ -38,7 +38,7 @@ export class DatasetService {
   /**
    * Get all dataset
    * @param containerId the container id
-   * @returns Observable of ApiResponse object
+   * @returns an Observable of ApiResponse object
    */
   public getAllDataset(): Observable<ApiResponse<any>> {
     return this.apiService.get(`${environment.baseUrl}/datasets`);
@@ -48,7 +48,7 @@ export class DatasetService {
    * Update specific dataset information (description)
    * @param datasetName the dataset name
    * @param datasetDescription the dataset new description
-   * @returns Observable of ApiResponse object
+   * @returns an Observable of ApiResponse object
    */
   public updateDatasetDescription(datasetName: string, datasetDescription: string): Observable<ApiResponse<any>> {
     // Create body object
@@ -63,7 +63,7 @@ export class DatasetService {
   /**
    * Get specific dataset
    * @param datasetName the dataset name
-   * @returns Observable of ApiResponse object
+   * @returns an Observable of ApiResponse object
    */
   public deleteDataset(datasetName: string): Observable<ApiResponse<any>> {
     // Add params
@@ -75,7 +75,7 @@ export class DatasetService {
   /**
    * Check unique dataset name
    * @param datasetName the dataset name
-   * @returns Observable of ApiResponse object
+   * @returns an Observable of ApiResponse object
    */
   public checkUniqueDataset(datasetName: string): Observable<ApiResponse<any>> {
     // Create body object

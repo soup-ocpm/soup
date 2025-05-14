@@ -23,7 +23,7 @@ export class JSONDataService {
 
   /**
    * Get the event node JSON
-   * @returns Observable of ApiResponse object
+   * @returns an Observable of ApiResponse object
    */
   public eventNodeJSON(): Observable<ApiResponse<any>> {
     return this.apiService.get(`${environment.baseUrl}/json/graph/event-nodes`);
@@ -31,7 +31,7 @@ export class JSONDataService {
 
   /**
    * Get the entity node JSON
-   * @returns Observable of ApiResponse object
+   * @returns an Observable of ApiResponse object
    */
   public entityNodeJSON(): Observable<ApiResponse<any>> {
     return this.apiService.get(`${environment.baseUrl}/json/graph/entity-nodes`);
@@ -39,7 +39,7 @@ export class JSONDataService {
 
   /**
    * Get the corr links JSON
-   * @returns Observable of ApiResponse object
+   * @returns an Observable of ApiResponse object
    */
   public corrLinkJSON(): Observable<ApiResponse<any>> {
     return this.apiService.get(`${environment.baseUrl}/json/graph/corr-links`);
@@ -47,7 +47,7 @@ export class JSONDataService {
 
   /**
    * Get the df links JSON
-   * @returns Observable of ApiResponse object
+   * @returns an Observable of ApiResponse object
    */
   public dfLinkJSON(): Observable<ApiResponse<any>> {
     return this.apiService.get(`${environment.baseUrl}/json/graph/df-links`);
@@ -55,7 +55,7 @@ export class JSONDataService {
 
   /**
    * Get the class node JSON
-   * @returns Observable of ApiResponse object
+   * @returns an Observable of ApiResponse object
    */
   public classNodeJSON(): Observable<ApiResponse<any>> {
     return this.apiService.get(`${environment.baseUrl}/json/class-graph/class-nodes`);
@@ -63,7 +63,7 @@ export class JSONDataService {
 
   /**
    * Get the obs link JSON
-   * @returns Observable of ApiResponse object
+   * @returns an Observable of ApiResponse object
    */
   public obsLinkJSON(): Observable<ApiResponse<any>> {
     return this.apiService.get(`${environment.baseUrl}/json/class-graph/class-obs-links`);
@@ -71,7 +71,7 @@ export class JSONDataService {
 
   /**
    * Get the dfc link JSON
-   * @returns Observable of ApiResponse object
+   * @returns an Observable of ApiResponse object
    */
   public dfcLinkJSON(): Observable<ApiResponse<any>> {
     return this.apiService.get(`${environment.baseUrl}/json/class-graph/class-df-links`);

@@ -1577,28 +1577,35 @@ export class GraphComponent implements OnInit, AfterViewInit {
     if (frequency != null && frequency > 0) {
       this.analysisService.calculateFrequencyFilter(frequency).subscribe({
         next: (response) => {
-          if (response.statusCode == 200 && response.responseData != null) {
-            const data = response.responseData;
+          // Check if the response statusCode is 200
+          if (response.statusCode === 200) {
+            if (response.responseData != null) {
+              const data = response.responseData;
 
-            // Add frequency results
-            data.forEach((item: any) => {
-              const freq = new FrequencyFilter();
-              freq.activity = item.activity;
-              freq.frequency = item.frequency;
+              // Process frequency data
+              data.forEach((item: any) => {
+                const freq = new FrequencyFilter();
+                freq.activity = item.activity;
+                freq.frequency = item.frequency;
 
-              this.frequencyResults.push(freq);
-            });
+                this.frequencyResults.push(freq);
+              });
 
-            if (this.frequencyResults.length > 0) {
-              this.openFrequencySidebar();
+              // If we have results, open the sidebar
+              if (this.frequencyResults.length > 0) {
+                this.openFrequencySidebar();
+              } else {
+                // No frequency data found
+                this.toast.show('No content for this frequency', ToastLevel.Warning, 3000);
+              }
             } else {
-              this.toast.show('No content for this frequency', ToastLevel.Warning, 3000);
+              // responseData is null → show the backend message
+              this.toast.show(response.message || 'No content for this frequency', ToastLevel.Warning, 3000);
             }
-          } else if (response.statusCode == 204) {
-            this.toast.show('No content for this frequency', ToastLevel.Warning, 3000);
           } else {
-            this.logger.error('Error while calculate the frequency', response.message);
-            this.toast.show('Error while calculate the frequency. Retry', ToastLevel.Error, 3000);
+            // Unexpected statusCode from backend
+            this.logger.error('Unexpected response status', response.message);
+            this.toast.show('Unexpected response. Retry', ToastLevel.Error, 3000);
           }
         },
         error: (errorData: ApiResponse<any>) => {
@@ -2084,14 +2091,14 @@ export class GraphComponent implements OnInit, AfterViewInit {
               icon: 'analytics',
               loading: false,
               action: () => this.openFrequencyModal()
-            },
-            {
-              title: 'Calculate Variation',
-              description: 'Calculate the variation based on the full Dataset data',
-              icon: 'analytics',
-              loading: false,
-              action: () => this.calculateGraphVariation()
             }
+            // {
+            //   title: 'Calculate Variation',
+            //   description: 'Calculate the variation based on the full Dataset data',
+            //   icon: 'analytics',
+            //   loading: false,
+            //   action: () => this.calculateGraphVariation()
+            // }
           );
         }
 

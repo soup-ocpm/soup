@@ -1,6 +1,6 @@
 import { SpBtnComponent, SpSpinnerComponent } from '@aledevsharp/sp-lib';
 import { CommonModule } from '@angular/common';
-import { Component } from '@angular/core';
+import { AfterViewInit, Component } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { NgbActiveModal } from '@ng-bootstrap/ng-bootstrap';
 import { ApiResponse } from 'src/app/core/models/api_response.model';
@@ -9,31 +9,27 @@ import { AnalysisService } from 'src/app/services/analysis.service';
 import { StandardGraphService } from 'src/app/services/standard_graph.service';
 import { NotificationService } from 'src/app/shared/components/s-toast/toast.service';
 import { ToastLevel } from 'src/app/shared/components/s-toast/toast_type.enum';
+import { MaterialModule } from 'src/app/shared/modules/materlal.module';
 
-import { PerformanceFilter } from './performance-filter.model';
+import { VariantFilter } from './variant-filter.model';
 
-/**
- * Performance Filter Component
- * @version 1.0.0
- * @since 1.0.0
- * @author Alessio Giacché
- */
 @Component({
-  selector: 'app-performance-filter-dialog',
+  selector: 'app-variant-filter-dialog',
   standalone: true,
   imports: [
     CommonModule,
     FormsModule,
+    MaterialModule,
     // Component import
     SpBtnComponent,
     SpSpinnerComponent
   ],
-  templateUrl: './performance-filter-dialog.component.html',
-  styleUrl: './performance-filter-dialog.component.scss'
+  templateUrl: './variant-filter-dialog.component.html',
+  styleUrl: './variant-filter-dialog.component.scss'
 })
-export class PerformanceFilterDialogComponent {
-  // The performance model
-  public performanceModel: PerformanceFilter = new PerformanceFilter();
+export class VariantFilterDialogComponent implements AfterViewInit {
+  // The variant model
+  public variantModel: VariantFilter = new VariantFilter();
 
   // All graph entity
   public allEntities: string[] = [];
@@ -41,26 +37,29 @@ export class PerformanceFilterDialogComponent {
   // Available operators
   public allOperators = ['<', '<=', '=', '!=', '>', '>='];
 
+  // All activity frequencies
+  public entityVariations: { variant: string[]; occurrences: number }[] = [];
+
   // The selected entity type
   public selectedEntityType = '';
-
-  // The entity avg duration
-  public avgEntityDuration = null;
 
   // The selected operator
   public selectedOperator = '';
 
-  // The seconds
-  public selectedSeconds = 0;
+  // The variation
+  public selectedVariation = 0;
 
   // The error message for entity
   public entityErrorMessage = '';
 
+  // Ngb tooltip
+  public tooltip: any;
+
   // Loading status for entities
   public isLoadingEntities = false;
 
-  // Loading status for duration
-  public isLoadingDuration = false;
+  // Loading status for variations
+  public isLoadingVariation = false;
 
   /**
    * Constructor for TimestamFilterDialogComponent component
@@ -79,6 +78,16 @@ export class PerformanceFilterDialogComponent {
     public graphService: StandardGraphService
   ) {}
 
+  // NgAfterViewInit implementation
+  public ngAfterViewInit() {
+    const tooltipTriggerList = Array.from(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    tooltipTriggerList.forEach((el) => {
+      new this.tooltip.Tooltip(el, {
+        html: true
+      });
+    });
+  }
+
   /**
    * Change the selected entity type
    */
@@ -86,60 +95,76 @@ export class PerformanceFilterDialogComponent {
     this.selectedEntityType = event;
 
     // Contact the server for retrieve the avg duration
-    this.isLoadingDuration = true;
-    this.avgEntityDuration = null;
+    this.isLoadingVariation = true;
+    this.entityVariations = [];
     this.entityErrorMessage = '';
     setTimeout(() => {
-      this.retrieveEntityAVGDuration();
+      this.retrieveEntityVariations();
     }, 300);
   }
 
   /**
-   * Retrieve the entity type avg duration
+   * Retrieve all entity variations
    */
-  private retrieveEntityAVGDuration(): void {
-    this.analysisService.retrieveEntityAVGDuration(this.selectedEntityType).subscribe({
+  private retrieveEntityVariations(): void {
+    this.analysisService.retrieveEntityVariationOccurrences(this.selectedEntityType).subscribe({
       next: (response) => {
         if (response != null && response.statusCode === 200 && response.responseData != null) {
           const data = response.responseData;
-          this.avgEntityDuration = data.formatted;
+
+          data.forEach((item: any) => {
+            const variant = item.variant;
+            const occurrences = item.occurrences;
+
+            this.entityVariations.push({
+              variant: variant,
+              occurrences: occurrences
+            });
+          });
         } else if (response != null && response.statusCode === 202) {
           // No content
-          this.logger.error('No entity avg duration found.', response.message);
-          this.entityErrorMessage = 'No entity avg duration found. Please retry';
+          this.logger.error('No activities frequency.', response.message);
+          this.entityErrorMessage = 'No activities frequency. Please retry';
         } else {
           // Error
-          this.logger.error('Unable to load the entity avg duration', response.message);
-          this.entityErrorMessage = 'Unable to load the entity avg duration. Please retry';
-          this.toast.show('Unable to load the entity avg duration. Please retry', ToastLevel.Error, 3000);
+          this.logger.error('Unable to load the activities frequency', response.message);
+          this.entityErrorMessage = 'Unable to load the activities frequency. Please retry';
+          this.toast.show('Unable to load the activities frequency. Please retry', ToastLevel.Error, 3000);
         }
 
-        this.isLoadingDuration = false;
+        this.isLoadingVariation = false;
       },
       error: (errorData: ApiResponse<any>) => {
         // Error
         this.logger.error(
-          'Unable to load the entities avg duration. Status code: ',
+          'Unable to load the activities frequency. Status code: ',
           errorData.statusCode + ' Message: ' + errorData.message
         );
 
-        this.entityErrorMessage = 'Unable to load the entities avg duration. Please retry';
-        this.toast.show('Unable to load the entities avg duration. Please retry', ToastLevel.Error, 3000);
+        this.entityErrorMessage = 'Unable to load the activities frequency. Please retry';
+        this.toast.show('Unable to load the activities frequency. Please retry', ToastLevel.Error, 3000);
 
-        this.isLoadingDuration = false;
+        this.isLoadingVariation = false;
       }
     });
+  }
+
+  /**
+   * Get specific tooltip text
+   */
+  public getTooltipText(variant: string[]): string {
+    return variant.join('\n');
   }
 
   /**
    * Submit the data
    */
   public onSubmit(): void {
-    if (this.selectedOperator !== '' && this.selectedSeconds > 0) {
-      this.performanceModel.entity = this.selectedEntityType;
-      this.performanceModel.operator = this.selectedOperator;
-      this.performanceModel.seconds = this.selectedSeconds;
-      this.activeModal.close({ performance: this.performanceModel });
+    if (this.selectedOperator !== '' && this.selectedVariation > 0) {
+      this.variantModel.entity = this.selectedEntityType;
+      this.variantModel.operator = this.selectedOperator;
+      this.variantModel.variant = this.selectedVariation;
+      this.activeModal.close({ variant: this.variantModel });
     }
   }
 

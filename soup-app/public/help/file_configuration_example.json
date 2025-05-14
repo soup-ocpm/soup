@@ -1,40 +1,39 @@
 {
   "timestamp": [
     {
-      "startDate": "2024-12-27T23:00:00.000Z",
-      "endDate": "2024-12-29T22:59:59.000Z"
-    },
-    {
-      "startDate": "2024-12-29T23:00:00.000Z",
-      "endDate": "2024-12-31T22:59:59.000Z"
+      "startDate": "2021-05-01T22:00:00.000Z",
+      "endDate": "2021-05-09T21:00:00.000Z"
     }
   ],
   "performance": [
     {
-      "startActivity": "Activity1",
-      "endActivity": "Activity2",
-      "seconds": 10
-    },
-    {
-      "startActivity": "Activity2",
-      "endActivity": "Activity3",
-      "seconds": 20
+      "entity": "Actor",
+      "operator": ">=",
+      "seconds": 100
     }
   ],
   "includeActivities": [
     {
-      "activities": ["Activity1"]
-    },
-    {
-      "activities": ["Filter4"]
+      "activities": ["Create_Order", "Receive_SO", "Update_Invoice"]
     }
   ],
   "excludeActivities": [
     {
-      "activities": ["Activity2"]
-    },
+      "activities": ["Create_Invoice", "Unpack", "Ship"]
+    }
+  ],
+  "frequence": [
     {
-      "activities": ["Activity3"]
+      "entity": "Actor",
+      "operator": ">=",
+      "frequency": 3
+    }
+  ],
+  "variant": [
+    {
+      "entity": "Order",
+      "operator": "=",
+      "variant": 1
     }
   ]
 }

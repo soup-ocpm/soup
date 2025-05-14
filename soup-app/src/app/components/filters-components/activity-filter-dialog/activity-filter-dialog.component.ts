@@ -100,6 +100,6 @@ export class ActivityFilterDialogComponent implements OnInit {
    * Close the modal without returning any data.
    */
   public onClose(): void {
-    this.activeModal.dismiss();
+    this.activeModal.dismiss('close-and-return');
   }
 }

@@ -4,13 +4,13 @@
  * @since 1.0.0
  * @author Alessio Giacché
  */
-export class PerformanceFilter {
+export class VariantFilter {
   // The start activity
   public entity = '';
 
   // The end activity
   public operator = '';
 
-  // The seconds
-  public seconds = 0;
+  // The variant
+  public variant = 0;
 }

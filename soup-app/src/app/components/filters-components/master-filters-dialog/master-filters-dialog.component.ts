@@ -1,4 +1,4 @@
-import { SpBtnTxtComponent } from '@aledevsharp/sp-lib';
+import { SpBtnComponent } from '@aledevsharp/sp-lib';
 import { CommonModule } from '@angular/common';
 import { Component } from '@angular/core';
 import { NgbActiveModal } from '@ng-bootstrap/ng-bootstrap';
@@ -12,18 +12,18 @@ import { MaterialModule } from '../../../shared/modules/materlal.module';
  * @author Alessio Giacché
  */
 @Component({
-  selector: 'app-primary-filter-dialog',
+  selector: 'app-master-filters-dialog',
   standalone: true,
-  imports: [CommonModule, MaterialModule, SpBtnTxtComponent],
-  templateUrl: './primary-filter-dialog.component.html',
-  styleUrl: './primary-filter-dialog.component.scss'
+  imports: [CommonModule, MaterialModule, SpBtnComponent],
+  templateUrl: './master-filters-dialog.component.html',
+  styleUrl: './master-filters-dialog.component.scss'
 })
-export class PrimaryFilterDialogComponent {
+export class MasterFiltersDialogComponent {
   // All filters
-  public filters = ['Timestamp', 'Performance', 'Include Activities', 'Exclude Activities', 'Frequence', 'Variation'];
+  public filters = ['Timestamp', 'Performance', 'Include Activities', 'Exclude Activities', 'Frequence', 'Variant'];
 
   /**
-   * Constructor for PrimaryFilterDialogComponent component
+   * Constructor for MasterFiltersDialogComponent component
    * @param activeModal the NgbActiveModal
    */
   constructor(public activeModal: NgbActiveModal) {}

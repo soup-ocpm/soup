@@ -1,10 +1,10 @@
 /**
- * Performance filter model class
+ * Frequence filter model class
  * @version 1.0.0
  * @since 1.0.0
  * @author Alessio Giacché
  */
-export class PerformanceFilter {
+export class FrequenceFilter {
   // The start activity
   public entity = '';
 
@@ -12,5 +12,5 @@ export class PerformanceFilter {
   public operator = '';
 
   // The seconds
-  public seconds = 0;
+  public frequency = 0;
 }

@@ -85,6 +85,33 @@ export class AnalysisService {
   }
 
   /**
+   * Retrieve the entity activities avg duration
+   * @param entity the specific entity
+   * @returns an Observable of ApiResponse object
+   */
+  public retrieveEntityAVGDuration(entity: string): Observable<ApiResponse<any>> {
+    return this.apiService.get(`${environment.baseUrl}/analyses/performance/avg?entity=${entity}`);
+  }
+
+  /**
+   * Retrieve the entity activities occurrences
+   * @param entity the specific entity
+   * @returns an Observable of ApiResponse object
+   */
+  public retrieveEntityOccurrences(entity: string): Observable<ApiResponse<any>> {
+    return this.apiService.get(`${environment.baseUrl}/analyses/frequency/occurrences?entity=${entity}`);
+  }
+
+  /**
+   * Retrieve the variation entity list
+   * @param entity the specific entity
+   * @returns an Observable of ApiResponse object
+   */
+  public retrieveEntityVariationOccurrences(entity: string): Observable<ApiResponse<any>> {
+    return this.apiService.get(`${environment.baseUrl}/analyses/variation/occurrences?entity=${entity}`);
+  }
+
+  /**
    * Get all analyses
    * @param datasetName the dataset name
    * @returns an Observable of ApiResponse object
