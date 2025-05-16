@@ -8,7 +8,9 @@ Starting from an event log, saved in a .csv file, the user is guided in the crea
 
 📃You can download some event logs [here](https://bitbucket.org/proslabteam/soup-validation/src/main/).
 
-⚠ Notably, as required by Memgraph, the timestamp should be in the following formats (optionally with milliseconds): `YYYY-MM-DDThh:mm:ss` or `YYYY-MM-DDThh:mm` or `YYYYMMDDThhmmss` or `YYYYMMDDThhmm` or `YYYYMMDDThh`.
+> ⚠ As required by Memgraph, the timestamp should be in the following formats (optionally with milliseconds): `YYYY-MM-DDThh:mm:ss` or `YYYY-MM-DDThh:mm` or `YYYYMMDDThhmmss` or `YYYYMMDDThhmm` or `YYYYMMDDThh`.
+
+> ⚠ To avoid undesired bugs, please upload event logs without spaces in column headers.
 
 ## Tecnhnologies
 ### 1. Memgraph Database
