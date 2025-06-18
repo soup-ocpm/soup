@@ -4,13 +4,6 @@
 The Soup Tool is a WebApp that allows the end user to create an Event Knowledge Graph (EKG) <br>
 Starting from an event log, saved in a .csv file, the user is guided in the creation of the EKG with the aim of performing object-centric process mining analysis. <br>
 
-ℹ Please refer to the project [wiki](https://bitbucket.org/proslabteam/soup/wiki/Home) for all the details.
-
-📃You can download some event logs [here](https://bitbucket.org/proslabteam/soup-validation/src/main/).
-
-> ⚠ As required by Memgraph, the timestamp should be in the following formats (optionally with milliseconds): `YYYY-MM-DDThh:mm:ss` or `YYYY-MM-DDThh:mm` or `YYYYMMDDThhmmss` or `YYYYMMDDThhmm` or `YYYYMMDDThh`.
-
-> ⚠ To avoid undesired bugs, please upload event logs without spaces in column headers.
 
 ## Tecnhnologies
 ### 1. Memgraph Database
@@ -42,7 +35,7 @@ and other libraries in package.json.
 The first step is to clone the project: 
 
 ```
-git clone git@bitbucket.org:proslabteam/soup.git
+git clone https://github.com/soup-ocpm/soup.git
 ```
 
 Make sure Git is installed on your computer. If Git is not installed, you will encounter an error message.
@@ -61,57 +54,38 @@ Run the following commands from the terminal to create a Container in Docker mad
 docker-compose -p soup-tool up --build
 ```
 
+OR (for Mac)
+
+```
+docker compose -p soup-tool up --build
+```
+
 Once the command is completed, Docker Compose automatically creates a container that includes the following sub-containers, all of which are already running:
 * Angular container: represents the web tool, contactable at the `localhost:4200`
 * Python container (Backend): represents the Backend and Engine of the system, contactable at the `localhost:8080`
 * Memgraph container: in this container, the Memgraph database runs which offers 3 different ports.The most important is `localhost:3000` which will open Memgraph Lab.
 
+## The Tool
+
+This tool allows users to upload their own `.csv` files containing object-centric event data. After uploading, users can filter the data and map the file's columns to desired attributes.
+
+Once mapping is complete, the server generates the graph of interest by executing queries on the Memgraph database. The resulting graph can then be: downloaded, filtered, aggregated based on custom attributes, and deleted if no longer needed.
 
 
-## Use case
-The tool allows the end user to upload a .csv file containing evet logs and create EKGs. <br>
-First, go to the corresponding "Upload CSV" section and follow the tool's instructions to correctly upload the csv file. <br>
-Once loaded, the file will be parsed and the user can see a preview of the entities and properties of the file through the table. <br>
-A Sidebar coming from the right has the task of letting the user filter the entities and properties to take into consideration for his analysis.<br>
+> [!TIP]
+> Please refer to the project [wiki](https://github.com/soup-ocpm/soup/wiki) for all the details.
 
-[Filter data](https://bitbucket.org/proslabteam/soup/raw/c4753811b425eb364664e811c11c984a1b51c275/ekg_screenshots/screen1.png)
+📃You can download some event logs [here](https://github.com/soup-ocpm/soup-validation).
 
-Once this first phase is completed, the graph will be automatically generated within our Memgraph database and the graph data will be reported in the form of Cards, as illustrated:
+> [!WARNING]
+> To avoid undesired bugs, please upload event logs without spaces in column headers.
 
-[Cards data](https://bitbucket.org/proslabteam/soup/raw/c4753811b425eb364664e811c11c984a1b51c275/ekg_screenshots/screen2.png)
+> [!NOTE] 
+> As required by Memgraph, the timestamp should be in the following formats (optionally with milliseconds): `YYYY-MM-DDThh:mm:ss` or `YYYY-MM-DDThh:mm` or `YYYYMMDDThhmmss` or `YYYYMMDDThhmm` or `YYYYMMDDThh`.
 
-Then it is possible to expand the cards to see the corresponding and specific JSON of the newly created data, with the possibility of searching within the JSON or even downloading it : 
-
-[Card visualization](https://bitbucket.org/proslabteam/soup/raw/c4753811b425eb364664e811c11c984a1b51c275/ekg_screenshots/screen3.png)
-
-In the Sidebar coming from the right, the user can perform operations such as downloading the complete JSON of the Graph, deleting the graph or above all grouping the nodes <br> 
-to create the graph composed of aggregate nodes (Class Graph). 
-
-[Class graph](https://bitbucket.org/proslabteam/soup/raw/c4753811b425eb364664e811c11c984a1b51c275/ekg_screenshots/screen4.png)
-
-Once the attributes to aggregate the nodes have been chosen, the Classes node will be created, and the user will automatically be redirected to the page which aims to view the complete graph. 
-
-In this section, the user can navigate the graprh. Above all, it is possible to search fo nodes or relationships, and through the Sidebar you can carry out other <br> 
-operations such as customizing the graph view, exporting the graph to .svg or deleting the graph.
-
-[Search nodes](https://bitbucket.org/proslabteam/soup/raw/c4753811b425eb364664e811c11c984a1b51c275/ekg_screenshots/screen5.png)
-
-[Change graph visualization](https://bitbucket.org/proslabteam/soup/raw/c4753811b425eb364664e811c11c984a1b51c275/ekg_screenshots/screen6.png)
-
-At the top left there is an arrow to return to the previous screen. In this case the tool recognizes that an aggregate graph has already been created (or in any case is present within the Database)<br> 
-so you have the possibility to see the graph or create a new one (the current graph will be eliminated).
-
-[New class graph](https://bitbucket.org/proslabteam/soup/raw/c4753811b425eb364664e811c11c984a1b51c275/ekg_screenshots/screen7.png)
-
-
-## Final Product
-The user has the possibility to upload his own .csv file containing the data of interest via Drag&Drop. 
-Once the .csv file is loaded, the user has the possibility to filter the data and therefore the columns of his .csv file.
-Once this operation has been done (optional) the Server will begin to create the Graph of interest through queries to the Memgraph Database and will return the generated graph as a result. Obviously, the user has the possibility to download his graph in .svg format, as the possibility of eliminating it, but above all grouping the entities by Classes, in such a way as to obtain a new graph of interest.
-All this achieved thanks to the Memgraph, Python and Angular libraries and documentation.
 
 ## Note
-> Our tool is called _Soup_, with a logo showcasing a mix of rainbow noodles, symbolizing the dynamic and interconnected flow of object-centric process mining, much like the iconic image of rainbow spaghetti.
+> 💭 Our tool is called _Soup_, with a logo showcasing a mix of rainbow noodles, symbolizing the dynamic and interconnected flow of object-centric process mining, much like the iconic image of rainbow spaghetti.
 
 ## Contact
 * **Development support**: Alessio Giacché ✉️ ale.giacc.dev@gmail.com
