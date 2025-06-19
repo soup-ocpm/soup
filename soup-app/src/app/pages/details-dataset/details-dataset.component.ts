@@ -397,14 +397,14 @@ export class DetailsDatasetComponent implements OnInit, AfterViewInit {
 
     // Show the modal
     this.modalService.showGenericModal(
-      'JSON Configuration?',
-      'Do you want to import a json configuration file containing filters?',
+      'Import Configuration',
+      'Would you like to load a pre-existing JSON file with your saved analysis settings and filters, or start fresh using our visual editor?',
       true,
       false,
       '',
-      'Yes',
+      'Upload',
       'var(--primary-color)',
-      'No, create manually',
+      'Start Fresh',
       '#000000',
       () => this.preOpenNewAnalysisSidebar(true),
       () => null,
