@@ -11,7 +11,13 @@
       <li
         class="filter-option"
         (click)="this.onSelectFilter(filter)">
-        {{ filter }}
+        <span class="filter-label">{{ filter }}</span>
+        <mat-icon
+          class="filter-icon"
+          ngbTooltip="{{ this.getFilterTextInfo(filter) }}"
+          placement="right">
+          info
+        </mat-icon>
       </li>
     }
   </ul>

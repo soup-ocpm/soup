@@ -5,7 +5,12 @@
   </div>
 
   <div class="modal-body">
-    <form (ngSubmit)="this.onSubmit()">
+    <div class="filter-description">
+      <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Ut pharetra sem mi, eget faucibus metus vulputate sit amet</p>
+    </div>
+    <form
+      style="margin-top: 10px"
+      (ngSubmit)="this.onSubmit()">
       <!--Select entity-->
       @if (!this.isLoadingEntities && this.allEntities != null && this.allEntities.length > 0) {
         <!-- Select Entity type -->

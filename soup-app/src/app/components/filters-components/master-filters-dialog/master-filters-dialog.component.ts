@@ -1,7 +1,7 @@
 import { SpBtnComponent } from '@aledevsharp/sp-lib';
 import { CommonModule } from '@angular/common';
 import { Component } from '@angular/core';
-import { NgbActiveModal } from '@ng-bootstrap/ng-bootstrap';
+import { NgbActiveModal, NgbTooltip } from '@ng-bootstrap/ng-bootstrap';
 
 import { MaterialModule } from '../../../shared/modules/materlal.module';
 
@@ -14,7 +14,7 @@ import { MaterialModule } from '../../../shared/modules/materlal.module';
 @Component({
   selector: 'app-master-filters-dialog',
   standalone: true,
-  imports: [CommonModule, MaterialModule, SpBtnComponent],
+  imports: [CommonModule, MaterialModule, NgbTooltip, SpBtnComponent],
   templateUrl: './master-filters-dialog.component.html',
   styleUrl: './master-filters-dialog.component.scss'
 })
@@ -29,7 +29,7 @@ export class MasterFiltersDialogComponent {
   constructor(public activeModal: NgbActiveModal) {}
 
   // Close the modal
-  public onModalClose() {
+  public onModalClose(): void {
     this.activeModal.close();
   }
 
@@ -37,7 +37,42 @@ export class MasterFiltersDialogComponent {
    * On select filter
    * @param filter the filter
    */
-  public onSelectFilter(filter: string) {
+  public onSelectFilter(filter: string): void {
     this.activeModal.close(filter);
+  }
+
+  /**
+   * Get the filter text info based on the filter
+   */
+  public getFilterTextInfo(filter: string): string {
+    let result = '';
+
+    switch (filter) {
+      case 'Timestamp':
+        result = 'Filtro: Timestamp';
+        break;
+
+      case 'Performance':
+        result = 'Filtro: Performance';
+        break;
+
+      case 'Include Activities':
+        result = 'Filtro: Include Activities';
+        break;
+
+      case 'Exclude Activities':
+        result = 'Filtro: Exclude';
+        break;
+
+      case 'Frequence':
+        result = 'Filtro: Frequence';
+        break;
+
+      case 'Variant':
+        result = 'Filtro: Variant';
+        break;
+    }
+
+    return result;
   }
 }
