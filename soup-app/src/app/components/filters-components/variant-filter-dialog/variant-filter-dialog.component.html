@@ -1,12 +1,20 @@
 <!--Main content-->
 <div class="master">
   <div class="modal-header">
-    <h4 class="modal-title">Variant filter</h4>
+    <h4 class="modal-title">Variant occurrency filter</h4>
   </div>
   <div class="modal-body">
     <div class="filter-description">
-      <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Ut pharetra sem mi, eget faucibus metus vulputate sit amet</p>
+      <p>Filter EKG traces based on occurrences of specific sequence (variant) of activities performed within a selected entity type.</p>
     </div>
+    <ul style="margin-top: 10px">
+      <li>
+        <strong>Entity Type:</strong> Choose the entity type to analyze.
+      </li>
+      <li>
+        <strong>Operator:</strong> Apply filters based on how often variant occurs (e.g., more than, less than, equal to a given count).
+      </li>
+    </ul>
     <form
       style="margin-top: 10px"
       (ngSubmit)="this.onSubmit()">
@@ -114,7 +122,7 @@
             <label
               for="seconds"
               style="color: var(--secondary-color); font-size: 15px">
-              Filter by trace duration
+              Filter by trace occurrence
             </label>
             <input
               id="seconds"

@@ -162,8 +162,8 @@ export class DetailsDatasetComponent implements OnInit, AfterViewInit {
       action: () => this.openAggregateSidebar()
     },
     {
-      title: 'New Analysis',
-      description: 'Create new analysis for this dataset',
+      title: 'Filter Builder',
+      description: 'Configure multiple filters for your EKG',
       icon: 'add_chart',
       loading: false,
       action: () => this.getGraphEntities()
@@ -436,7 +436,7 @@ export class DetailsDatasetComponent implements OnInit, AfterViewInit {
       {
         width: '600px',
         backgroundColor: '#fff',
-        title: 'New Analysis',
+        title: 'Filter Builder',
         closeIcon: true,
         stickyFooter: true,
         footerButtons: []
@@ -720,7 +720,7 @@ export class DetailsDatasetComponent implements OnInit, AfterViewInit {
    * @param add if we want to add the loading or not
    */
   public updateCalculateVariationOperation(add: boolean): void {
-    const newAnalysisIndex = this.operations.findIndex((op) => op.title === 'New Analysis');
+    const newAnalysisIndex = this.operations.findIndex((op) => op.title === 'Filter Builder');
 
     if (newAnalysisIndex !== -1) {
       // Change the loading attribute
@@ -1836,7 +1836,7 @@ export class DetailsDatasetComponent implements OnInit, AfterViewInit {
     if (actionType === 'add') {
       // Add the new operation
       if (manageAnalysisIndex === -1 && !this.operations.some((op) => op.title === 'Manage Analysis')) {
-        const newAnalysisIndex = this.operations.findIndex((op) => op.title === 'New Analysis');
+        const newAnalysisIndex = this.operations.findIndex((op) => op.title === 'Filter Builder');
         if (newAnalysisIndex !== -1) {
           this.operations.splice(newAnalysisIndex + 1, 0, {
             title: 'Manage Analysis',

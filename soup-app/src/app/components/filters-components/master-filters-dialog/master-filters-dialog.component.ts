@@ -49,11 +49,11 @@ export class MasterFiltersDialogComponent {
 
     switch (filter) {
       case 'Timestamp':
-        result = 'Filtro: Timestamp';
+        result = 'Narrow down the EKG data by specifying a custom date and time range';
         break;
 
       case 'Performance':
-        result = 'Filtro: Performance';
+        result = 'Filter EKG by selecting an entity type and applying duration-based conditions';
         break;
 
       case 'Include Activities':
@@ -65,11 +65,11 @@ export class MasterFiltersDialogComponent {
         break;
 
       case 'Frequence':
-        result = 'Filtro: Frequence';
+        result = 'Filter EKG traces based on how frequently specific activities occur within a selected entity type';
         break;
 
       case 'Variant':
-        result = 'Filtro: Variant';
+        result = 'Filter EKG traces based on the occurrences of variants of a selected entity type';
         break;
     }
 

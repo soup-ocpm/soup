@@ -1,13 +1,21 @@
 <!--Main content-->
 <div class="master">
   <div class="modal-header">
-    <h4 class="modal-title">Frequence filter</h4>
+    <h4 class="modal-title">Frequency filter</h4>
   </div>
 
   <div class="modal-body">
     <div class="filter-description">
-      <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Ut pharetra sem mi, eget faucibus metus vulputate sit amet</p>
+      <p>Filter EKG traces based on how frequently specific activities occur within a selected entity type.</p>
     </div>
+    <ul style="margin-top: 10px">
+      <li>
+        <strong>Entity Type:</strong> Choose the entity type to analyze.
+      </li>
+      <li>
+        <strong>Operator:</strong> Apply filters based on how often activities occurs (e.g., more than, less than, equal to a given count).
+      </li>
+    </ul>
     <form
       style="margin-top: 10px"
       (ngSubmit)="this.onSubmit()">
