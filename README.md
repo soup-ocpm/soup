@@ -1,8 +1,8 @@
 # Soup
 
-![Angular](https://img.shields.io/badge/Angular-v18.2.0-DD0031?style=flat&logo=angular&logoColor=white)
-![Python](https://img.shields.io/badge/Python-3.11.5-3776AB?style=flat&logo=python&logoColor=white)
-![Memgraph](https://img.shields.io/badge/Memgraph-v3.3.0-000000%3Fstyle%3Dflat%26logo%3Dmemgraph%26logoColor%3Dwhite?color=orange)
+![Angular](https://img.shields.io/badge/Angular-v18.2.0-DD0031?style=for-the-badge&logo=Angular&color=%23e61919)
+![Python](https://img.shields.io/badge/Python-3.11.5-3776AB?style=for-the-badge&logo=Python&color=blue)
+![Memgraph](https://img.shields.io/badge/Memgraph-v3.3.0-000000?style=for-the-badge&color=orange)
 
 ## Description
 **SOUP** is a web application that enables users to create an **Event Knowledge Graph (EKG)** from their own event logs.
