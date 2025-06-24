@@ -4,8 +4,8 @@ File : filter_query_lib.py
 Description: Cypher query library for filter EKG
 Date creation: 22-12-2024
 Project : soup-server
-Author: Alessio Giacché
-Copyright: Copyright (c) 2024 Alessio Giacché <ale.giacc.dev@gmail.com>
+Author: Alessio Giacché & Sara Pettinari
+Copyright: Copyright (c) 2024 Alessio Giacché <ale.giacc.dev@gmail.com> & Sara Pettinari <sara.pettinari@gssi.it>
 License : MIT
 ------------------------------------------------------------------------
 """
@@ -79,52 +79,52 @@ def performance_filter_delete_query(start_activity_name, end_activity_name, dura
             f"DETACH DELETE start, end")
 
 
-def include_activity_filter_query(activities):
-    """
-    Include activity filter query
-    :param activities: list of the activities
-    :return: the filtered graph
-    """
-    return (f"MATCH (e1:Event)-[r:DF]->(e2:Event) "
-            f"WHERE e1.ActivityName = '{activities}' AND e2.ActivityName = '{activities}' "
-            f"RETURN e1 as source, id(e1) as source_id, properties(r) as edge, "
-            f"id(r) as edge_id, e2 as target, id(e2) as target_id ")
+# def _include_activity_filter_query(activities):
+#     """
+#     Include activity filter query
+#     :param activities: list of the activities
+#     :return: the filtered graph
+#     """
+#     return (f"MATCH (e1:Event)-[r:DF]->(e2:Event) "
+#             f"WHERE e1.ActivityName = '{activities}' AND e2.ActivityName = '{activities}' "
+#             f"RETURN e1 as source, id(e1) as source_id, properties(r) as edge, "
+#             f"id(r) as edge_id, e2 as target, id(e2) as target_id ")
 
 
-def include_activity_filter_delete_query(activities):
-    """
-    Include activity filter delete query
-    :param activities: the activities
-    :return: the filtered graph
-    """
-    activities_str = "', '".join(activities)
-    return (f"MATCH (e1:Event)-[r:DF]->(e2:Event) "
-            f"WHERE NOT (e1.ActivityName IN ['{activities_str}'] AND e2.ActivityName IN ['{activities_str}']) "
-            f"DETACH DELETE e1, e2, r")
+# def include_activity_filter_delete_query(activities):
+#     """
+#     Include activity filter delete query
+#     :param activities: the activities
+#     :return: the filtered graph
+#     """
+#     activities_str = "', '".join(activities)
+#     return (f"MATCH (e1:Event)-[r:DF]->(e2:Event) "
+#             f"WHERE NOT (e1.ActivityName IN ['{activities_str}'] AND e2.ActivityName IN ['{activities_str}']) "
+#             f"DETACH DELETE e1, e2, r")
 
 
-def exclude_activity_filter_query(activities):
-    """
-    Exclude activity filter query
-    :param activities: the activities
-    :return: the filtered graph
-    """
-    return (f"MATCH (e1:Event)-[r:DF]->(e2:Event) "
-            f"WHERE NOT (e1.ActivityName = '{activities}' AND e2.ActivityName = '{activities}') "
-            f"RETURN e1 as source, id(e1) as source_id, properties(r) as edge, "
-            f"id(r) as edge_id, e2 as target, id(e2) as target_id ")
+# def _exclude_activity_filter_query(activities):
+#     """
+#     Exclude activity filter query
+#     :param activities: the activities
+#     :return: the filtered graph
+#     """
+#     return (f"MATCH (e1:Event)-[r:DF]->(e2:Event) "
+#             f"WHERE NOT (e1.ActivityName = '{activities}' AND e2.ActivityName = '{activities}') "
+#             f"RETURN e1 as source, id(e1) as source_id, properties(r) as edge, "
+#             f"id(r) as edge_id, e2 as target, id(e2) as target_id ")
 
 
-def exclude_activity_filter_delete_query(activities):
-    """
-    Exclude activity filter delete query
-    :param activities: the activities
-    :return: the filtered graph
-    """
-    activities_str = "', '".join(activities)
-    return (f"MATCH (e1:Event)-[r:DF]->(e2:Event) "
-            f"WHERE (e1.ActivityName IN ['{activities_str}'] OR e2.ActivityName IN ['{activities_str}']) "
-            f"DETACH DELETE e1, e2, r")
+# def exclude_activity_filter_delete_query(activities):
+#     """
+#     Exclude activity filter delete query
+#     :param activities: the activities
+#     :return: the filtered graph
+#     """
+#     activities_str = "', '".join(activities)
+#     return (f"MATCH (e1:Event)-[r:DF]->(e2:Event) "
+#             f"WHERE (e1.ActivityName IN ['{activities_str}'] OR e2.ActivityName IN ['{activities_str}']) "
+#             f"DETACH DELETE e1, e2, r")
 
 
 def frequency_filter_query(frequency):
@@ -177,6 +177,48 @@ def clean_timestamp(timestamp):
 
 
 ########################## NEW FILTERS ##########################
+
+######## ACTIVITY FILTERS ########
+def exclude_activity_filter_query(activity):
+    """
+    Exclude an activity from the EKG and infers the DF relationships between its predecessors and successors.
+    """
+    query = f"""
+        MATCH (e:Event {{ActivityName: '{activity}'}})
+        OPTIONAL MATCH (pred:Event)-[inRel:DF]->(e)
+        OPTIONAL MATCH (e)-[outRel:DF]->(succ:Event)
+        WITH e, pred, succ, inRel, outRel
+        FOREACH (_ IN CASE WHEN pred IS NOT NULL AND succ IS NOT NULL AND inRel IS NOT NULL AND outRel IS NOT NULL AND inRel.Type = outRel.Type THEN [1] ELSE [] END |
+            MERGE (pred)-[newRel:DF {{Type: inRel.Type}}]->(succ)
+            SET newRel.edge_weight = inRel.edge_weight
+        )
+        WITH DISTINCT e
+        DETACH DELETE e
+    """
+    return query
+
+
+def include_activity_filter_query(activities):
+    query = f"""
+        UNWIND {activities} AS activityToKeep
+        WITH collect(activityToKeep) AS keepList
+        MATCH (e1:Event)
+        WHERE e1.ActivityName IN keepList
+        CALL {{
+        WITH e1, keepList
+        MATCH (e1)-[d:DF*2..30]->(e2:Event)
+        WHERE e2.ActivityName IN keepList AND e1 <> e2
+        WITH e1, e2, d[0] AS firstRel
+        MERGE (e1)-[:DF {{Type: firstRel.Type, edge_weight: 1}}]->(e2)
+        }}
+        WITH keepList
+        MATCH (e:Event)
+        WHERE NOT e.ActivityName IN keepList
+        DETACH DELETE e
+    """
+    return query
+
+
 
 ######## PERFORMANCE FILTERS ########
 def generic_trace_duration_query(ent_type):

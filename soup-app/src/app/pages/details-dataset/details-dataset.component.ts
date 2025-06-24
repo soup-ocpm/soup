@@ -398,7 +398,7 @@ export class DetailsDatasetComponent implements OnInit, AfterViewInit {
     // Show the modal
     this.modalService.showGenericModal(
       'Import Configuration',
-      'Would you like to load a pre-existing JSON file with your saved analysis settings and filters, or start fresh using our visual editor?',
+      'Would you like to load a pre-existing JSON file with your saved analysis settings and filters, or start fresh using our visual editor? *Note*: if you want to use an existing analysis configuration you can choose it in the "Manage Analysis" tab.',
       true,
       false,
       '',
@@ -1840,7 +1840,7 @@ export class DetailsDatasetComponent implements OnInit, AfterViewInit {
         if (newAnalysisIndex !== -1) {
           this.operations.splice(newAnalysisIndex + 1, 0, {
             title: 'Manage Analysis',
-            description: 'Manage the analysis.',
+            description: 'See, load or delete analysis history',
             icon: 'history',
             loading: false,
             action: () => this.openHistoryAnalysisSidebar()

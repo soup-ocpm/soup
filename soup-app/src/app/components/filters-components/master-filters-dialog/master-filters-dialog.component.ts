@@ -57,11 +57,11 @@ export class MasterFiltersDialogComponent {
         break;
 
       case 'Include Activities':
-        result = 'Filtro: Include Activities';
+        result = 'Select specific activities to include in the EKG';
         break;
 
       case 'Exclude Activities':
-        result = 'Filtro: Exclude';
+        result = 'Select specific activities to exclude from the EKG';
         break;
 
       case 'Frequence':

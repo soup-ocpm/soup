@@ -695,7 +695,8 @@ def process_analysis(container_id, database_connector, dataset_name, analysis_na
         # 5.3 Include activities filter queries
         for current_include_filter in include_filters:
             activities = current_include_filter['activities']
-            query = include_activity_filter_delete_query(activities)
+            query = include_activity_filter_query(activities)
+            print(query)
 
             try:
                 # Execute the query
@@ -708,15 +709,16 @@ def process_analysis(container_id, database_connector, dataset_name, analysis_na
         # 5.4 Exclude activities filter queries
         for current_exclude_filter in exclude_filters:
             activities = current_exclude_filter['activities']
-            query = exclude_activity_filter_delete_query(activities)
+            for activity in activities:
+                query = exclude_activity_filter_query(activity)
 
-            try:
-                # Execute the query
-                database_connector.run_query_memgraph(query)
+                try:
+                    # Execute the query
+                    database_connector.run_query_memgraph(query)
 
-            except Exception as e:
-                logger.error(f'Exclude Activities Internal Server Error: {str(e)}')
-                return f'error {e}', []
+                except Exception as e:
+                    logger.error(f'Exclude Activities Internal Server Error: {str(e)}')
+                    return f'error {e}', []
 
         # 5.5 Frequency filter queries
         for current_frequency_filter in frequence_filters:
