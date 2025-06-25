@@ -1,88 +1,95 @@
 # Soup
 
-## Description
-The Soup Tool is a WebApp that allows the end user to create an Event Knowledge Graph (EKG) <br>
-Starting from an event log, saved in a .csv file, the user is guided in the creation of the EKG with the aim of performing object-centric process mining analysis. <br>
+![Angular](https://img.shields.io/badge/Angular-v18.2.0-DD0031?style=for-the-badge&logo=Angular&color=%23e61919)
+![Python](https://img.shields.io/badge/Python-3.11.5-3776AB?style=for-the-badge&logo=Python&color=blue)
+![Memgraph](https://img.shields.io/badge/Memgraph-v3.3.0-000000?style=for-the-badge&color=orange)
 
+## Description
+**SOUP** is a web application that enables users to create an **Event Knowledge Graph (EKG)** from their own event logs.
+
+Starting from a `.csv` file containing object-centric event data, the tool guides the user through the EKG creation process, with the goal of supporting **object-centric process mining** analysis in an intuitive and efficient way.
+
+---
 
 ## Tecnhnologies
-### 1. Memgraph Database
-As a Graph database for storing and manipulated event data.
 
-Useful links: 
-* [Memgraph](https://memgraph.com/) 
-* [Chyper Query Language](https://neo4j.com/product/cypher-graph-query-language/?utm_source=google&utm_medium=PaidSearch&utm_campaign=GDB&utm_content=EMEA-X-Awareness-GDB-Text&utm_term=cypher%20query%20language&gad_source=1&gclid=CjwKCAiA9ourBhAVEiwA3L5RFhfAegfrPme8ND2NcBymbz8fhWHLrDI-HbSaK5lhBIA0kp-iR8ZZgRoC47wQAvD_BwE)
+| Role in SOUP                                    | Useful Links |
+|------------------|--------------|
+| Graph database used to store and query the EKG | [Memgraph](https://memgraph.com/) <br> [Cypher Query Language](https://neo4j.com/product/cypher-graph-query-language/) |
+| Backend logic and API layer                     | [Python](https://www.python.org/) <br> [Flask](https://flask.palletsprojects.com/en/3.0.x/) <br> [Neo4j Python Driver](https://neo4j.com/developer/python/) |
+| Frontend and graph rendering       | [Angular](https://angular.io/) <br> [Dagre-d3](https://www.npmjs.com/package/dagre-d3) |
+| Other supporting libraries and tools                  | See `package.json` for full list |
 
-### 2. Python
-The Backend is based on the Python programming language and the Flask library.
-
-Useful links: 
-* [Python](https://www.python.org/)
-* [Flask](https://flask.palletsprojects.com/en/3.0.x/)
-* [Neo4j Python library](https://neo4j.com/developer/python/)
-
-### 3. Angular
-The Angular framework is used as a frontend.  Within Angular, the dagre-d3 library has been used to create graphs based on nodes and relations.
-
-Useful links: 
-* [Angular](https://angular.io/)
-* [Dagre-d3](https://www.npmjs.com/package/dagre-d3)
-
-and other libraries in package.json.
+---
 
 ## Tool Setup - Instructions
 
-The first step is to clone the project: 
+First, ensure [Git](https://git-scm.com/downloads) is installed on your machine. Then, open your terminal and run:
 
 ```
 git clone https://github.com/soup-ocpm/soup.git
 ```
 
-Make sure Git is installed on your computer. If Git is not installed, you will encounter an error message.
+Make sure Git is installed on your computer. If Git is not installed, you’ll see an error — install it from the link above before proceeding.
 
-To download Git, visit the following page: [Download Git](https://git-scm.com/downloads)
+### Start the tool via Docker
 
-### Start tool by Docker
+First, install Docker on your computer: [Download Docker](https://www.docker.com/get-started/)
 
-First, install Docker inside your computer: [Download Docker](https://www.docker.com/get-started/)
-
-After successfully installing Docker, open the terminal in the main folder of the cloned project.
-
-Run the following commands from the terminal to create a Container in Docker made up of all the projects:<br>
+Once Docker is installed, open your terminal in the root directory of the cloned project and run:
 
 ```
 docker-compose -p soup-tool up --build
 ```
 
-OR (for Mac)
+> 💡 Mac users (and newer Docker versions) may need to run:
+  ```
+  docker compose -p soup-tool up --build
+  ```
 
-```
-docker compose -p soup-tool up --build
-```
+Docker Compose will spin up the following containers:
 
-Once the command is completed, Docker Compose automatically creates a container that includes the following sub-containers, all of which are already running:
-* Angular container: represents the web tool, contactable at the `localhost:4200`
-* Python container (Backend): represents the Backend and Engine of the system, contactable at the `localhost:8080`
-* Memgraph container: in this container, the Memgraph database runs which offers 3 different ports.The most important is `localhost:3000` which will open Memgraph Lab.
+| Container        | Description                                  | Access Point                   |
+|------------------|----------------------------------------------|--------------------------------|
+| **Angular**    | Frontend WebApp                              | [http://localhost:4200](http://localhost:4200) |
+| **Python/Flask** | Backend logic and API engine                 | [http://localhost:8080](http://localhost:8080) |
+| **Memgraph**   | Graph DB for storing and querying EKGs       | [http://localhost:3000](http://localhost:3000) *(Memgraph Lab)* |
+
+
+
+You’re now ready to start using SOUP! 🎉
+
+---
 
 ## The Tool
 
-This tool allows users to upload their own `.csv` files containing object-centric event data. After uploading, users can filter the data and map the file's columns to desired attributes.
+**SOUP** is a user-friendly web application to work with object-centric event data in `.csv` format. It allows you to:
 
-Once mapping is complete, the server generates the graph of interest by executing queries on the Memgraph database. The resulting graph can then be: downloaded, filtered, aggregated based on custom attributes, and deleted if no longer needed.
+1. **Upload** your event log file.
+2. **Filter and map** columns to the appropriate event attributes.
+3. **Automatically generate** an Event Knowledge Graph (EKG) using the Memgraph database.
+4. **Explore and manipulate** the graph through:
+   - **Filtering** (e.g., timestamps, frequency, performance)
+   - **Aggregating** nodes into classes
+   - **Exporting** to `.svg` or `.json`
+   - **Deleting** graphs when no longer needed
 
+---
 
 > [!TIP]
-> Please refer to the project [wiki](https://github.com/soup-ocpm/soup/wiki) for all the details.
+> Please refer to the project [wiki](https://github.com/soup-ocpm/soup/wiki) for all the details additionally you can download some event logs [here](https://github.com/soup-ocpm/soup-validation).
 
-📃You can download some event logs [here](https://github.com/soup-ocpm/soup-validation).
+---
 
 > [!WARNING]
-> To avoid undesired bugs, please upload event logs without spaces in column headers.
+> Make sure your `.csv` file **does not contain spaces** in the column headers to avoid parsing issues.
 
-> [!NOTE] 
-> As required by Memgraph, the timestamp should be in the following formats (optionally with milliseconds): `YYYY-MM-DDThh:mm:ss` or `YYYY-MM-DDThh:mm` or `YYYYMMDDThhmmss` or `YYYYMMDDThhmm` or `YYYYMMDDThh`.
+---
 
+> [!NOTE]   
+> **Timestamp Format Requirements**: Memgraph accepts the following timestamp formats (with optional milliseconds): `YYYY-MM-DDThh:mm:ss` or `YYYY-MM-DDThh:mm` or `YYYYMMDDThhmmss` or `YYYYMMDDThhmm` or `YYYYMMDDThh`.
+
+---
 
 ## Note
 > 💭 Our tool is called _Soup_, with a logo showcasing a mix of rainbow noodles, symbolizing the dynamic and interconnected flow of object-centric process mining, much like the iconic image of rainbow spaghetti.
