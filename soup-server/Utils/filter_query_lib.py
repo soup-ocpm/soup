@@ -79,88 +79,6 @@ def performance_filter_delete_query(start_activity_name, end_activity_name, dura
             f"DETACH DELETE start, end")
 
 
-# def _include_activity_filter_query(activities):
-#     """
-#     Include activity filter query
-#     :param activities: list of the activities
-#     :return: the filtered graph
-#     """
-#     return (f"MATCH (e1:Event)-[r:DF]->(e2:Event) "
-#             f"WHERE e1.ActivityName = '{activities}' AND e2.ActivityName = '{activities}' "
-#             f"RETURN e1 as source, id(e1) as source_id, properties(r) as edge, "
-#             f"id(r) as edge_id, e2 as target, id(e2) as target_id ")
-
-
-# def include_activity_filter_delete_query(activities):
-#     """
-#     Include activity filter delete query
-#     :param activities: the activities
-#     :return: the filtered graph
-#     """
-#     activities_str = "', '".join(activities)
-#     return (f"MATCH (e1:Event)-[r:DF]->(e2:Event) "
-#             f"WHERE NOT (e1.ActivityName IN ['{activities_str}'] AND e2.ActivityName IN ['{activities_str}']) "
-#             f"DETACH DELETE e1, e2, r")
-
-
-# def _exclude_activity_filter_query(activities):
-#     """
-#     Exclude activity filter query
-#     :param activities: the activities
-#     :return: the filtered graph
-#     """
-#     return (f"MATCH (e1:Event)-[r:DF]->(e2:Event) "
-#             f"WHERE NOT (e1.ActivityName = '{activities}' AND e2.ActivityName = '{activities}') "
-#             f"RETURN e1 as source, id(e1) as source_id, properties(r) as edge, "
-#             f"id(r) as edge_id, e2 as target, id(e2) as target_id ")
-
-
-# def exclude_activity_filter_delete_query(activities):
-#     """
-#     Exclude activity filter delete query
-#     :param activities: the activities
-#     :return: the filtered graph
-#     """
-#     activities_str = "', '".join(activities)
-#     return (f"MATCH (e1:Event)-[r:DF]->(e2:Event) "
-#             f"WHERE (e1.ActivityName IN ['{activities_str}'] OR e2.ActivityName IN ['{activities_str}']) "
-#             f"DETACH DELETE e1, e2, r")
-
-
-def frequency_filter_query(frequency):
-    """
-    Frequency filter query
-    :param frequency: the frequency
-    :return: the activities and frequencies
-    """
-    return (f"MATCH (e:Event) "
-            f"WITH e.ActivityName AS activities, COUNT(e) AS frequency "
-            f"WHERE frequency >= {frequency} "
-            f"RETURN activities, frequency "
-            f"ORDER BY frequency ASC ")
-
-
-def variation_filter_query():
-    """
-    Variation filter query
-    :return: the activities and durations
-    """
-    query = """
-            MATCH (start:Event)-[:DF*1..5]->(end:Event)
-            WITH start.EventID AS caseId,
-            COLLECT(DISTINCT start.ActivityName) + COLLECT(DISTINCT end.ActivityName) AS activities,
-            COLLECT(DISTINCT start.ActivityName) AS distinct_activities,
-            MIN(start.Timestamp.year * 10000000000 + start.Timestamp.month * 100000000 + start.Timestamp.day * 1000000 + start.Timestamp.hour * 10000 + start.Timestamp.minute * 100 + start.Timestamp.second) AS min_timestamp,
-            MAX(end.Timestamp.year * 10000000000 + end.Timestamp.month * 100000000 + end.Timestamp.day * 1000000 + end.Timestamp.hour * 10000 + end.Timestamp.minute * 100 + end.Timestamp.second) AS max_timestamp
-            WITH caseId, activities, distinct_activities,
-            (max_timestamp - min_timestamp) / 1000 AS duration_seconds
-            RETURN activities, distinct_activities, AVG(duration_seconds) AS avg_duration, COUNT(*) AS frequency
-            ORDER BY avg_duration ASC
-    """
-
-    return query
-
-
 def clean_timestamp(timestamp):
     """
     Clean the timestamp
@@ -193,27 +111,6 @@ def exclude_activity_filter_query(activity):
             SET newRel.edge_weight = inRel.edge_weight
         )
         WITH DISTINCT e
-        DETACH DELETE e
-    """
-    return query
-
-
-def include_activity_filter_query(activities):
-    query = f"""
-        UNWIND {activities} AS activityToKeep
-        WITH collect(activityToKeep) AS keepList
-        MATCH (e1:Event)
-        WHERE e1.ActivityName IN keepList
-        CALL {{
-        WITH e1, keepList
-        MATCH (e1)-[d:DF*2..30]->(e2:Event)
-        WHERE e2.ActivityName IN keepList AND e1 <> e2
-        WITH e1, e2, d[0] AS firstRel
-        MERGE (e1)-[:DF {{Type: firstRel.Type, edge_weight: 1}}]->(e2)
-        }}
-        WITH keepList
-        MATCH (e:Event)
-        WHERE NOT e.ActivityName IN keepList
         DETACH DELETE e
     """
     return query
@@ -289,8 +186,13 @@ def filter_activity_frequency(ent_type, operator, frequency):
     return (f'''
             MATCH (e:Event)-[:CORR]->(t:Entity {{Type: "{ent_type}"}})
             WITH e.ActivityName AS Activity, COLLECT(e) as Events
-            WHERE SIZE (Events) {operator} {frequency}
-            UNWIND Events AS e
+            WHERE SIZE(Events) {operator} {frequency}
+            UNWIND Events AS e_keep
+            WITH COLLECT(e_keep) AS EventsToKeep
+
+            // Match all other events (those NOT in EventsToKeep)
+            MATCH (e:Event)
+            WHERE NOT e IN EventsToKeep
             // Find predecessors and successors of the event in the DF chain
             OPTIONAL MATCH (prev)-[df1:DF]->(e)-[df2:DF]->(next)
             // Create a new connection from the predecessor to the successor if both exist

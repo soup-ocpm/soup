@@ -25,7 +25,7 @@ from Models.api_response_model import ApiResponse
 from Models.logger_model import Logger
 from Utils.filter_query_lib import *
 from Utils.aggregate_graph_query_lib import delete_class_graph_query
-from Utils.graph_query_lib import get_limit_standard_graph_query, delete_event_graph_query, delete_entity_graph_query
+from Utils.graph_query_lib import get_limit_standard_graph_query, delete_event_graph_query, delete_entity_graph_query, get_activities_name_query
 
 # Engine logger setup
 logger = Logger()
@@ -694,13 +694,20 @@ def process_analysis(container_id, database_connector, dataset_name, analysis_na
 
         # 5.3 Include activities filter queries
         for current_include_filter in include_filters:
+            activities_q = get_activities_name_query()
+            
             activities = current_include_filter['activities']
-            query = include_activity_filter_query(activities)
-            print(query)
 
             try:
-                # Execute the query
-                database_connector.run_query_memgraph(query)
+                entities = database_connector.run_query_memgraph(activities_q)
+                all_activities = entities[0]['activityNames']
+                excluded_activities = [x for x in all_activities if x not in activities]
+                
+                # Execute the query, i.e., exclude all the activities that are not selected as 'include'
+                for e_act in excluded_activities:
+                    query = exclude_activity_filter_query(e_act)
+                    print(query)
+                    database_connector.run_query_memgraph(query)
 
             except Exception as e:
                 logger.error(f'Include Activities Internal Server Error: {str(e)}')
@@ -726,6 +733,7 @@ def process_analysis(container_id, database_connector, dataset_name, analysis_na
             operator = current_frequency_filter['operator']
             frequency = current_frequency_filter['frequency']
             query = filter_activity_frequency(entity, operator, frequency)
+            print(query)
 
             try:
                 # Execute the query

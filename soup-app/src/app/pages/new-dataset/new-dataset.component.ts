@@ -351,7 +351,7 @@ export class NewDatasetComponent implements OnInit {
       {
         width: '500px',
         backgroundColor: '#f9f9f9',
-        title: 'Filter Data',
+        title: 'Select Data',
         closeIcon: false,
         stickyFooter: false,
         footerButtons: [{ label: 'Continue', action: () => this.inputDatasetName(), color: 'var(--primary-color)' }]
