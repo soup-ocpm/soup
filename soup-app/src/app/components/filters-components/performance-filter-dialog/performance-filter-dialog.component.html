@@ -4,101 +4,129 @@
 </div>
 <div class="modal-body">
   <div class="filter-description">
-    <p> Filter EKG trace performance by selecting an entity type and applying duration-based conditions. </p><br>
-</div>
-<ul style="margin-top: 10px">
-  <li>
-    <strong>Entity Type:</strong> Choose the entity you want to analyze.<br>
-  </li>
-  <li>
-    <strong>Operator:</strong> Filter entity traces based on total duration (e.g., greater than, less than, equal to a specific threshold).
-  </li>
-</ul>
-<form style="margin-top: 10px" (ngSubmit)="this.onSubmit()">
-  <!--Select entity-->
-  @if (!this.isLoadingEntities && this.allEntities != null && this.allEntities.length > 0) {
-  <!-- Select Entity type -->
-  <div class="form-group">
-    <label class="form-group-label" for="entityType">
-      Select the Entity type
-    </label>
-    <select id="entityType" name="entityType" class="form-select" [(ngModel)]="this.selectedEntityType"
-      (ngModelChange)="this.changeSelectedEntityType($event)">
-      @for (entityType of this.allEntities; track $index) {
-      <option [value]="entityType">
-        {{ entityType }}
-      </option>
-      }
-    </select>
+    <p>Filter EKG trace performance by selecting an entity type and applying duration-based conditions.</p>
+    <br />
   </div>
-  }
-
-  <!--Loading status-->
-  @if (this.isLoadingEntities || this.isLoadingDuration) {
-  <div class="loading-entity">
-    <sp-spinner></sp-spinner>
-  </div>
-  }
-
-  <!--Error or no entities-->
-  @if (!this.isLoadingEntities && (this.allEntities == null || this.allEntities.length === 0) && this.entityErrorMessage
-  != '') {
-  <div class="loading-entity">
-    <p style="color: red">{{ this.entityErrorMessage }}</p>
-  </div>
-  }
-
-  <!--Inputs-->
-  @if (
-  !this.isLoadingEntities &&
-  !this.isLoadingDuration &&
-  this.allEntities != null &&
-  this.allEntities.length > 0 &&
-  this.avgEntityDuration != null
-  ) {
-  <div class="avg-duration">
-    <p>
-      Average duration:
-      <span style="font-size: bold">{{ this.avgEntityDuration }}</span>
-      seconds
-    </p>
-  </div>
-
-  <!--Inputs-->
-  <div class="input-user">
-    <!-- Input operator -->
-    <div class="form-group">
-      <label class="form-group-label" for="operator">
-        Operator
-      </label>
-      <select id="operator" name="operator" class="form-select" [(ngModel)]="this.selectedOperator">
-        @for (operator of this.allOperators; track $index) {
-        <option [value]="operator">
-          {{ operator }}
-        </option>
-        }
-      </select>
-    </div>
-
-    <!--Input second-->
-    <div class="form-group">
-      <label for="seconds" style="color: var(--secondary-color); font-size: 15px">
-        Filter by trace duration (seconds)
-      </label>
-      <input id="seconds" class="form-control form-control-sm" name="seconds" type="number"
-        [(ngModel)]="this.selectedSeconds"
-        style="height: 2rem; font-size: 1rem; padding: 0.375rem 0.75rem; line-height: 1.2" />
-    </div>
-  </div>
-  }
-
-  <!-- Buttons -->
-  <div class="modal-footer">
-    <sp-btn [text]="'Close'" [color]="'#6c757d'" (buttonClick)="this.onClose()"></sp-btn>
-
-    @if (this.selectedOperator !== '' && this.selectedSeconds != null && this.selectedSeconds > 0) {
-    <sp-btn [text]="'Save'" (buttonClick)="this.onSubmit()"></sp-btn>
+  <ul style="margin-top: 10px">
+    <li>
+      <strong style="color: var(--secondary-color)">Entity Type:</strong>
+      Choose the entity you want to analyze.
+      <br />
+    </li>
+    <li>
+      <strong style="color: var(--secondary-color)">Operator:</strong>
+      Filter entity traces based on total duration (e.g., greater than, less than, equal to a specific threshold).
+    </li>
+  </ul>
+  <form
+    style="margin-top: 10px"
+    (ngSubmit)="this.onSubmit()">
+    <!--Select entity-->
+    @if (!this.isLoadingEntities && this.allEntities != null && this.allEntities.length > 0) {
+      <!-- Select Entity type -->
+      <div class="form-group">
+        <label
+          class="form-group-label"
+          for="entityType">
+          Select the Entity type
+        </label>
+        <select
+          id="entityType"
+          name="entityType"
+          class="form-select"
+          [(ngModel)]="this.selectedEntityType"
+          (ngModelChange)="this.changeSelectedEntityType($event)">
+          @for (entityType of this.allEntities; track $index) {
+            <option [value]="entityType">
+              {{ entityType }}
+            </option>
+          }
+        </select>
+      </div>
     }
-  </div>
-</form>
+
+    <!--Loading status-->
+    @if (this.isLoadingEntities || this.isLoadingDuration) {
+      <div class="loading-entity">
+        <sp-spinner></sp-spinner>
+      </div>
+    }
+
+    <!--Error or no entities-->
+    @if (!this.isLoadingEntities && (this.allEntities == null || this.allEntities.length === 0) && this.entityErrorMessage != '') {
+      <div class="loading-entity">
+        <p style="color: red">{{ this.entityErrorMessage }}</p>
+      </div>
+    }
+
+    <!--Inputs-->
+    @if (
+      !this.isLoadingEntities &&
+      !this.isLoadingDuration &&
+      this.allEntities != null &&
+      this.allEntities.length > 0 &&
+      this.avgEntityDuration != null
+    ) {
+      <div class="avg-duration">
+        <p>
+          Average duration:
+          <span style="font-size: bold">{{ this.avgEntityDuration }}</span>
+          seconds
+        </p>
+      </div>
+
+      <!--Inputs-->
+      <div class="input-user">
+        <!-- Input operator -->
+        <div class="form-group">
+          <label
+            class="form-group-label"
+            for="operator">
+            Operator
+          </label>
+          <select
+            id="operator"
+            name="operator"
+            class="form-select"
+            [(ngModel)]="this.selectedOperator">
+            @for (operator of this.allOperators; track $index) {
+              <option [value]="operator">
+                {{ operator }}
+              </option>
+            }
+          </select>
+        </div>
+
+        <!--Input second-->
+        <div class="form-group">
+          <label
+            for="seconds"
+            style="color: var(--secondary-color); font-size: 15px">
+            Filter by trace duration (seconds)
+          </label>
+          <input
+            id="seconds"
+            class="form-control form-control-sm"
+            name="seconds"
+            type="number"
+            [(ngModel)]="this.selectedSeconds"
+            style="height: 2rem; font-size: 1rem; padding: 0.375rem 0.75rem; line-height: 1.2" />
+        </div>
+      </div>
+    }
+
+    <!-- Buttons -->
+    <div class="modal-footer">
+      <sp-btn
+        [text]="'Close'"
+        [color]="'#6c757d'"
+        (buttonClick)="this.onClose()"></sp-btn>
+
+      @if (this.selectedOperator !== '' && this.selectedSeconds != null && this.selectedSeconds > 0) {
+        <sp-btn
+          [text]="'Save'"
+          (buttonClick)="this.onSubmit()"></sp-btn>
+      }
+    </div>
+  </form>
 </div>

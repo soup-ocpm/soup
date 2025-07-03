@@ -405,7 +405,7 @@ export class DetailsDatasetComponent implements OnInit, AfterViewInit {
       'Upload',
       'var(--primary-color)',
       'Start Fresh',
-      '#000000',
+      'var(--secondary-color)',
       () => this.preOpenNewAnalysisSidebar(true),
       () => null,
       () => this.preOpenNewAnalysisSidebar(false)

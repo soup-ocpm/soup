@@ -33,7 +33,13 @@
   position: absolute;
   right: 30px;
   top: 16px;
-  cursor: pointer;
-  font-family: 'Times New Roman', Times, serif;
-  color: var(--primary-color);
+
+  a {
+    cursor: pointer;
+    font-family: 'Times New Roman', Times, serif;
+    color: var(--primary-color);
+  }
+  img {
+    margin-right: 5px;
+  }
 }
