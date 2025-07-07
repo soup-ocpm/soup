@@ -2078,30 +2078,6 @@ export class GraphComponent implements OnInit, AfterViewInit {
           action: () => this.deleteAggregateGraph()
         });
       } else {
-        const manageGraphViewIndex = this.operations.findIndex((op) => op.title === 'Manage Graph View');
-
-        // Add the operations
-        if (manageGraphViewIndex !== -1) {
-          this.operations.splice(
-            manageGraphViewIndex + 1,
-            0,
-            {
-              title: 'Calculate Frequency',
-              description: 'Calculate the frequency based on the full Dataset data',
-              icon: 'analytics',
-              loading: false,
-              action: () => this.openFrequencyModal()
-            }
-            // {
-            //   title: 'Calculate Variation',
-            //   description: 'Calculate the variation based on the full Dataset data',
-            //   icon: 'analytics',
-            //   loading: false,
-            //   action: () => this.calculateGraphVariation()
-            // }
-          );
-        }
-
         this.operations.push({
           title: 'Delete Dataset',
           description: 'This operation is not reversible',
