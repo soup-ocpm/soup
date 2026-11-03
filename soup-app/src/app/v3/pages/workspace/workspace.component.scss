@@ -1,12 +1,25 @@
 @use '../v3-page';
 
+.soup-tree {
+  margin: 0;
+  padding: var(--soup-space-1) var(--soup-space-4);
+
+  ul {
+    margin: 0;
+  }
+}
+
+// The children are indented by their depth (less on small screens).
 .soup-row {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding-top: 6px;
-  padding-bottom: 6px;
-  border-bottom: 1px solid #eee;
+  gap: var(--soup-space-3);
+  padding: var(--soup-space-3) 0 var(--soup-space-3) calc(var(--soup-depth, 0) * clamp(12px, 3vw, 24px));
+  border-bottom: 1px solid var(--soup-border-soft);
+}
+
+.soup-tree > li:last-child > .soup-row:only-child {
+  border-bottom: 0;
 }
 
 .soup-thumb {
@@ -16,10 +29,11 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  border: 1px solid #e5e5e5;
-  border-radius: 4px;
-  background: #fafafa;
-  color: #999;
+  overflow: hidden;
+  border: 1px solid var(--soup-border-soft);
+  border-radius: var(--soup-radius-sm);
+  background: var(--soup-surface-alt);
+  color: var(--soup-text-muted);
 
   img {
     max-width: 100%;
@@ -35,13 +49,26 @@
 .soup-name {
   font-weight: 600;
   text-decoration: none;
+  overflow-wrap: anywhere;
 }
 
 .soup-meta {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 6px;
+  gap: var(--soup-space-1) var(--soup-space-2);
+  margin-top: var(--soup-space-1);
+}
+
+.soup-badge-kind {
+  border: 1px solid var(--soup-border);
+  background: var(--soup-surface-alt);
+  color: var(--soup-text);
+}
+
+.soup-row-actions {
+  flex: 0 0 auto;
+  gap: var(--soup-space-1);
 }
 
 .soup-rename {
@@ -49,11 +76,28 @@
 }
 
 .soup-description-input {
-  margin-top: 4px;
+  margin-top: var(--soup-space-1);
 }
 
 .soup-description {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+@media (max-width: 575.98px) {
+  .soup-tree {
+    padding: var(--soup-space-1) var(--soup-space-3);
+  }
+
+  .soup-thumb {
+    flex-basis: 40px;
+    width: 40px;
+    height: 40px;
+  }
+
+  // The two buttons one above the other: the name keeps the width
+  .soup-row-actions {
+    flex-direction: column;
+  }
 }

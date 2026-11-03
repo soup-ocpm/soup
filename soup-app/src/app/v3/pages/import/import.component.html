@@ -1,12 +1,16 @@
-<div class="container py-4 soup-import">
-  <h2 class="mb-3">Importa un file</h2>
+<div class="soup-page soup-import">
+  <div class="soup-page-head">
+    <h2>Importa un file</h2>
+  </div>
 
   <!-- 1. File -->
   <section class="soup-panel">
-    <h5>1. File</h5>
+    <h3 class="soup-panel-title">1. File</h3>
     @if (this.file(); as chosen) {
-      <div class="d-flex align-items-center gap-2">
-        <i class="bi bi-file-earmark"></i>
+      <div class="d-flex flex-wrap align-items-center gap-2">
+        <i
+          class="bi bi-file-earmark"
+          aria-hidden="true"></i>
         <strong class="soup-file-name">{{ chosen.name }}</strong>
         <span class="text-muted small">{{ chosen.size }} byte</span>
         <button
@@ -36,14 +40,18 @@
   </section>
 
   @if (this.busy()) {
-    <div class="text-muted mb-3">
-      <span class="spinner-border spinner-border-sm"></span>
+    <div
+      class="soup-notice"
+      role="status">
+      <span
+        class="spinner-border spinner-border-sm"
+        aria-hidden="true"></span>
       {{ this.busy() }}
     </div>
   }
   @if (this.error()) {
     <div
-      class="alert alert-danger"
+      class="soup-notice soup-notice-danger"
       role="alert">
       {{ this.error() }}
     </div>
@@ -52,7 +60,7 @@
   <!-- 2. Importer -->
   @if (this.importers(); as importers) {
     <section class="soup-panel">
-      <h5>2. Importer</h5>
+      <h3 class="soup-panel-title">2. Importer</h3>
       @if (importers.length === 0) {
         <p class="text-muted m-0">
           Nessun importer installato legge questo file. Installa un package dalla pagina
@@ -60,9 +68,9 @@
           .
         </p>
       } @else if (this.importer()) {
-        <div class="d-flex align-items-center gap-2">
+        <div class="d-flex flex-wrap align-items-center gap-2">
           <strong>{{ this.importer()?.label }}</strong>
-          <span class="badge text-bg-light">{{ this.importer()?.produces }}</span>
+          <span class="badge soup-badge-kind">{{ this.importer()?.produces }}</span>
           <span class="badge text-bg-secondary">{{ this.importer()?.package }}</span>
           @if (importers.length > 1) {
             <button
@@ -74,17 +82,17 @@
           }
         </div>
       } @else {
-        <div class="soup-cards">
+        <div class="soup-importers">
           @for (importer of importers; track importer.id) {
             <button
               type="button"
-              class="soup-card"
+              class="soup-importer"
               [attr.data-importer]="importer.id"
               (click)="this.chooseImporter(importer)">
               <strong>{{ importer.label }}</strong>
               <span class="small text-muted">{{ importer.description }}</span>
               <span>
-                <span class="badge text-bg-light">{{ importer.produces }}</span>
+                <span class="badge soup-badge-kind">{{ importer.produces }}</span>
                 <span class="badge text-bg-secondary">{{ importer.package }}</span>
               </span>
             </button>
@@ -97,7 +105,7 @@
   <!-- 3. Preview and options -->
   @if (this.inspection(); as inspection) {
     <section class="soup-panel">
-      <h5>3. Anteprima e opzioni</h5>
+      <h3 class="soup-panel-title">3. Anteprima e opzioni</h3>
       <div class="soup-preview">
         <soup-blocks-preview
           [blocks]="this.blocks()"
@@ -125,14 +133,16 @@
         class="btn btn-outline-primary"
         [disabled]="!!this.busy()"
         (click)="this.refreshPreview()">
-        <i class="bi bi-arrow-repeat"></i>
+        <i
+          class="bi bi-arrow-repeat"
+          aria-hidden="true"></i>
         Aggiorna anteprima
       </button>
     </section>
 
     <!-- 4. Name and import -->
     <section class="soup-panel">
-      <h5>4. Nome e descrizione</h5>
+      <h3 class="soup-panel-title">4. Nome e descrizione</h3>
       <div class="mb-2">
         <label
           class="form-label"
@@ -168,7 +178,9 @@
         class="btn btn-primary soup-import-button"
         [disabled]="!!this.busy()"
         (click)="this.importFile()">
-        <i class="bi bi-box-arrow-in-down"></i>
+        <i
+          class="bi bi-box-arrow-in-down"
+          aria-hidden="true"></i>
         Importa
       </button>
     </section>

@@ -16,6 +16,7 @@ import pytest
 
 from soup.api.flask_app import build_flask_app
 from soup.core.settings import Settings
+from tests.api_client import soup_client
 from tests.fakes import FakeDatabase, InMemoryFileStorage, fake_tool_engine
 
 
@@ -25,7 +26,7 @@ def client():
     engine = fake_tool_engine(settings, db=FakeDatabase(), files=InMemoryFileStorage())
     app = build_flask_app(engine)
     app.config["TESTING"] = True
-    return app.test_client()
+    return soup_client(app)
 
 
 def test_unknown_route_returns_404(client):

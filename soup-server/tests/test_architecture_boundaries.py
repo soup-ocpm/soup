@@ -81,6 +81,20 @@ def test_core_never_imports_from_api_or_packages():
     assert violations == []
 
 
+def test_startup_imports_neither_flask_nor_the_rest_of_the_host():
+    # soup.startup runs before Flask is imported (app.py, tests/e2e_server.py):
+    # it must work in an environment where Flask, pandas or the engine are broken.
+    forbidden = ("flask", "werkzeug", "pandas", "numpy")
+    violations = []
+    files = _py_files(SOUP_ROOT / "startup")
+    assert files
+    for file_path in files:
+        for module in _imported_modules(file_path):
+            if module.split(".")[0] in forbidden or module.startswith(("soup.api", "soup.core", "soup_pkg_")):
+                violations.append(f"{file_path.relative_to(SOUP_ROOT)} imports {module}")
+    assert violations == []
+
+
 def test_soup_plugins_is_gone():
     # The built-in plugins moved to soup-packages/ (commit 2).
     assert not (SOUP_ROOT / "plugins").exists()

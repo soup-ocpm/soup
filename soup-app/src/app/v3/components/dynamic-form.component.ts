@@ -2,6 +2,7 @@ import { KeyValuePipe, NgTemplateOutlet } from '@angular/common';
 import {
   Component,
   DestroyRef,
+  ElementRef,
   inject,
   input,
   OnChanges,
@@ -14,7 +15,16 @@ import {
 } from '@angular/core';
 import { Field, FieldType, FileValue, FormValues, ItemValue, PairValue, Variant } from '@soup/sdk';
 
-import { formatValue, initialValues, optionsFor, readFileValue, requiredErrors, summarize, withoutIndex } from './form-values';
+import {
+  applicationOrder,
+  formatValue,
+  initialValues,
+  optionsFor,
+  readableSummary,
+  readFileValue,
+  requiredErrors,
+  withoutIndex
+} from './form-values';
 
 // What the renderer of a field receives
 interface FieldContext {
@@ -33,10 +43,13 @@ interface ItemEditor {
  * <soup-dynamic-form [fields] [columns] [value] (valueChange)> - the
  * generic form of an importer, operation or exporter, for every Field
  * type. "column", "columns" and "pairs" offer the field's choices, else
- * the preview's `columns`, else free text. "items" elements are tiles with
- * a summary; deleting a tile removes the element from the value (C28),
- * editing or adding one opens the form of its variant (this same
- * component). Every change emits the whole value. Each Field type has its
+ * the preview's `columns`, else free text. "items" elements are numbered
+ * cards with a readable summary; deleting a card removes the element from
+ * the value (C28), editing one or adding one (from the menu of the
+ * variants, with their description) opens the form of its variant (this
+ * same component). When the field's help declares an order of application
+ * (the order of the variants) and the cards are in another one, a notice
+ * shows it. Every change emits the whole value. Each Field type has its
  * own renderer, an ng-template of the template, found in a map (open/closed:
  * a new type is one more template, not one more branch).
  */
@@ -63,8 +76,8 @@ export class DynamicFormComponent implements OnChanges, OnInit {
   public readonly errors = signal<Record<string, string>>({});
   public readonly editors = signal<Record<string, ItemEditor>>({});
 
-  // The variant picked in the "add" selector of each items field
-  public readonly newVariant = signal<Record<string, string>>({});
+  // The items field whose menu of variants is open
+  public readonly addMenu = signal<string | null>(null);
 
   // Unique prefix for the ids of the inputs (several forms per page)
   public readonly uid = `sdf${Math.random().toString(36).slice(2, 8)}`;
@@ -90,6 +103,8 @@ export class DynamicFormComponent implements OnChanges, OnInit {
 
   // The initial value is emitted after the change detection that set it, if still alive
   private destroyed = false;
+
+  private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
 
   constructor() {
     inject(DestroyRef).onDestroy(() => (this.destroyed = true));
@@ -179,8 +194,18 @@ export class DynamicFormComponent implements OnChanges, OnInit {
     return field.variants.find((variant) => variant.key === key);
   }
 
-  public summary(field: Field, item: ItemValue): string {
-    return summarize(this.variantOf(field, item.variant), item);
+  public readable(field: Field, item: ItemValue): string {
+    return readableSummary(this.variantOf(field, item.variant), item);
+  }
+
+  /** The order of application of the elements, when it differs from theirs (see applicationOrder). */
+  public order(field: Field): { index: number; item: ItemValue }[] | null {
+    return applicationOrder(field, this.items(field));
+  }
+
+  /** The label of a field of a variant (the name when unknown), for its error. */
+  public fieldLabel(field: Field, variantKey: string, name: string): string {
+    return this.variantOf(field, variantKey)?.fields.find((item) => item.name === name)?.label ?? name;
   }
 
   public id(field: Field, suffix = ''): string {
@@ -262,19 +287,41 @@ export class DynamicFormComponent implements OnChanges, OnInit {
   }
 
   // --- items --------------------------------------------------------------- //
-  public pickVariant(field: Field, event: Event): void {
-    const key = (event.target as HTMLSelectElement).value;
-    this.newVariant.update((picked) => ({ ...picked, [field.name]: key }));
+  public toggleAddMenu(field: Field): void {
+    const open = this.addMenu() !== field.name;
+    this.addMenu.set(open ? field.name : null);
+    if (open) {
+      this.focusLater(`#${this.id(field, '-variants')} [role="menuitem"]`);
+    }
   }
 
-  public pickedVariant(field: Field): string {
-    return this.newVariant()[field.name] ?? field.variants[0]?.key ?? '';
+  public closeAddMenu(): void {
+    this.addMenu.set(null);
   }
 
-  public startAdd(field: Field): void {
-    const variant = this.variantOf(field, this.pickedVariant(field));
+  /** Arrows move between the variants, Esc closes the menu (focus back on its button). */
+  public onMenuKey(field: Field, event: KeyboardEvent): void {
+    const items = Array.from(this.host.nativeElement.querySelectorAll<HTMLElement>(`#${this.id(field, '-variants')} [role="menuitem"]`));
+    const current = items.indexOf(document.activeElement as HTMLElement);
+    const moves: Record<string, number> = { ArrowDown: 1, ArrowUp: -1 };
+    if (event.key in moves && items.length) {
+      event.preventDefault();
+      items[(current + moves[event.key] + items.length) % items.length].focus();
+    } else if (event.key === 'Escape') {
+      event.stopPropagation();
+      this.closeAddMenu();
+      this.focusLater(`#${this.id(field)} .soup-add-item-button`);
+    }
+  }
+
+  public startAdd(field: Field, key: string): void {
+    const variant = this.variantOf(field, key);
+    this.closeAddMenu();
     if (variant) {
       this.openEditor(field, { index: null, variant: variant.key, values: initialValues(variant.fields, null), errors: {} });
+      this.focusLater(
+        `#${this.id(field)} .soup-item-editor input, #${this.id(field)} .soup-item-editor select, #${this.id(field)} .soup-item-editor textarea`
+      );
     }
   }
 
@@ -319,6 +366,16 @@ export class DynamicFormComponent implements OnChanges, OnInit {
       const next = { ...editors };
       delete next[field.name];
       return next;
+    });
+    this.focusLater(`#${this.id(field)} .soup-add-item-button`);
+  }
+
+  /** Focus the first element matching `selector` once the view shows it. */
+  private focusLater(selector: string): void {
+    setTimeout(() => {
+      if (!this.destroyed) {
+        this.host.nativeElement.querySelector<HTMLElement>(selector)?.focus();
+      }
     });
   }
 

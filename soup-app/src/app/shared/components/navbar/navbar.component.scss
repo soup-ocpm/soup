@@ -1,45 +1,84 @@
 // ================================
 // Region: Main content
 // ================================
+// Sticky at the top: in the flow (the pages need no padding for it).
 .master {
-  height: 55px;
-  left: 0;
-  right: 0;
-  display: flex;
-  padding: 10px;
-  position: fixed;
-  background-color: #f1f1f1;
+  position: sticky;
+  top: 0;
   z-index: 1000;
+  display: flex;
+  align-items: center;
+  gap: var(--soup-space-4);
+  min-height: var(--soup-bar-height);
+  padding: var(--soup-space-2) var(--soup-gutter);
+  border-bottom: 1px solid var(--soup-border-soft);
+  background-color: #f1f1f1;
+}
+
+.navbar-brand {
+  flex-shrink: 0;
+  margin: 0;
 }
 
 .link {
   display: flex;
+  gap: var(--soup-space-1) var(--soup-space-5);
+  min-width: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
 }
 
 .link p {
-  margin-top: 5px;
-  margin-left: 30px;
+  margin: 0;
+  padding: var(--soup-space-1) var(--soup-space-1);
+  border-bottom: 2px solid transparent;
   font-size: 17px;
+  white-space: nowrap;
   cursor: pointer;
   font-family: 'Times New Roman', Times, serif;
-  color: #666;
+  color: var(--soup-text-muted);
 }
 
-.link p:hover {
-  color: var(--primary-color);
+.link p:hover,
+.link p.active {
+  color: var(--soup-text);
+  border-bottom-color: var(--soup-primary);
 }
 
 .soup-feedback {
-  position: absolute;
-  right: 30px;
-  top: 16px;
+  display: flex;
+  align-items: center;
+  gap: var(--soup-space-1);
+  margin-left: auto;
+  white-space: nowrap;
 
   a {
     cursor: pointer;
     font-family: 'Times New Roman', Times, serif;
-    color: var(--primary-color);
+    color: var(--soup-primary-strong);
   }
-  img {
-    margin-right: 5px;
+}
+
+@media (max-width: 575.98px) {
+  .master {
+    gap: var(--soup-space-3);
+  }
+
+  .link {
+    gap: var(--soup-space-1) var(--soup-space-3);
+  }
+
+  .link p {
+    font-size: 16px;
+  }
+
+  // The feedback link is the icon only
+  .soup-feedback a {
+    font-size: 0;
+  }
+
+  .soup-feedback a::after {
+    content: 'Feedback';
+    font-size: 14px;
   }
 }

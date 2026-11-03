@@ -8,7 +8,8 @@ Description: Engine settings, read from the environment with explicit
              MEMGRAPH_HOST/MEMGRAPH_PORT, tool_storage reads
              SOUP_STORAGE_KIND, SOUP_CONTAINER_NAME and
              SOUP_LOCAL_STORAGE_ROOT). SOUP_MAX_UPLOAD_MB caps the
-             request body of /api/v3.
+             request body of /api/v3; SOUP_CORS_ORIGINS lists the
+             origins of the SOUP app allowed to call it from a browser.
 Project : soup-server
 ------------------------------------------------------------------------
 """
@@ -41,6 +42,10 @@ DEFAULT_INSTALLED_PACKAGES_DIR = str(_SERVER_ROOT / "instance" / "packages")
 DEFAULT_ALLOW_PACKAGE_INSTALL = False
 # Largest request body accepted by /api/v3 (uploaded files, package zips).
 DEFAULT_MAX_UPLOAD_MB = 200
+# The origins of the SOUP app (the container and ng serve, on 4200): the
+# only pages a browser lets call /api/v3 (CORS), and the only Origin a
+# request that changes data may come from (soup/api/security.py).
+DEFAULT_CORS_ORIGINS = ("http://localhost:4200", "http://127.0.0.1:4200")
 
 _TRUE_VALUES = {"1", "true", "yes", "on"}
 
@@ -67,6 +72,12 @@ def _positive_int(name: str, value: str | None, default: int) -> int:
     return number
 
 
+def _origins(value: str | None) -> tuple[str, ...]:
+    """Comma-separated origins, without a trailing slash (the form of the Origin header)."""
+
+    return tuple(origin.rstrip("/") for origin in _split_csv(value or ""))
+
+
 def _as_bool(value: str | None, default: bool) -> bool:
     if value is None:
         return default
@@ -82,6 +93,7 @@ class Settings:
     allow_package_install: bool = DEFAULT_ALLOW_PACKAGE_INSTALL
     strict: bool = DEFAULT_STRICT
     max_upload_mb: int = DEFAULT_MAX_UPLOAD_MB
+    cors_origins: tuple[str, ...] = DEFAULT_CORS_ORIGINS
 
     @property
     def max_upload_bytes(self) -> int:
@@ -95,6 +107,7 @@ class Settings:
 
         # SOUP_PACKAGES="" disables every package; absent means all of them.
         raw_packages = source.get("SOUP_PACKAGES")
+        raw_origins = source.get("SOUP_CORS_ORIGINS")
         installed_dir = source.get("SOUP_INSTALLED_PACKAGES_DIR", DEFAULT_INSTALLED_PACKAGES_DIR)
         raw_path = source.get("SOUP_PACKAGES_PATH")
         packages_path = _split_paths(raw_path) if raw_path is not None else (DEFAULT_BUNDLED_PACKAGES_DIR,)
@@ -109,4 +122,6 @@ class Settings:
             allow_package_install=_as_bool(source.get("SOUP_ALLOW_PACKAGE_INSTALL"), DEFAULT_ALLOW_PACKAGE_INSTALL),
             strict=_as_bool(source.get("SOUP_STRICT"), DEFAULT_STRICT),
             max_upload_mb=_positive_int("SOUP_MAX_UPLOAD_MB", source.get("SOUP_MAX_UPLOAD_MB"), DEFAULT_MAX_UPLOAD_MB),
+            # Absent or empty: the default origins (an empty list would lock the app out).
+            cors_origins=_origins(raw_origins) or DEFAULT_CORS_ORIGINS,
         )

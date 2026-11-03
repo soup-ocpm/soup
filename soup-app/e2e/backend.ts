@@ -15,6 +15,13 @@ import { E2E_API_PORT } from '../playwright.config';
 
 export const API = `http://127.0.0.1:${E2E_API_PORT}/api/v3`;
 export const PACKAGES_DIR = join(__dirname, '..', '..', 'soup-packages');
+/**
+ * The header the app adds (soup-client.interceptor.ts) to the requests that
+ * change data: without it the backend answers 403. The helpers below call
+ * the API directly, not through the app, so they add it themselves.
+ */
+const CLIENT_HEADERS = { 'X-Soup-Client': '1' };
+
 /** The in-memory catalog and preferences of tests/e2e_server.py. */
 export const CORE_TOOLS = 'test_core_tools';
 
@@ -50,12 +57,13 @@ export async function packages(request: APIRequestContext): Promise<Map<string, 
 }
 
 async function post(request: APIRequestContext, path: string): Promise<void> {
-  const response = await request.post(`${API}/packages/${path}`);
+  const response = await request.post(`${API}/packages/${path}`, { headers: CLIENT_HEADERS });
   expect(response.status(), await response.text()).toBe(200);
 }
 
 async function upload(request: APIRequestContext, name: string): Promise<number> {
   const response = await request.post(`${API}/packages`, {
+    headers: CLIENT_HEADERS,
     multipart: { file: { name: `${name}-1.0.0.zip`, mimeType: 'application/zip', buffer: readFileSync(zipOf(name)) } }
   });
   return response.status();
@@ -102,7 +110,7 @@ export class PackageChanges {
     while (pending.length) {
       const left: PackageInfo[] = [];
       for (const pkg of pending) {
-        const response = await request.delete(`${API}/packages/${pkg.name}`);
+        const response = await request.delete(`${API}/packages/${pkg.name}`, { headers: CLIENT_HEADERS });
         if (response.status() === 200) this.removed.push(pkg);
         else if (response.status() === 409) left.push(pkg);
         else expect(response.status(), await response.text()).toBe(200);
@@ -117,7 +125,7 @@ export class PackageChanges {
   /** Undo everything recorded, in reverse order. */
   public async restore(request: APIRequestContext): Promise<void> {
     for (const name of [...this.installed].reverse()) {
-      const response = await request.delete(`${API}/packages/${name}`);
+      const response = await request.delete(`${API}/packages/${name}`, { headers: CLIENT_HEADERS });
       expect(response.status(), `uninstall ${name}: ${await response.text()}`).toBe(200);
     }
     for (const name of [...this.enabled].reverse()) {

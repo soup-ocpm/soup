@@ -18,6 +18,11 @@ const FIT_MARGIN = 20;
 
 // The space between a node's label and its border (dagre-d3's default padding).
 const NODE_PADDING = 10;
+
+// The box behind an edge label: padding around the text and corner radius.
+const LABEL_PAD_X = 4;
+const LABEL_PAD_Y = 2;
+const LABEL_RADIUS = 4;
 let arrowheads = 0;
 
 interface Point {
@@ -186,7 +191,13 @@ function drawNodes(parent: Selection, graph: LayoutGraph): d3.Selection<SVGGElem
   return nodes;
 }
 
-/** One g.edgeLabel per edge (kept across redraws by id), with its label; sets the label sizes dagre lays out. */
+/**
+ * One g.edgeLabel per edge (kept across redraws by id), with its label on a
+ * light rounded box (rect.label-bg, presentation attributes: the same in
+ * the exported SVG and in the thumbnail) that hides the line under the
+ * text, so the label never looks struck through; sets the label sizes
+ * dagre lays out (box included). An empty label has no box.
+ */
 function drawEdgeLabels(parent: Selection, graph: LayoutGraph): d3.Selection<SVGGElement, Edge, SVGGElement, unknown> {
   const labels = (parent as d3.Selection<SVGGElement, unknown, null, undefined>)
     .selectAll<SVGGElement, Edge>('g.edgeLabel')
@@ -196,9 +207,27 @@ function drawEdgeLabels(parent: Selection, graph: LayoutGraph): d3.Selection<SVG
     const edge = edgeOf(graph, e);
     const group = d3.select(this) as Selection;
     group.select('.label').remove();
+    group.select('rect.label-bg').remove();
     const box = (addLabel(group, edge.label, LABEL_STYLE).classed('label', true).node() as SVGGElement).getBBox();
-    edge.width = box.width;
-    edge.height = box.height;
+    const width = box.width > 0 ? box.width + 2 * LABEL_PAD_X : 0;
+    const height = box.height > 0 ? box.height + 2 * LABEL_PAD_Y : 0;
+    if (width > 0 && height > 0) {
+      group
+        .insert('rect', ':first-child')
+        .attr('class', 'label-bg')
+        .attr('x', -width / 2)
+        .attr('y', -height / 2)
+        .attr('width', width)
+        .attr('height', height)
+        .attr('rx', LABEL_RADIUS)
+        .attr('ry', LABEL_RADIUS)
+        .attr('fill', '#fff')
+        .attr('fill-opacity', 0.92)
+        .attr('stroke', '#d0d7de')
+        .attr('stroke-width', 1);
+    }
+    edge.width = width;
+    edge.height = height;
   });
   return labels;
 }
@@ -278,6 +307,8 @@ export class DagreGraphRenderer implements GraphRenderer {
   private options: RenderOptions = { palette: new RelationshipPalette(), shape: 'rect' };
   private readonly highlighted = new Set<string>();
   private centered = false;
+  // The user zoomed or panned since the last new data: no more automatic fit.
+  private moved = false;
   // The last graph laid out, centered when the container gets a size.
   private laidOut: LayoutGraph | null = null;
   private resizes: ResizeObserver | null = null;
@@ -289,6 +320,11 @@ export class DagreGraphRenderer implements GraphRenderer {
     this.group = svg.append('g').attr('class', 'soup-graph-group');
     this.zoom = d3.zoom<SVGSVGElement, unknown>().on('zoom', (event: d3.D3ZoomEvent<SVGSVGElement, unknown>) => {
       this.group?.attr('transform', event.transform.toString());
+      // Only the zooms of the user have a source event (the fit has none).
+      if (event.sourceEvent) {
+        this.moved = true;
+        this.stopWatchingSize();
+      }
     });
     (svg as d3.Selection<SVGSVGElement, unknown, null, undefined>).call(this.zoom);
   }
@@ -298,6 +334,7 @@ export class DagreGraphRenderer implements GraphRenderer {
     this.options = { ...options };
     this.highlighted.clear();
     this.centered = false;
+    this.moved = false;
     this.draw();
   }
 
@@ -424,7 +461,7 @@ export class DagreGraphRenderer implements GraphRenderer {
     this.laidOut = graph;
     if (!this.centered) {
       this.centered = this.center(graph);
-      if (!this.centered) this.watchSize();
+      if (!this.moved) this.watchSize();
     }
   }
 
@@ -442,13 +479,16 @@ export class DagreGraphRenderer implements GraphRenderer {
     return true;
   }
 
-  /** Center the last graph laid out when the container gets a size (once, where ResizeObserver exists). */
+  /**
+   * Fit the last graph laid out again whenever the container changes size
+   * (it gets one, the window or the toolbar changes), until the user zooms
+   * or pans: then the view stays theirs. Where ResizeObserver exists.
+   */
   private watchSize(): void {
     if (this.resizes || !this.container || typeof ResizeObserver === 'undefined') return;
     this.resizes = new ResizeObserver(() => {
-      if (this.centered || !this.laidOut) return;
-      this.centered = this.center(this.laidOut);
-      if (this.centered) this.stopWatchingSize();
+      if (this.moved || !this.laidOut) return;
+      this.centered = this.center(this.laidOut) || this.centered;
     });
     this.resizes.observe(this.container);
   }

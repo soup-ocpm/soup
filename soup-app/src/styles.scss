@@ -1,7 +1,63 @@
 /* You can add global styles to this file, and also import other style files */
+
+// ================================
+// Region: Design tokens
+// ================================
+// One scale for the host and the packages: the custom properties cross the
+// shadow DOM, so the elements of the packages read them too (always with a
+// fallback, var(--soup-space-3, 12px), to work without the host).
 :root {
-  --primary-color: #ffac1c;
-  --secondary-color: #666;
+  // Spaces
+  --soup-space-1: 4px;
+  --soup-space-2: 8px;
+  --soup-space-3: 12px;
+  --soup-space-4: 16px;
+  --soup-space-5: 24px;
+  --soup-space-6: 32px;
+  --soup-space-7: 48px;
+
+  // Radii and shadows
+  --soup-radius-sm: 4px;
+  --soup-radius-md: 8px;
+  --soup-radius-lg: 12px;
+  --soup-shadow-sm: 0 1px 2px rgba(16, 24, 40, 0.06);
+  --soup-shadow-md: 0 4px 12px rgba(16, 24, 40, 0.1);
+  --soup-shadow-lg: 0 12px 32px rgba(16, 24, 40, 0.18);
+
+  // Colors (text on white at least 4.5:1, AA)
+  --soup-primary: #ffac1c;
+  --soup-primary-strong: #b86e00; // primary as text or border on white (4.6:1)
+  --soup-on-primary: #1f1300; // text on the primary
+  --soup-primary-soft: #fff4e0;
+  --soup-text: #212529;
+  --soup-text-muted: #5c636a;
+  --soup-border: #d0d7de;
+  --soup-border-soft: #eaeef2;
+  --soup-surface: #fff;
+  --soup-surface-alt: #f6f8fa;
+  --soup-page-bg: #fafbfc;
+  --soup-focus: #0b5ed7;
+  --soup-notice-bg: #fff8e1;
+  --soup-notice-border: #997404;
+  --soup-notice-text: #664d03;
+  --soup-danger-bg: #fdecee;
+  --soup-danger-border: #b02a37;
+  --soup-danger-text: #842029;
+
+  // Layout
+  --soup-content-max: 1320px;
+  --soup-gutter: var(--soup-space-4);
+  --soup-bar-height: 56px;
+
+  // Kept for the existing rules
+  --primary-color: var(--soup-primary);
+  --secondary-color: var(--soup-text-muted);
+}
+
+@media (min-width: 768px) {
+  :root {
+    --soup-gutter: var(--soup-space-5);
+  }
 }
 
 html,
@@ -9,6 +65,7 @@ body {
   height: 100%;
   margin: 0;
   font-family: Roboto, 'Helvetica Neue', sans-serif;
+  color: var(--soup-text);
 
   h2,
   h3,
@@ -18,6 +75,141 @@ body {
     color: var(--secondary-color);
     font-family: 'Times New Roman', Times, serif;
   }
+}
+
+body {
+  background: var(--soup-page-bg);
+}
+
+// Visible focus on every control (keyboard only)
+:focus-visible {
+  outline: 2px solid var(--soup-focus);
+  outline-offset: 2px;
+}
+
+.btn:focus-visible,
+.form-control:focus-visible,
+.form-select:focus-visible,
+.form-check-input:focus-visible {
+  outline: 2px solid var(--soup-focus);
+  outline-offset: 2px;
+  box-shadow: none;
+}
+
+// The primary buttons in the SOUP color, dark text (AA)
+.btn-primary {
+  --bs-btn-color: var(--soup-on-primary);
+  --bs-btn-bg: var(--soup-primary);
+  --bs-btn-border-color: var(--soup-primary);
+  --bs-btn-hover-color: var(--soup-on-primary);
+  --bs-btn-hover-bg: #f29a00;
+  --bs-btn-hover-border-color: #f29a00;
+  --bs-btn-active-color: var(--soup-on-primary);
+  --bs-btn-active-bg: #e08f00;
+  --bs-btn-active-border-color: #e08f00;
+  --bs-btn-disabled-color: var(--soup-on-primary);
+  --bs-btn-disabled-bg: var(--soup-primary);
+  --bs-btn-disabled-border-color: var(--soup-primary);
+}
+
+.btn-outline-primary {
+  --bs-btn-color: var(--soup-primary-strong);
+  --bs-btn-border-color: var(--soup-primary-strong);
+  --bs-btn-hover-color: var(--soup-on-primary);
+  --bs-btn-hover-bg: var(--soup-primary);
+  --bs-btn-hover-border-color: var(--soup-primary);
+  --bs-btn-active-color: var(--soup-on-primary);
+  --bs-btn-active-bg: var(--soup-primary);
+  --bs-btn-active-border-color: var(--soup-primary);
+}
+
+.text-muted {
+  color: var(--soup-text-muted) !important;
+}
+
+// ================================
+// Region: Page building blocks
+// ================================
+// The content of every page: same maximum width, same side margins, space
+// below the last element.
+.soup-page {
+  width: 100%;
+  max-width: var(--soup-content-max);
+  margin: 0 auto;
+  padding: var(--soup-space-5) var(--soup-gutter) var(--soup-space-7);
+}
+
+.soup-page-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--soup-space-3);
+  margin-bottom: var(--soup-space-4);
+
+  h2 {
+    margin: 0;
+  }
+}
+
+.soup-card {
+  padding: var(--soup-space-4);
+  border: 1px solid var(--soup-border);
+  border-radius: var(--soup-radius-md);
+  background: var(--soup-surface);
+  box-shadow: var(--soup-shadow-sm);
+}
+
+.soup-notice {
+  margin: 0 0 var(--soup-space-3);
+  padding: var(--soup-space-2) var(--soup-space-3);
+  border-left: 3px solid var(--soup-notice-border);
+  border-radius: var(--soup-radius-sm);
+  background: var(--soup-notice-bg);
+  color: var(--soup-notice-text);
+  font-size: 0.9rem;
+}
+
+.soup-notice-danger {
+  border-left-color: var(--soup-danger-border);
+  background: var(--soup-danger-bg);
+  color: var(--soup-danger-text);
+}
+
+.soup-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--soup-space-2);
+  padding: var(--soup-space-6) var(--soup-space-4);
+  text-align: center;
+  color: var(--soup-text-muted);
+
+  .bi {
+    font-size: 2rem;
+  }
+
+  p {
+    margin: 0;
+    font-family: inherit;
+  }
+}
+
+// An icon-only button: a square with the icon, its name in aria-label
+.soup-icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 32px;
+  min-height: 32px;
+  padding: 0 var(--soup-space-2);
+}
+
+.soup-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--soup-space-2);
 }
 
 // ================================

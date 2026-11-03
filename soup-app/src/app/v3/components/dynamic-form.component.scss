@@ -1,41 +1,146 @@
+// The error of a field, as the notices
+.soup-field-error {
+  display: flex;
+  align-items: center;
+  gap: var(--soup-space-1);
+  margin-top: var(--soup-space-1);
+  padding: var(--soup-space-1) var(--soup-space-2);
+  border-left: 3px solid var(--soup-danger-border);
+  border-radius: var(--soup-radius-sm);
+  background: var(--soup-danger-bg);
+  color: var(--soup-danger-text);
+  font-size: 0.85rem;
+}
+
+// ================================
+// Region: "items" field
+// ================================
 .soup-tiles {
   display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin-bottom: 8px;
+  flex-direction: column;
+  gap: var(--soup-space-2);
+  margin: 0 0 var(--soup-space-3);
+  padding: 0;
+  list-style: none;
 }
 
 .soup-tile {
-  width: 240px;
-  padding: 6px 10px;
-  border: 1px solid #d0d7de;
-  border-radius: 6px;
-  background: #fff;
+  display: flex;
+  align-items: flex-start;
+  gap: var(--soup-space-3);
+  padding: var(--soup-space-3);
+  border: 1px solid var(--soup-border);
+  border-radius: var(--soup-radius-md);
+  background: var(--soup-surface);
+  box-shadow: var(--soup-shadow-sm);
 }
 
 .soup-tile-editing {
-  border-color: #0d6efd;
+  border-color: var(--soup-primary-strong);
+  box-shadow: 0 0 0 2px var(--soup-primary-soft);
 }
 
-.soup-tile-head {
-  display: flex;
+.soup-tile-number {
+  display: inline-flex;
+  flex: 0 0 24px;
   align-items: center;
-  justify-content: space-between;
+  justify-content: center;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--soup-primary-soft);
+  color: var(--soup-primary-strong);
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.soup-tile-body {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.soup-tile-title {
+  display: block;
+  font-size: 0.9rem;
 }
 
 .soup-tile-summary {
   font-size: 0.85rem;
-  color: #555;
-  word-break: break-word;
+  color: var(--soup-text-muted);
+  overflow-wrap: anywhere;
+}
+
+.soup-tile-actions {
+  display: flex;
+  flex: 0 0 auto;
+  gap: var(--soup-space-1);
+}
+
+.soup-items-empty {
+  margin: 0 0 var(--soup-space-3);
+  font-family: inherit;
+  font-size: 0.85rem;
+  color: var(--soup-text-muted);
+}
+
+.soup-order-list {
+  margin: var(--soup-space-1) 0 0;
+  padding-left: var(--soup-space-5);
 }
 
 .soup-item-editor {
-  padding: 10px;
-  margin-bottom: 8px;
-  border: 1px dashed #adb5bd;
-  border-radius: 6px;
+  padding: var(--soup-space-3);
+  margin-bottom: var(--soup-space-3);
+  border: 1px dashed var(--soup-primary-strong);
+  border-radius: var(--soup-radius-md);
+  background: var(--soup-surface-alt);
 }
 
 .soup-add-item {
-  max-width: 420px;
+  position: relative;
+}
+
+.soup-variant-menu {
+  position: absolute;
+  z-index: 5;
+  top: calc(100% + var(--soup-space-1));
+  left: 0;
+  width: min(420px, 100%);
+  min-width: 260px;
+  max-height: 320px;
+  overflow: auto;
+  margin: 0;
+  padding: var(--soup-space-1);
+  border: 1px solid var(--soup-border);
+  border-radius: var(--soup-radius-md);
+  background: var(--soup-surface);
+  box-shadow: var(--soup-shadow-md);
+  list-style: none;
+}
+
+.soup-variant {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  width: 100%;
+  padding: var(--soup-space-2) var(--soup-space-3);
+  border: 0;
+  border-radius: var(--soup-radius-sm);
+  background: transparent;
+  color: var(--soup-text);
+  text-align: left;
+
+  &:hover,
+  &:focus-visible {
+    background: var(--soup-primary-soft);
+  }
+}
+
+.soup-variant-label {
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.soup-variant-description {
+  font-size: 0.8rem;
+  color: var(--soup-text-muted);
 }

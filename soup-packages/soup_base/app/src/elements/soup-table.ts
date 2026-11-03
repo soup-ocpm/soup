@@ -10,11 +10,16 @@ interface TableData {
 }
 
 const CSS = `
-  .toolbar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 6px; }
-  .wrap { overflow: auto; max-height: 520px; border: 1px solid #d0d7de; border-radius: 6px; }
-  table { border-collapse: collapse; width: 100%; font-size: 0.875rem; }
-  th, td { padding: 4px 8px; border-bottom: 1px solid #eaeef2; text-align: left; vertical-align: top; }
-  th { position: sticky; top: 0; background: #f6f8fa; cursor: pointer; user-select: none; white-space: nowrap; }
+  .toolbar { display: flex; flex-wrap: wrap; gap: var(--soup-space-2, 8px); align-items: center; margin-bottom: var(--soup-space-2, 8px); }
+  .wrap { overflow: auto; max-height: 520px; border: 1px solid var(--soup-border, #d0d7de); border-radius: var(--soup-radius-md, 8px); background: #fff; }
+  table { border-collapse: separate; border-spacing: 0; width: 100%; font-size: 0.875rem; }
+  th, td { padding: 6px 10px; border-bottom: 1px solid #eaeef2; text-align: left; vertical-align: top; }
+  th { position: sticky; top: 0; z-index: 1; background: var(--soup-surface-alt, #f6f8fa); border-bottom-color: var(--soup-border, #d0d7de); cursor: pointer; user-select: none; white-space: nowrap; font-weight: 600; }
+  th:focus-visible { outline: 2px solid var(--soup-focus, #0b5ed7); outline-offset: -2px; }
+  tbody tr:nth-child(even) td { background: #fafbfc; }
+  tbody tr:hover td { background: var(--soup-primary-soft, #fff4e0); }
+  tbody tr:last-child td { border-bottom: 0; }
+  td.num { text-align: right; font-variant-numeric: tabular-nums; }
   th[aria-sort='ascending']::after { content: ' ▲'; }
   th[aria-sort='descending']::after { content: ' ▼'; }
   .pager { display: flex; gap: 8px; align-items: center; margin-top: 6px; }
@@ -174,13 +179,27 @@ export class SoupTable extends HTMLElement {
     const visible = this.visibleColumns();
     const head = h('tr');
     for (const index of visible) {
-      const th = h('th', { text: this.columns[index], attrs: { scope: 'col' }, on: { click: () => void this.sortBy(index) } });
+      // Sorted by a click or, with the keyboard, Enter or Space.
+      const th = h('th', {
+        text: this.columns[index],
+        attrs: { scope: 'col', tabindex: '0' },
+        on: {
+          click: () => void this.sortBy(index),
+          keydown: (event) => {
+            const key = (event as KeyboardEvent).key;
+            if (key === 'Enter' || key === ' ') {
+              event.preventDefault();
+              void this.sortBy(index);
+            }
+          }
+        }
+      });
       if (this.sort?.column === index) th.setAttribute('aria-sort', this.sort.direction === 'asc' ? 'ascending' : 'descending');
       head.append(th);
     }
     const body = h('tbody');
     for (const row of this.current.rows) {
-      body.append(h('tr', {}, ...visible.map((index) => h('td', { text: display(row[index]) }))));
+      body.append(h('tr', {}, ...visible.map((index) => h('td', { text: display(row[index]), className: typeof row[index] === 'number' ? 'num' : '' }))));
     }
     wrap.replaceChildren(h('table', {}, h('thead', {}, head), body));
   }

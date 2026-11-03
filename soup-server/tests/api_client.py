@@ -24,10 +24,22 @@ from soup.core.settings import Settings
 from tests.fakes import CoreToolsPackage
 
 
+def soup_client(app):
+    """
+    A test client that, like the SOUP app, sends X-Soup-Client: 1 with every
+    request (without it the requests that change data get 403: see
+    test_api_v3_security.py for the requests without it).
+    """
+
+    client = app.test_client()
+    client.environ_base["HTTP_X_SOUP_CLIENT"] = "1"
+    return client
+
+
 def client_for(engine: Engine):
     app = build_flask_app(engine)
     app.config["TESTING"] = True
-    return app.test_client()
+    return soup_client(app)
 
 
 def code_client(*packages: SoupPlugin, with_core_tools: bool = True, max_upload_mb: Optional[int] = None):

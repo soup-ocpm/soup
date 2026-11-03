@@ -24,7 +24,8 @@
     "test": "ng test",
     "test:v3": "ng test --watch=false",
     "e2e": "playwright test",
-    "lint": "ng lint && knip && tsc -p tsconfig.app.json --noEmit && tsc -p tsconfig.spec.json --noEmit && tsc -p e2e/tsconfig.json"
+    "setup:server": "python ../soup-server/scripts/setup_venv.py",
+    "lint": "ng lint --max-warnings=0 && knip && tsc -p tsconfig.app.json --noEmit && tsc -p tsconfig.spec.json --noEmit && tsc -p e2e/tsconfig.json"
   },
   "private": true,
   "engines": {

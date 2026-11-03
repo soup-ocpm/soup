@@ -1,17 +1,19 @@
 /**
- * <soup-pkg-ekg-graph>: the "Grafo" visualizer of "ekg" objects. A bar
- * chooses the view (any GraphView contributed to "ekg.graph_views"), the
- * limit, the relationship types and the node shape; the drawing, zoom,
- * search and properties are <soup-graph-view>'s (soup_base), with the
- * remote search (action "search") and the properties of a node (action
- * "node"). After the first drawing <soup-graph-view> sends soup-thumbnail,
- * the preview of the object in the workspace; the SVG is saved with
- * context.download.
+ * <soup-pkg-ekg-graph>: the "Grafo" visualizer of "ekg" objects. One bar,
+ * in groups: the view (any GraphView contributed to "ekg.graph_views"),
+ * the limit, the relationship types and the node shape | the search | the
+ * SVG export, with the summary "N nodi, M archi · massimo mostrabile" at
+ * the right. The drawing, zoom, search panel and properties are
+ * <soup-graph-view>'s (soup_base), without its own toolbar (toolbar =
+ * "none": no command twice), with the remote search (action "search") and
+ * the properties of a node (action "node"). After the first drawing
+ * <soup-graph-view> sends soup-thumbnail, the preview of the object in the
+ * workspace; the SVG is saved with context.download.
  */
 
 import { errorMessage, h, SoupVisualizerElement, VisualizerContext } from '@soup/sdk';
 
-import { NOTICE_CSS, noticeBox } from './dom';
+import { GRAPH_BAR_CSS, NOTICE_CSS, noticeBox } from './dom';
 import { GraphData, GraphEdgeModel, GraphNodeModel, NodeShape, SearchPage, SearchTarget, SoupGraphViewElement } from './soup-base';
 
 export interface ViewInfo {
@@ -36,14 +38,14 @@ export interface GraphViewData extends GraphResult {
   max_limit: number;
 }
 
+const SHAPES: [NodeShape, string][] = [
+  ['rect', 'Rettangoli'],
+  ['circle', 'Cerchi']
+];
+
 const CSS = `
   :host { display: block; font-family: system-ui, -apple-system, 'Segoe UI', sans-serif; font-size: 0.95rem; }
-  .bar { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; margin-bottom: 8px; }
-  .bar label { display: inline-flex; gap: 4px; align-items: center; }
-  .relations { display: inline-flex; gap: 8px; }
   input[type='number'] { width: 6em; }
-  select, input, button { font: inherit; }
-  .info { color: #6c757d; font-size: 0.875rem; }
 `;
 
 export class SoupPkgEkgGraph extends HTMLElement implements SoupVisualizerElement<GraphViewData> {
@@ -60,6 +62,8 @@ export class SoupPkgEkgGraph extends HTMLElement implements SoupVisualizerElemen
   private readonly root = this.attachShadow({ mode: 'open' });
   private bar: HTMLElement | null = null;
   private request = 0;
+  private drawn: GraphData | null = null;
+  private relationsOpen = false;
 
   public connectedCallback(): void {
     if (this.graph) return;
@@ -69,18 +73,20 @@ export class SoupPkgEkgGraph extends HTMLElement implements SoupVisualizerElemen
     this.maxData = this.data.max_data;
 
     const graph = document.createElement('soup-graph-view') as SoupGraphViewElement;
+    // The commands are in the bar of this element.
+    graph.toolbar = 'none';
     graph.context = this.context;
     graph.search = (query, target, offset) => this.search(query, target, offset);
     graph.nodeDetails = (id) => this.context.action<GraphNodeModel>('node', { view: this.view, id });
     this.graph = graph;
-    this.bar = h('div', { className: 'bar' });
-    this.root.replaceChildren(h('style', { text: CSS + NOTICE_CSS }), ...noticeBox(this.data.notice), this.bar, graph);
-    this.drawBar();
+    this.bar = h('div', { className: 'bar', attrs: { role: 'toolbar', 'aria-label': 'Comandi del grafo' } });
+    this.root.replaceChildren(h('style', { text: CSS + GRAPH_BAR_CSS + NOTICE_CSS }), ...noticeBox(this.data.notice), this.bar, graph);
 
     // Only the first drawing becomes the preview of the object.
     graph.thumbnail = true;
-    graph.data = this.data.graph;
+    this.show(this.data.graph);
     graph.thumbnail = false;
+    this.drawBar();
   }
 
   public currentView(): ViewInfo | undefined {
@@ -125,7 +131,7 @@ export class SoupPkgEkgGraph extends HTMLElement implements SoupVisualizerElemen
       this.limit = result.limit;
       this.relations = [...result.relations];
       this.maxData = result.max_data;
-      this.graph.data = result.graph;
+      this.show(result.graph);
       this.graph.setNodeShape(this.shape);
     } catch (error) {
       this.context.notify(errorMessage(error), 'error');
@@ -137,6 +143,26 @@ export class SoupPkgEkgGraph extends HTMLElement implements SoupVisualizerElemen
     const svg = this.graph?.exportSvg() ?? '';
     if (!svg) return;
     this.context.download(`${this.context.object.name}.svg`, 'image/svg+xml', svg);
+  }
+
+  /** Open or close the search panel of <soup-graph-view>. */
+  public toggleSearch(): void {
+    this.graph?.openSearch();
+    this.drawBar();
+  }
+
+  /** "N nodi, M archi · massimo mostrabile X elementi" (the part known). */
+  public summary(): string {
+    const parts: string[] = [];
+    if (this.drawn) parts.push(`${this.drawn.nodes.length} nodi, ${this.drawn.edges.length} archi`);
+    if (this.maxData !== null) parts.push(`massimo mostrabile: ${this.maxData} elementi`);
+    const text = parts.join(' · ');
+    return text.charAt(0).toUpperCase() + text.slice(1);
+  }
+
+  private show(graph: GraphData): void {
+    this.drawn = graph;
+    if (this.graph) this.graph.data = graph;
   }
 
   private search(query: string, target: SearchTarget, offset: number): Promise<SearchPage<GraphNodeModel | GraphEdgeModel>> {
@@ -159,29 +185,41 @@ export class SoupPkgEkgGraph extends HTMLElement implements SoupVisualizerElemen
     });
     limit.value = String(this.limit);
 
-    const relations = h('span', { className: 'relations' });
-    for (const type of this.currentView()?.relationship_types ?? []) {
+    const types = this.currentView()?.relationship_types ?? [];
+    const list = h('div', { className: 'menu' });
+    for (const type of types) {
       const box = h('input', { attrs: { type: 'checkbox', 'data-relation': type }, on: { change: (event) => void this.setRelation(type, (event.target as HTMLInputElement).checked) } });
       box.checked = this.relations.includes(type);
-      relations.append(h('label', {}, box, type));
+      list.append(h('label', {}, box, type));
     }
+    const relations = h(
+      'details',
+      { className: 'relations', on: { toggle: (event) => (this.relationsOpen = (event.target as HTMLDetailsElement).open) } },
+      h('summary', { text: `Relazioni (${this.relations.length}/${types.length})` }),
+      list
+    );
+    (relations as HTMLDetailsElement).open = this.relationsOpen;
 
     const shape = h('select', { attrs: { 'aria-label': 'Forma dei nodi' }, on: { change: (event) => this.setShape((event.target as HTMLSelectElement).value as NodeShape) } });
-    for (const [value, label] of [['rect', 'Rettangoli'], ['circle', 'Cerchi']]) {
+    for (const [value, label] of SHAPES) {
       const option = h('option', { text: label, attrs: { value } });
       option.selected = value === this.shape;
       shape.append(option);
     }
 
+    const searching = this.graph?.searchVisible ?? false;
+    const searchButton = h('button', {
+      text: searching ? 'Chiudi ricerca' : 'Cerca',
+      attrs: { type: 'button', 'aria-pressed': String(searching) },
+      on: { click: () => this.toggleSearch() }
+    });
     const exportButton = h('button', { text: 'Esporta SVG', attrs: { type: 'button' }, on: { click: () => this.exportSvg() } });
-    const info = h('span', { className: 'info', text: this.maxData === null ? '' : `Massimo mostrabile: ${this.maxData} elementi` });
+    const info = h('span', { className: 'info', text: this.summary(), attrs: { 'aria-live': 'polite' } });
 
     this.bar.replaceChildren(
-      h('label', {}, 'Vista', views),
-      h('label', {}, 'Limite', limit),
-      relations,
-      h('label', {}, 'Forma', shape),
-      exportButton,
+      h('div', { className: 'group' }, h('label', {}, 'Vista', views), h('label', {}, 'Limite', limit), relations, h('label', {}, 'Forma', shape)),
+      h('div', { className: 'group' }, searchButton),
+      h('div', { className: 'group' }, exportButton),
       info
     );
   }

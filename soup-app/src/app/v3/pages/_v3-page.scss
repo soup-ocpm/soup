@@ -6,21 +6,30 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  padding: var(--soup-space-4);
   background: rgba(0, 0, 0, 0.35);
 }
 
 .soup-dialog {
-  width: min(520px, calc(100vw - 32px));
-  padding: 20px;
-  border-radius: 8px;
-  background: #fff;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+  width: min(520px, 100%);
+  padding: var(--soup-space-5);
+  border-radius: var(--soup-radius-md);
+  background: var(--soup-surface);
+  box-shadow: var(--soup-shadow-lg);
 }
 
 .soup-panel {
-  padding: 16px;
-  margin-bottom: 16px;
-  border: 1px solid #e5e5e5;
-  border-radius: 8px;
-  background: #fff;
+  min-width: 0;
+  padding: var(--soup-space-4);
+  margin-bottom: var(--soup-space-4);
+  border: 1px solid var(--soup-border);
+  border-radius: var(--soup-radius-md);
+  background: var(--soup-surface);
+  box-shadow: var(--soup-shadow-sm);
+}
+
+.soup-panel-title {
+  margin: 0 0 var(--soup-space-3);
+  font-size: 1.1rem;
+  color: var(--soup-text);
 }

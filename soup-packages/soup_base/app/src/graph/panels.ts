@@ -72,16 +72,57 @@ function relationshipsMenu(relationships: readonly RelationshipToggle[], actions
   return h('details', { className: 'relationships' }, h('summary', { text: 'Relazioni' }), list);
 }
 
-/** The controls of the toolbar, in order. */
-export function toolbarControls(state: ToolbarState, actions: ToolbarActions): Node[] {
-  const searchButton = h('button', {
-    text: state.searchOpen ? 'Chiudi ricerca' : 'Cerca',
-    attrs: { type: 'button', 'aria-pressed': String(state.searchOpen) },
-    on: { click: () => actions.toggleSearch() }
-  });
-  const exportButton = h('button', { text: 'Esporta SVG', attrs: { type: 'button' }, on: { click: () => actions.exportSvg() } });
-  const counts = h('span', { className: 'muted', text: `${state.nodes} nodi, ${state.edges} archi` });
-  return [shapeSelect(state.shape, actions), relationshipsMenu(state.relationships, actions), searchButton, exportButton, counts];
+/** A command of the toolbar of <soup-graph-view> (its `toolbar` property). */
+export type ToolbarCommand = 'shape' | 'relationships' | 'search' | 'export' | 'counts';
+
+/** Every command, in the order of the toolbar. */
+const TOOLBAR_COMMANDS: readonly ToolbarCommand[] = ['shape', 'relationships', 'search', 'export', 'counts'];
+
+/** `toolbar`: every command, none, or the ones listed. */
+export type ToolbarSetting = 'full' | 'none' | readonly ToolbarCommand[];
+
+/**
+ * The commands a `toolbar` value shows, in the toolbar's order. Also takes
+ * the attribute's text: "full", "none" or names separated by spaces or
+ * commas ("search export"); unknown names are ignored, null is "full".
+ */
+export function toolbarCommands(setting: ToolbarSetting | string | null | undefined): ToolbarCommand[] {
+  if (setting === null || setting === undefined || setting === 'full') return [...TOOLBAR_COMMANDS];
+  if (setting === 'none') return [];
+  const names = typeof setting === 'string' ? setting.split(/[\s,]+/) : setting;
+  const wanted = new Set(names.map((name) => name.trim()));
+  return TOOLBAR_COMMANDS.filter((command) => wanted.has(command));
+}
+
+/** "N nodi, M archi" */
+function countsText(nodes: number, edges: number): string {
+  return `${nodes} nodi, ${edges} archi`;
+}
+
+/**
+ * The controls of the toolbar, in groups: [shape, relationships] |
+ * [search] | [export], the counts last (discreet, at the right). Only the
+ * commands given (all by default); an empty group is not drawn.
+ */
+export function toolbarControls(state: ToolbarState, actions: ToolbarActions, commands: readonly ToolbarCommand[] = TOOLBAR_COMMANDS): Node[] {
+  const wanted = new Set(commands);
+  const controls: Record<ToolbarCommand, () => HTMLElement> = {
+    shape: () => shapeSelect(state.shape, actions),
+    relationships: () => relationshipsMenu(state.relationships, actions),
+    search: () =>
+      h('button', {
+        text: state.searchOpen ? 'Chiudi ricerca' : 'Cerca',
+        attrs: { type: 'button', 'aria-pressed': String(state.searchOpen) },
+        on: { click: () => actions.toggleSearch() }
+      }),
+    export: () => h('button', { text: 'Esporta SVG', attrs: { type: 'button' }, on: { click: () => actions.exportSvg() } }),
+    counts: () => h('span', { className: 'muted counts', text: countsText(state.nodes, state.edges) })
+  };
+  const groups: ToolbarCommand[][] = [['shape', 'relationships'], ['search'], ['export'], ['counts']];
+  return groups
+    .map((group) => group.filter((command) => wanted.has(command)))
+    .filter((group) => group.length)
+    .map((group) => h('div', { className: `group${group.includes('counts') ? ' group-counts' : ''}` }, ...group.map((command) => controls[command]())));
 }
 
 interface SearchActions {

@@ -19,6 +19,7 @@ import pytest
 from soup.api.flask_app import build_flask_app
 from soup.core.engine import build_engine
 from soup.core.settings import Settings
+from tests.api_client import soup_client
 from tests.package_builder import build_zip, write_package
 
 
@@ -41,7 +42,7 @@ def _client(tmp_path, allow_install=True):
     )
     app = build_flask_app(build_engine(settings))
     app.config["TESTING"] = True
-    return app.test_client()
+    return soup_client(app)
 
 
 def _upload(client, data, **form):

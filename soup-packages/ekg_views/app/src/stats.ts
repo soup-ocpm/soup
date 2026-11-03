@@ -11,7 +11,7 @@
 
 import { h, SoupVisualizerElement, VisualizerContext } from '@soup/sdk';
 
-import { NOTICE_CSS, noticeBox } from './dom';
+import { card, CARDS_CSS, NOTICE_CSS, noticeBox } from './dom';
 import { ChartData, SoupChartElement, SoupKeyValueElement, SoupTableElement } from './soup-base';
 
 export interface EntityStat {
@@ -49,11 +49,7 @@ export interface StatsData {
 
 const CSS = `
   :host { display: block; font-family: system-ui, -apple-system, 'Segoe UI', sans-serif; font-size: 0.95rem; }
-  h4 { margin: 16px 0 6px; font-size: 0.95rem; }
-  .charts { display: flex; flex-wrap: wrap; gap: 24px; }
-  .charts > div { flex: 1 1 280px; max-width: 420px; }
-  .info { color: #6c757d; font-size: 0.875rem; }
-  .warning { color: #997404; }
+  .warning { margin: 0 0 var(--soup-space-3, 12px); padding: var(--soup-space-2, 8px) var(--soup-space-3, 12px) var(--soup-space-2, 8px) var(--soup-space-6, 32px); border-left: 3px solid var(--soup-notice-border, #997404); border-radius: var(--soup-radius-sm, 4px); background: var(--soup-notice-bg, #fff8e1); color: var(--soup-notice-text, #664d03); font-size: 0.9rem; }
 `;
 
 export class SoupPkgEkgStats extends HTMLElement implements SoupVisualizerElement<StatsData> {
@@ -68,7 +64,9 @@ export class SoupPkgEkgStats extends HTMLElement implements SoupVisualizerElemen
     this.drawn = true;
     const { counts, timestamps } = this.data;
 
+    // The main numbers, as stat tiles at the top
     const summary = document.createElement('soup-keyvalue') as SoupKeyValueElement;
+    summary.setAttribute('variant', 'tiles');
     summary.data = {
       items: [
         { key: 'Nodi evento', value: counts.event_nodes },
@@ -96,27 +94,24 @@ export class SoupPkgEkgStats extends HTMLElement implements SoupVisualizerElemen
     const columnTable = document.createElement('soup-table') as SoupTableElement;
     columnTable.data = { columns: ['colonna', 'ruolo'], rows: columns.map((column) => [column.name, ROLE_LABELS[column.role] ?? column.role]) };
 
-    const charts = h('div', { className: 'charts' }, this.chart('Composizione del grafo', this.data.charts.data));
+    const charts = h('div', { className: 'cards charts' }, this.chart('Composizione del grafo', this.data.charts.data));
     if (this.data.charts.process) charts.append(this.chart('Tempi di costruzione (secondi)', this.data.charts.process));
-    else charts.append(h('p', { className: 'info', text: 'Tempi di costruzione non salvati per questo grafo.' }));
+    else charts.append(card('Tempi di costruzione', h('p', { className: 'info', text: 'Tempi di costruzione non salvati per questo grafo.' })));
 
-    this.root.replaceChildren(
-      h('style', { text: CSS + NOTICE_CSS }),
-      ...noticeBox(this.data.notice),
-      summary,
-      charts,
-      h('h4', { text: 'Entità' }),
-      ...(warnings.length ? [warningList] : []),
-      entities,
-      h('h4', { text: 'Attività' }),
-      activities,
-      ...(columns.length ? [h('h4', { text: 'Colonne del dataset' }), columnTable] : [])
+    const tables = h(
+      'div',
+      { className: 'cards' },
+      card('Entità', ...(warnings.length ? [warningList] : []), entities),
+      card('Attività', activities),
+      ...(columns.length ? [card('Colonne del dataset', columnTable)] : [])
     );
+
+    this.root.replaceChildren(h('style', { text: CSS + CARDS_CSS + NOTICE_CSS }), ...noticeBox(this.data.notice), summary, charts, tables);
   }
 
   private chart(title: string, data: ChartData): HTMLElement {
     const chart = document.createElement('soup-chart') as SoupChartElement;
     chart.data = data;
-    return h('div', {}, h('h4', { text: title }), chart);
+    return card(title, chart);
   }
 }

@@ -9,7 +9,9 @@ import { V3ApiService } from '../../../core/v3/v3-api.service';
 import { NotificationService } from '../../../shared/components/s-toast/toast.service';
 import { DynamicFormComponent } from '../../components/dynamic-form.component';
 import { errorMessage, notify } from '../../components/notify';
+import { SidePanelComponent } from '../../components/side-panel.component';
 import { VisualizerHostComponent } from '../../components/visualizer-host.component';
+import { groupIcon } from './operation-icons';
 import { FirstAccessHintService } from './services/first-access-hint.service';
 import { ObjectProvenanceService } from './services/object-provenance.service';
 import { VisualizerChoiceService } from './services/visualizer-choice.service';
@@ -42,8 +44,9 @@ function groupOperations(operations: readonly OperationInfo[]): OperationGroup[]
  * /o/:id - one object: header and provenance (parents and derived
  * objects), the visualizer selector as in ProM (the first one is the
  * default, the choice is remembered per kind in the preferences), the
- * "Azioni" panel with the operations applicable to the object (their form,
- * then the new object's page) and the "Esporta" menu. The first object
+ * "Azioni" panel with the operations applicable to the object (one card
+ * each, by group; the form opens in a <soup-side-panel>, then the new
+ * object's page) and the "Esporta" menu in the header. The first object
  * ever opened also shows the first-access hint. The choice of the
  * visualizer, the provenance and the hint are services
  * (VisualizerChoiceService, ObjectProvenanceService,
@@ -51,7 +54,7 @@ function groupOperations(operations: readonly OperationInfo[]): OperationGroup[]
  */
 @Component({
   selector: 'app-object',
-  imports: [RouterLink, DatePipe, VisualizerHostComponent, DynamicFormComponent],
+  imports: [RouterLink, DatePipe, VisualizerHostComponent, DynamicFormComponent, SidePanelComponent],
   templateUrl: './object.component.html',
   styleUrl: './object.component.scss'
 })
@@ -70,6 +73,9 @@ export class ObjectComponent implements OnInit {
   public readonly operations = signal<OperationInfo[]>([]);
   public readonly groups = computed(() => groupOperations(this.operations()));
   public readonly operationForm = signal<OpenForm<OperationInfo> | null>(null);
+  // The operation whose fields are being loaded (its card shows a spinner)
+  public readonly opening = signal<string | null>(null);
+  public readonly groupIcon = groupIcon;
 
   public readonly exporters = signal<ExporterInfo[]>([]);
   public readonly exportForm = signal<OpenForm<ExporterInfo> | null>(null);
@@ -169,13 +175,21 @@ export class ObjectComponent implements OnInit {
   // --- operations ---------------------------------------------------------- //
   public openOperation(operation: OperationInfo): void {
     const object = this.object();
-    if (!object) {
+    // Not disabled while loading: the card keeps the focus, given back when the form closes.
+    if (!object || this.opening()) {
       return;
     }
     this.actionError.set('');
+    this.opening.set(operation.id);
     this.api.operationFields(operation.id, [object.id]).subscribe({
-      next: (fields) => this.operationForm.set({ item: operation, fields, values: {} }),
-      error: (error) => this.actionError.set(errorMessage(error))
+      next: (fields) => {
+        this.opening.set(null);
+        this.operationForm.set({ item: operation, fields, values: {} });
+      },
+      error: (error) => {
+        this.opening.set(null);
+        this.actionError.set(errorMessage(error));
+      }
     });
   }
 
@@ -188,6 +202,7 @@ export class ObjectComponent implements OnInit {
 
   public closeOperation(): void {
     this.operationForm.set(null);
+    this.actionError.set('');
   }
 
   public runOperation(): void {
@@ -218,6 +233,10 @@ export class ObjectComponent implements OnInit {
     this.exportOpen.update((open) => !open);
   }
 
+  public closeExportMenu(): void {
+    this.exportOpen.set(false);
+  }
+
   public chooseExporter(exporter: ExporterInfo): void {
     this.exportOpen.set(false);
     if (exporter.fields.length) {
@@ -243,6 +262,7 @@ export class ObjectComponent implements OnInit {
 
   public closeExport(): void {
     this.exportForm.set(null);
+    this.actionError.set('');
   }
 
   private export(exporter: ExporterInfo, values: FormValues): void {

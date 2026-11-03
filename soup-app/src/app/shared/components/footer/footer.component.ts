@@ -12,4 +12,7 @@ import { Component } from '@angular/core';
   templateUrl: './footer.component.html',
   styleUrl: './footer.component.scss'
 })
-export class FooterComponent {}
+export class FooterComponent {
+  // The year of the copyright, the current one
+  public readonly year = new Date().getFullYear();
+}

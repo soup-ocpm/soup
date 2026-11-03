@@ -6,6 +6,10 @@ Description: build_flask_app(engine) assembles the Flask app from the
              visualizer, package and system), thin wrappers around the
              core routers that serialize through serializers.py.
              Request bodies are capped at Settings.max_upload_mb (413).
+             CORS answers only the origins of the SOUP app
+             (Settings.cors_origins); a request that changes data needs
+             the header X-Soup-Client and an allowed Origin, if it has one
+             (security.py), otherwise 403.
              soup/api is the only place in soup/ that imports Flask;
              soup/core and the packages never do.
 Project : soup-server
@@ -16,7 +20,7 @@ from __future__ import annotations
 
 import logging
 
-from flask import Flask, Request, current_app, jsonify
+from flask import Flask, Request, current_app, jsonify, request
 from flask.typing import ResponseReturnValue
 from flask_cors import CORS
 from werkzeug.exceptions import HTTPException
@@ -24,6 +28,7 @@ from werkzeug.exceptions import HTTPException
 from soup.api.import_routes import build_import_blueprint
 from soup.api.operation_routes import build_operation_blueprint
 from soup.api.package_routes import build_package_blueprint
+from soup.api.security import CLIENT_HEADER, mutation_refusal
 from soup.api.system_routes import build_system_blueprint
 from soup.api.visualizer_routes import build_visualizer_blueprint
 from soup.api.workspace_routes import build_workspace_blueprint
@@ -68,16 +73,37 @@ def build_flask_app(engine: Engine) -> Flask:
     app.register_blueprint(build_visualizer_blueprint(engine))
     app.register_blueprint(build_system_blueprint(engine))
     _register_error_handlers(app)
+    _register_mutation_guard(app, engine.settings.cors_origins)
 
-    # The host reads the name of an exported file from Content-Disposition:
-    # in development it runs on another origin, where the browser hides the
-    # header unless it is exposed.
-    CORS(app, expose_headers=["Content-Disposition"])
+    # Only the pages of the SOUP app may call the API from a browser; they
+    # send X-Soup-Client on the requests that change data (allowed by the
+    # preflight). The host reads the name of an exported file from
+    # Content-Disposition: on another origin the browser hides the header
+    # unless it is exposed.
+    CORS(
+        app,
+        origins=list(engine.settings.cors_origins),
+        allow_headers=["Content-Type", CLIENT_HEADER],
+        expose_headers=["Content-Disposition"],
+    )
 
     log = logging.getLogger("werkzeug")
     log.setLevel(logging.ERROR)
 
     return app
+
+
+def _register_mutation_guard(app: Flask, allowed_origins: tuple[str, ...]) -> None:
+    """403 for a request that changes data without X-Soup-Client or from another site (security.py)."""
+
+    @app.before_request
+    def _refuse_foreign_mutations() -> ResponseReturnValue | None:
+        own_origin = f"{request.scheme}://{request.host}"
+        headers = {name: request.headers.get(name, "") for name in (CLIENT_HEADER, "Origin")}
+        reason = mutation_refusal(request.method, request.path, headers, own_origin, allowed_origins)
+        if reason is None:
+            return None
+        return jsonify(Result(403, reason).to_dict()), 403
 
 
 def _register_error_handlers(app: Flask) -> None:

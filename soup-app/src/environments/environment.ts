@@ -1,6 +1,7 @@
-// This file can be replaced during build by using the `fileReplacements` array.
-// `ng build` replaces `environment.ts` with `environment.prod.ts`.
-// The list of file replacements can be found in `angular.json`.
+// The environment of `ng serve` and of the production build (the image): the
+// browser calls the backend directly on 127.0.0.1:8080 (no proxy in nginx).
+// The e2e configuration replaces this file with environment.e2e.ts (`fileReplacements`
+// in angular.json).
 
 export const environment = {
   production: false,

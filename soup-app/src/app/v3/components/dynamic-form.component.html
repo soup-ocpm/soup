@@ -21,7 +21,14 @@
         <div class="form-text">{{ field.help }}</div>
       }
       @if (this.errors()[field.name]; as error) {
-        <div class="text-danger small soup-field-error">{{ error }}</div>
+        <div
+          class="soup-field-error"
+          role="alert">
+          <i
+            class="bi bi-exclamation-circle"
+            aria-hidden="true"></i>
+          {{ error }}
+        </div>
       }
     </div>
   }
@@ -285,37 +292,79 @@
   <div
     class="soup-items"
     [id]="this.id(field)">
-    <div class="soup-tiles">
-      @for (item of this.items(field); track $index; let i = $index) {
-        <div
-          class="soup-tile"
-          [class.soup-tile-editing]="this.editor(field)?.index === i">
-          <div class="soup-tile-head">
-            <strong>{{ this.variantOf(field, item.variant)?.label ?? item.variant }}</strong>
-            <span>
+    @if (this.items(field).length) {
+      <ol
+        class="soup-tiles"
+        [attr.aria-label]="field.label">
+        @for (item of this.items(field); track $index; let i = $index) {
+          <li
+            class="soup-tile"
+            [class.soup-tile-editing]="this.editor(field)?.index === i">
+            <span
+              class="soup-tile-number"
+              aria-hidden="true">
+              {{ i + 1 }}
+            </span>
+            <div class="soup-tile-body">
+              <strong class="soup-tile-title">{{ this.variantOf(field, item.variant)?.label ?? item.variant }}</strong>
+              <div class="soup-tile-summary">{{ this.readable(field, item) }}</div>
+            </div>
+            <span class="soup-tile-actions">
               <button
                 type="button"
-                class="btn btn-sm btn-link soup-edit-item"
+                class="btn btn-sm btn-outline-secondary soup-icon-btn soup-edit-item"
                 title="Modifica"
+                [attr.aria-label]="'Modifica elemento ' + (i + 1) + ' di ' + field.label"
                 (click)="this.startEdit(field, i)">
-                <i class="bi bi-pencil"></i>
+                <i
+                  class="bi bi-pencil"
+                  aria-hidden="true"></i>
               </button>
               <button
                 type="button"
-                class="btn btn-sm btn-link text-danger soup-remove-item"
+                class="btn btn-sm btn-outline-danger soup-icon-btn soup-remove-item"
                 title="Elimina"
+                [attr.aria-label]="'Elimina elemento ' + (i + 1) + ' di ' + field.label"
                 (click)="this.removeItem(field, i)">
-                <i class="bi bi-trash"></i>
+                <i
+                  class="bi bi-trash"
+                  aria-hidden="true"></i>
               </button>
             </span>
-          </div>
-          <div class="soup-tile-summary">{{ this.summary(field, item) }}</div>
-        </div>
-      }
-    </div>
+          </li>
+        }
+      </ol>
+    } @else {
+      <p class="soup-items-empty">Nessun elemento: aggiungine uno.</p>
+    }
+
+    @if (this.order(field); as order) {
+      <div
+        class="soup-notice soup-order-notice"
+        role="status">
+        <strong>
+          <i
+            class="bi bi-sort-down"
+            aria-hidden="true"></i>
+          Ordine di applicazione diverso da quello di inserimento.
+        </strong>
+        I filtri si applicano in quest'ordine:
+        <ol class="soup-order-list">
+          @for (entry of order; track entry.index) {
+            <li>
+              {{ this.variantOf(field, entry.item.variant)?.label ?? entry.item.variant }}
+              <span class="text-muted">(n. {{ entry.index + 1 }})</span>
+            </li>
+          }
+        </ol>
+      </div>
+    }
 
     @if (this.editor(field); as editor) {
-      <div class="soup-item-editor">
+      <div
+        class="soup-item-editor"
+        role="group"
+        [attr.aria-label]="(editor.index === null ? 'Nuovo: ' : 'Modifica: ') + (this.variantOf(field, editor.variant)?.label ?? '')">
         <h6>
           {{ editor.index === null ? 'Nuovo' : 'Modifica' }}:
           {{ this.variantOf(field, editor.variant)?.label }}
@@ -323,48 +372,74 @@
         @if (this.variantOf(field, editor.variant)?.description) {
           <p class="text-muted small">{{ this.variantOf(field, editor.variant)?.description }}</p>
         }
+        @if ((editor.errors | keyvalue).length) {
+          <div
+            class="soup-notice soup-notice-danger"
+            role="alert">
+            @for (error of editor.errors | keyvalue; track error.key) {
+              <div>{{ this.fieldLabel(field, editor.variant, error.key) }}: {{ error.value }}</div>
+            }
+          </div>
+        }
         <soup-dynamic-form
           [fields]="this.variantOf(field, editor.variant)?.fields ?? []"
           [columns]="this.columns()"
           [value]="editor.values"
           (valueChange)="this.onEditorChange(field, $event)"></soup-dynamic-form>
-        @for (error of editor.errors | keyvalue; track error.key) {
-          <div class="text-danger small">{{ error.key }}: {{ error.value }}</div>
-        }
-        <button
-          type="button"
-          class="btn btn-sm btn-primary me-2 soup-save-item"
-          (click)="this.saveEditor(field)">
-          Salva
-        </button>
-        <button
-          type="button"
-          class="btn btn-sm btn-outline-secondary"
-          (click)="this.closeEditor(field)">
-          Annulla
-        </button>
+        <div class="soup-actions justify-content-end">
+          <button
+            type="button"
+            class="btn btn-sm btn-outline-secondary"
+            (click)="this.closeEditor(field)">
+            Annulla
+          </button>
+          <button
+            type="button"
+            class="btn btn-sm btn-primary soup-save-item"
+            (click)="this.saveEditor(field)">
+            Salva
+          </button>
+        </div>
       </div>
     } @else {
-      <div class="input-group input-group-sm soup-add-item">
-        <select
-          class="form-select"
-          [attr.aria-label]="'Tipo di elemento per ' + field.label"
-          (change)="this.pickVariant(field, $event)">
-          @for (variant of field.variants; track variant.key) {
-            <option
-              [value]="variant.key"
-              [selected]="this.pickedVariant(field) === variant.key">
-              {{ variant.label }}
-            </option>
-          }
-        </select>
+      <div class="soup-add-item">
         <button
           type="button"
-          class="btn btn-outline-primary soup-add-item-button"
-          (click)="this.startAdd(field)">
-          <i class="bi bi-plus"></i>
-          Aggiungi
+          class="btn btn-sm btn-outline-primary soup-add-item-button"
+          aria-haspopup="menu"
+          [attr.aria-expanded]="this.addMenu() === field.name"
+          [attr.aria-controls]="this.id(field, '-variants')"
+          (click)="this.toggleAddMenu(field)"
+          (keydown.escape)="this.closeAddMenu()">
+          <i
+            class="bi bi-plus-lg"
+            aria-hidden="true"></i>
+          Aggiungi {{ field.label.toLowerCase() === 'filtri' ? 'filtro' : 'elemento' }}
         </button>
+        @if (this.addMenu() === field.name) {
+          <ul
+            class="soup-variant-menu"
+            role="menu"
+            [id]="this.id(field, '-variants')"
+            [attr.aria-label]="'Tipi di ' + field.label"
+            (keydown)="this.onMenuKey(field, $event)">
+            @for (variant of field.variants; track variant.key) {
+              <li role="none">
+                <button
+                  type="button"
+                  role="menuitem"
+                  class="soup-variant"
+                  [attr.data-variant]="variant.key"
+                  (click)="this.startAdd(field, variant.key)">
+                  <span class="soup-variant-label">{{ variant.label }}</span>
+                  @if (variant.description) {
+                    <span class="soup-variant-description">{{ variant.description }}</span>
+                  }
+                </button>
+              </li>
+            }
+          </ul>
+        }
       </div>
     }
   </div>

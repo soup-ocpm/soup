@@ -1,0 +1,96 @@
+// A drawer on the right from 768 px, a centered dialog below.
+:host {
+  position: fixed;
+  inset: 0;
+  z-index: 1060;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--soup-space-3);
+}
+
+.soup-side-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(16, 24, 40, 0.4);
+}
+
+.soup-side {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  width: min(560px, 100%);
+  max-height: calc(100dvh - 2 * var(--soup-space-3));
+  border-radius: var(--soup-radius-lg);
+  background: var(--soup-surface);
+  box-shadow: var(--soup-shadow-lg);
+  outline: none;
+}
+
+@media (min-width: 768px) {
+  :host {
+    justify-content: flex-end;
+    align-items: stretch;
+    padding: 0;
+  }
+
+  .soup-side {
+    width: min(520px, 92vw);
+    max-height: none;
+    height: 100%;
+    border-radius: var(--soup-radius-lg) 0 0 var(--soup-radius-lg);
+  }
+}
+
+.soup-side-head {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--soup-space-3);
+  padding: var(--soup-space-4) var(--soup-space-5);
+  border-bottom: 1px solid var(--soup-border-soft);
+}
+
+.soup-side-titles {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.soup-side-title {
+  margin: 0;
+  font-size: 1.25rem;
+  color: var(--soup-text);
+}
+
+.soup-side-description {
+  margin: var(--soup-space-1) 0 0;
+  font-family: inherit;
+  font-size: 0.9rem;
+  color: var(--soup-text-muted);
+}
+
+.soup-side-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto;
+  padding: var(--soup-space-4) var(--soup-space-5);
+}
+
+.soup-side-footer {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: var(--soup-space-2);
+  padding: var(--soup-space-3) var(--soup-space-5);
+  border-top: 1px solid var(--soup-border-soft);
+  background: var(--soup-surface-alt);
+  border-radius: 0 0 var(--soup-radius-lg) var(--soup-radius-lg);
+}
+
+@media (max-width: 575.98px) {
+  .soup-side-head,
+  .soup-side-body,
+  .soup-side-footer {
+    padding-left: var(--soup-space-4);
+    padding-right: var(--soup-space-4);
+  }
+}

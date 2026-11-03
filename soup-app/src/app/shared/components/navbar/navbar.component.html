@@ -1,21 +1,34 @@
 <!--Navigation bar-->
-<div class="master">
-  <div>
-    <a
-      class="navbar-brand"
-      href="/welcome">
-      <img
-        src="icons/favicon.png"
-        width="60"
-        height="32"
-        alt="" />
-    </a>
-  </div>
+<nav
+  class="master"
+  aria-label="Navigazione principale">
+  <a
+    class="navbar-brand"
+    href="/welcome">
+    <img
+      src="icons/favicon.png"
+      width="60"
+      height="32"
+      alt="SOUP" />
+  </a>
   <div class="link">
-    <p (click)="this.goToHome()">Home</p>
-    <p (click)="this.goTo('/workspace')">Workspace</p>
-    <p (click)="this.goTo('/import')">Import</p>
-    <p (click)="this.goTo('/packages')">Packages</p>
+    <p
+      role="link"
+      tabindex="0"
+      (click)="this.goToHome()"
+      (keydown.enter)="this.goToHome()">
+      Home
+    </p>
+    @for (item of this.links; track item.path) {
+      <p
+        role="link"
+        tabindex="0"
+        [class.active]="this.isActive(item.path)"
+        [attr.aria-current]="this.isActive(item.path) ? 'page' : null"
+        (click)="this.goTo(item.path)"
+        (keydown.enter)="this.goTo(item.path)"
+        [textContent]="item.label"></p>
+    }
   </div>
 
   <!--Soup feedback link-->
@@ -28,9 +41,10 @@
         alt="" />
       <a
         href="https://forms.gle/EoxJVvuXofh8oBku7"
-        target="_blank">
+        target="_blank"
+        rel="noopener">
         Leave feedback
       </a>
     </div>
   }
-</div>
+</nav>

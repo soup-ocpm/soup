@@ -24,9 +24,10 @@ interface ColumnFilter {
 
 const CSS = `
   :host { display: block; font-family: system-ui, -apple-system, 'Segoe UI', sans-serif; font-size: 0.95rem; }
-  header { display: flex; flex-wrap: wrap; align-items: baseline; gap: 12px; margin-bottom: 8px; }
-  .info { color: #6c757d; font-size: 0.875rem; }
-  .filters { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 6px; margin-bottom: 8px; }
+  :focus-visible { outline: 2px solid var(--soup-focus, #0b5ed7); outline-offset: 2px; }
+  header { display: flex; flex-wrap: wrap; align-items: baseline; gap: var(--soup-space-3, 12px); margin-bottom: var(--soup-space-2, 8px); }
+  .info { color: var(--soup-text-muted, #5c636a); font-size: 0.875rem; }
+  .filters { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: var(--soup-space-2, 8px); margin-bottom: var(--soup-space-3, 12px); }
   .filters label { display: flex; flex-direction: column; font-size: 0.8rem; color: #495057; overflow: hidden; }
   .filters span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   button, input { font: inherit; }

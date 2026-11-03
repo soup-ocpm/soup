@@ -4,7 +4,7 @@ File : test_api_v3_packages_frontend.py
 Description: Tests for the package side of /api/v3 (soup/api/
              package_routes.py, soup/core/packages/frontend.py): the
              contributions and errors in GET /api/v3/packages, the static
-             files of app/dist (Content-Type, version-based ETag, 304,
+             files of app/dist (Content-Type, an ETag per file from version, size and mtime, 304,
              every path escaping app/dist refused), the frontend manifest
              ordered by dependencies, and a disabled package disappearing
              from importers, operations, visualizers, manifest and files.
@@ -67,7 +67,7 @@ def test_static_files_of_app_dist(tmp_path):
     assert "feat-1.0.0" in etag
 
     css = client.get("/api/v3/packages/feat/app/styles/main.css")
-    assert (css.status_code, css.mimetype, css.headers["ETag"]) == (200, "text/css", etag)
+    assert (css.status_code, css.mimetype) == (200, "text/css")
 
     cached = client.get("/api/v3/packages/feat/app/index.js", headers={"If-None-Match": etag})
     assert cached.status_code == 304
@@ -110,6 +110,60 @@ def test_app_file_refuses_absolute_and_unsafe_paths(tmp_path, path):
 
     with pytest.raises(NotFoundError):
         engine.frontend.app_file("feat", path)
+
+
+def test_every_file_of_a_package_has_its_own_etag(tmp_path):
+    _feature(tmp_path)
+    client, _ = disk_client(tmp_path)
+
+    bundle = client.get("/api/v3/packages/feat/app/index.js").headers["ETag"]
+    css = client.get("/api/v3/packages/feat/app/styles/main.css").headers["ETag"]
+
+    assert bundle != css
+    assert "feat-1.0.0-" in bundle and "feat-1.0.0-" in css
+
+
+REBUILT = b"export const rebuilt = 'with more code';"
+REBUILT_AGAIN = b"export const rebuilt = 'with more CODE';"  # the same size as REBUILT
+
+
+def test_a_rebuilt_bundle_with_the_same_version_gets_a_new_etag(tmp_path):
+    package_dir = _feature(tmp_path)
+    client, _ = disk_client(tmp_path)
+    bundle = package_dir / "app" / "dist" / "index.js"
+    url = "/api/v3/packages/feat/app/index.js"
+    old = client.get(url).headers["ETag"]
+
+    # Rebuilt: another content, the version unchanged.
+    bundle.write_bytes(REBUILT)
+    new = client.get(url).headers["ETag"]
+    assert new != old
+
+    # The same size, written later (the modification time changes).
+    stat = bundle.stat()
+    bundle.write_bytes(REBUILT_AGAIN)
+    os.utime(bundle, ns=(stat.st_atime_ns, stat.st_mtime_ns + 1_000_000_000))
+    newest = client.get(url).headers["ETag"]
+    assert newest not in (old, new)
+
+    # The browser's copy: still valid with the current ETag, refreshed with the old one.
+    current = client.get(url, headers={"If-None-Match": newest})
+    assert current.status_code == 304
+    current.close()
+    stale = client.get(url, headers={"If-None-Match": old})
+    assert stale.status_code == 200
+    assert stale.data == REBUILT_AGAIN
+
+
+def test_the_etag_is_computed_from_the_metadata_only(tmp_path):
+    package_dir = _feature(tmp_path)
+    client, _ = disk_client(tmp_path)
+    bundle = package_dir / "app" / "dist" / "index.js"
+    stat = bundle.stat()
+
+    etag = client.get("/api/v3/packages/feat/app/index.js").headers["ETag"]
+
+    assert etag == f'"feat-1.0.0-{stat.st_size}-{stat.st_mtime_ns}"'
 
 
 def test_static_files_do_not_follow_links_out_of_dist(tmp_path):

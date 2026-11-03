@@ -22,7 +22,7 @@
     "build:sdk": "tsc -p sdk",
     "build:packages": "node sdk/scripts/build-packages.mjs",
     "pack": "node sdk/scripts/pack.mjs",
-    "lint": "eslint . && knip && tsc -p sdk --noEmit",
+    "lint": "eslint . --max-warnings=0 && knip && tsc -p sdk --noEmit",
     "typecheck": "tsc -p sdk --noEmit",
     "test": "vitest run"
   },

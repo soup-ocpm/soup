@@ -13,7 +13,7 @@ Description: /api/v3/packages - the package manager over HTTP:
              - DELETE /api/v3/packages/<name>          uninstall
              - GET    /api/v3/packages/<name>/app/<path>  static files of
                       the package's app/dist (PackageFrontend validates
-                      the path), with an ETag based on the version
+                      the path), with an ETag of the file (version, size, mtime)
              - GET    /api/v3/frontend/manifest        the active packages
                       with an app part, dependencies first
              Install and uninstall answer 403 unless

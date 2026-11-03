@@ -4,7 +4,7 @@ import { BASE_CSS, style } from '../dom';
 import { DagreGraphRenderer } from './dagre-renderer';
 import { GraphEdgeModel, GraphModel, GraphNodeModel, searchModel, SearchPage, SearchTarget, toGraphModel } from './model';
 import { RelationshipPalette } from './palette';
-import { propertiesPanel, searchPanel, toolbarControls } from './panels';
+import { propertiesPanel, searchPanel, ToolbarCommand, toolbarCommands, toolbarControls, ToolbarSetting } from './panels';
 import { GraphRenderer, GraphRendererFactory, NodeShape } from './renderer';
 
 /** Remote search: a visualizer may page the matches on the server (e.g. through its actions). */
@@ -17,26 +17,42 @@ const SEARCH_PAGE_SIZE = 50;
 // The thumbnail is saved only below this size (the catalog accepts 1 MB).
 const MAX_THUMBNAIL_CHARS = 512 * 1024;
 
+// The height of the drawing follows the window (never below 420 px; 420 px
+// below 768 px, where the area is narrow); --soup-graph-height sets it.
+// Below 768 px the side panel goes under it.
 const CSS = `
-  :host { position: relative; }
-  .toolbar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 6px; }
-  .layout { display: flex; gap: 8px; }
-  .canvas { flex: 1 1 auto; min-width: 0; height: var(--soup-graph-height, 70vh); border: 1px solid #d0d7de; border-radius: 6px; background: #fff; overflow: hidden; }
-  .side { flex: 0 0 300px; display: flex; flex-direction: column; gap: 8px; max-height: var(--soup-graph-height, 70vh); }
+  :host { position: relative; --soup-graph-area: var(--soup-graph-height, clamp(420px, calc(100dvh - 300px), 900px)); }
+  .toolbar { display: flex; flex-wrap: wrap; gap: var(--soup-space-2, 8px) var(--soup-space-3, 12px); align-items: center; margin-bottom: var(--soup-space-2, 8px); }
+  .toolbar[hidden] { display: none; }
+  .toolbar .group { display: flex; flex-wrap: wrap; gap: var(--soup-space-2, 8px); align-items: center; }
+  .toolbar .group + .group:not(.group-counts) { padding-left: var(--soup-space-3, 12px); border-left: 1px solid var(--soup-border, #d0d7de); }
+  .toolbar .group-counts { margin-left: auto; }
+  .counts { font-size: 0.85rem; }
+  .layout { display: flex; gap: var(--soup-space-2, 8px); }
+  .canvas { flex: 1 1 auto; min-width: 0; height: var(--soup-graph-area); border: 1px solid var(--soup-border, #d0d7de); border-radius: var(--soup-radius-md, 8px); background: #fff; overflow: hidden; touch-action: none; }
+  .side { flex: 0 0 300px; min-width: 0; display: flex; flex-direction: column; gap: var(--soup-space-2, 8px); max-height: var(--soup-graph-area); }
   .side[hidden] { display: none; }
-  .tabs { display: flex; gap: 4px; }
-  .tabs button[aria-selected='true'] { border-color: #0d6efd; color: #0d6efd; }
-  .results { flex: 1 1 auto; overflow: auto; border: 1px solid #d0d7de; border-radius: 6px; margin: 0; padding: 0; list-style: none; }
-  .results li { padding: 4px 8px; border-bottom: 1px solid #eaeef2; cursor: pointer; font-size: 0.85rem; }
+  @media (max-width: 767.98px) {
+    :host { --soup-graph-area: var(--soup-graph-height, 420px); }
+    .layout { flex-direction: column; }
+    .side { flex-basis: auto; max-height: none; }
+    .results { max-height: 240px; }
+  }
+  .tabs { display: flex; gap: var(--soup-space-1, 4px); }
+  .tabs button[aria-selected='true'] { border-color: var(--soup-primary-strong, #b86e00); color: var(--soup-primary-strong, #b86e00); font-weight: 600; }
+  .results { flex: 1 1 auto; overflow: auto; border: 1px solid var(--soup-border, #d0d7de); border-radius: var(--soup-radius-md, 8px); margin: 0; padding: 0; list-style: none; }
+  .results li { padding: var(--soup-space-1, 4px) var(--soup-space-2, 8px); border-bottom: 1px solid #eaeef2; cursor: pointer; font-size: 0.85rem; }
   .results li:hover, .results li.selected { background: #fff4e0; }
-  .properties { border: 1px solid #d0d7de; border-radius: 6px; padding: 8px; max-height: 35vh; overflow: auto; }
+  .properties { border: 1px solid var(--soup-border, #d0d7de); border-radius: var(--soup-radius-md, 8px); padding: var(--soup-space-2, 8px); max-height: 35vh; overflow: auto; }
+  .properties .toolbar { justify-content: space-between; flex-wrap: nowrap; }
   .properties dl { display: grid; grid-template-columns: max-content 1fr; gap: 2px 12px; margin: 0; font-size: 0.85rem; }
   .properties dt { font-weight: 600; } .properties dd { margin: 0; word-break: break-word; }
   details.relationships { position: relative; }
-  details.relationships > div { position: absolute; z-index: 3; padding: 6px 10px; background: #fff; border: 1px solid #d0d7de; border-radius: 6px; max-height: 300px; overflow: auto; }
+  details.relationships > summary { cursor: pointer; padding: 2px 4px; border-radius: var(--soup-radius-sm, 4px); }
+  details.relationships > div { position: absolute; z-index: 3; padding: 6px 10px; background: #fff; border: 1px solid var(--soup-border, #d0d7de); border-radius: var(--soup-radius-md, 8px); box-shadow: 0 4px 12px rgba(16, 24, 40, 0.1); max-height: 300px; overflow: auto; }
   label { display: block; white-space: nowrap; }
   .swatch { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 4px; }
-  .error { color: #b02a37; }
+  .error { color: #b02a37; padding: var(--soup-space-3, 12px); }
   .soup-graph-svg { display: block; }
   .soup-graph-svg .edgePath path { fill: none; }
   .soup-graph-svg .edgeLabel text { fill: #333; }
@@ -61,7 +77,7 @@ export class SoupGraphView extends HTMLElement {
     return [...SoupGraphView.renderers.keys()];
   }
 
-  public static readonly observedAttributes = ['engine'];
+  public static readonly observedAttributes = ['engine', 'toolbar'];
 
   // Only notify() is used: any VisualizerContext fits.
   public context: NotifyContext | null = null;
@@ -94,8 +110,37 @@ export class SoupGraphView extends HTMLElement {
   private detailsRequest = 0;
 
   private canvas: HTMLElement | null = null;
+  // The `toolbar` property; null: the attribute's value (default "full")
+  private toolbarSetting: ToolbarSetting | null = null;
 
   // --- properties ---------------------------------------------------------- //
+  /**
+   * The commands of the toolbar: 'full' (default: shape, relationships,
+   * search, export, counts), 'none' (no toolbar: the visualizer draws its
+   * own, with openSearch() and exportSvg()) or the list of the commands to
+   * show. Wins over the `toolbar` attribute ("full", "none" or the names
+   * separated by spaces or commas).
+   */
+  public get toolbar(): ToolbarSetting {
+    if (this.toolbarSetting !== null) return this.toolbarSetting;
+    const attribute = this.getAttribute('toolbar');
+    return attribute === null || attribute === 'full' || attribute === 'none' ? (attribute ?? 'full') : toolbarCommands(attribute);
+  }
+
+  public set toolbar(value: ToolbarSetting | null) {
+    this.toolbarSetting = value;
+    this.drawToolbar();
+  }
+
+  /** The commands the toolbar shows, in order. */
+  public toolbarCommands(): ToolbarCommand[] {
+    return toolbarCommands(this.toolbarSetting ?? this.getAttribute('toolbar'));
+  }
+
+  /** True when the search panel is open. */
+  public get searchVisible(): boolean {
+    return this.searchOpen;
+  }
   public get data(): unknown {
     return this.value;
   }
@@ -135,8 +180,9 @@ export class SoupGraphView extends HTMLElement {
     this.engine = null;
   }
 
-  public attributeChangedCallback(): void {
-    if (this.isConnected && !this.customEngine) this.redraw(false);
+  public attributeChangedCallback(name: string): void {
+    if (name === 'toolbar') this.drawToolbar();
+    else if (this.isConnected && !this.customEngine) this.redraw(false);
   }
 
   // --- methods ------------------------------------------------------------- //
@@ -259,8 +305,11 @@ export class SoupGraphView extends HTMLElement {
   }
 
   private drawToolbar(): void {
-    const toolbar = this.root.querySelector('.toolbar');
+    // The first .toolbar: the properties panel has one too, after it.
+    const toolbar = this.root.querySelector<HTMLElement>('.toolbar');
     if (!toolbar) return;
+    const commands = this.toolbarCommands();
+    toolbar.hidden = commands.length === 0;
     const state = {
       shape: this.shape,
       relationships: this.palette.relationshipTypes(),
@@ -272,16 +321,21 @@ export class SoupGraphView extends HTMLElement {
       ...toolbarControls(state, {
         setShape: (shape) => this.setNodeShape(shape),
         setRelationshipVisible: (type, visible) => this.setRelationshipVisible(type, visible),
-        toggleSearch: () => this.toggleSearch(),
+        toggleSearch: () => this.openSearch(),
         exportSvg: () => this.downloadSvg()
-      })
+      }, commands)
     );
   }
 
-  private toggleSearch(): void {
-    this.searchOpen = !this.searchOpen;
+  /**
+   * Open (true) or close (false) the search panel; without an argument,
+   * toggle it. For a visualizer with its own toolbar (toolbar = 'none').
+   */
+  public openSearch(open = !this.searchOpen): void {
+    this.searchOpen = open;
     this.drawToolbar();
     this.drawSide();
+    if (open) this.root.querySelector<HTMLInputElement>('.side input[type="search"]')?.focus();
   }
 
   private drawSide(): void {

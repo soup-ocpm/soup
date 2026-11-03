@@ -26,6 +26,7 @@ import sys
 import pytest
 
 from soup.core.contracts import NotFoundError, Upload, ValidationError
+from tests.api_client import soup_client
 from tests.fakes import FakeDatabase, ekg_engine
 from tests.packages import bundled_module
 
@@ -231,7 +232,7 @@ def test_an_undeclared_relation_or_label_answers_400(setup):
 
     engine, _db = setup
     obj = _import(engine)
-    client = build_flask_app(engine).test_client()
+    client = soup_client(build_flask_app(engine))
     url = f"/api/v3/objects/{obj.id}/visualizers/ekg_views.graph/actions"
 
     assert client.post(f"{url}/graph", json={"relations": ["DF"]}).status_code == 200

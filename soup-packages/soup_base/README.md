@@ -41,7 +41,7 @@ da `marked` dopo averlo sanificato con DOMPurify (solo HTML: niente SVG, MathML 
 | `<soup-image>` | `{mime, base64}` oppure `{svg}`, `alt?` | Solo tipi `image/*`; l'SVG è mostrato con `<img src="data:image/svg+xml;base64,...">`. |
 | `<soup-table>` | `{columns, rows, total?}` | Vedi sotto. |
 | `<soup-chart>` | `{chart: 'pie'\|'bar'\|'line', labels, datasets: [{label, data}]}` | Chart.js; il grafico viene distrutto quando l'elemento esce dalla pagina. |
-| `<soup-keyvalue>` | `{items: [{key, value}]}` | |
+| `<soup-keyvalue>` | `{items: [{key, value}]}` | Attributo `variant="tiles"`: ogni coppia come "stat tile" (valore grande, chiave sotto, in griglia), per i numeri principali di una pagina. |
 | `<soup-file-link>` | `{filename, mime, base64}` | Bottone che salva il file. |
 | `<soup-error>` | `{message}` | |
 | `<soup-report-view>` | `{blocks, name?, description?}` | Disegna i blocchi uno sotto l'altro con gli elementi di questa tabella (il titolo del blocco sopra). Un tipo sconosciuto mostra un avviso con i dati in JSON. Riceve anche `context` (`VisualizerContext`), passato agli elementi che lo accettano. L'host lo usa anche per l'anteprima dell'import. Altri tipi di blocco si aggiungono senza toccare il suo codice: `customElements.get('soup-report-view').registerBlock(tipo, tag)` (vedi sotto). |
@@ -49,8 +49,9 @@ da `marked` dopo averlo sanificato con DOMPurify (solo HTML: niente SVG, MathML 
 
 ### `<soup-table>`
 
-Paginazione, ordinamento per colonna (clic sull'intestazione: crescente, decrescente, nessuno;
-numeri per valore, celle vuote in fondo), ricerca e scelta delle colonne visibili.
+Paginazione, ordinamento per colonna (clic sull'intestazione, o Invio/Spazio da tastiera: crescente, decrescente, nessuno;
+numeri per valore, celle vuote in fondo), ricerca e scelta delle colonne visibili. Intestazione fissa,
+righe alternate, numeri allineati a destra.
 
 | Proprietà | Significato |
 |---|---|
@@ -111,11 +112,21 @@ che restituisce `GraphModel {nodes: GraphNodeModel[], edges: GraphEdgeModel[], d
 | `nodeDetails` | Proprietà complete del nodo selezionato: `(id) => Promise<GraphNodeModel \| null>` (di solito un'azione del visualizzatore). Le proprietà mostrate sono quelle restituite (`null`: restano quelle del modello); una risposta che arriva quando è selezionato un altro nodo è ignorata. Senza, si mostrano le proprietà del modello. |
 | `renderer` | Un'istanza di `GraphRenderer` (ha la precedenza sull'attributo `engine`). |
 | `thumbnail` | `true` (default): dopo aver disegnato nuovi dati emette `soup-thumbnail` con l'SVG (se sotto 512 KB). |
+| `toolbar` | I comandi della barra: `'full'` (default: forma dei nodi, relazioni, cerca, esporta SVG, conteggi), `'none'` (nessuna barra: il visualizzatore disegna la propria e usa `openSearch()`, `exportSvg()`, `setNodeShape()`) oppure l'elenco dei comandi da mostrare tra `'shape'`, `'relationships'`, `'search'`, `'export'`, `'counts'` (sempre nell'ordine della barra, raggruppati: forma e relazioni \| cerca \| esporta, conteggi a destra). Ha la precedenza sull'attributo `toolbar`. |
+| `searchVisible` | `true` se il pannello di ricerca è aperto (sola lettura). |
 | `palette` | La `RelationshipPalette` (sola lettura). |
 | `model`, `selected`, `shape` | Il modello disegnato, il nodo selezionato, la forma corrente (sola lettura). |
 
-Attributo `engine`: il nome di un motore registrato (default `dagre`). Variabile CSS
-`--soup-graph-height` (default `70vh`).
+Attributo `engine`: il nome di un motore registrato (default `dagre`). Attributo `toolbar`:
+`full`, `none` o i nomi dei comandi separati da spazi o virgole (`toolbar="search export"`; i nomi
+sconosciuti sono ignorati). Variabile CSS `--soup-graph-height` (default
+`clamp(420px, calc(100dvh - 300px), 900px)`: segue l'altezza della finestra, mai sotto 420 px; 420 px
+sotto 768 px); sotto 768 px il pannello laterale (ricerca, proprietà) va sotto il disegno.
+
+Il disegno è adattato e centrato nell'area (anche in verticale) a ogni nuovo dato e a ogni cambio di
+dimensione dell'area, finché l'utente non usa zoom o pan. Le etichette degli archi hanno uno sfondo
+chiaro con bordo arrotondato (`rect.label-bg`, con attributi di presentazione: identico
+nell'esportazione SVG e nell'anteprima) che copre la linea sotto il testo.
 
 ### Metodi
 
@@ -125,6 +136,8 @@ Attributo `engine`: il nome di un motore registrato (default `dagre`). Variabile
 | `setRelationshipVisible(type, visible)` | Mostra o nasconde un tipo di relazione. |
 | `highlight(ids, on)` | Evidenzia o spegne dei nodi. |
 | `selectNode(id \| null)` | Seleziona un nodo del modello o dei risultati della ricerca, anche se non è disegnato (di nuovo lo stesso, o `null`: deseleziona), e ne mostra le proprietà (chieste a `nodeDetails`, se impostato). |
+| `openSearch(open?)` | Apre (`true`) o chiude (`false`) il pannello di ricerca; senza argomento lo alterna. Per una barra propria (`toolbar = 'none'`). |
+| `toolbarCommands()` | I comandi che la barra mostra, in ordine. |
 | `runSearch(query, target?)`, `loadMore()` | Ricerca e pagina successiva dei risultati. |
 | `exportSvg(): string` | Il disegno come documento SVG autonomo. |
 | `downloadSvg(filename = 'graph.svg')` | Salva l'SVG. |

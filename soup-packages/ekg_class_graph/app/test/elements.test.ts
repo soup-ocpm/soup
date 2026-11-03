@@ -12,7 +12,10 @@ class FakeGraphView extends HTMLElement {
   public search: ((query: string, target: SearchTarget, offset: number, limit: number) => Promise<SearchPage<GraphNodeModel | GraphEdgeModel>>) | null = null;
   public nodeDetails: ((id: string) => Promise<GraphNodeModel | null>) | null = null;
   public thumbnail = true;
+  public toolbar: unknown = 'full';
+  public searchVisible = false;
   public drawn: { data: unknown; thumbnail: boolean }[] = [];
+  public shapes: string[] = [];
   private value: unknown;
   public get data(): unknown {
     return this.value;
@@ -21,7 +24,12 @@ class FakeGraphView extends HTMLElement {
     this.value = value;
     this.drawn.push({ data: value, thumbnail: this.thumbnail });
   }
-  public setNodeShape(): void {}
+  public setNodeShape(shape: string): void {
+    this.shapes.push(shape);
+  }
+  public openSearch(open = !this.searchVisible): void {
+    this.searchVisible = open;
+  }
   public exportSvg(): string {
     return '<svg><text>classes</text></svg>';
   }
@@ -100,6 +108,26 @@ describe('<soup-pkg-ekg-class-graph>', () => {
     await element.setRelation('OBSERVED', true);
     expect(context.action).toHaveBeenCalledWith('graph', { view: 'class', limit: 200, relations: ['DF_C', 'OBSERVED'] });
     expect(graphOf(element).drawn[1]).toEqual({ data: OTHER, thumbnail: false });
+  });
+
+  it('has one bar: soup-graph-view without its toolbar, with shape, search and export once', () => {
+    const context = fakeContext(graphAction);
+    const element = mount<SoupPkgEkgClassGraph>('soup-pkg-ekg-class-graph', GRAPH_DATA, context);
+    const root = element.shadowRoot!;
+    const names = () => [...root.querySelectorAll('.bar button')].map((button) => button.textContent);
+
+    expect(graphOf(element).toolbar).toBe('none');
+    expect(names()).toEqual(['Cerca', 'Esporta SVG']);
+    expect(root.querySelectorAll('.bar > .group')).toHaveLength(3);
+    expect(root.querySelector('.info')!.textContent).toMatch(/^\d+ nodi, \d+ archi/);
+
+    (root.querySelector('select[aria-label="Forma dei nodi"]') as HTMLSelectElement).value = 'circle';
+    root.querySelector('select[aria-label="Forma dei nodi"]')!.dispatchEvent(new Event('change'));
+    expect(graphOf(element).shapes).toEqual(['circle']);
+
+    (root.querySelector('.bar button[aria-pressed]') as HTMLButtonElement).click();
+    expect(graphOf(element).searchVisible).toBe(true);
+    expect(names()).toEqual(['Chiudi ricerca', 'Esporta SVG']);
   });
 
   it('switches to a standard view with its default relationship types and clamps the limit', async () => {

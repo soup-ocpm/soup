@@ -14,6 +14,13 @@ import { Router } from '@angular/router';
   styleUrl: './navbar.component.scss'
 })
 export class NavbarComponent {
+  // The pages of the workspace in the bar
+  public readonly links = [
+    { path: '/workspace', label: 'Workspace' },
+    { path: '/import', label: 'Import' },
+    { path: '/packages', label: 'Packages' }
+  ];
+
   /**
    * Constructor for NavbarComponent component
    * @param router the Router
@@ -33,6 +40,15 @@ export class NavbarComponent {
    */
   public goTo(path: string): void {
     this.router.navigate([path]);
+  }
+
+  /**
+   * Return true if the current page is `path` or one of its pages
+   * @param path the path of the page
+   */
+  public isActive(path: string): boolean {
+    const url = this.router.url.split('?')[0];
+    return url === path || url.startsWith(`${path}/`);
   }
 
   /**

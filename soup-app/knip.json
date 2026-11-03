@@ -6,6 +6,9 @@
   "ignore": [
     "src/**/*.scss"
   ],
+  "ignoreBinaries": [
+    "python"
+  ],
   "ignoreDependencies": [
     "bootstrap",
     "bootstrap-icons",

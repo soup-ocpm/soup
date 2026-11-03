@@ -24,7 +24,12 @@ export interface ObjectContext {
 }
 
 export interface ActionContext {
-  /** Call an action of this element's own visualizer (POST .../actions/<name>). */
+  /**
+   * Call an action of this element's own visualizer (POST .../actions/<name>).
+   * The host sends it, with the header X-Soup-Client the backend requires on
+   * the requests that change data: an element never calls the API itself
+   * (a direct fetch gets 403).
+   */
   action<T = Json>(name: string, params?: Record<string, unknown>): Promise<T>;
 }
 

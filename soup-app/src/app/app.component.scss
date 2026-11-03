@@ -1,7 +1,21 @@
 // ================================
-// Region: Main content
+// Region: Page layout
 // ================================
+// A full-height column: navbar, the content that grows, the footer at the
+// bottom of the page (in the flow: it never covers the content).
+:host {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  min-height: 100dvh;
+}
+
 .content {
-  padding-top: 55px;
-  overflow: hidden;
+  flex: 1 0 auto;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  // The pages slide horizontally at every change (styles.scss): no
+  // horizontal scroll, the vertical one stays the page's.
+  overflow-x: clip;
 }

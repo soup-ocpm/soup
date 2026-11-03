@@ -1,13 +1,214 @@
 @use '../v3-page';
 
-.soup-subpanel {
-  padding: 12px;
-  margin-bottom: 12px;
-  border: 1px dashed #adb5bd;
-  border-radius: 6px;
+// ================================
+// Region: Header
+// ================================
+.soup-object-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: var(--soup-space-3) var(--soup-space-4);
+}
+
+.soup-object-title {
+  flex: 1 1 320px;
+  min-width: 0;
+}
+
+.soup-back {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--soup-space-1);
+  margin-bottom: var(--soup-space-1);
+  font-size: 0.875rem;
+}
+
+.soup-object-name-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--soup-space-2);
+}
+
+.soup-object-name {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.soup-badge-kind {
+  border: 1px solid var(--soup-border);
+  background: var(--soup-surface-alt);
+  color: var(--soup-text);
+}
+
+.soup-badge-package {
+  background: #495057;
+  color: #fff;
+}
+
+.soup-object-description {
+  margin: var(--soup-space-2) 0 var(--soup-space-1);
+  font-size: 1rem;
+}
+
+.soup-meta {
+  margin-top: var(--soup-space-1);
+  font-size: 0.875rem;
+  color: var(--soup-text-muted);
+  overflow-wrap: anywhere;
+}
+
+.soup-export {
+  position: relative;
+  flex: 0 0 auto;
 }
 
 .soup-export-menu {
+  top: calc(100% + var(--soup-space-1));
   right: 0;
   left: auto;
+}
+
+// ================================
+// Region: Visualizer and actions
+// ================================
+// One column below 992 px (the actions under the visualizer), two above.
+.soup-object-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--soup-space-4);
+  align-items: start;
+}
+
+@media (min-width: 992px) {
+  .soup-object-layout {
+    grid-template-columns: minmax(0, 1fr) 320px;
+  }
+
+  .soup-object-aside {
+    position: sticky;
+    top: calc(var(--soup-bar-height) + var(--soup-space-4));
+  }
+}
+
+.soup-object-main,
+.soup-object-aside {
+  min-width: 0;
+}
+
+.soup-viewer {
+  margin-bottom: 0;
+}
+
+.soup-viewer-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--soup-space-2);
+  margin-bottom: var(--soup-space-3);
+}
+
+.soup-actions-panel {
+  margin-bottom: 0;
+}
+
+.soup-op-group + .soup-op-group {
+  margin-top: var(--soup-space-4);
+}
+
+.soup-op-group-title {
+  display: flex;
+  align-items: center;
+  gap: var(--soup-space-2);
+  margin: 0 0 var(--soup-space-2);
+  font-family: inherit;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--soup-text-muted);
+}
+
+.soup-op-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--soup-space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.soup-op-card {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--soup-space-3);
+  width: 100%;
+  padding: var(--soup-space-3);
+  border: 1px solid var(--soup-border);
+  border-radius: var(--soup-radius-md);
+  background: var(--soup-surface);
+  color: var(--soup-text);
+  text-align: left;
+  cursor: pointer;
+  transition:
+    border-color 120ms ease,
+    box-shadow 120ms ease,
+    background-color 120ms ease;
+
+  &:hover {
+    border-color: var(--soup-primary);
+    background: var(--soup-primary-soft);
+    box-shadow: var(--soup-shadow-sm);
+  }
+
+  &[aria-busy='true'] {
+    cursor: progress;
+  }
+}
+
+.soup-op-icon {
+  display: inline-flex;
+  flex: 0 0 32px;
+  align-items: center;
+  justify-content: center;
+  height: 32px;
+  border-radius: var(--soup-radius-sm);
+  background: var(--soup-primary-soft);
+  color: var(--soup-primary-strong);
+  font-size: 1rem;
+}
+
+.soup-op-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.soup-op-label {
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.soup-op-description {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  font-size: 0.8125rem;
+  line-height: 1.35;
+  color: var(--soup-text-muted);
+}
+
+.soup-op-produces {
+  font-size: 0.75rem;
+  color: var(--soup-text-muted);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .soup-op-card {
+    transition: none;
+  }
 }

@@ -3,7 +3,7 @@ import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 
 import '../src/index';
 import { GraphViewData, SoupPkgEkgGraph } from '../src/graph';
-import { QueriesData, SoupPkgEkgQueries } from '../src/queries';
+import { canRunAtOnce, QueriesData, resultKey, SoupPkgEkgQueries } from '../src/queries';
 import { ChartData, GraphEdgeModel, GraphNodeModel, NodeShape, SearchPage, SearchTarget, TableData } from '../src/soup-base';
 import { SoupPkgEkgStats, StatsData } from '../src/stats';
 
@@ -13,10 +13,15 @@ class FakeGraphView extends HTMLElement {
   public search: ((query: string, target: SearchTarget, offset: number, limit: number) => Promise<SearchPage<GraphNodeModel | GraphEdgeModel>>) | null = null;
   public nodeDetails: ((id: string) => Promise<GraphNodeModel | null>) | null = null;
   public thumbnail = true;
+  public toolbar: unknown = 'full';
+  public searchVisible = false;
   /** The value of `thumbnail` when each data was set. */
   public drawn: { data: unknown; thumbnail: boolean }[] = [];
   public shapes: NodeShape[] = [];
   private value: unknown;
+  public openSearch(open = !this.searchVisible): void {
+    this.searchVisible = open;
+  }
   public get data(): unknown {
     return this.value;
   }
@@ -113,12 +118,32 @@ describe('<soup-pkg-ekg-graph>', () => {
     expect(view.drawn).toEqual([{ data: GRAPH, thumbnail: true }]);
     expect(view.thumbnail).toBe(false);
     expect(view.context).toBe(context);
-    expect(element.shadowRoot!.querySelector('.info')!.textContent).toBe('Massimo mostrabile: 340 elementi');
+    expect(element.shadowRoot!.querySelector('.info')!.textContent).toBe('1 nodi, 0 archi · massimo mostrabile: 340 elementi');
 
     await element.setLimit(50);
     expect(context.action).toHaveBeenCalledWith('graph', { view: 'standard', limit: 50, relations: ['DF'] });
     expect(view.drawn[1]).toEqual({ data: OTHER, thumbnail: false });
-    expect(element.shadowRoot!.querySelector('.info')!.textContent).toBe('Massimo mostrabile: 12 elementi');
+    expect(element.shadowRoot!.querySelector('.info')!.textContent).toBe('1 nodi, 0 archi · massimo mostrabile: 12 elementi');
+  });
+
+  it('has one bar: soup-graph-view without its toolbar, no command twice, the search opened from the bar', () => {
+    const context = fakeContext(graphAction);
+    const element = mount<SoupPkgEkgGraph>('soup-pkg-ekg-graph', GRAPH_DATA, context);
+    const view = graphOf(element);
+    const root = element.shadowRoot!;
+    const names = () => [...root.querySelectorAll('.bar button')].map((button) => button.textContent);
+
+    expect(view.toolbar).toBe('none');
+    expect(root.querySelectorAll('.bar')).toHaveLength(1);
+    expect(names()).toEqual(['Cerca', 'Esporta SVG']);
+    expect(root.querySelectorAll('select[aria-label="Forma dei nodi"]')).toHaveLength(1);
+    expect([...root.querySelectorAll('.bar > .group')]).toHaveLength(3);
+    expect(root.querySelector('details.relations summary')!.textContent).toBe('Relazioni (1/2)');
+
+    (root.querySelector('.bar button[aria-pressed]') as HTMLButtonElement).click();
+    expect(view.searchVisible).toBe(true);
+    expect(names()).toEqual(['Chiudi ricerca', 'Esporta SVG']);
+    expect(root.querySelector('.bar button[aria-pressed]')!.getAttribute('aria-pressed')).toBe('true');
   });
 
   it('offers the views and the relationship types of the chosen view', async () => {
@@ -296,7 +321,164 @@ describe('<soup-pkg-ekg-queries>', () => {
     expect(context.notify).toHaveBeenCalledWith("'word' is required", 'error');
     expect(element.shadowRoot!.querySelector('soup-report-view')).toBeNull();
   });
+
+  /** An action answering each call with `blocksOf(key)`, or held until release(). */
+  function controlledContext(): { context: VisualizerContext; pending: Map<string, () => void> } {
+    const pending = new Map<string, () => void>();
+    const context = fakeContext((_name, params) => {
+      const key = String(params.key);
+      const blocks: Block[] = [{ type: 'text', title: key, data: { text: key } }];
+      return new Promise((resolve) => pending.set(key, () => resolve({ key, label: key, blocks })));
+    });
+    return { context, pending };
+  }
+
+  const shownTitle = (element: SoupPkgEkgQueries) =>
+    (element.shadowRoot!.querySelector('.result soup-report-view') as FakeReportView | null)?.data?.blocks[0]?.title ?? null;
+
+  it('decides from the fields whether a query runs at once', () => {
+    const [count, echo] = [QUERIES.groups[0].queries[0], QUERIES.groups[1].queries[0]];
+    expect(canRunAtOnce(count)).toBe(true);
+    expect(canRunAtOnce(echo)).toBe(false);
+    expect(canRunAtOnce({ ...echo, fields: [echo.fields[1]] })).toBe(true);
+    expect(canRunAtOnce({ ...echo, fields: [{ ...echo.fields[0], default: 'x' }] })).toBe(true);
+    expect(resultKey('q', { b: 1, a: 2 })).toBe(resultKey('q', { a: 2, b: 1 }));
+  });
+
+  it('runs a query without fields as soon as it is chosen, showing the wait meanwhile', async () => {
+    const { context, pending } = controlledContext();
+    const element = mount<SoupPkgEkgQueries>('soup-pkg-ekg-queries', QUERIES, context);
+
+    expect(context.action).toHaveBeenCalledWith('query', { key: 'count_events', params: {} });
+    const area = element.shadowRoot!.querySelector('.result')!;
+    expect(area.getAttribute('aria-busy')).toBe('true');
+    expect(area.querySelector('.loading')!.textContent).toBe('Esecuzione…');
+
+    pending.get('count_events')!();
+    await vi.waitFor(() => expect(shownTitle(element)).toBe('count_events'));
+    expect(area.hasAttribute('aria-busy')).toBe(false);
+  });
+
+  it('does not run a query with a required field without default until "Esegui"', async () => {
+    const { context, pending } = controlledContext();
+    const element = mount<SoupPkgEkgQueries>('soup-pkg-ekg-queries', QUERIES, context);
+    const root = element.shadowRoot!;
+    (root.querySelector('button[data-query="test.echo"]') as HTMLButtonElement).click();
+    expect(context.action).toHaveBeenCalledTimes(1); // only count_events, at the first opening
+
+    const word = root.querySelector('input[name="word"]') as HTMLInputElement;
+    word.value = 'ciao';
+    word.dispatchEvent(new Event('input'));
+    expect(context.action).toHaveBeenCalledTimes(1); // nothing at each key
+
+    root.querySelector('form')!.dispatchEvent(new Event('submit', { cancelable: true }));
+    expect(context.action).toHaveBeenLastCalledWith('query', { key: 'test.echo', params: { word: 'ciao', limit: 100 } });
+    pending.get('test.echo')!();
+    await vi.waitFor(() => expect(shownTitle(element)).toBe('test.echo'));
+    expect(root.querySelector('form button[type="submit"]')!.textContent).toBe('Esegui');
+  });
+
+  it('shows only the last query when the user switches while one is running', async () => {
+    const { context, pending } = controlledContext();
+    const element = mount<SoupPkgEkgQueries>('soup-pkg-ekg-queries', WITH_LIMIT, context);
+    // count_events is running; the user goes to "top" (runs at once too).
+    element.choose('top');
+    pending.get('top')!();
+    await vi.waitFor(() => expect(shownTitle(element)).toBe('top'));
+
+    // The late answer of count_events is not drawn.
+    pending.get('count_events')!();
+    await Promise.resolve();
+    await Promise.resolve();
+    expect(shownTitle(element)).toBe('top');
+    expect(element.selected!.key).toBe('top');
+  });
+
+  it('shows a query already run without a new request; "Esegui" asks again', async () => {
+    const { context, pending } = controlledContext();
+    const element = mount<SoupPkgEkgQueries>('soup-pkg-ekg-queries', WITH_LIMIT, context);
+    pending.get('count_events')!();
+    await vi.waitFor(() => expect(shownTitle(element)).toBe('count_events'));
+    element.choose('top');
+    pending.get('top')!();
+    await vi.waitFor(() => expect(shownTitle(element)).toBe('top'));
+    expect(context.action).toHaveBeenCalledTimes(2);
+
+    element.choose('count_events');
+    expect(shownTitle(element)).toBe('count_events');
+    expect(context.action).toHaveBeenCalledTimes(2);
+
+    void element.run();
+    expect(context.action).toHaveBeenCalledTimes(3);
+  });
+
+  it('shows no form and no "Esegui" for a query without fields; keeps "Esegui" for one with a default', async () => {
+    const { context, pending } = controlledContext();
+    const element = mount<SoupPkgEkgQueries>('soup-pkg-ekg-queries', WITH_LIMIT, context);
+    const root = element.shadowRoot!;
+    const buttons = () => [...root.querySelectorAll('.main button')].map((button) => button.textContent);
+
+    expect(element.selected!.key).toBe('count_events');
+    expect(root.querySelector('.main form')).toBeNull();
+    pending.get('count_events')!();
+    await vi.waitFor(() => expect(shownTitle(element)).toBe('count_events'));
+    expect(buttons()).toEqual([]);
+
+    // Only a limit, with its default: runs at once and keeps "Esegui" to run again with other values.
+    element.choose('top');
+    expect(root.querySelector('.main form input[name="limit"]')).not.toBeNull();
+    expect(buttons()).toEqual(['Esegui']);
+  });
+
+  it('shows the error of a query without fields in the result, with "Riprova"', async () => {
+    let fail = true;
+    const context = fakeContext(() => (fail ? Promise.reject(new Error('Memgraph offline')) : Promise.resolve({ key: 'count_events', label: 'Nodi evento', blocks: BLOCKS })));
+    const element = mount<SoupPkgEkgQueries>('soup-pkg-ekg-queries', QUERIES, context);
+    const root = element.shadowRoot!;
+
+    await vi.waitFor(() => expect(root.querySelector('.result .failure')).not.toBeNull());
+    const failure = root.querySelector('.result .failure')!;
+    expect(failure.getAttribute('role')).toBe('alert');
+    expect(failure.querySelector('p')!.textContent).toBe('Memgraph offline');
+    expect(context.notify).not.toHaveBeenCalled();
+
+    fail = false;
+    (failure.querySelector('button') as HTMLButtonElement).click();
+    await vi.waitFor(() => expect(root.querySelector('.result soup-report-view')).not.toBeNull());
+    expect(context.action).toHaveBeenCalledTimes(2);
+    expect(root.querySelector('.result .failure')).toBeNull();
+  });
+
+  it('notifies, without "Riprova", the error of a query with fields', async () => {
+    const context = fakeContext((_name, params) =>
+      params.key === 'test.echo' ? Promise.reject(new Error("'word' is required")) : Promise.resolve({ key: 'count_events', label: '', blocks: [] })
+    );
+    const element = mount<SoupPkgEkgQueries>('soup-pkg-ekg-queries', QUERIES, context);
+    element.choose('test.echo');
+    await element.run();
+    expect(context.notify).toHaveBeenCalledWith("'word' is required", 'error');
+    expect(element.shadowRoot!.querySelector('.result .failure')).toBeNull();
+  });
 });
+
+/** count_events (no field) and "top" (only a limit with its default): both run at once. */
+const WITH_LIMIT: QueriesData = {
+  groups: [
+    { group: 'Conteggi', queries: [QUERIES.groups[0].queries[0]] },
+    {
+      group: 'Classifiche',
+      queries: [
+        {
+          key: 'top',
+          label: 'Attività più frequenti',
+          group: 'Classifiche',
+          description: '',
+          fields: [{ name: 'limit', label: 'Righe', type: 'number', required: false, default: 10, choices: [], help: '', variants: [] }]
+        }
+      ]
+    }
+  ]
+};
 
 describe('the notice of an object', () => {
   const NOTICE = "L'analisi non ha modificato il grafo: è uguale a quello di partenza.";

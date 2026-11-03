@@ -14,6 +14,18 @@ ekg_views valgono per `ekg` ed `ekg_class` (il grafo aggregato contiene anche l'
 Interrogazioni e JSON del grafo accettano `ekg_class` solo mentre un package (`ekg_class_graph`)
 contribuisce qualcosa di dedicato a quel kind; Grafo e Statistiche restano per `ekg`.
 
+In **Interrogazioni** un'interrogazione il cui form è già valido con i default (nessun campo, oppure
+campi tutti facoltativi o con un default, come `Righe`) parte appena la si sceglie; quelle con un
+campo obbligatorio senza default aspettano **Esegui**. Le interrogazioni **senza campi** non hanno né
+form né **Esegui**: si eseguono alla selezione (o mostrano il risultato in memoria) e basta; se
+falliscono, l'errore resta nell'area del risultato con il pulsante **Riprova** (solo in questo
+caso: per le altre l'errore è una notifica). Per quelle con campi **Esegui** resta, per rieseguire
+dopo aver cambiato i parametri (mai a ogni tasto), e forza una nuova esecuzione. Durante l'attesa
+l'area del risultato è `aria-busy`; la risposta di un'interrogazione lasciata nel frattempo è
+scartata. I risultati restano in memoria per la pagina, per interrogazione e parametri: tornando su
+una già eseguita la si vede subito. La regola si calcola dai `fields` (`required`/`default`,
+`canRunAtOnce`).
+
 ## Come sono scritte le query
 
 - **Etichette e tipi nel pattern**, come il vecchio `MATCH (e1:Event)-[r:DF]->(e2:Event) ... LIMIT`:
@@ -83,10 +95,12 @@ Passi manuali con l'intero stack (`docker compose` dalla radice del repository):
    risultati (le pagine successive arrivano scorrendo); seleziona un risultato non disegnato e
    verifica che il pannello mostri le sue proprietà. Passa ad **Archi**, cerca un tipo di entità e
    passa col mouse su un risultato per evidenziarne i nodi.
-5. **Ogni interrogazione.** In **Interrogazioni** esegui una per una tutte le 21 voci di tutti i
-   gruppi (Nodi, Relazioni, Conteggi, Attività, Entità, Tempo, Grafo), compilando i campi
-   obbligatori (un tipo di entità, un'attività), cambiando `Righe` e `Dalla riga` nelle tabelle
-   paginate: nessuna risponde con un errore e i conteggi coincidono con le Statistiche.
+5. **Ogni interrogazione.** In **Interrogazioni** scegli una per una tutte le 21 voci di tutti i
+   gruppi (Nodi, Relazioni, Conteggi, Attività, Entità, Tempo, Grafo): quelle senza campi
+   obbligatori mostrano subito il risultato (i conteggi senza alcun campo non hanno **Esegui**), le
+   altre dopo aver compilato i campi (un tipo di entità, un'attività) e premuto **Esegui**; cambia
+   `Righe` e `Dalla riga` nelle tabelle paginate e premi **Esegui**: nessuna risponde con un errore e
+   i conteggi coincidono con le Statistiche.
 6. **Export JSON.** Dal menu di export dell'oggetto scegli **JSON del grafo** con tutte le parti:
    il file ha le chiavi `Event nodes`, `Entity nodes`, `CORR relationships` (`corr_data`,
    `corr_count`), `DF relationships` (`df_data`, `df_count`) e `REL relationships` (`rel_data` con

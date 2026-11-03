@@ -10,8 +10,11 @@ Description: PackageFrontend - the app/ part of the packages as the
              (symbolic links included), stays inside the package's
              app/dist; anything else is a 404, like a missing file, so
              nothing outside dist can be probed. Disabled and missing
-             packages serve nothing. The ETag of a file is based on the
-             package version: a new version invalidates the cache.
+             packages serve nothing. The ETag of each file is its package
+             version, size and modification time in nanoseconds (one
+             os.stat, the content is never read): a new version or a
+             rebuilt bundle with the same version both invalidate the
+             browser's copy, and every file has its own.
 Project : soup-server
 ------------------------------------------------------------------------
 """
@@ -69,6 +72,13 @@ class StaticFile:
     etag: str
 
 
+def file_etag(package: str, version: str, path: Path) -> str:
+    """The ETag of a static file: package, version, size and modification time (ns) of the file."""
+
+    stat = path.stat()
+    return f"{package}-{version}-{stat.st_size}-{stat.st_mtime_ns}"
+
+
 def mime_type(filename: str) -> str:
     suffix = Path(filename).suffix.lower()
     return _MIME_TYPES.get(suffix) or mimetypes.guess_type(filename)[0] or _DEFAULT_MIME
@@ -116,4 +126,4 @@ class PackageFrontend:
         target = (dist / path).resolve()
         if not target.is_relative_to(dist) or not target.is_file():
             raise NotFoundError(f"File '{path}' not found in package '{package}'")
-        return StaticFile(target, mime_type(target.name), f"{package}-{source.manifest.version}")
+        return StaticFile(target, mime_type(target.name), file_etag(package, source.manifest.version, target))

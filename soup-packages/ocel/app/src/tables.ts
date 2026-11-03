@@ -27,12 +27,13 @@ export interface OcelTablesData {
 
 const CSS = `
   :host { display: block; font-family: system-ui, -apple-system, 'Segoe UI', sans-serif; font-size: 0.95rem; }
+  :focus-visible { outline: 2px solid var(--soup-focus, #0b5ed7); outline-offset: 2px; }
   [role="tablist"] { display: flex; flex-wrap: wrap; gap: 4px; border-bottom: 1px solid #dee2e6; margin-bottom: 8px; }
   [role="tab"] { font: inherit; cursor: pointer; padding: 4px 12px; border: 1px solid transparent; border-radius: 4px 4px 0 0;
     background: none; color: #495057; margin-bottom: -1px; }
   [role="tab"][aria-selected="true"] { border-color: #dee2e6 #dee2e6 #fff; background: #fff; color: #212529; font-weight: 600; }
   .bar { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin-bottom: 8px; }
-  .info { color: #6c757d; font-size: 0.875rem; }
+  .info { color: var(--soup-text-muted, #5c636a); font-size: 0.875rem; }
   select { font: inherit; padding: 2px 6px; border: 1px solid #adb5bd; border-radius: 4px; }
 `;
 

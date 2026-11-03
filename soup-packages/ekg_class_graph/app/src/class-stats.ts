@@ -10,7 +10,7 @@
 
 import { h, SoupVisualizerElement, VisualizerContext } from '@soup/sdk';
 
-import { NOTICE_CSS, noticeBox } from './dom';
+import { card, CARDS_CSS, NOTICE_CSS, noticeBox } from './dom';
 import { ChartData, SoupChartElement, SoupKeyValueElement } from './soup-base';
 
 export interface ClassStatsData {
@@ -22,10 +22,6 @@ export interface ClassStatsData {
 
 const CSS = `
   :host { display: block; font-family: system-ui, -apple-system, 'Segoe UI', sans-serif; font-size: 0.95rem; }
-  h4 { margin: 16px 0 6px; font-size: 0.95rem; }
-  .charts { display: flex; flex-wrap: wrap; gap: 24px; }
-  .charts > div { flex: 1 1 280px; max-width: 420px; }
-  .info { color: #6c757d; font-size: 0.875rem; }
 `;
 
 export class SoupPkgEkgClassStats extends HTMLElement implements SoupVisualizerElement<ClassStatsData> {
@@ -40,7 +36,9 @@ export class SoupPkgEkgClassStats extends HTMLElement implements SoupVisualizerE
     this.drawn = true;
     const { counts } = this.data;
 
+    // The main numbers, as stat tiles at the top
     const summary = document.createElement('soup-keyvalue') as SoupKeyValueElement;
+    summary.setAttribute('variant', 'tiles');
     summary.data = {
       items: [
         { key: 'Nodi Class', value: counts.class_nodes },
@@ -50,16 +48,16 @@ export class SoupPkgEkgClassStats extends HTMLElement implements SoupVisualizerE
       ]
     };
 
-    const charts = h('div', { className: 'charts' }, this.chart('Dati aggregati', this.data.charts.data));
+    const charts = h('div', { className: 'cards charts' }, this.chart('Dati aggregati', this.data.charts.data));
     if (this.data.charts.process) charts.append(this.chart('Tempi di costruzione (secondi)', this.data.charts.process));
-    else charts.append(h('p', { className: 'info', text: 'Tempi di costruzione non disponibili per questo grafo.' }));
+    else charts.append(card('Tempi di costruzione', h('p', { className: 'info', text: 'Tempi di costruzione non disponibili per questo grafo.' })));
 
-    this.root.replaceChildren(h('style', { text: CSS + NOTICE_CSS }), ...noticeBox(this.data.notice), summary, charts);
+    this.root.replaceChildren(h('style', { text: CSS + CARDS_CSS + NOTICE_CSS }), ...noticeBox(this.data.notice), summary, charts);
   }
 
   private chart(title: string, data: ChartData): HTMLElement {
     const chart = document.createElement('soup-chart') as SoupChartElement;
     chart.data = data;
-    return h('div', {}, h('h4', { text: title }), chart);
+    return card(title, chart);
   }
 }

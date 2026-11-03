@@ -12,7 +12,7 @@
 
 import { errorMessage, h, SoupVisualizerElement, VisualizerContext } from '@soup/sdk';
 
-import { NOTICE_CSS, noticeBox } from './dom';
+import { card, CARDS_CSS, NOTICE_CSS, noticeBox } from './dom';
 import { ChartData, SoupChartElement, SoupKeyValueElement, SoupTableElement, TableData } from './soup-base';
 
 export interface Average {
@@ -42,13 +42,12 @@ export interface InsightsData {
 
 const CSS = `
   :host { display: block; font-family: system-ui, -apple-system, 'Segoe UI', sans-serif; font-size: 0.95rem; }
-  h4 { margin: 16px 0 6px; font-size: 0.95rem; }
-  .bar { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; margin-bottom: 8px; }
-  .bar label { display: inline-flex; gap: 4px; align-items: center; }
+  .bar { display: flex; flex-wrap: wrap; gap: var(--soup-space-3, 12px); align-items: center; margin-bottom: var(--soup-space-3, 12px); }
+  .bar label { display: inline-flex; gap: var(--soup-space-1, 4px); align-items: center; }
   input[type='number'] { width: 6em; }
   select, input, button { font: inherit; }
-  .charts { max-width: 640px; }
-  .info { color: #6c757d; font-size: 0.875rem; }
+  select, input[type='number'] { padding: 2px 6px; border: 1px solid #adb5bd; border-radius: var(--soup-radius-sm, 4px); background: #fff; }
+  :focus-visible { outline: 2px solid var(--soup-focus, #0b5ed7); outline-offset: 2px; }
 `;
 
 function table(data: TableData): SoupTableElement {
@@ -85,7 +84,7 @@ export class SoupPkgEkgInsights extends HTMLElement implements SoupVisualizerEle
     this.entitySection = h('section');
     this.frequencySection = h('section');
     this.root.replaceChildren(
-      h('style', { text: CSS + NOTICE_CSS }),
+      h('style', { text: CSS + CARDS_CSS + NOTICE_CSS }),
       ...noticeBox(this.data.notice),
       this.entitySection,
       this.frequencySection
@@ -155,19 +154,23 @@ export class SoupPkgEkgInsights extends HTMLElement implements SoupVisualizerEle
       on: { change: (event) => void this.setMinimum(Number((event.target as HTMLInputElement).value)) }
     });
     minimum.value = String(this.minimum);
-    this.frequencySection.replaceChildren(
-      h('h4', { text: 'Frequenza delle attività' }),
+    const frequency = card(
+      'Frequenza delle attività',
       h('div', { className: 'bar' }, h('label', {}, 'Almeno', minimum, 'eventi')),
       this.frequency.length
         ? table({ columns: ['attività', 'eventi'], rows: this.frequency.map((item) => [item.activity, item.frequency]) })
         : h('p', { className: 'info', text: 'Nessuna attività con questa frequenza.' })
     );
+    frequency.classList.add('wide');
+    this.frequencySection.replaceChildren(h('div', { className: 'cards' }, frequency));
   }
 }
 
 /** The indicators of one entity type: the summary, the activities and the variants. */
 function indicatorParts(indicators: Indicators): Node[] {
+  // The main numbers, as stat tiles at the top
   const summary = document.createElement('soup-keyvalue') as SoupKeyValueElement;
+  summary.setAttribute('variant', 'tiles');
   summary.data = {
     items: [
       { key: 'Durata media delle tracce', value: indicators.duration?.formatted ?? '—' },
@@ -176,23 +179,29 @@ function indicatorParts(indicators: Indicators): Node[] {
       { key: 'Varianti', value: indicators.variants.length }
     ]
   };
-  return [
-    summary,
-    h('h4', { text: 'Occorrenze delle attività' }),
-    h(
-      'div',
-      { className: 'charts' },
-      chart({
-        chart: 'bar',
-        labels: indicators.activities.map((item) => item.activity),
-        datasets: [{ label: 'occorrenze', data: indicators.activities.map((item) => item.occurrences) }]
-      })
-    ),
-    table({ columns: ['attività', 'occorrenze'], rows: indicators.activities.map((item) => [item.activity, item.occurrences]) }),
-    h('h4', { text: 'Varianti' }),
+  const variants = card(
+    'Varianti',
     table({
       columns: ['variante', 'occorrenze', 'durata media', 'secondi'],
       rows: indicators.variants.map((item) => [item.variant.join(' → '), item.occurrences, item.formatted ?? '—', item.average_seconds ?? '—'])
     })
+  );
+  variants.classList.add('wide');
+  return [
+    summary,
+    h(
+      'div',
+      { className: 'cards' },
+      card(
+        'Occorrenze delle attività',
+        chart({
+          chart: 'bar',
+          labels: indicators.activities.map((item) => item.activity),
+          datasets: [{ label: 'occorrenze', data: indicators.activities.map((item) => item.occurrences) }]
+        })
+      ),
+      card('Attività', table({ columns: ['attività', 'occorrenze'], rows: indicators.activities.map((item) => [item.activity, item.occurrences]) })),
+      variants
+    )
   ];
 }

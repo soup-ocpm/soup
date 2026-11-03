@@ -1,18 +1,24 @@
-<div class="container py-4 soup-workspace">
-  <div class="d-flex align-items-center justify-content-between mb-3">
-    <h2 class="m-0">Workspace</h2>
-    <div>
+<div class="soup-page soup-workspace">
+  <div class="soup-page-head">
+    <h2>Workspace</h2>
+    <div class="soup-actions">
       <a
-        class="btn btn-primary me-2"
+        class="btn btn-primary"
         routerLink="/import">
-        <i class="bi bi-upload"></i>
+        <i
+          class="bi bi-upload"
+          aria-hidden="true"></i>
         Importa
       </a>
       <button
         type="button"
-        class="btn btn-outline-secondary"
+        class="btn btn-outline-secondary soup-icon-btn"
+        aria-label="Aggiorna il workspace"
+        title="Aggiorna"
         (click)="this.refresh()">
-        <i class="bi bi-arrow-clockwise"></i>
+        <i
+          class="bi bi-arrow-clockwise"
+          aria-hidden="true"></i>
       </button>
     </div>
   </div>
@@ -61,27 +67,42 @@
 
   @if (this.loadError()) {
     <div
-      class="alert alert-danger"
+      class="soup-notice soup-notice-danger"
       role="alert">
       {{ this.loadError() }}
     </div>
   }
 
   @if (this.loading()) {
-    <div class="text-muted">
-      <span class="spinner-border spinner-border-sm"></span>
+    <div
+      class="text-muted"
+      role="status">
+      <span
+        class="spinner-border spinner-border-sm"
+        aria-hidden="true"></span>
       Caricamento...
     </div>
   } @else if (this.total() === 0) {
-    <p class="text-muted">
-      Il workspace è vuoto:
-      <a routerLink="/import">importa un file</a>
-      per iniziare.
-    </p>
+    <div class="soup-card soup-empty">
+      <i
+        class="bi bi-inbox"
+        aria-hidden="true"></i>
+      <p>Il workspace è vuoto: importa un file per iniziare.</p>
+      <a
+        class="btn btn-primary"
+        routerLink="/import">
+        Vai a Import
+      </a>
+    </div>
   } @else if (this.visible().length === 0) {
-    <p class="text-muted">Nessun oggetto corrisponde ai filtri.</p>
+    <div class="soup-card soup-empty">
+      <i
+        class="bi bi-search"
+        aria-hidden="true"></i>
+      <p>Nessun oggetto corrisponde ai filtri.</p>
+    </div>
   } @else {
-    <ul class="soup-tree list-unstyled">
+    <ul class="soup-tree soup-card list-unstyled">
       <ng-container *ngTemplateOutlet="tree; context: { $implicit: this.visible(), depth: 0 }"></ng-container>
     </ul>
   }
@@ -97,7 +118,7 @@
       [attr.data-object]="node.object.id">
       <div
         class="soup-row"
-        [style.padding-left.px]="depth * 24">
+        [style.--soup-depth]="depth">
         <div class="soup-thumb">
           @if (!this.noThumbnail().has(node.object.id)) {
             <img
@@ -106,7 +127,9 @@
               [src]="this.api.thumbnailUrl(node.object.id, this.thumbnailVersion())"
               (error)="this.hideThumbnail(node.object.id)" />
           } @else {
-            <i class="bi bi-box"></i>
+            <i
+              class="bi bi-box"
+              aria-hidden="true"></i>
           }
         </div>
         <div class="soup-main">
@@ -152,7 +175,7 @@
             }
           }
           <div class="soup-meta">
-            <span class="badge text-bg-light">{{ node.object.kind }}</span>
+            <span class="badge soup-badge-kind">{{ node.object.kind }}</span>
             <span
               class="badge"
               [class.text-bg-secondary]="!node.package_missing"
@@ -163,26 +186,32 @@
                 ({{ node.package_status }})
               }
             </span>
-            <span class="text-muted small">
+            <span class="text-muted small soup-created">
               {{ node.object.created_by.type }} {{ node.object.created_by.contributor_id }} ·
               {{ node.object.created_at | date: 'short' }}
             </span>
           </div>
         </div>
-        <div class="soup-actions">
+        <div class="soup-actions soup-row-actions">
           <button
             type="button"
-            class="btn btn-sm btn-link"
+            class="btn btn-sm btn-outline-secondary soup-icon-btn"
             title="Rinomina e descrivi"
+            [attr.aria-label]="'Rinomina e descrivi ' + node.object.name"
             (click)="this.startRename(node)">
-            <i class="bi bi-pencil"></i>
+            <i
+              class="bi bi-pencil"
+              aria-hidden="true"></i>
           </button>
           <button
             type="button"
-            class="btn btn-sm btn-link text-danger"
+            class="btn btn-sm btn-outline-danger soup-icon-btn"
             title="Elimina"
+            [attr.aria-label]="'Elimina ' + node.object.name"
             (click)="this.askDelete(node)">
-            <i class="bi bi-trash"></i>
+            <i
+              class="bi bi-trash"
+              aria-hidden="true"></i>
           </button>
         </div>
       </div>
@@ -199,9 +228,10 @@
   <div
     class="soup-dialog-backdrop"
     role="dialog"
-    aria-modal="true">
+    aria-modal="true"
+    aria-labelledby="soup-delete-title">
     <div class="soup-dialog">
-      <h5>Eliminare '{{ pending.node.object.name }}'?</h5>
+      <h5 id="soup-delete-title">Eliminare '{{ pending.node.object.name }}'?</h5>
       <p class="text-muted">I dati dell'oggetto vengono eliminati dal package che lo ha creato.</p>
       @if (pending.descendants > 0) {
         <div class="form-check mb-2">
@@ -220,7 +250,7 @@
       }
       @if (pending.error) {
         <div
-          class="alert alert-danger small"
+          class="soup-notice soup-notice-danger"
           role="alert">
           {{ pending.error }}
         </div>

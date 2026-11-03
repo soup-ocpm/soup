@@ -6,17 +6,24 @@
   display: flex;
   align-items: center;
   height: 180px;
-  background: #fff;
+  padding: var(--soup-space-4);
+  background: var(--soup-surface-alt);
   cursor: pointer;
-  color: #717386;
-  border: 2px dashed #717386;
-  border-radius: 5px;
+  color: var(--soup-text-muted);
+  border: 2px dashed var(--soup-text-muted);
+  border-radius: var(--soup-radius-md);
   font-size: 16px;
   overflow-x: auto;
+
+  &:hover {
+    border-color: var(--soup-primary-strong);
+  }
 }
 
 .ngx-dropzone.ngx-dz-hovered {
   border-style: solid;
+  border-color: var(--soup-primary-strong);
+  background: var(--soup-primary-soft);
 }
 
 .ngx-dropzone input {
@@ -31,41 +38,55 @@
 .ngx-dropzone-label {
   text-align: center;
   z-index: 10;
-  margin: 10px auto;
+  margin: var(--soup-space-2) auto;
 }
 
-.ngx-dropzone input:focus + .ngx-dropzone-label {
-  outline: 1px dotted #000;
-  outline: -webkit-focus-ring-color auto 5px;
+// The hidden input has the focus: the zone shows it
+.ngx-dropzone:focus-within {
+  outline: 2px solid var(--soup-focus);
+  outline-offset: 2px;
 }
 
 .soup-dropzone {
   height: 140px;
 }
 
-.soup-cards {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 12px;
+.soup-file-name {
+  overflow-wrap: anywhere;
 }
 
-.soup-card {
+.soup-badge-kind {
+  border: 1px solid var(--soup-border);
+  background: var(--soup-surface-alt);
+  color: var(--soup-text);
+}
+
+.soup-importers {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: var(--soup-space-3);
+}
+
+.soup-importer {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  gap: 4px;
-  width: 260px;
-  padding: 12px;
+  gap: var(--soup-space-1);
+  padding: var(--soup-space-3);
   text-align: left;
-  border: 1px solid #d0d7de;
-  border-radius: 8px;
-  background: #fff;
+  color: var(--soup-text);
+  border: 1px solid var(--soup-border);
+  border-radius: var(--soup-radius-md);
+  background: var(--soup-surface);
 
   &:hover {
-    border-color: #0d6efd;
+    border-color: var(--soup-primary);
+    background: var(--soup-primary-soft);
   }
 }
 
 .soup-preview {
-  margin-bottom: 16px;
+  margin-bottom: var(--soup-space-4);
+  min-width: 0;
+  overflow-x: auto;
 }

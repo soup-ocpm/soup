@@ -39,9 +39,17 @@ export interface SearchPage<T> {
   total: number;
 }
 
+/** The commands of the toolbar of <soup-graph-view>. */
+export type GraphToolbarCommand = 'shape' | 'relationships' | 'search' | 'export' | 'counts';
+
 /** <soup-graph-view>: zoom, relationship types, search, properties, SVG export. */
 export interface SoupGraphViewElement extends HTMLElement {
   data: unknown;
+  /** 'full' (default), 'none' (the visualizer has its own bar) or the commands to show. */
+  toolbar: 'full' | 'none' | readonly GraphToolbarCommand[];
+  /** Open, close (or toggle, without argument) the search panel. */
+  openSearch(open?: boolean): void;
+  readonly searchVisible: boolean;
   context: VisualizerContext | null;
   search: ((query: string, target: SearchTarget, offset: number, limit: number) => Promise<SearchPage<GraphNodeModel | GraphEdgeModel>>) | null;
   nodeDetails: ((id: string) => Promise<GraphNodeModel | null>) | null;

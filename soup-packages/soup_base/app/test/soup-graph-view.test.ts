@@ -85,3 +85,71 @@ describe('<soup-graph-view> nodeDetails', () => {
     expect(view.selected).toBeNull();
   });
 });
+
+describe('<soup-graph-view> toolbar', () => {
+  const toolbar = (view: SoupGraphView) => view.shadowRoot!.querySelector<HTMLElement>('.toolbar')!;
+  const buttons = (view: SoupGraphView) => [...toolbar(view).querySelectorAll('button')].map((button) => button.textContent);
+  const shown = (view: SoupGraphView) => ({
+    shape: toolbar(view).querySelector('select[aria-label="Forma dei nodi"]') !== null,
+    relationships: toolbar(view).querySelector('details.relationships') !== null,
+    buttons: buttons(view),
+    counts: toolbar(view).querySelector('.counts')?.textContent ?? null
+  });
+
+  it('shows every command by default, in groups', () => {
+    const view = mount();
+    expect(view.toolbar).toBe('full');
+    expect(view.toolbarCommands()).toEqual(['shape', 'relationships', 'search', 'export', 'counts']);
+    expect(shown(view)).toEqual({ shape: true, relationships: true, buttons: ['Cerca', 'Esporta SVG'], counts: '1 nodi, 0 archi' });
+    expect([...toolbar(view).children].map((group) => group.className)).toEqual(['group', 'group', 'group', 'group group-counts']);
+    expect(toolbar(view).hidden).toBe(false);
+  });
+
+  it("'none' hides the toolbar; the search still opens with openSearch()", () => {
+    const view = mount();
+    view.toolbar = 'none';
+    expect(toolbar(view).hidden).toBe(true);
+    expect(toolbar(view).children).toHaveLength(0);
+
+    view.openSearch();
+    expect(view.searchVisible).toBe(true);
+    expect(view.shadowRoot!.querySelector('.side')!.hasAttribute('hidden')).toBe(false);
+    expect(view.shadowRoot!.querySelector('.side input[type="search"]')).not.toBeNull();
+    view.openSearch(false);
+    expect(view.searchVisible).toBe(false);
+    expect(view.shadowRoot!.querySelector('.side')!.hasAttribute('hidden')).toBe(true);
+  });
+
+  it('a list shows only those commands, in the order of the toolbar', () => {
+    const view = mount();
+    view.toolbar = ['export', 'search'];
+    expect(view.toolbarCommands()).toEqual(['search', 'export']);
+    expect(shown(view)).toEqual({ shape: false, relationships: false, buttons: ['Cerca', 'Esporta SVG'], counts: null });
+  });
+
+  it('reads the attribute: "none", a list of names (unknown ones ignored), and the property wins over it', () => {
+    const view = mount();
+    view.setAttribute('toolbar', 'none');
+    expect(view.toolbar).toBe('none');
+    expect(toolbar(view).hidden).toBe(true);
+
+    view.setAttribute('toolbar', 'counts, zoom search');
+    expect(view.toolbar).toEqual(['search', 'counts']);
+    expect(shown(view)).toEqual({ shape: false, relationships: false, buttons: ['Cerca'], counts: '1 nodi, 0 archi' });
+
+    view.toolbar = 'full';
+    expect(shown(view).buttons).toEqual(['Cerca', 'Esporta SVG']);
+    view.toolbar = null;
+    expect(view.toolbar).toEqual(['search', 'counts']);
+  });
+
+  it('keeps the chosen commands across new data and the search toggle', () => {
+    const view = mount();
+    view.toolbar = ['search'];
+    view.data = { nodes: [DRAWN, FOUND], edges: [], directed: true };
+    expect(buttons(view)).toEqual(['Cerca']);
+    toolbar(view).querySelector('button')!.click();
+    expect(buttons(view)).toEqual(['Chiudi ricerca']);
+    expect(view.searchVisible).toBe(true);
+  });
+});

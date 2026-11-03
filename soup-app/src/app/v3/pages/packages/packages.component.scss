@@ -1,9 +1,61 @@
 @use '../v3-page';
 
+// The packages as cards, two per row on wide screens
+.soup-package-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 420px), 1fr));
+  gap: var(--soup-space-4);
+  align-items: start;
+}
+
+.soup-package {
+  margin-bottom: 0;
+}
+
+.soup-package-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--soup-space-2) var(--soup-space-3);
+}
+
+.soup-package-title {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--soup-space-1) var(--soup-space-2);
+  min-width: 0;
+}
+
+.soup-package-name {
+  margin: 0;
+  font-size: 1.1rem;
+  color: var(--soup-text);
+}
+
+.soup-badge-origin {
+  border: 1px solid var(--soup-border);
+  background: var(--soup-surface-alt);
+  color: var(--soup-text);
+}
+
+.soup-package-actions {
+  gap: var(--soup-space-1);
+}
+
+.soup-package-description {
+  margin: var(--soup-space-2) 0 var(--soup-space-2);
+  font-size: 1rem;
+}
+
 .soup-contributions {
   display: grid;
-  grid-template-columns: max-content 1fr;
-  column-gap: 12px;
+  grid-template-columns: max-content minmax(0, 1fr);
+  column-gap: var(--soup-space-3);
+  row-gap: 2px;
+  padding-top: var(--soup-space-2);
+  border-top: 1px solid var(--soup-border-soft);
 
   dt {
     font-weight: 600;
@@ -11,5 +63,6 @@
 
   dd {
     margin: 0;
+    overflow-wrap: anywhere;
   }
 }

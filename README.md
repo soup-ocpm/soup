@@ -152,6 +152,18 @@ docker compose -p soup-tool up --build
 | **soup-lab** | Memgraph Lab (`memgraph/lab:3.13.2`) | [http://localhost:3300](http://localhost:3300) |
 | **volume-init** | One-off: gives the files of the volumes to the user of the backend and of Memgraph, then exits | |
 
+SOUP is meant for **local use**: every port is published on `127.0.0.1` only, so nobody else on the
+same network can reach the app, the API or Memgraph, which has no user and no password. Do not
+publish these ports on a network interface (see [Security](#security)).
+
+**How the app reaches the backend.** The app is a static site served by nginx; it runs in the
+browser, which calls the backend directly at `http://127.0.0.1:8080/api/v3`
+(`soup-app/src/environments/environment.ts`): nginx has no proxy to the backend. The backend
+accepts calls from a browser only from the pages of the app (`SOUP_CORS_ORIGINS`, default
+`http://localhost:4200` and `http://127.0.0.1:4200`), and the requests that change data must carry
+the header `X-Soup-Client: 1`, which the app adds. The package bundles are loaded from the backend
+in the same way.
+
 The datasets, the catalog of the objects and the preferences are files in the `soup-volume`
 volume, mounted on `/soup` in the backend (which writes them) and in Memgraph (which reads the CSVs
 with `LOAD CSV`). The packages installed at runtime are in `soup-installed-packages`. Both survive a
@@ -217,12 +229,14 @@ under `[wsl2]` in `%UserProfile%\.wslconfig` and run `wsl --shutdown`. On Linux:
 
 Node **24.22.0** or later with npm 11 (`.nvmrc`), Python **3.12** (3.10 is supported too).
 
+The backend runs in the environment of the project, `soup-server/.venv` (ignored by git), with the
+exact versions of `requirements.txt`: the Python of the system is only used to create it, nothing
+is installed into it.
+
 ```sh
-# backend: a virtual environment with the libraries of the image and the dev tools
-cd soup-server
-python -m venv .venv
-source .venv/Scripts/activate     # Git Bash on Windows; Linux and macOS: source .venv/bin/activate
-pip install -r requirements-dev.txt
+# backend: soup-server/.venv with the libraries of the image and the dev tools
+cd soup-app
+npm run setup:server              # python ../soup-server/scripts/setup_venv.py
 
 # packages: the SDK and the frontend bundles of every package
 cd ../soup-packages
@@ -233,6 +247,31 @@ npm run build:packages
 cd ../soup-app
 npm ci
 ```
+
+`setup:server` creates `.venv` with the `python` on the `PATH` (reused if it exists), upgrades pip,
+installs `requirements-dev.txt` and prints the versions of Flask, Werkzeug, pandas and numpy. The
+same by hand:
+
+```sh
+# Windows (PowerShell)
+cd soup-server
+py -3.12 -m venv .venv
+.venv\Scripts\python.exe -m pip install --upgrade pip
+.venv\Scripts\python.exe -m pip install -r requirements-dev.txt
+
+# Linux and macOS
+cd soup-server
+python3 -m venv .venv
+.venv/bin/python -m pip install --upgrade pip
+.venv/bin/python -m pip install -r requirements-dev.txt
+```
+
+Run the backend commands with that Python (`.venv\Scripts\python.exe` on Windows, `.venv/bin/python`
+on Linux and macOS), or activate it first (`.venv\Scripts\Activate.ps1`, Git Bash
+`source .venv/Scripts/activate`, Linux and macOS `source .venv/bin/activate`). `app.py` and the e2e
+backend check at startup that Flask, Werkzeug, pandas and numpy have the versions of
+`requirements.txt` and otherwise stop, naming the Python in use and the command to run
+(`SOUP_SKIP_REQUIREMENTS_CHECK=1` skips the check).
 
 To work on the frontend against the backend of the Docker stack, stop its frontend and start the
 development server on the same port (the frontend calls the backend at `http://127.0.0.1:8080`):
@@ -264,7 +303,7 @@ MEMGRAPH_HOST=localhost SOUP_STORAGE_KIND=docker python app.py
 ```sh
 # backend and the Python tests of the packages (FakeDatabase and in-memory storage: no Docker)
 cd soup-server
-python -m pytest
+python -m pytest                  # with the Python of .venv (activated, or .venv/bin/python -m pytest)
 python scripts/lint.py            # ruff, vulture, mypy --strict on soup/ and every package's server/
 
 # packages: eslint, knip, tsc; unit tests (Vitest, jsdom); bundles
@@ -277,7 +316,10 @@ npm run lint && npm run test:v3 && npm run build && npm run e2e
 ```
 
 The end-to-end tests start their own backend (`python -m tests.e2e_server` in `soup-server`) with
-the `python` on the `PATH`: activate the virtual environment first. The smoke tests of `ekg_views`
+the Python of `soup-server/.venv` when it exists (no need to activate it), otherwise with the
+`python` on the `PATH`, with a hint to run `npm run setup:server`; `SOUP_PYTHON=<path>` chooses
+another one. The backend stops at once if that Python does not have the versions of
+`requirements.txt`. The smoke tests of `ekg_views`
 and `ekg_analysis` run every query against a real Memgraph (their READMEs).
 
 The same checks run on GitHub Actions at every push and pull request
@@ -297,7 +339,10 @@ images. More in [Testing and CI](https://github.com/AlessioPiana54/soup/wiki/Tes
 | `SOUP_ALLOW_PACKAGE_INSTALL` | `false` (`true` in `docker-compose.yaml`) | host | Allows installing and uninstalling packages at runtime. |
 | `SOUP_STRICT` | `false` | host | A package that fails to load stops the startup. |
 | `SOUP_MAX_UPLOAD_MB` | `200` | host | Maximum request body of `/api/v3` (413 above). |
+| `SOUP_CORS_ORIGINS` | `http://localhost:4200,http://127.0.0.1:4200` | host | The origins of the app, comma-separated: the only pages a browser lets call the API, and the only `Origin` a request that changes data may have. |
 | `SOUP_DEBUG` | `false` | `app.py` only | `1` or `true`: Flask debug mode. |
+| `SOUP_SKIP_REQUIREMENTS_CHECK` | absent | `app.py`, `tests/e2e_server.py` | `1`: start even if Flask, Werkzeug, pandas or numpy do not have the versions of `requirements.txt`. |
+| `SOUP_PYTHON` | absent | `soup-app/playwright.config.ts` | The Python of the e2e backend (default: `soup-server/.venv`, else `python`). |
 | `MEMGRAPH_HOST`, `MEMGRAPH_PORT` | `memgraph`, `7687` | `tool_memgraph` | Memgraph connection. |
 | `SOUP_STORAGE_KIND` | `docker` (`local` in `docker-compose.yaml`) | `tool_storage` | `local`: files under `SOUP_LOCAL_STORAGE_ROOT`; `docker`: files written into the Memgraph container through the Docker API. |
 | `SOUP_LOCAL_STORAGE_ROOT` | `/soup` | `tool_storage` | Root of the `local` storage, the same path Memgraph reads with `LOAD CSV`. |
@@ -311,12 +356,29 @@ images. More in [Testing and CI](https://github.com/AlessioPiana54/soup/wiki/Tes
 
 ## Security
 
+- **Local use only.** SOUP has no users and no login, and Memgraph has no password:
+  `docker-compose.yaml` publishes every port (4200, 8080, 7687, 7444, 3300) on `127.0.0.1`, so
+  only this machine reaches them. Do not change the mappings to `0.0.0.0` or put SOUP behind a
+  public address.
+- **Requests from other sites.** A site open in the same browser could try to call the local API.
+  The backend answers CORS only to the origins of the app (`SOUP_CORS_ORIGINS`), and every request
+  that changes data (`POST`, `PUT`, `PATCH`, `DELETE` under `/api/v3`) must carry the header
+  `X-Soup-Client: 1`, added by the app (an Angular interceptor; the visualizers of the packages go
+  through it with `context.action`). Without it the answer is `403`. A page of another site cannot
+  add a custom header without a CORS preflight, which the backend refuses; in addition, a request
+  with an `Origin` that is neither an origin of the app nor the backend's own gets `403` even with
+  the header. Requests without `Origin` (curl, scripts) need only the header:
+
+  ```sh
+  curl -X PUT -H "X-Soup-Client: 1" -H "Content-Type: application/json" \
+    -d '{"value": "dark"}' http://127.0.0.1:8080/api/v3/preferences/theme
+  ```
 - **Installing a package runs its code** with the privileges of the server (its `server/` part) and
-  of the browser (its `app/` part). Installation is off by default
-  (`SOUP_ALLOW_PACKAGE_INSTALL=false`, then install and uninstall answer `403`); the development
-  `docker-compose.yaml` turns it on: turn it off for a shared deployment. Zips are validated before
-  any code is imported (size, paths, symbolic links, manifest, `api_version`,
-  `python_dependencies`, `requires`); only a package's `app/dist` is served to the browser.
+  of the browser (its `app/` part): install at runtime only packages you trust. Installation is off
+  by default (`SOUP_ALLOW_PACKAGE_INSTALL=false`, then install and uninstall answer `403`); the
+  `docker-compose.yaml` of local use turns it on. Zips are validated before any code is imported
+  (size, paths, symbolic links, manifest, `api_version`, `python_dependencies`, `requires`); only a
+  package's `app/dist` is served to the browser.
 - **The backend has no access to the Docker daemon.** `docker-compose.yaml` does not mount the
   Docker socket and the backend runs as an unprivileged user. Whoever controls the Docker socket
   controls the host; the `docker` storage (`SOUP_STORAGE_KIND=docker`) needs it and is meant for

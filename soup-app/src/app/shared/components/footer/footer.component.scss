@@ -2,26 +2,23 @@
 // Region: Main content
 // ================================
 .master-footer {
-  height: 55px;
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
+  flex-shrink: 0;
+  padding: var(--soup-space-3) var(--soup-gutter);
+  border-top: 1px solid var(--soup-border-soft);
   background-color: #f1f1f1;
-  padding: 10px;
-  text-align: center;
-  justify-content: center;
 }
 
 .inside {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: center;
-  height: 40px;
+  gap: var(--soup-space-2);
+  min-height: 32px;
   font-family: 'Times New Roman', Times, serif;
-  color: #666;
+  color: var(--soup-text-muted);
 
-  span {
-    margin-left: 10px;
+  a {
+    color: var(--soup-primary-strong);
   }
 }

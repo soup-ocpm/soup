@@ -33,9 +33,11 @@ const LABELS: [keyof OcelCounts, string][] = [
   ['object_objects', 'Relazioni oggetto-oggetto']
 ];
 
+// The counts as stat tiles, the chart in a card (the design tokens of the host, with fallbacks).
 const CSS = `
   :host { display: block; font-family: system-ui, -apple-system, 'Segoe UI', sans-serif; font-size: 0.95rem; }
-  h4 { margin: 16px 0 6px; font-size: 0.95rem; }
+  .card { min-width: 0; margin-top: var(--soup-space-4, 16px); padding: var(--soup-space-4, 16px); border: 1px solid var(--soup-border, #d0d7de); border-radius: var(--soup-radius-md, 8px); background: var(--soup-surface, #fff); box-shadow: 0 1px 2px rgba(16, 24, 40, 0.06); }
+  .card > h3 { margin: 0 0 var(--soup-space-3, 12px); font-size: 1rem; font-weight: 600; }
 `;
 
 export function countsOf(counts: OcelCounts): KeyValueData {
@@ -78,11 +80,12 @@ export class SoupPkgOcelSummary extends HTMLElement implements SoupVisualizerEle
   public connectedCallback(): void {
     if (this.chart) return;
     const counts = document.createElement('soup-keyvalue') as SoupKeyValueElement;
+    counts.setAttribute('variant', 'tiles');
     counts.data = countsOf(this.data.counts);
     const chart = document.createElement('soup-chart') as SoupChartElement;
     chart.data = eventsChart(this.data.events_per_type);
     this.chart = chart;
-    this.root.replaceChildren(h('style', { text: CSS }), counts, h('h4', { text: 'Eventi per tipo' }), chart);
+    this.root.replaceChildren(h('style', { text: CSS }), counts, h('section', { className: 'card' }, h('h3', { text: 'Eventi per tipo' }), chart));
     this.context?.setThumbnail(thumbnailOf(Object.values(this.data.events_per_type).map(Number)));
   }
 }

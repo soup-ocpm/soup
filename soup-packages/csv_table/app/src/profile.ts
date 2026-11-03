@@ -35,8 +35,9 @@ const OTHER_LABEL = '(altri)';
 
 const CSS = `
   :host { display: block; font-family: system-ui, -apple-system, 'Segoe UI', sans-serif; font-size: 0.95rem; }
+  :focus-visible { outline: 2px solid var(--soup-focus, #0b5ed7); outline-offset: 2px; }
   h4 { margin: 16px 0 6px; font-size: 0.95rem; }
-  .info { color: #6c757d; font-size: 0.875rem; }
+  .info { color: var(--soup-text-muted, #5c636a); font-size: 0.875rem; }
   .choose { display: flex; gap: 8px; align-items: center; margin: 16px 0 6px; }
   select { font: inherit; padding: 2px 6px; border: 1px solid #adb5bd; border-radius: 4px; }
 `;

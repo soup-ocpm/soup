@@ -185,7 +185,7 @@ describe('DagreGraphRenderer', () => {
     expect(group()).toBeNull();
   });
 
-  it('centers the graph at the first resize with a valid size, then stops watching', () => {
+  it('centers the graph at the first resize with a valid size, and again at every resize', () => {
     const { renderer, group } = mounted();
     renderer.render(MODEL, { palette: new RelationshipPalette(), shape: 'rect' });
     expect(group()).toBeNull();
@@ -193,9 +193,61 @@ describe('DagreGraphRenderer', () => {
 
     box = { width: 800, height: 600 };
     resized!();
+    const first = group();
+    expect(first).toMatch(/^translate\([\d.]+,[\d.]+\) scale\(1\)$/);
 
-    expect(group()).toMatch(/^translate\([\d.]+,[\d.]+\) scale\(1\)$/);
+    // A taller area: the graph moves down to stay in the middle.
+    box = { width: 800, height: 900 };
+    resized!();
+    const [, y1] = /translate\([\d.]+,([\d.]+)\)/.exec(first!)!;
+    const [, y2] = /translate\([\d.]+,([\d.]+)\)/.exec(group()!)!;
+    expect(Number(y2) - Number(y1)).toBeCloseTo(150);
+  });
+
+  it('stops fitting the graph once the user zooms or pans, until new data', async () => {
+    box = { width: 800, height: 600 };
+    const { renderer, group } = mounted();
+    renderer.render(MODEL, { palette: new RelationshipPalette(), shape: 'rect' });
+    expect(resized).not.toBeNull();
+
+    document.querySelector('svg.soup-graph-svg')!.dispatchEvent(new WheelEvent('wheel', { deltaY: -100, clientX: 10, clientY: 10, bubbles: true }));
+    const zoomed = group();
     expect(resized).toBeNull();
+
+    renderer.setNodeShape('circle');
+    expect(group()).toBe(zoomed);
+
+    // d3 ends the wheel gesture 150 ms after the last wheel event.
+    await new Promise((done) => setTimeout(done, 200));
+    renderer.render(MODEL, { palette: new RelationshipPalette(), shape: 'rect' });
+    expect(group()).not.toBe(zoomed);
+    expect(resized).not.toBeNull();
+  });
+
+  it('draws each edge label on a light rounded box, also in the exported SVG', () => {
+    box = { width: 800, height: 600 };
+    const { renderer } = mounted();
+    renderer.render(TWO_TYPES, { palette: new RelationshipPalette(), shape: 'rect' });
+
+    const label = document.querySelector('g.edgeLabel')!;
+    const background = label.firstElementChild!;
+    expect(background.matches('rect.label-bg')).toBe(true);
+    // The text measures 40 x 20: 4 px around it horizontally, 2 px vertically, centered on the label.
+    expect(['x', 'y', 'width', 'height', 'rx', 'fill', 'stroke'].map((name) => background.getAttribute(name))).toEqual([
+      '-24',
+      '-12',
+      '48',
+      '24',
+      '4',
+      '#fff',
+      '#d0d7de'
+    ]);
+    expect(label.querySelector('g.label text')).not.toBeNull();
+    expect(renderer.exportSvg()).toContain('class="label-bg"');
+
+    // Redrawn in place: still one box per label.
+    renderer.setNodeShape('circle');
+    expect(label.querySelectorAll('rect.label-bg')).toHaveLength(1);
   });
 
   it('centers at the next draw once the graph is not empty', () => {
