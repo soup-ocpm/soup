@@ -32,7 +32,7 @@ COPY --from=packages /srv/soup-packages/ /srv/soup-packages/
 # "memgraph" user of the Memgraph image of docker-compose.yaml, so the
 # files one writes in the shared soup-volume (/soup) are readable and
 # writable by the other. Read from the image, not guessed:
-#   docker run --rm --entrypoint id memgraph/memgraph-mage:3.13.2 memgraph
+#   docker run --rm --entrypoint id memgraph/memgraph:3.13.2 memgraph
 #   uid=101(memgraph) gid=103(memgraph)
 # Check them again when the Memgraph tag changes.
 ARG SOUP_UID=101

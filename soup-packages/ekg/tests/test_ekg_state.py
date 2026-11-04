@@ -137,8 +137,24 @@ def test_ensure_loaded_does_not_rebuild_an_active_state(setup):
 
     assert ekg.ensure_loaded(obj, _tools(engine)) is False
 
-    assert len(db.received_queries) == before
+    # One query more: the check that the graph is still in the database.
+    assert _texts(db, before) == [db.ANY_NODE]
     assert len(package.events) == published
+
+
+def test_ensure_loaded_rebuilds_an_active_state_after_memgraph_restarted(setup):
+    # Memgraph has no persistence: after a restart of Memgraph alone, the
+    # backend still holds the state and the database is empty.
+    engine, db, _package = setup
+    obj = _import(engine)
+    db.set_empty()
+    start = len(db.received_queries)
+
+    assert ekg.ensure_loaded(obj, _tools(engine)) is True
+
+    sent = _texts(db, start)
+    assert sent[0] == db.ANY_NODE and CLEAR in sent and len(sent) > 2
+    assert _memgraph(engine).current_state() == obj.meta["graph_key"]
 
 
 def test_ensure_loaded_rebuilds_with_force_or_for_another_object(setup):
@@ -239,9 +255,9 @@ def test_the_load_operation_runs_ensure_loaded(setup):
 
     start = len(db.received_queries)
     engine.operation_router.run("ekg.load", [first.id])
-    assert _texts(db, start) == []
+    assert _texts(db, start) == [db.ANY_NODE]
     engine.operation_router.run("ekg.load", [first.id], {"force": True})
-    assert _texts(db, start)[0] == CLEAR
+    assert _texts(db, start)[1] == CLEAR
 
 
 def test_a_rebuild_saves_the_counts_and_times_in_the_config(setup, tmp_path):
@@ -266,8 +282,9 @@ def test_derive_state_changes_the_loaded_parent_in_place_and_keeps_its_key(setup
 
     graph_key = ekg.derive_state(root, lambda run: run(ekg.Query("MATCH (n:`Event`) RETURN n LIMIT $limit", {"limit": 1})), _tools(engine))
 
-    # The parent was active: no rebuild, only the change.
-    assert _texts(db, start) == ["MATCH (n:`Event`) RETURN n LIMIT $limit"]
+    # The parent was active: no rebuild, the two checks that its graph is
+    # there (ensure_loaded, advance) and the change.
+    assert _texts(db, start) == [db.ANY_NODE, db.ANY_NODE, "MATCH (n:`Event`) RETURN n LIMIT $limit"]
     assert _memgraph(engine).current_state() == graph_key != root.meta["graph_key"]
 
     # The derived object keeps that key: its first opening does not

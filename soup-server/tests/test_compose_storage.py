@@ -7,7 +7,7 @@ Description: The backend of docker-compose.yaml has no access to Docker:
              reads the same files with LOAD CSV), and it waits for the
              one-off volume-init service. Its image runs as an
              unprivileged user with the UID/GID of the "memgraph" user of
-             the Memgraph image (101/103 in memgraph-mage 3.13.2), created
+             the Memgraph image (101/103 in memgraph/memgraph 3.13.2), created
              after pip install.
 Project : soup-server
 ------------------------------------------------------------------------
@@ -48,11 +48,35 @@ def test_memgraph_reads_the_same_volume_on_the_same_path():
     assert "- soup-installed-packages:/data/soup-packages" in services["volume-init"]
 
 
+def test_memgraph_has_named_volumes_and_no_persistence():
+    memgraph = _services()["memgraph"]
+    for line in (
+        "- memgraph-data:/var/lib/memgraph",
+        "- memgraph-etc:/etc/memgraph",
+        "- memgraph-log:/var/log/memgraph",
+        "- --storage-snapshot-interval-sec=0",
+        "- --storage-snapshot-on-exit=false",
+        "- --storage-wal-enabled=false",
+        "- --data-recovery-on-startup=false",
+    ):
+        assert line in memgraph
+    top_level = COMPOSE.read_text(encoding="utf-8").split("\nvolumes:", 1)[1]
+    for volume in ("memgraph-data:", "memgraph-etc:", "memgraph-log:"):
+        assert f"\n  {volume}" in top_level
+
+
+def test_the_long_running_services_restart_and_volume_init_does_not():
+    services = _services()
+    for name in ("memgraph", "lab", "flask", "angular"):
+        assert "restart: unless-stopped" in services[name], name
+    assert "restart:" not in services["volume-init"]
+
+
 def test_volume_init_only_changes_owners():
     init = _services()["volume-init"]
     command = re.search(r"entrypoint: (\[.*\])", init)
     assert command is not None
-    assert "chown" in command.group(1)
+    assert "chown -h 101:103" in command.group(1)  # The IDs of soup-server/Dockerfile
     for verb in ("rm ", "mv ", "-delete"):
         assert verb not in command.group(1)
 

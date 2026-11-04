@@ -83,12 +83,16 @@ class FakeDatabase:
     """
     GraphDatabase fake that records every Query it receives (text and
     params, in order) and returns a configurable canned response per
-    query text, falling back to a default response.
+    query text, falling back to a default response. The check of
+    tool_memgraph for a lost graph finds a node, as in a database that
+    holds the graph: a test of the lost graph calls set_empty().
     """
+
+    ANY_NODE = "MATCH (n) RETURN 1 AS found LIMIT 1"
 
     def __init__(self) -> None:
         self.received_queries: list[Query] = []
-        self._responses: dict[str, list[dict[str, Any]]] = {}
+        self._responses: dict[str, list[dict[str, Any]]] = {self.ANY_NODE: [{"found": 1}]}
         self._default_response: list[dict[str, Any]] = []
 
     def set_response(self, query_text: str, rows: list[dict[str, Any]]) -> None:
@@ -96,6 +100,11 @@ class FakeDatabase:
 
     def set_default_response(self, rows: list[dict[str, Any]]) -> None:
         self._default_response = rows
+
+    def set_empty(self, empty: bool = True) -> None:
+        """The answer of the check for a lost graph: an empty database, or one with a node."""
+
+        self._responses[self.ANY_NODE] = [] if empty else [{"found": 1}]
 
     def run(self, query: Query) -> list[dict[str, Any]]:
         self.received_queries.append(query)

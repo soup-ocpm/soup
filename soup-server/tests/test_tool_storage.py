@@ -285,7 +285,7 @@ def test_docker_commands_are_argv_lists_never_a_shell():
 
 
 def test_docker_commands_run_as_root_and_files_stay_readable_by_memgraph():
-    # memgraph/memgraph-mage runs as the "memgraph" user, which cannot write
+    # memgraph/memgraph runs as the "memgraph" user, which cannot write
     # in the root-owned volume: the commands do not depend on the image's USER.
     backend, container = _docker()
     storage = api.StorageTool(backend)

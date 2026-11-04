@@ -36,16 +36,16 @@ oggetto del workspace; con `cascade` si cancellano anche le figlie e i loro file
   esce con 1 se qualcosa fallisce.
 
   ```sh
-  docker run -d --rm --name ekg-analysis-smoke -p 17688:7687 memgraph/memgraph-mage:3.13.2
+  docker run -d --rm --name ekg-analysis-smoke -p 17688:7687 memgraph/memgraph:3.13.2
   cd soup-server
   python ../soup-packages/ekg_analysis/tests/memgraph_smoke.py            # default bolt://localhost:17688
   docker stop ekg-analysis-smoke
   ```
 
   Lo script **svuota il database**: non va mai puntato su un Memgraph con dati da conservare.
-  L'immagine è la stessa di `docker-compose.yaml` (`memgraph/memgraph-mage:3.13.2`, Memgraph 3.13.2): se si
+  L'immagine è la stessa di `docker-compose.yaml` (`memgraph/memgraph:3.13.2`, Memgraph 3.13.2): se si
   aggiorna il tag lì, va aggiornato anche qui e lo script rieseguito (lo controlla
-  `soup-server/tests/test_cypher_compatibility.py`). Ultima esecuzione: `51/51 checks ok` (anche su
+  `soup-server/tests/test_cypher_compatibility.py`). Ultima esecuzione: `51/51 checks ok` su `memgraph/memgraph:3.13.2` (anche su
   `memgraph/memgraph-platform` 2.14.1).
 
 ## Verifica con Memgraph

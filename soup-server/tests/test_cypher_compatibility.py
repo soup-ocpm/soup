@@ -13,7 +13,7 @@ Description: The Cypher of the packages must run on the Memgraph of
              FakeDatabase by an engine with every EKG package, while it
              imports (CSV and OCEL), opens the visualizers, runs every
              interrogation and the insights actions and exports.
-             Also: docker-compose.yaml pins the Memgraph images (mage and
+             Also: docker-compose.yaml pins the Memgraph images (memgraph and
              lab, same version, never "latest") and the smoke tests of
              ekg_views and ekg_analysis are documented with that image.
 Project : soup-server
@@ -160,12 +160,13 @@ def _compose_images() -> dict[str, str]:
 def test_compose_pins_the_memgraph_images_and_the_smoke_tests_use_the_same():
     images = _compose_images()
     memgraph, lab = images["memgraph"], images["lab"]
-    assert memgraph.startswith("memgraph/memgraph-mage:") and lab.startswith("memgraph/lab:")
+    assert memgraph.startswith("memgraph/memgraph:") and lab.startswith("memgraph/lab:")
     for image in (memgraph, lab):
         tag = image.rpartition(":")[2]
         assert re.fullmatch(r"\d+\.\d+\.\d+", tag), image  # never the implicit "latest"
     assert memgraph.rpartition(":")[2] == lab.rpartition(":")[2]
-    assert images["volume-init"] == memgraph  # it gives the files to the user of this image
+    # Not the Memgraph image: its VOLUMEs would leave anonymous volumes at each run.
+    assert re.fullmatch(r"alpine:\d+\.\d+\.\d+", images["volume-init"])
     for path in SMOKE_FILES:
         text = (REPOSITORY / path).read_text(encoding="utf-8")
         assert re.findall(r"docker run [^\n]*memgraph/\S+", text) and all(

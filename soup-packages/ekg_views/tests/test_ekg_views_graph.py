@@ -220,11 +220,11 @@ def test_the_graph_action_takes_view_limit_and_relations(setup):
         with pytest.raises(ValidationError):
             engine.visualizer_router.action("ekg_views.graph", obj.id, "graph", params)
 
-    # Every type hidden: an empty graph, nothing read.
+    # Every type hidden: an empty graph, only the check that it is loaded.
     before = len(db.received_queries)
     empty = engine.visualizer_router.action("ekg_views.graph", obj.id, "graph", {"relations": []})
     assert (empty["graph"]["nodes"], empty["max_data"]) == ([], 0)
-    assert len(db.received_queries) == before
+    assert [query.text for query in db.received_queries[before:]] == [db.ANY_NODE]
 
 
 def test_an_undeclared_relation_or_label_answers_400(setup):

@@ -1,4 +1,4 @@
-# Continuous integration: the checks of README.md ("Tests") on every push
+# Continuous integration: the checks of the wiki page "Testing and CI" on every push
 # and pull request, one job per area. Python and Node are the versions of
 # soup-server/Dockerfile and soup-app/Dockerfile (python:3.12.16-slim,
 # node:24.22.0-alpine), Memgraph the image of docker-compose.yaml; the
@@ -115,7 +115,7 @@ jobs:
     runs-on: ubuntu-latest
     services:
       memgraph:
-        image: memgraph/memgraph-mage:3.13.2
+        image: memgraph/memgraph:3.13.2
         ports:
           - 7687:7687
         options: >-

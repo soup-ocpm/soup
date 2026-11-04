@@ -79,7 +79,44 @@ def test_ensure_loaded_does_not_reload_the_active_state(tool, db):
     assert tool.ensure_loaded("obj-1", loader) is False
 
     assert loader.calls == 1
+    # One query more: the check that the graph is still in the database.
+    assert _texts(db) == [db.ANY_NODE]
+
+
+def test_ensure_loaded_rebuilds_when_the_active_state_finds_an_empty_database(tool, db, caplog):
+    loader = _Loader()
+    tool.ensure_loaded("obj-1", loader)
+    db.set_empty()
+    db.received_queries.clear()
+
+    with caplog.at_level("WARNING", logger="soup.memgraph"):
+        assert tool.ensure_loaded("obj-1", loader) is True
+
+    assert loader.calls == 2
+    assert _texts(db) == [db.ANY_NODE, CLEAR, "CREATE (:Event)"]
+    assert tool.current_state() == "obj-1"
+    assert "Memgraph restarted or emptied: reloading obj-1" in caplog.text
+
+
+def test_is_loaded_looks_at_the_database_only_for_the_active_state(tool, db):
+    tool.ensure_loaded("obj-1", _Loader())
+    db.received_queries.clear()
+
+    assert tool.is_loaded("obj-2") is False
     assert db.received_queries == []
+    assert tool.current_state() == "obj-1"
+
+    assert tool.is_loaded("obj-1") is True
+    assert _texts(db) == [db.ANY_NODE]
+
+
+def test_is_loaded_forgets_the_state_of_an_empty_database(tool, db):
+    tool.ensure_loaded("obj-1", _Loader())
+    db.set_empty()
+
+    assert tool.is_loaded("obj-1") is False
+
+    assert tool.current_state() is None
 
 
 def test_ensure_loaded_reloads_when_the_state_changes(tool, db):
@@ -123,8 +160,24 @@ def test_advance_mutates_the_active_graph_and_moves_to_the_new_state(tool, db):
     tool.advance("parent", "child", lambda run: run(Query("MATCH (n:`Event`) DETACH DELETE n")))
 
     assert tool.current_state() == "child"
-    # In place: no clear of the database.
-    assert _texts(db) == ["MATCH (n:`Event`) DETACH DELETE n"]
+    # In place: no clear of the database, only the check that the graph is there.
+    assert _texts(db) == [db.ANY_NODE, "MATCH (n:`Event`) DETACH DELETE n"]
+
+
+def test_advance_on_an_empty_database_is_an_error_and_mutates_nothing(tool, db):
+    from soup.core.contracts import ConflictError
+
+    tool.ensure_loaded("parent", lambda run: None)
+    db.set_empty()
+    db.received_queries.clear()
+    calls = []
+
+    with pytest.raises(ConflictError, match="no longer in Memgraph"):
+        tool.advance("parent", "child", lambda run: calls.append(run))
+
+    assert calls == [] and _texts(db) == [db.ANY_NODE]
+    # The state is forgotten: the next opening rebuilds the parent.
+    assert tool.current_state() is None
 
 
 def test_advance_from_a_state_that_is_not_active_does_not_touch_the_graph(tool, db):

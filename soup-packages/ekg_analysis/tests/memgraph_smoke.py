@@ -23,7 +23,7 @@ Description: Smoke test of the queries of ekg_analysis and ekg_class_graph
              It prints one line per check and the ones that failed, and
              exits with 1 if any did.
 
-             docker run -d --rm --name ekg-analysis-smoke -p 17688:7687 memgraph/memgraph-mage:3.13.2
+             docker run -d --rm --name ekg-analysis-smoke -p 17688:7687 memgraph/memgraph:3.13.2
              cd soup-server
              python ../soup-packages/ekg_analysis/tests/memgraph_smoke.py [bolt://localhost:17688]
              docker stop ekg-analysis-smoke

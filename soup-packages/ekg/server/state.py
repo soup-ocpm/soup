@@ -165,7 +165,7 @@ def ensure_loaded(obj: ObjectRef, tools: Any, force: bool = False) -> bool:
     memgraph = tools.get(MEMGRAPH)
     chain = chain_of(obj, runtime.tools.typed(CATALOG, Catalog))
     graph_key = graph_key_of(obj)
-    if not force and memgraph.current_state() == graph_key:
+    if not force and memgraph.is_loaded(graph_key):
         return False
 
     root = chain[0]

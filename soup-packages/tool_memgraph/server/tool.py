@@ -13,12 +13,17 @@ Description: MemgraphTool - the "memgraph" tool. Runs parameterized
              graph in place (an analysis on the loaded parent): only if
              from_state is active, and the state becomes to_state only
              if mutate succeeds.
+             Memgraph runs without persistence, so if it restarts alone it
+             comes back empty while this process still holds the state:
+             is_loaded and advance check that the database has a node
+             before they trust the state.
 Project : soup-packages/tool_memgraph
 ------------------------------------------------------------------------
 """
 
 from __future__ import annotations
 
+import logging
 import threading
 from collections.abc import Callable
 from typing import Any
@@ -28,6 +33,8 @@ from soup.core.contracts import ConflictError, Tool
 from .port import GraphDatabase
 from .query import Query
 
+_LOGGER = logging.getLogger("soup.memgraph")
+
 MEMGRAPH_TOOL = "memgraph"
 
 Run = Callable[[Query], list[dict[str, Any]]]
@@ -35,6 +42,7 @@ Loader = Callable[[Run], None]
 
 _PING_QUERY = Query("RETURN 1 AS ok")
 _CLEAR_QUERY = Query("MATCH (n) DETACH DELETE n")
+_ANY_NODE_QUERY = Query("MATCH (n) RETURN 1 AS found LIMIT 1")
 
 
 class MemgraphTool(Tool, GraphDatabase):
@@ -55,10 +63,29 @@ class MemgraphTool(Tool, GraphDatabase):
             return {"ok": False, "error": str(exc)}
         return {"ok": True, "state": self._state}
 
+    def is_loaded(self, state_key: str) -> bool:
+        """
+        True if `state_key` is the active state and the database has a
+        node. An empty database means the graph is lost (Memgraph restarted
+        or was emptied): the state is forgotten, so the next ensure_loaded
+        rebuilds. Callers that skip work when the graph is loaded ask here,
+        not current_state(), which does not look at the database.
+        """
+
+        with self._lock:
+            if self._state != state_key:
+                return False
+            if self._db.run(_ANY_NODE_QUERY):
+                return True
+            _LOGGER.warning("Memgraph restarted or emptied: reloading %s", state_key)
+            self._state = None
+            return False
+
     def ensure_loaded(self, state_key: str, loader: Loader, force: bool = False) -> bool:
         """
         Make `state_key` the active graph. Returns True if loader ran,
-        False if `state_key` was already active. If loader raises, the
+        False if `state_key` was already active and its graph is still in
+        the database (is_loaded). If loader raises, the
         database is in an unknown state: the active state becomes None
         and the error propagates.
         """
@@ -66,7 +93,7 @@ class MemgraphTool(Tool, GraphDatabase):
         if not isinstance(state_key, str) or not state_key:
             raise ValueError(f"state_key must be a non-empty string, got {state_key!r}")
         with self._lock:
-            if not force and self._state == state_key:
+            if not force and self.is_loaded(state_key):
                 return False
             self.clear()
             loader(self.run)
@@ -79,8 +106,9 @@ class MemgraphTool(Tool, GraphDatabase):
         `to_state`. Atomic under the lock of the loads.
 
         :raises ConflictError: `from_state` is not the active state
-            (mutate does not run, the graph is untouched); the caller
-            loads it first
+            (mutate does not run, the graph is untouched), or the
+            database is empty: the graph of `from_state` is lost, the state
+            is forgotten and mutate does not run. The caller loads it first
         If mutate raises, the graph is in an unknown state: the active
         state becomes None (the next ensure_loaded reloads) and the error
         propagates.
@@ -93,6 +121,12 @@ class MemgraphTool(Tool, GraphDatabase):
             if self._state != from_state:
                 raise ConflictError(
                     f"The graph in Memgraph changed meanwhile (expected state {from_state!r}); retry"
+                )
+            if not self._db.run(_ANY_NODE_QUERY):
+                self._state = None
+                raise ConflictError(
+                    f"The graph of state {from_state!r} is no longer in Memgraph "
+                    "(restarted or emptied): nothing was changed; retry"
                 )
             self._state = None
             mutate(self.run)

@@ -15,7 +15,7 @@ Description: Smoke test of every query ekg_views generates, against a REAL
              for every combination of relationship types. It prints one line per
              query and the ones that failed, and exits with 1 if any did.
 
-             docker run -d --rm --name ekg-views-smoke -p 17687:7687 memgraph/memgraph-mage:3.13.2
+             docker run -d --rm --name ekg-views-smoke -p 17687:7687 memgraph/memgraph:3.13.2
              cd soup-server
              python ../soup-packages/ekg_views/tests/memgraph_smoke.py [bolt://localhost:17687]
              docker stop ekg-views-smoke

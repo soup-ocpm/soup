@@ -58,17 +58,17 @@ una già eseguita la si vede subito. La regola si calcola dai `fields` (`require
   riporta quelle che falliscono (codice di uscita 1):
 
   ```sh
-  docker run -d --rm --name ekg-views-smoke -p 17687:7687 memgraph/memgraph-mage:3.13.2
+  docker run -d --rm --name ekg-views-smoke -p 17687:7687 memgraph/memgraph:3.13.2
   cd soup-server
   python ../soup-packages/ekg_views/tests/memgraph_smoke.py            # default bolt://localhost:17687
   docker stop ekg-views-smoke
   ```
 
   Lo script **svuota il database**: non va mai puntato su un Memgraph con dati da conservare.
-  L'immagine è la stessa di `docker-compose.yaml` (`memgraph/memgraph-mage:3.13.2`, Memgraph 3.13.2): se si
+  L'immagine è la stessa di `docker-compose.yaml` (`memgraph/memgraph:3.13.2`, Memgraph 3.13.2): se si
   aggiorna il tag lì, va aggiornato anche qui e lo script rieseguito (lo controlla
   `soup-server/tests/test_cypher_compatibility.py`). Ultima esecuzione: `58/58 queries ok` su
-  `memgraph/memgraph-mage:3.13.2` (la versione precedente, con 43 query, anche su
+  `memgraph/memgraph:3.13.2` (la versione precedente, con 43 query, anche su
   `memgraph/memgraph-platform` 2.14.1).
 
 ## Verifica con Memgraph

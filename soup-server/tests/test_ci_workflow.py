@@ -42,7 +42,7 @@ def test_node_is_the_one_of_both_images_and_of_nvmrc():
 
 def test_the_smoke_tests_run_on_the_memgraph_of_docker_compose():
     compose = (REPOSITORY / "docker-compose.yaml").read_text(encoding="utf-8")
-    images = set(re.findall(r"image: (memgraph/memgraph-mage:\S+)", compose))
+    images = set(re.findall(r"image: (memgraph/memgraph:\S+)", compose))
     assert len(images) == 1
     assert _one(r"^        image: (memgraph/\S+)$", WORKFLOW) == images.pop()
     for package in ("ekg_views", "ekg_analysis"):

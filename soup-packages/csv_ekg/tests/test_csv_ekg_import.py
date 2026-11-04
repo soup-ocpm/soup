@@ -406,7 +406,8 @@ def test_after_converti_in_ekg_the_first_opening_does_not_rebuild(tmp_path, monk
     builds = len(db.received_queries)
 
     assert ekg.ensure_loaded(child, _tools(engine)) is False
-    assert len(db.received_queries) == builds
+    # Only the check that the graph is still in the database.
+    assert [query.text for query in db.received_queries[builds:]] == [db.ANY_NODE]
 
     # Once another object is opened, the child is built again, under the same key.
     other = engine.import_router.import_(

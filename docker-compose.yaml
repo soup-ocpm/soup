@@ -4,6 +4,7 @@ services:
       context: . # Repository root: the app compiles @soup/sdk from soup-packages/sdk
       dockerfile: soup-app/Dockerfile
     container_name: soup-app
+    restart: unless-stopped
     ports:
       # Local use only: every port is published on 127.0.0.1, never on the network.
       - "127.0.0.1:4200:80" # The app on http://localhost:4200 (Nginx in the container)
@@ -17,6 +18,7 @@ services:
       context: . # Repository root: the image also needs soup-packages/
       dockerfile: soup-server/Dockerfile
     container_name: soup-engine
+    restart: unless-stopped
     ports:
       - "127.0.0.1:8080:8080" # The API, called by the app from the browser (CORS: SOUP_CORS_ORIGINS)
     networks:
@@ -41,16 +43,18 @@ services:
       volume-init:
         condition: service_completed_successfully
 
-  # One-off: gives the files of the two volumes to the "memgraph" user of
-  # the Memgraph image, the user the backend image also runs as (same
-  # UID/GID, soup-server/Dockerfile). Volumes written before, when the
+  # One-off: gives the files of the two volumes to UID 101 and GID 103, the
+  # "memgraph" user of the Memgraph image and the user the backend image
+  # runs as (soup-server/Dockerfile). Volumes written before, when the
   # backend wrote through the Docker socket as root, have root's files.
   # Only the files with another owner are changed; nothing is removed or
-  # moved. It exits at once when there is nothing to change.
+  # moved. It exits at once when there is nothing to change. Alpine, not the
+  # Memgraph image: that one declares VOLUMEs, and each run would leave
+  # three anonymous volumes behind.
   volume-init:
-    image: memgraph/memgraph-mage:3.13.2
+    image: alpine:3.24.3
     user: root
-    entrypoint: ["sh", "-c", "find /soup /data/soup-packages \\( ! -user memgraph -o ! -group memgraph \\) -exec chown -h memgraph:memgraph {} +"]
+    entrypoint: ["sh", "-c", "find /soup /data/soup-packages \\( ! -user 101 -o ! -group 103 \\) -exec chown -h 101:103 {} +"]
     volumes:
       - soup-volume:/soup
       - soup-installed-packages:/data/soup-packages
@@ -60,10 +64,21 @@ services:
   # Memgraph and its web interface as two images with the same pinned
   # version (memgraph/memgraph-platform, which bundled them, is deprecated:
   # its last release is 2.14.1, February 2024). Check the running version
-  # with "SHOW VERSION;" (README.md, "Memgraph"). Update both tags together.
+  # with "SHOW VERSION;" (wiki, Installation). Update both tags together.
   memgraph:
-    image: memgraph/memgraph-mage:3.13.2
+    image: memgraph/memgraph:3.13.2
     container_name: soup-database
+    restart: unless-stopped
+    # No persistence: the graph is always rebuilt from the dataset files in
+    # soup-volume, so snapshots, the WAL and the recovery at startup would
+    # only spend disk and time. Memgraph starts empty and the backend
+    # rebuilds the graph when an object is opened, also after a restart of
+    # Memgraph alone (it finds the database empty: tool_memgraph, is_loaded).
+    command:
+      - --storage-snapshot-interval-sec=0
+      - --storage-snapshot-on-exit=false
+      - --storage-wal-enabled=false
+      - --data-recovery-on-startup=false
     ports:
       # Memgraph has no user and no password: only this machine can reach it.
       - "127.0.0.1:7687:7687" # Memgraph Bolt protocol
@@ -72,10 +87,16 @@ services:
       - app-network
     volumes:
       - soup-volume:/soup
+      # The image declares these three as VOLUME: named here, so a "down"
+      # leaves no anonymous volumes behind.
+      - memgraph-data:/var/lib/memgraph
+      - memgraph-etc:/etc/memgraph
+      - memgraph-log:/var/log/memgraph
 
   lab:
     image: memgraph/lab:3.13.2
     container_name: soup-lab
+    restart: unless-stopped
     ports:
       # Memgraph Lab (web interface) on http://localhost:3300: Windows often
       # reserves the host ports 2981-3080 (Hyper-V/WinNAT), so 3000 cannot be bound.
@@ -92,6 +113,12 @@ volumes:
   soup-volume: # The datasets and the catalog: /soup in flask (writes) and memgraph (LOAD CSV)
     driver: local
   soup-installed-packages: # Packages installed at runtime, and their enabled/disabled state
+    driver: local
+  memgraph-data: # /var/lib/memgraph: stays small, persistence is off (see the memgraph service)
+    driver: local
+  memgraph-etc: # /etc/memgraph: copied from the image when created, memgraph.conf included
+    driver: local
+  memgraph-log: # /var/log/memgraph: the log files of Memgraph
     driver: local
 
 networks:

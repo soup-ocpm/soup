@@ -10,7 +10,7 @@ Description: FileStorage backend writing into the SOUP Docker volume via
              Commands run in the container as argv lists, never through
              "sh -c" with the path spliced in, and always as root
              (EXEC_USER): the image of docker-compose.yaml
-             (memgraph/memgraph-mage) runs as the unprivileged "memgraph"
+             (memgraph/memgraph) runs as the unprivileged "memgraph"
              user, which cannot create or remove anything in the volume
              (owned by root); the files stay readable by Memgraph for
              LOAD CSV (directories 755, files 644). DockerException is
