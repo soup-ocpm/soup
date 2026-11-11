@@ -10,21 +10,21 @@ import { SidePanelComponent } from './side-panel.component';
       type="button"
       class="opener"
       (click)="this.open.set(true)">
-      Apri
+      Open
     </button>
     @if (this.open()) {
       <soup-side-panel
-        heading="Nuova analisi"
-        description="Filtra l'EKG"
+        heading="New analysis"
+        description="Filter the EKG"
         (closed)="this.close()">
         <input
           class="first"
-          aria-label="Nome" />
+          aria-label="Name" />
         <ng-container soup-panel-footer>
           <button
             type="button"
             class="run">
-            Esegui
+            Run
           </button>
         </ng-container>
       </soup-side-panel>
@@ -75,8 +75,8 @@ describe('SidePanelComponent', () => {
 
     const dialog = element().querySelector('[role="dialog"]') as HTMLElement;
     expect(dialog.getAttribute('aria-modal')).toBe('true');
-    expect(document.getElementById(dialog.getAttribute('aria-labelledby')!)?.textContent?.trim()).toBe('Nuova analisi');
-    expect(document.getElementById(dialog.getAttribute('aria-describedby')!)?.textContent?.trim()).toBe("Filtra l'EKG");
+    expect(document.getElementById(dialog.getAttribute('aria-labelledby')!)?.textContent?.trim()).toBe('New analysis');
+    expect(document.getElementById(dialog.getAttribute('aria-describedby')!)?.textContent?.trim()).toBe('Filter the EKG');
     expect(dialog.querySelector('.soup-side-body .first')).not.toBeNull();
     expect(dialog.querySelector('.soup-side-footer .run')).not.toBeNull();
   });

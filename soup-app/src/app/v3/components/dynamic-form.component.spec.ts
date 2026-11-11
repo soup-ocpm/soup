@@ -31,39 +31,39 @@ const STEPS = field('steps', 'items', { variants: [FILTER, AGGREGATE] });
 // The shapes of the filters of "Nuova analisi" (ekg_analysis/server/filters.py)
 const PERFORMANCE: Variant = {
   key: 'performance',
-  label: 'Durata delle tracce',
+  label: 'Trace duration',
   description: '',
   fields: [
-    field('entity', 'select', { label: 'Tipo di entità', choices: [{ value: 'order', label: 'order' }] }),
-    field('operator', 'select', { label: 'Operatore', choices: [{ value: '>', label: '>' }] }),
-    field('seconds', 'number', { label: 'Secondi' })
+    field('entity', 'select', { label: 'Entity type', choices: [{ value: 'order', label: 'order' }] }),
+    field('operator', 'select', { label: 'Operator', choices: [{ value: '>', label: '>' }] }),
+    field('seconds', 'number', { label: 'Seconds' })
   ]
 };
 
 const FREQUENCE: Variant = {
   key: 'frequence',
-  label: 'Frequenza delle attività',
+  label: 'Activity frequency',
   description: '',
-  fields: [field('entity', 'select'), field('operator', 'select'), field('frequency', 'number', { label: 'Occorrenze' })]
+  fields: [field('entity', 'select'), field('operator', 'select'), field('frequency', 'number', { label: 'Occurrences' })]
 };
 
 const TIMESTAMP: Variant = {
   key: 'timestamp',
-  label: 'Intervallo temporale',
+  label: 'Time range',
   description: '',
-  fields: [field('startDate', 'datetime', { label: 'Dal' }), field('endDate', 'datetime', { label: 'Al' })]
+  fields: [field('startDate', 'datetime', { label: 'From' }), field('endDate', 'datetime', { label: 'To' })]
 };
 
 const ACTIVITIES: Variant = {
   key: 'includeActivities',
-  label: 'Solo queste attività',
+  label: 'Include activities',
   description: '',
   fields: [field('activities', 'multiselect', { choices: choices('a', 'b', 'c', 'd', 'e', 'f') })]
 };
 
 const FILTERS = field('filters', 'items', {
-  label: 'Filtri',
-  help: "Si applicano nell'ordine dei filtri, non in quello della lista.",
+  label: 'Filters',
+  help: 'Conditions are applied in filter order rather than list order.',
   variants: [TIMESTAMP, PERFORMANCE, FREQUENCE]
 });
 
@@ -100,20 +100,20 @@ describe('form values', () => {
     };
     const activities: ItemValue = { variant: 'includeActivities', values: { activities: ['a', 'b', 'c', 'd', 'e', 'f'] } };
 
-    expect(readableSummary(PERFORMANCE, performance)).toBe('Durata delle tracce di order > 3600 s');
-    expect(readableSummary(FREQUENCE, frequence)).toBe('Frequenza delle attività di item >= 2 occorrenze');
-    expect(readableSummary(TIMESTAMP, timestamp)).toBe('Intervallo temporale: dal 2021-05-01 09:05 al 2021-05-09 15:00');
-    expect(readableSummary(ACTIVITIES, activities)).toBe('Solo queste attività: A, B, C, D e altri 2');
+    expect(readableSummary(PERFORMANCE, performance)).toBe('Trace duration of order > 3600 s');
+    expect(readableSummary(FREQUENCE, frequence)).toBe('Activity frequency of item >= 2 occurrences');
+    expect(readableSummary(TIMESTAMP, timestamp)).toBe('Time range: from 2021-05-01 09:05 to 2021-05-09 15:00');
+    expect(readableSummary(ACTIVITIES, activities)).toBe('Include activities: A, B, C, D and 2 more');
     expect(readableSummary(PERFORMANCE, { variant: 'performance', values: { entity: 'order', operator: '>', seconds: null } })).toBe(
-      'Durata delle tracce di order > ? s'
+      'Trace duration of order > ? s'
     );
   });
 
   it('falls back to "field: value" for the other shapes and an unknown variant', () => {
     const item: ItemValue = { variant: 'filter', values: { activity: 'Ship', keep: true } };
 
-    expect(readableSummary(FILTER, item)).toBe('activity: Ship; keep: sì');
-    expect(readableSummary(undefined, { variant: 'gone', values: {} })).toBe("Variante sconosciuta 'gone'");
+    expect(readableSummary(FILTER, item)).toBe('activity: Ship; keep: yes');
+    expect(readableSummary(undefined, { variant: 'gone', values: {} })).toBe("Unknown variant 'gone'");
   });
 
   it('gives the order of application only when the help declares it and it differs', () => {
@@ -287,7 +287,7 @@ describe('DynamicFormComponent', () => {
 
     expect(last()['steps']).toEqual([{ variant: 'filter', values: { activity: 'Ship', keep: true } }]);
     expect(inside('steps').querySelectorAll('.soup-tile').length).toBe(1);
-    expect(inside('steps').querySelector('.soup-tile-summary')?.textContent).toContain('activity: Ship; keep: sì');
+    expect(inside('steps').querySelector('.soup-tile-summary')?.textContent).toContain('activity: Ship; keep: yes');
   });
 
   it('deleting a tile removes the element from the value (C28)', async () => {
@@ -324,8 +324,8 @@ describe('DynamicFormComponent', () => {
     await render([STEPS], [], { steps: [{ variant: 'filter', values: { activity: 'Create', keep: true } }] });
 
     expect(inside('steps').querySelector('.soup-tile-number')?.textContent?.trim()).toBe('1');
-    expect(inside('steps').querySelector('.soup-edit-item')?.getAttribute('aria-label')).toBe('Modifica elemento 1 di steps');
-    expect(inside('steps').querySelector('.soup-remove-item')?.getAttribute('aria-label')).toBe('Elimina elemento 1 di steps');
+    expect(inside('steps').querySelector('.soup-edit-item')?.getAttribute('aria-label')).toBe('Edit item 1 of steps');
+    expect(inside('steps').querySelector('.soup-remove-item')?.getAttribute('aria-label')).toBe('Delete item 1 of steps');
 
     click(inside('steps').querySelector('.soup-add-item-button'));
     const menu = inside('steps').querySelector('[role="menu"]') as HTMLElement;
@@ -340,16 +340,16 @@ describe('DynamicFormComponent', () => {
     await render([FILTERS], [], { filters: [timestamp, performance] });
 
     expect(inside('filters').querySelector('.soup-order-notice')).toBeNull();
-    expect(inside('filters').textContent).toContain('Durata delle tracce di order > 3600 s');
-    expect(inside('filters').querySelector('.soup-add-item-button')?.textContent).toContain('Aggiungi filtro');
+    expect(inside('filters').textContent).toContain('Trace duration of order > 3600 s');
+    expect(inside('filters').querySelector('.soup-add-item-button')?.textContent).toContain('Add filter');
 
     await render([FILTERS], [], { filters: [performance, timestamp] });
 
     const notice = inside('filters').querySelector('.soup-order-notice') as HTMLElement;
-    expect(notice.textContent).toContain('Ordine di applicazione diverso da quello di inserimento');
+    expect(notice.textContent).toContain('Application order differs from the order added');
     expect(Array.from(notice.querySelectorAll('li')).map((item) => item.textContent?.replace(/\s+/g, ' ').trim())).toEqual([
-      'Intervallo temporale (n. 2)',
-      'Durata delle tracce (n. 1)'
+      'Time range (#2)',
+      'Trace duration (#1)'
     ]);
   });
 

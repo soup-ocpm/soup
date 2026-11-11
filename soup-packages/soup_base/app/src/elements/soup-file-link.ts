@@ -19,7 +19,7 @@ export class SoupFileLink extends BlockElement<FileData> {
   protected draw(data: FileData | undefined): Node[] {
     if (!data) return [];
     const button = h('button', {
-      text: `Scarica ${data.filename}`,
+      text: `Download ${data.filename}`,
       attrs: { type: 'button' },
       on: { click: () => download(data.filename, data.mime, decodeBase64(data.base64)) }
     });

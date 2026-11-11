@@ -4,7 +4,7 @@
       class="soup-notice soup-notice-danger"
       role="alert">
       {{ this.loadError() }}
-      <a routerLink="/workspace">Torna al workspace</a>
+      <a routerLink="/workspace">Back to workspace</a>
     </div>
   }
 
@@ -29,12 +29,12 @@
           <p class="soup-object-description">{{ object.description }}</p>
         }
         <div class="soup-meta">
-          Creato da {{ object.created_by.type }} {{ object.created_by.contributor_id }} il
+          Created by {{ object.created_by.type }} {{ object.created_by.contributor_id }} on
           {{ object.created_at | date: 'medium' }}
         </div>
         @if (this.parents().length) {
           <div class="soup-meta">
-            Deriva da:
+            Derived from:
             @for (parent of this.parents(); track parent.id) {
               <a
                 class="me-2"
@@ -46,7 +46,7 @@
         }
         @if (this.children().length) {
           <div class="soup-meta">
-            Oggetti derivati:
+            Derived objects:
             @for (child of this.children(); track child.id) {
               <a
                 class="me-2"
@@ -72,7 +72,7 @@
             <i
               class="bi bi-download"
               aria-hidden="true"></i>
-            Esporta
+            Export
           </button>
           @if (this.exportOpen()) {
             <!-- A list of buttons (disclosure), not an ARIA menu: Tab moves between them, Esc closes -->
@@ -116,7 +116,7 @@
               <label
                 class="form-label m-0"
                 for="soup-visualizer">
-                Visualizzatore
+                Visualizer
               </label>
               <select
                 id="soup-visualizer"
@@ -151,7 +151,7 @@
           <h3
             id="soup-actions-title"
             class="soup-panel-title">
-            Azioni
+            Actions
           </h3>
           @if (this.actionError() && !this.operationForm()) {
             <div
@@ -162,7 +162,7 @@
           }
 
           @if (this.operations().length === 0) {
-            <p class="text-muted small m-0">Nessuna operazione installata accetta oggetti di kind {{ object.kind }}.</p>
+            <p class="text-muted small m-0">No installed operation accepts objects of kind {{ object.kind }}.</p>
           } @else {
             @for (group of this.groups(); track group.name) {
               <section
@@ -242,7 +242,7 @@
             type="button"
             class="btn btn-outline-secondary"
             (click)="this.closeOperation()">
-            Annulla
+            Cancel
           </button>
           <button
             type="button"
@@ -254,9 +254,9 @@
               <span
                 class="spinner-border spinner-border-sm"
                 aria-hidden="true"></span>
-              Esecuzione...
+              Running...
             } @else {
-              Esegui
+              Run
             }
           </button>
         </ng-container>
@@ -266,7 +266,7 @@
     <!-- The form of an exporter -->
     @if (this.exportForm(); as form) {
       <soup-side-panel
-        [heading]="'Esporta: ' + form.item.label"
+        [heading]="'Export: ' + form.item.label"
         (closed)="this.closeExport()">
         @if (this.actionError()) {
           <div
@@ -284,7 +284,7 @@
             type="button"
             class="btn btn-outline-secondary"
             (click)="this.closeExport()">
-            Annulla
+            Cancel
           </button>
           <button
             type="button"
@@ -296,7 +296,7 @@
                 class="spinner-border spinner-border-sm"
                 aria-hidden="true"></span>
             }
-            Scarica
+            Download
           </button>
         </ng-container>
       </soup-side-panel>
@@ -308,7 +308,7 @@
       <span
         class="spinner-border spinner-border-sm"
         aria-hidden="true"></span>
-      Caricamento...
+      Loading...
     </div>
   }
 </div>

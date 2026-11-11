@@ -87,18 +87,18 @@ export class SoupPkgCsvTableViewer extends HTMLElement implements SoupVisualizer
     if (this.info) {
       const filtered = page.total !== this.data.total;
       this.info.textContent = filtered
-        ? `${page.total} righe su ${this.data.total} · ${this.data.columns.length} colonne`
-        : `${this.data.total} righe · ${this.data.columns.length} colonne`;
+        ? `${page.total} of ${this.data.total} rows · ${this.data.columns.length} columns`
+        : `${this.data.total} rows · ${this.data.columns.length} columns`;
     }
     return page;
   }
 
   private render(): void {
     const name = this.context?.object.name ?? '';
-    this.info = h('span', { className: 'info', text: `${this.data.total} righe · ${this.data.columns.length} colonne` });
+    this.info = h('span', { className: 'info', text: `${this.data.total} rows · ${this.data.columns.length} columns` });
     const clear = h('button', {
       className: 'clear-filters',
-      text: 'Azzera filtri',
+      text: 'Clear filters',
       attrs: { type: 'button' },
       on: { click: () => void this.clearFilters() }
     });
@@ -109,7 +109,7 @@ export class SoupPkgCsvTableViewer extends HTMLElement implements SoupVisualizer
       { className: 'filters' },
       ...this.data.columns.map((column, index) => {
         const input = h('input', {
-          attrs: { type: 'search', placeholder: 'Filtra', 'aria-label': `Filtro ${column}`, 'data-column': String(index) },
+          attrs: { type: 'search', placeholder: 'Filter', 'aria-label': `Filter ${column}`, 'data-column': String(index) },
           on: {
             input: (event) => {
               const value = (event.target as HTMLInputElement).value;

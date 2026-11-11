@@ -30,7 +30,7 @@ export class SoupChart extends BlockElement<ChartData> {
     this.destroyChart();
     if (!data) return [];
     if (!KINDS.includes(data.chart)) {
-      return [h('div', { className: 'error', text: `Tipo di grafico non supportato: ${data.chart}` })];
+      return [h('div', { className: 'error', text: `Unsupported chart type: ${data.chart}` })];
     }
     const canvas = h('canvas');
     // Chart.js measures the canvas: create it once it is in the document.

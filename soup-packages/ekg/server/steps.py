@@ -25,7 +25,7 @@ from __future__ import annotations
 
 from soup_pkg_tool_memgraph.api import GraphDatabase, Query
 
-from soup.core.contracts import import_phase
+from soup.core.contracts import DomainError, import_phase
 
 from . import schema
 from .build import BuildContext, EkgBuildStep
@@ -85,27 +85,40 @@ class LoadEntitiesStep(EkgBuildStep):
         db.run(schema.load_entities_query(ctx.entities_csv_path))
 
 
+def index_keys(db: GraphDatabase) -> set[tuple[str, tuple[str, ...]]]:
+    """Normalize old scalar and current list-valued Memgraph index metadata."""
+
+    existing: set[tuple[str, tuple[str, ...]]] = set()
+    for record, row in enumerate(db.run(Query("SHOW INDEX INFO")), start=1):
+        if row.get("index type") not in ("label", "label+property"):
+            continue
+        label, properties = row.get("label"), row.get("property")
+        if row.get("index type") == "label":
+            properties = ()
+        elif isinstance(properties, str):
+            properties = (properties,)
+        if not isinstance(label, str) or not isinstance(properties, (list, tuple)) or not all(
+            isinstance(prop, str) for prop in properties
+        ) or (row.get("index type") == "label+property" and not properties):
+            raise DomainError(
+                "Memgraph returned unsupported index metadata; check the server version and backend logs. "
+                "This is a database metadata error, not a CSV validation error.",
+                details={"phase": "index setup", "field": f"index metadata record {record}",
+                         "value_type": type(properties).__name__},
+            )
+        existing.add((label, tuple(properties)))
+    return existing
+
+
 class CreateIndexesStep(EkgBuildStep):
     key = "create_indexes"
     order = 50
     phase = "index"
 
     def execute(self, ctx: BuildContext, db: GraphDatabase) -> None:
-        existing: set[tuple[object, object]] = set()
-        for record, row in enumerate(db.run(Query("SHOW INDEX INFO")), start=1):
-            if row.get("index type") != "label+property":
-                continue
-            for field in ("label", "property"):
-                with import_phase(
-                    "index setup",
-                    field=f"index metadata record {record}.{field}",
-                    value_type=type(row.get(field)).__name__,
-                    hint="Check the label/property shapes returned by SHOW INDEX INFO; this is not a CSV cell.",
-                ):
-                    hash(row.get(field))
-            existing.add((row.get("label"), row.get("property")))
-        for key, factory in schema.INDEXES.items():
-            if key not in existing:
+        existing = index_keys(db)
+        for (label, prop), factory in schema.INDEXES.items():
+            if (label, (prop,)) not in existing:
                 db.run(factory())
 
 

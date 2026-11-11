@@ -7,7 +7,7 @@ import { Field, FieldType, FileValue, FormValues, ItemValue, LIST_FIELD_TYPES, P
  * the shapes soup/core/field_validation.py accepts.
  */
 
-const REQUIRED_MESSAGE = 'Campo obbligatorio';
+const REQUIRED_MESSAGE = 'Required field';
 
 const SUMMARY_MAX = 120;
 
@@ -89,10 +89,10 @@ function choiceLabel(field: Field, value: unknown): string {
 
 // The short text of a value, per type (plainText for the others).
 const FORMATTERS: Partial<Record<FieldType, Formatter>> = {
-  bool: (_field, value) => (value ? 'sì' : 'no'),
+  bool: (_field, value) => (value ? 'yes' : 'no'),
   pairs: (_field, value) => (value as PairValue[]).map(([first, second]) => `${first} → ${second}`).join(', '),
   file: (_field, value) => (value as FileValue).filename,
-  items: (_field, value) => `${(value as ItemValue[]).length} elementi`,
+  items: (_field, value) => `${(value as ItemValue[]).length} items`,
   select: choiceLabel,
   multiselect: (field, value) => (value as string[]).map((item) => choiceLabel(field, item)).join(', ')
 };
@@ -100,7 +100,7 @@ const FORMATTERS: Partial<Record<FieldType, Formatter>> = {
 /** The text of the tile of an "items" element: "field: value; ...". */
 export function summarize(variant: Variant | undefined, item: ItemValue): string {
   if (!variant) {
-    return `Variante sconosciuta '${item.variant}'`;
+    return `Unknown variant '${item.variant}'`;
   }
   const parts = variant.fields.map((field) => `${field.label}: ${formatValue(field, item.values[field.name])}`);
   const text = parts.join('; ') || variant.description || variant.label;
@@ -124,7 +124,7 @@ function shortList(labels: readonly string[]): string {
   if (labels.length <= LIST_SHOWN) {
     return labels.join(', ');
   }
-  return `${labels.slice(0, LIST_SHOWN).join(', ')} e altri ${labels.length - LIST_SHOWN}`;
+  return `${labels.slice(0, LIST_SHOWN).join(', ')} and ${labels.length - LIST_SHOWN} more`;
 }
 
 /** The unit after a number: "s" for seconds, else the field's label in lower case. */
@@ -146,7 +146,7 @@ const PHRASES: readonly Phrase[] = [
     }
     const value = values[amount.name];
     const number = value === null || value === undefined || value === '' ? '?' : String(value);
-    return `${variant.label} di ${formatValue(subject, values[subject.name])} ${formatValue(operator, values[operator.name])} ${number} ${unitOf(amount)}`;
+    return `${variant.label} of ${formatValue(subject, values[subject.name])} ${formatValue(operator, values[operator.name])} ${number} ${unitOf(amount)}`;
   },
   // "<label>: dal <date> al <date>" (the labels of the two date fields)
   (variant, values) => {

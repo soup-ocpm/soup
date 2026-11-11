@@ -59,7 +59,7 @@ type HostState = 'idle' | 'loading' | 'ready' | 'error';
     @if (this.state() === 'loading') {
       <div class="text-muted py-3">
         <span class="spinner-border spinner-border-sm"></span>
-        Caricamento di {{ this.visualizer()?.label }}...
+        Loading {{ this.visualizer()?.label }}...
       </div>
     }
     @if (this.state() === 'error') {
@@ -210,7 +210,7 @@ export class VisualizerHostComponent implements OnChanges, AfterViewInit, OnDest
     const object = this.object();
     this.api.setThumbnail(object.id, detail.svg).subscribe({
       next: () => this.thumbnailChanged.emit(detail.svg),
-      error: (error) => notify(this.notifications, `Anteprima non salvata: ${errorMessage(error)}`, 'warning')
+      error: (error) => notify(this.notifications, `Preview not saved: ${errorMessage(error)}`, 'warning')
     });
   }
 

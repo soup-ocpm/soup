@@ -181,12 +181,11 @@ def build(obj: Any, log: OcelLog, extension: str, tools: ToolAccess) -> dict[str
 
 class OcelEkgImporter(OcelImporterBase):
     id = "ekg"
-    label = "OCEL 2.0 come EKG su Memgraph"
+    label = "OCEL 2.0 as EKG on Memgraph"
     description = (
-        "Scompone il log in un EKG su Memgraph: id, time e type di ogni evento, i tipi di oggetto come tipi "
-        "di entità e gli attributi degli eventi come proprietà. Il qualifier di una relazione evento-oggetto "
-        "diventa la proprietà qualifier della sua :CORR, le relazioni oggetto-oggetto diventano :REL tra le "
-        "entità, con il loro qualifier."
+        "Convert the log to an EKG on Memgraph: each event's id, time and type, object types as entity types, "
+        "and event attributes as properties. Event-object qualifiers become qualifier properties on :CORR; "
+        "object-object relationships become :REL between entities, preserving their qualifiers."
     )
     produces = EKG_KIND
     requires_tools = (MEMGRAPH, STORAGE)
@@ -200,9 +199,9 @@ class OcelEkgImporter(OcelImporterBase):
 
 
 OLD_EKG_NOTICE = (
-    "Questo EKG è stato creato da un log OCEL 2.0 prima che i qualifier e le relazioni oggetto-oggetto "
-    "entrassero nel grafo: non ha né i qualifier sulle :CORR né le :REL. Per averli reimporta il file con "
-    "\"OCEL 2.0 come EKG su Memgraph\" o rifai \"Scomponi in EKG\" dalle sue tabelle."
+    "This EKG was imported before OCEL 2.0 qualifiers and object-object relationships were supported. It has no"
+    " :CORR qualifiers or :REL relationships. Reimport the file using \"OCEL 2.0 as EKG on Memgraph\" or run "
+    "\"Convert to EKG\" on its tables to include them."
 )
 
 
@@ -224,10 +223,10 @@ class OcelRelationshipsNotice(StatsNotice):
 
 class DecomposeToEkg(CachedTables, Operation):
     id = "to_ekg"
-    label = "Scomponi in EKG"
+    label = "Convert to EKG"
     description = (
-        "Costruisce su Memgraph l'EKG delle tabelle OCEL, come l'importer \"OCEL 2.0 come EKG\": "
-        "i qualifier sulle :CORR e le relazioni oggetto-oggetto come :REL tra le entità."
+        "Build an EKG from the OCEL tables on Memgraph, preserving :CORR qualifiers and object-object "
+        "relationships as :REL between entities, as with the OCEL 2.0 EKG importer."
     )
     group = "EKG"
     inputs = (OperationInput("tables", (TABLES_KIND,)),)

@@ -113,8 +113,8 @@ export class V3ApiService {
    * @param force only remove it from the catalog (its package is not active)
    * @returns the ids of the deleted objects
    */
-  public deleteObject(id: string, cascade = false, force = false): Observable<string[]> {
-    const params = new HttpParams().set('cascade', cascade).set('force', force);
+  public deleteObject(id: string, cascade = false, force = false, confirmDatabaseDrop = false): Observable<string[]> {
+    const params = new HttpParams().set('cascade', cascade).set('force', force).set('confirm_database_drop', confirmDatabaseDrop);
     return this.unwrap(this.api.delete<{ deleted: string[] }>(`${this.base}/objects/${this.segment(id)}`, params)).pipe(
       map((data) => data.deleted)
     );

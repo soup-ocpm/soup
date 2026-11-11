@@ -2,7 +2,7 @@
   "name": "ekg_analysis",
   "version": "1.0.0",
   "api_version": "4.0",
-  "label": "Analisi dell'EKG",
+  "label": "EKG analysis",
   "description": "Analyses of 'ekg' objects as operations (filters contributed to ekg.analysis_filters, applied with a compensating rollback), the legacy analyses on the volume, the example and the export of a configuration, and the process indicators.",
   "author": "SOUP",
   "contributors": [{"name": "Alessio Pianaroli", "email": "alessiopianaroli.it@gmail.com"}],

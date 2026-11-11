@@ -72,9 +72,9 @@ MAX_TOP = 50
 # chosen.
 SEPARATOR_NAMES = {"comma": table.COMMA, "semicolon": table.SEMICOLON, "tab": table.TAB}
 SEPARATOR_CHOICES = (
-    Choice("comma", "virgola"),
-    Choice("semicolon", "punto e virgola"),
-    Choice("tab", "tabulazione"),
+    Choice("comma", "Comma"),
+    Choice("semicolon", "Semicolon"),
+    Choice("tab", "Tab"),
 )
 
 
@@ -112,7 +112,7 @@ def separator_char(value: Any) -> str:
 
 def _separator_field(default: str) -> Field:
     # Not required: when missing, the core fills in the default.
-    return Field("separator", "Separatore", type="select", default=default, choices=SEPARATOR_CHOICES)
+    return Field("separator", "Separator", type="select", default=default, choices=SEPARATOR_CHOICES)
 
 
 def _space(tools: ToolAccess) -> StorageSpace:
@@ -171,11 +171,21 @@ def _parsed(upload: Upload, options: Mapping[str, Any]) -> tuple[list[str], list
         text, encoding = table.decode(upload.read())
         separator, header = _options(text, upload.filename, options)
         columns, rows = table.parse(text, separator, header)
+    selected = options.get("columns")
+    if selected is not None:
+        with import_phase("column mapping"):
+            if not isinstance(selected, list) or not selected or any(
+                not isinstance(name, str) or name not in columns for name in selected
+            ):
+                raise ValidationError("Select at least one existing column to keep.")
+            indices = [index for index, name in enumerate(columns) if name in selected]
+            columns = [columns[index] for index in indices]
+            rows = [[row[index] for index in indices] for row in rows]
     return columns, rows, separator, header, encoding
 
 
 def _preview(columns: list[str], rows: list[table.Row]) -> dict[str, Any]:
-    return report.table(columns, rows[:PREVIEW_ROWS], total=len(rows), title=f"Prime {PREVIEW_ROWS} righe")
+    return report.table(columns, rows[:PREVIEW_ROWS], total=len(rows), title=f"First {PREVIEW_ROWS} rows")
 
 
 def _int(value: Any, name: str, default: int, low: int, high: int) -> int:
@@ -224,12 +234,12 @@ def _object_name(text: str) -> str:
     """`text` made acceptable as an object name (no separators, "..", control characters)."""
 
     cleaned = re.sub(r"[\\/\x00-\x1f\x7f]", " ", text).replace("..", ".")
-    return cleaned.strip().lstrip("_").strip()[:128].strip() or "distribuzione"
+    return cleaned.strip().lstrip("_").strip()[:128].strip() or "distribution"
 
 
 class CsvTableImporter(_Cached, Importer):
     id = "csv"
-    label = "CSV come tabella"
+    label = "CSV as table"
     description = (
         "Reads the file with Python's csv module and keeps it as a table "
         "(separator and header of your choice)."
@@ -243,14 +253,16 @@ class CsvTableImporter(_Cached, Importer):
         return Inspection(
             preview=(_preview(columns, rows),),
             fields=(
+                Field("columns", "Property", type="columns", default=columns,
+                      choices=cast("tuple[Choice, ...]", columns)),
                 _separator_field(separator_name(separator)),
-                Field("header", "Intestazione presente", type="bool", default=header,
-                      help="La prima riga contiene i nomi delle colonne."),
+                Field("header", "Header row", type="bool", default=header,
+                      help="The first row contains column names."),
             ),
         )
 
     def preview(self, upload: Upload, options: Mapping[str, Any], tools: ToolAccess) -> list[dict[str, Any]]:
-        columns, rows, *_ = _parsed(upload, options)
+        columns, rows, *_ = _parsed(upload, {key: value for key, value in options.items() if key != "columns"})
         return [_preview(columns, rows)]
 
     def import_(self, upload: Upload, obj: ObjectRef, options: Mapping[str, Any], tools: ToolAccess) -> dict[str, Any]:
@@ -278,7 +290,7 @@ class CsvTableImporter(_Cached, Importer):
 
 class CsvTableVisualizer(_Cached, Visualizer):
     id = "table"
-    label = "Tabella CSV"
+    label = "CSV table"
     accepts = (KIND,)
     element = "soup-pkg-csv-table-viewer"
     requires_tools = (STORAGE,)
@@ -306,7 +318,7 @@ class CsvTableVisualizer(_Cached, Visualizer):
 
 class CsvProfileVisualizer(_Cached, Visualizer):
     id = "profile"
-    label = "Profilo colonne"
+    label = "Column profile"
     accepts = (KIND,)
     element = "soup-pkg-csv-profile"
     requires_tools = (STORAGE,)
@@ -326,9 +338,9 @@ class CsvProfileVisualizer(_Cached, Visualizer):
 
 class ColumnDistribution(_Cached, Operation):
     id = "distribution"
-    label = "Distribuzione di una colonna"
+    label = "Column distribution"
     description = "Counts the values of one column: a report with a bar chart and a table."
-    group = "Tabelle"
+    group = "Tables"
     inputs = (OperationInput("table", (KIND,)),)
     produces = (report.REPORT,)
     requires_tools = (STORAGE,)
@@ -336,9 +348,9 @@ class ColumnDistribution(_Cached, Operation):
     def fields(self, inputs: Mapping[str, ObjectRef], tools: ToolAccess) -> list[Field]:
         columns = [str(name) for name in inputs["table"].meta.get("columns") or []]
         return [
-            Field("column", "Colonna", type="column", required=True, choices=cast("tuple[Choice, ...]", columns)),
-            Field("top", "Valori mostrati", type="number", default=DEFAULT_TOP,
-                  help=f"I valori più frequenti (al massimo {MAX_TOP}); gli altri sono sommati."),
+            Field("column", "Column", type="column", required=True, choices=cast("tuple[Choice, ...]", columns)),
+            Field("top", "Values shown", type="number", default=DEFAULT_TOP,
+                  help=f"The most frequent values (at most {MAX_TOP}); the others are summed."),
         ]
 
     def run(self, inputs: Mapping[str, ObjectRef], params: Mapping[str, Any], tools: ToolAccess) -> list[ObjectDraft]:
@@ -355,14 +367,14 @@ class ColumnDistribution(_Cached, Operation):
             counts.append(result["other"])
         total = result["total"] or 1
         blocks = [
-            report.chart("bar", labels, [{"label": name, "data": counts}], title=f"Distribuzione di {name}"),
+            report.chart("bar", labels, [{"label": name, "data": counts}], title=f"Distribution of {name}"),
             report.table(
-                ["valore", "conteggio", "%"],
+                ["Value", "Count", "%"],
                 [[label, count, round(100 * count / total, 2)] for label, count in zip(labels, counts, strict=False)],
-                title="Valori",
+                title="Values",
             ),
         ]
-        return [report.report(_object_name(f"{source.name} - distribuzione di {name}"), blocks)]
+        return [report.report(_object_name(f"{source.name} - distribution of {name}"), blocks)]
 
 
 # The file type of an export with the "tab" separator (Exporter.file_type, contracts "4.1").
@@ -381,8 +393,8 @@ class CsvExporter(_Cached, Exporter):
         separator = obj.meta.get("separator")
         return [
             _separator_field(separator if separator in SEPARATOR_NAMES else "comma"),
-            Field("header", "Intestazione", type="bool", default=True,
-                help="Scrive i nomi delle colonne nella prima riga."),
+            Field("header", "Header", type="bool", default=True,
+                help="Writes the column names in the first row."),
         ]
 
     def file_type(self, obj: ObjectRef, params: Mapping[str, Any]) -> tuple[str, str]:

@@ -11,7 +11,7 @@ interface TableData {
 
 const CSS = `
   .toolbar { display: flex; flex-wrap: wrap; gap: var(--soup-space-2, 8px); align-items: center; margin-bottom: var(--soup-space-2, 8px); }
-  .wrap { overflow: auto; max-height: 520px; border: 1px solid var(--soup-border, #d0d7de); border-radius: var(--soup-radius-md, 8px); background: #fff; }
+  .wrap { overflow: auto; max-height: 78dvh; border: 1px solid var(--soup-border, #d0d7de); border-radius: var(--soup-radius-md, 8px); background: #fff; }
   table { border-collapse: separate; border-spacing: 0; width: 100%; font-size: 0.875rem; }
   th, td { padding: 6px 10px; border-bottom: 1px solid #eaeef2; text-align: left; vertical-align: top; }
   th { position: sticky; top: 0; z-index: 1; background: var(--soup-surface-alt, #f6f8fa); border-bottom-color: var(--soup-border, #d0d7de); cursor: pointer; user-select: none; white-space: nowrap; font-weight: 600; }
@@ -131,7 +131,7 @@ export class SoupTable extends HTMLElement {
   private ensureSkeleton() {
     if (this.skeleton) return this.skeleton;
     const search = h('input', {
-      attrs: { type: 'search', placeholder: 'Cerca', 'aria-label': 'Cerca nella tabella' },
+      attrs: { type: 'search', placeholder: 'Search', 'aria-label': 'Search table' },
       on: {
         input: (event) => {
           const value = (event.target as HTMLInputElement).value;
@@ -144,7 +144,7 @@ export class SoupTable extends HTMLElement {
     const note = h('span', { className: 'muted note' });
     const wrap = h('div', { className: 'wrap' });
     const pager = h('div', { className: 'pager' });
-    const columnsMenu = h('details', { className: 'columns' }, h('summary', { text: 'Colonne' }), chooser);
+    const columnsMenu = h('details', { className: 'columns' }, h('summary', { text: 'Columns' }), chooser);
     this.root.replaceChildren(style(BASE_CSS + CSS), h('div', { className: 'toolbar' }, search, columnsMenu, note), wrap, pager);
     this.skeleton = { search, chooser, note, wrap, pager };
     return this.skeleton;
@@ -210,24 +210,24 @@ export class SoupTable extends HTMLElement {
     const last = Math.min(this.current.total, (this.page + 1) * this.pageSize);
     const previous = h('button', {
       text: '‹',
-      attrs: { type: 'button', 'aria-label': 'Pagina precedente' },
+      attrs: { type: 'button', 'aria-label': 'Previous page' },
       on: { click: () => void this.goTo(this.page - 1) }
     });
     const next = h('button', {
       text: '›',
-      attrs: { type: 'button', 'aria-label': 'Pagina successiva' },
+      attrs: { type: 'button', 'aria-label': 'Next page' },
       on: { click: () => void this.goTo(this.page + 1) }
     });
     previous.disabled = this.page === 0;
     next.disabled = this.page >= pages - 1;
-    pager.replaceChildren(previous, h('span', { className: 'range', text: `${first}–${last} di ${this.current.total}` }), next);
+    pager.replaceChildren(previous, h('span', { className: 'range', text: `${first}–${last} of ${this.current.total}` }), next);
   }
 
   /** With local paging, a note when the data says the table has more rows than it was given. */
   private drawNote(note: HTMLElement): void {
     note.textContent =
       !this.loadPage && this.declaredTotal !== null && this.declaredTotal > this.rows.length
-        ? `Mostrate ${this.rows.length} righe su ${this.declaredTotal}`
+        ? `Showing ${this.rows.length} of ${this.declaredTotal} rows`
         : '';
   }
 

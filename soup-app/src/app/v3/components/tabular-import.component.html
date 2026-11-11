@@ -2,12 +2,12 @@
   @if (this.table(); as table) {
     <section
       class="preview-panel"
-      aria-label="Anteprima delle tabelle">
+      aria-label="Table preview">
       @if ((this.configuration()?.tables?.length ?? 0) > 1) {
         <label
           class="form-label"
           [for]="this.uid + '-table'">
-          Tabella
+          Table
         </label>
         <select
           [id]="this.uid + '-table'"
@@ -23,8 +23,8 @@
       }
       <div
         class="legend small"
-        aria-label="Legenda delle colonne">
-        <span class="property-badge">Proprietà inclusa</span>
+        aria-label="Column legend">
+        <span class="property-badge">Included property</span>
         @for (role of table.roles ?? []; track role.key) {
           <span
             class="role-badge"
@@ -33,12 +33,12 @@
           </span>
         }
       </div>
-      <p class="small text-muted">Fai clic su un'intestazione per configurare la colonna.</p>
+      <p class="small text-muted">Click a header to configure the column.</p>
       <div
         class="table-scroll"
         tabindex="0"
         role="region"
-        aria-label="Anteprima CSV scorrevole">
+        aria-label="Scrollable CSV preview">
         <table class="table table-sm mb-0">
           <thead>
             <tr>
@@ -91,40 +91,37 @@
       <fieldset
         [disabled]="this.disabled()"
         class="column-options">
-        @if (column.property !== undefined) {
-          <label class="form-check">
-            <input
-              class="form-check-input"
-              type="checkbox"
-              [checked]="column.property"
-              [disabled]="!this.table()?.propertiesEditable"
-              (change)="this.change('property', $any($event.target).checked)" />
-            <span class="form-check-label">Mantieni proprietà</span>
-          </label>
-        }
-        @for (role of this.table()?.roles ?? []; track role.key) {
-          <label class="form-check">
-            <input
-              class="form-check-input"
-              type="checkbox"
-              [checked]="column.roles?.includes(role.key) ?? false"
-              [disabled]="column.disabledRoles?.includes(role.key) ?? false"
-              (change)="this.change('role', $any($event.target).checked, role.key)" />
-            <span
-              class="form-check-label role-badge"
-              [style.--role-color]="this.color(role.key)">
+        <label
+          class="form-label"
+          [for]="this.uid + '-role'">
+          Column role
+        </label>
+        <select
+          class="form-select"
+          [id]="this.uid + '-role'"
+          [value]="column.roles?.[0] ?? (column.property ? '__property' : '__ignore')"
+          (change)="this.change('role', true, $any($event.target).value)">
+          @if (!this.table()?.roles?.length) {
+            <option value="__property">Property</option>
+          }
+          @for (role of this.table()?.roles ?? []; track role.key) {
+            <option
+              [value]="role.key"
+              [disabled]="column.disabledRoles?.includes(role.key) ?? false">
               {{ role.label }}
-            </span>
-            @if (role.help) {
-              <small class="d-block text-muted">{{ role.help }}</small>
-            }
-          </label>
+            </option>
+          }
+        </select>
+        @for (role of this.roles(column); track role.key) {
+          @if (role.help) {
+            <small class="d-block text-muted mt-2">{{ role.help }}</small>
+          }
         }
         @if (column.type) {
           <label
             class="form-label mt-2"
             [for]="this.uid + '-type'">
-            Tipo di dato
+            Data type
           </label>
           @if (this.table()?.types?.length) {
             <select

@@ -188,7 +188,7 @@ export class SoupPkgEkgQueries extends HTMLElement implements SoupVisualizerElem
 
   /** A query without fields has no "Esegui": its error stays in the result area, with "Riprova". */
   private showFailure(message: string): void {
-    const retry = h('button', { text: 'Riprova', attrs: { type: 'button' }, on: { click: () => void this.run() } });
+    const retry = h('button', { text: 'Retry', attrs: { type: 'button' }, on: { click: () => void this.run() } });
     this.main
       ?.querySelector('.result')
       ?.replaceChildren(h('div', { className: 'failure', attrs: { role: 'alert' } }, h('p', { text: message }), retry));
@@ -210,7 +210,7 @@ export class SoupPkgEkgQueries extends HTMLElement implements SoupVisualizerElem
     if (!area) return;
     if (loading) {
       area.setAttribute('aria-busy', 'true');
-      area.replaceChildren(h('p', { className: 'info loading', text: 'Esecuzione…', attrs: { role: 'status' } }));
+      area.replaceChildren(h('p', { className: 'info loading', text: 'Running…', attrs: { role: 'status' } }));
     } else {
       area.removeAttribute('aria-busy');
       area.replaceChildren();
@@ -234,7 +234,7 @@ export class SoupPkgEkgQueries extends HTMLElement implements SoupVisualizerElem
 
     const query = this.selected;
     if (!query) {
-      this.main.replaceChildren(h('p', { className: 'info', text: 'Nessuna interrogazione disponibile.' }));
+      this.main.replaceChildren(h('p', { className: 'info', text: 'No queries available.' }));
       return;
     }
     this.main.replaceChildren(
@@ -255,7 +255,7 @@ export class SoupPkgEkgQueries extends HTMLElement implements SoupVisualizerElem
         }
       }
     });
-    form.append(...query.fields.map((field) => this.input(field)), h('button', { text: 'Esegui', attrs: { type: 'submit' } }));
+    form.append(...query.fields.map((field) => this.input(field)), h('button', { text: 'Run', attrs: { type: 'submit' } }));
     return form;
   }
 

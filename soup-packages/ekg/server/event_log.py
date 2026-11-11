@@ -48,6 +48,7 @@ import io
 import re
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, replace
+from datetime import datetime
 from typing import Any, cast
 
 from soup.core.contracts import ValidationError
@@ -65,7 +66,14 @@ ACTIVITY_COLUMN = "activity_name"
 _RESERVED_CANONICAL_NAMES = (EVENT_ID_COLUMN, TIMESTAMP_COLUMN, ACTIVITY_COLUMN)
 
 _WHITESPACE_RE = re.compile(r"\s+")
-_MILLIS_COMMA_RE = re.compile(r"(\d{2}:\d{2}:\d{2}),(\d{3})")
+_ISO_TIMESTAMP_RE = re.compile(
+    r"(?:[0-9]{4}-[0-9]{2}-[0-9]{2}|[0-9]{8})[Tt ]"
+    r"(?:(?:[0-9]{2}:[0-9]{2}:[0-9]{2}|[0-9]{6})(?:[.,](?P<fraction>[0-9]+))?"
+    r"|[0-9]{2}:[0-9]{2}|[0-9]{4}|[0-9]{2})(?:Z|[+-][0-9:.,]+)?"
+)
+
+_TIMESTAMP_PRECISION = 6
+_TIMESTAMP_ERROR_LIMIT = 160
 
 _OBJECT_ID = "object_id"
 _OBJECT_TYPE = "object_type"
@@ -84,10 +92,42 @@ def normalize_text(value: str) -> str:
     return _normalize_text(value)
 
 
-def _fix_millis_comma(value: str) -> str:
-    """'...HH:MM:SS,mmm' -> '...HH:MM:SS.mmm' (European decimal comma in milliseconds)."""
+def _normalize_timestamp(value: str | None, column: str, row: int) -> str:
+    """Validate once before staging; Memgraph requires 3 or 6 fractional digits."""
 
-    return _MILLIS_COMMA_RE.sub(r"\1.\2", value)
+    reason = "Timestamp is missing." if value is None or isinstance(value, str) else "Timestamp must be ISO 8601 text."
+    if isinstance(value, str) and value.strip():
+        text = value.strip()
+        match = _ISO_TIMESTAMP_RE.fullmatch(text)
+        reason = "Use an ISO 8601 date and time, such as 2016-06-10T19:00:01.255."
+        if match:
+            fraction = match["fraction"] or ""
+            if len(fraction) > _TIMESTAMP_PRECISION:
+                reason = (
+                    "Memgraph supports at most six fractional digits; "
+                    "higher precision cannot be kept without rounding."
+                )
+            else:
+                try:
+                    parsed = datetime.fromisoformat(text.replace(",", "."))
+                except ValueError:
+                    pass
+                else:
+                    if parsed.tzinfo is not None:
+                        reason = (
+                            "The EKG uses localDateTime, which cannot preserve timezone offsets. "
+                            "Convert the entire timestamp column to one consistent local timezone before importing."
+                        )
+                    else:
+                        # Zero padding preserves fractional values and DF ordering exactly.
+                        return parsed.isoformat(timespec="microseconds" if fraction else "seconds")
+    preview = repr(value) if value is None or isinstance(value, str) else f"<{type(value).__name__}>"
+    if len(preview) > _TIMESTAMP_ERROR_LIMIT:
+        preview = preview[:_TIMESTAMP_ERROR_LIMIT - len("...")] + "..."
+    raise ValidationError(
+        f"Column '{column}', data row {row}: invalid timestamp {preview}. {reason}",
+        details={"phase": "timestamp validation", "column": column, "row": row, "value_type": type(value).__name__},
+    )
 
 
 def _split_multi_value(raw: str) -> list[str]:
@@ -388,7 +428,7 @@ class EventLog:
 
     @staticmethod
     def _normalize(table: Table, mapping: ColumnMapping) -> tuple[Table, ColumnMapping]:
-        """Whitespace normalization, millisecond-comma fix, then mapping validation."""
+        """Validate timestamps separately from textual whitespace normalization."""
 
         normalized_columns = tuple(_normalize_text(column) for column in table.columns)
         normalized_mapping = mapping._normalized()
@@ -400,6 +440,9 @@ class EventLog:
         for row_number, row in enumerate(table.rows, start=1):
             new_row: list[str | None] = []
             for index, value in enumerate(row):
+                if index == timestamp_index:
+                    new_row.append(_normalize_timestamp(value, table.columns[index], row_number))
+                    continue
                 if value is None:
                     new_row.append(None)
                     continue
@@ -413,8 +456,6 @@ class EventLog:
                         details={"phase": "event normalization", "column": table.columns[index],
                                  "row": row_number, "value_type": type(value).__name__},
                     ) from exc
-                if index == timestamp_index:
-                    cleaned = _fix_millis_comma(cleaned)
                 new_row.append(cleaned)
             normalized_rows.append(tuple(new_row))
 

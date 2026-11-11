@@ -57,20 +57,20 @@ JSON_MIME = "application/json"
 # The tabs of "Tabelle OCEL": (table, label, columns compared with the
 # "type" filter, label of the filter, the kind of types it offers).
 TABS = (
-    (EVENTS, "Eventi", (1,), "Tipo di evento", "event"),
-    (OBJECTS, "Oggetti", (1,), "Tipo di oggetto", "object"),
-    (EVENT_OBJECTS, "Relazioni evento-oggetto", (3,), "Tipo di oggetto", "object"),
-    (OBJECT_OBJECTS, "Relazioni oggetto-oggetto", (1, 3), "Tipo di oggetto", "object"),
+    (EVENTS, "Events", (1,), "Event type", "event"),
+    (OBJECTS, "Objects", (1,), "Object type", "object"),
+    (EVENT_OBJECTS, "Event-object relationships", (3,), "Object type", "object"),
+    (OBJECT_OBJECTS, "Object-object relationships", (1, 3), "Object type", "object"),
 )
 _TYPE_COLUMNS = {key: columns for key, _label, columns, _filter, _types in TABS}
 
 
 class OcelTablesImporter(CachedTables, OcelImporterBase):
     id = "tables"
-    label = "OCEL 2.0 come tabelle"
+    label = "OCEL 2.0 as tables"
     description = (
-        "Salva eventi, oggetti, relazioni evento-oggetto (con il qualifier) e relazioni oggetto-oggetto "
-        "come tabelle nello storage, senza Memgraph. Si possono poi scomporre in EKG."
+        "Store events, objects, qualified event-object relationships and object-object relationships as tables "
+        "without Memgraph. They can later be converted to an EKG."
     )
     produces = TABLES_KIND
     requires_tools = (STORAGE,)
@@ -164,7 +164,7 @@ def page(rows: Sequence[Sequence[Scalar]], table: str, params: Mapping[str, Any]
 
 class OcelTablesVisualizer(CachedTables, Visualizer):
     id = "tables"
-    label = "Tabelle OCEL"
+    label = "OCEL tables"
     accepts = (TABLES_KIND,)
     element = "soup-pkg-ocel-tables"
     requires_tools = (STORAGE,)
@@ -200,7 +200,7 @@ class OcelTablesVisualizer(CachedTables, Visualizer):
 
 class OcelSummaryVisualizer(Visualizer):
     id = "summary"
-    label = "Riepilogo OCEL"
+    label = "OCEL summary"
     accepts = (TABLES_KIND,)
     element = "soup-pkg-ocel-summary"
 

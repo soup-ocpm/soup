@@ -48,13 +48,13 @@ from .queries import (
 from .values import clean
 from .views import CORR, DF, ENTITY, EVENT, REL, StandardGraphView
 
-NODES = "Nodi"
-RELATIONSHIPS = "Relazioni"
-COUNTS = "Conteggi"
-ACTIVITIES = "Attività"
-ENTITIES = "Entità"
-TIME = "Tempo"
-GRAPH = "Grafo"
+NODES = "Nodes"
+RELATIONSHIPS = "Relationships"
+COUNTS = "Counts"
+ACTIVITIES = "Activities"
+ENTITIES = "Entities"
+TIME = "Time"
+GRAPH = "Graph"
 
 
 # ---------------------------------------------------------------------- #
@@ -62,10 +62,10 @@ GRAPH = "Grafo"
 # ---------------------------------------------------------------------- #
 class EntitiesOfType(NodeListQuery):
     key = "entities_of_type"
-    label = "Entità di un tipo"
+    label = "Entities of a type"
     node_label = ENTITY
     where = "n.Type = $type"
-    fields = (Field("type", "Tipo di entità", required=True), *limit_fields())
+    fields = (Field("type", "Entity type", required=True), *limit_fields())
 
     def __init__(self) -> None:
         super().__init__(group=NODES)
@@ -76,10 +76,10 @@ class EntitiesOfType(NodeListQuery):
 
 class EventsOfActivity(NodeListQuery):
     key = "events_of_activity"
-    label = "Eventi di un'attività"
+    label = "Events of an activity"
     node_label = EVENT
     where = "n.ActivityName = $activity"
-    fields = (Field("activity", "Attività", required=True), *limit_fields())
+    fields = (Field("activity", "Activity", required=True), *limit_fields())
 
     def __init__(self) -> None:
         super().__init__(group=NODES)
@@ -90,7 +90,7 @@ class EventsOfActivity(NodeListQuery):
 
 class EntityPerType(GraphQuery):
     key = "entity_per_type"
-    label = "Un'entità per tipo"
+    label = "One entity per type"
     group = NODES
 
     def build(self, params: Mapping[str, Any]) -> Query:
@@ -111,12 +111,12 @@ class EntityPerType(GraphQuery):
 # ---------------------------------------------------------------------- #
 class DfOfType(RelationshipListQuery):
     key = "df_of_type"
-    label = "Relazioni DF di un tipo di entità"
+    label = "DF relationships for an entity type"
     source_label = EVENT
     relationship = DF
     target_label = EVENT
     where = "r.Type = $entity_type"
-    fields = (Field("entity_type", "Tipo di entità", required=True), *limit_fields())
+    fields = (Field("entity_type", "Entity type", required=True), *limit_fields())
 
     def __init__(self) -> None:
         super().__init__(group=RELATIONSHIPS)
@@ -132,7 +132,7 @@ class Activities(GraphQuery):
     """get_activities_name_query: the distinct activity names."""
 
     key = "activities"
-    label = "Attività distinte"
+    label = "Distinct activities"
     group = ACTIVITIES
 
     def build(self, params: Mapping[str, Any]) -> Query:
@@ -148,12 +148,12 @@ class Activities(GraphQuery):
 
     def transform(self, records: Sequence[Mapping[str, Any]], params: Mapping[str, Any]) -> list[Block]:
         names = self.rows(records)
-        return [report.table(["attività"], [[name] for name in names], title=f"{self.label} ({len(names)})")]
+        return [report.table(["Activity"], [[name] for name in names], title=f"{self.label} ({len(names)})")]
 
 
 class ActivityFrequency(GraphQuery):
     key = "activity_frequency"
-    label = "Frequenza delle attività"
+    label = "Activity frequency"
     group = ACTIVITIES
 
     def build(self, params: Mapping[str, Any]) -> Query:
@@ -166,10 +166,10 @@ class ActivityFrequency(GraphQuery):
         labels = [str(record.get("activity")) for record in records]
         counts = [int(record.get("count") or 0) for record in records]
         return [
-            report.chart("bar", labels, [{"label": "eventi", "data": counts}], title=self.label),
-            report.table(["attività", "eventi"],
+            report.chart("bar", labels, [{"label": "Events", "data": counts}], title=self.label),
+            report.table(["Activity", "Events"],
                 [[label, count] for label, count in zip(labels, counts, strict=False)],
-                title="Valori"),
+                title="Values"),
         ]
 
 
@@ -180,7 +180,7 @@ class EntityKeys(GraphQuery):
     """get_distinct_entities_keys: the entity types."""
 
     key = "entity_keys"
-    label = "Chiavi delle entità"
+    label = "Entity types"
     group = ENTITIES
 
     def build(self, params: Mapping[str, Any]) -> Query:
@@ -194,14 +194,14 @@ class EntityKeys(GraphQuery):
         return [str(record.get("entity_type")) for record in records if record.get("entity_type") is not None]
 
     def transform(self, records: Sequence[Mapping[str, Any]], params: Mapping[str, Any]) -> list[Block]:
-        return [report.table(["tipo di entità"], [[name] for name in self.rows(records)], title=self.label)]
+        return [report.table(["Entity type"], [[name] for name in self.rows(records)], title=self.label)]
 
 
 class RelationshipQualifiers(GraphQuery):
     """The :REL and :CORR with a qualifier (from an OCEL log), counted per qualifier."""
 
     key = "qualifiers"
-    label = "Qualifier delle relazioni"
+    label = "Relationship qualifiers"
     group = RELATIONSHIPS
 
     def build(self, params: Mapping[str, Any]) -> Query:
@@ -214,12 +214,12 @@ class RelationshipQualifiers(GraphQuery):
     def transform(self, records: Sequence[Mapping[str, Any]], params: Mapping[str, Any]) -> list[Block]:
         rows = [[str(record.get("relationship")), str(record.get("qualifier")), int(record.get("count") or 0)]
                 for record in records]
-        return [report.table(["relazione", "qualifier", "numero"], rows, title=self.label)]
+        return [report.table(["relazione", "qualifier", "Count"], rows, title=self.label)]
 
 
 class EntitiesPerType(GraphQuery):
     key = "entities_per_type"
-    label = "Entità per tipo"
+    label = "Entities per type"
     group = ENTITIES
 
     def build(self, params: Mapping[str, Any]) -> Query:
@@ -232,10 +232,10 @@ class EntitiesPerType(GraphQuery):
         labels = [str(record.get("entity_type")) for record in records]
         counts = [int(record.get("count") or 0) for record in records]
         return [
-            report.chart("pie", labels, [{"label": "entità", "data": counts}], title=self.label),
-            report.table(["tipo di entità", "entità"],
+            report.chart("pie", labels, [{"label": "Entities", "data": counts}], title=self.label),
+            report.table(["Entity type", "Entities"],
                 [[label, count] for label, count in zip(labels, counts, strict=False)],
-                title="Valori"),
+                title="Values"),
         ]
 
 
@@ -243,7 +243,7 @@ class NullEntities(GraphQuery):
     """get_nan_entities: the event properties with a null, "nan" or empty value, with the number of events."""
 
     key = "null_entities"
-    label = "Entità con valori nulli"
+    label = "Entities with null values"
     group = ENTITIES
 
     def build(self, params: Mapping[str, Any]) -> Query:
@@ -261,7 +261,7 @@ class NullEntities(GraphQuery):
 
     def transform(self, records: Sequence[Mapping[str, Any]], params: Mapping[str, Any]) -> list[Block]:
         rows = [[name, count] for name, count in self.rows(records).items()]
-        return [report.table(["proprietà", "eventi"], rows, title=self.label)]
+        return [report.table(["Property", "Events"], rows, title=self.label)]
 
 
 # ---------------------------------------------------------------------- #
@@ -283,7 +283,7 @@ def _iso_of_number(value: Any) -> str | None:
 
 class Timestamps(GraphQuery):
     key = "timestamps"
-    label = "Primo e ultimo timestamp"
+    label = "First and last timestamps"
     group = TIME
 
     def build(self, params: Mapping[str, Any]) -> Query:
@@ -306,7 +306,7 @@ class Timestamps(GraphQuery):
 
     def transform(self, records: Sequence[Mapping[str, Any]], params: Mapping[str, Any]) -> list[Block]:
         values = self.rows(records)
-        return [report.keyvalue({"primo": values["min"], "ultimo": values["max"]}, title=self.label)]
+        return [report.keyvalue({"First": values["min"], "Last": values["max"]}, title=self.label)]
 
 
 # ---------------------------------------------------------------------- #
@@ -314,7 +314,7 @@ class Timestamps(GraphQuery):
 # ---------------------------------------------------------------------- #
 class MaxData(GraphQuery):
     key = "max_data"
-    label = "Massimo numero di elementi mostrabili"
+    label = "Maximum number of displayable elements"
     group = GRAPH
 
     def __init__(self) -> None:
@@ -325,34 +325,34 @@ class MaxData(GraphQuery):
 
     def transform(self, records: Sequence[Mapping[str, Any]], params: Mapping[str, Any]) -> list[Block]:
         nodes, rels = count_of(records, "total_nodes"), count_of(records, "total_rels")
-        return [report.keyvalue({"nodi": nodes, "relazioni": rels, "totale": nodes + rels}, title=self.label)]
+        return [report.keyvalue({"Nodes": nodes, "Relationships": rels, "Total": nodes + rels}, title=self.label)]
 
 
 # The count queries, also read by the Statistiche visualizer.
-COUNT_EVENTS = CountQuery("count_events", "Nodi evento", COUNTS, node_label=EVENT)
-COUNT_ENTITIES = CountQuery("count_entities", "Nodi entità", COUNTS, node_label=ENTITY)
-COUNT_CORR = CountQuery("count_corr", "Relazioni CORR", COUNTS, relationship=CORR)
-COUNT_DF = CountQuery("count_df", "Relazioni DF", COUNTS, relationship=DF)
+COUNT_EVENTS = CountQuery("count_events", "Event nodes", COUNTS, node_label=EVENT)
+COUNT_ENTITIES = CountQuery("count_entities", "Entity nodes", COUNTS, node_label=ENTITY)
+COUNT_CORR = CountQuery("count_corr", "CORR relationships", COUNTS, relationship=CORR)
+COUNT_DF = CountQuery("count_df", "DF relationships", COUNTS, relationship=DF)
 
 
 def builtin_queries() -> list[GraphQuery]:
     """The 21 queries of ekg_views, for "ekg" and "ekg_class" objects (STANDARD_KINDS)."""
 
     queries = [
-        NodeListQuery("event_nodes", "Nodi evento", NODES, node_label=EVENT),
-        NodeListQuery("entity_nodes", "Nodi entità", NODES, node_label=ENTITY),
+        NodeListQuery("event_nodes", "Event nodes", NODES, node_label=EVENT),
+        NodeListQuery("entity_nodes", "Entity nodes", NODES, node_label=ENTITY),
         EntityPerType(),
         EntitiesOfType(),
         EventsOfActivity(),
-        RelationshipListQuery("corr", "Relazioni CORR", RELATIONSHIPS, EVENT, CORR, ENTITY),
-        RelationshipListQuery("df", "Relazioni DF", RELATIONSHIPS, EVENT, DF, EVENT),
+        RelationshipListQuery("corr", "CORR relationships", RELATIONSHIPS, EVENT, CORR, ENTITY),
+        RelationshipListQuery("df", "DF relationships", RELATIONSHIPS, EVENT, DF, EVENT),
         DfOfType(),
         RelationshipQualifiers(),
         COUNT_EVENTS,
         COUNT_ENTITIES,
         COUNT_CORR,
         COUNT_DF,
-        CountQuery("count_nodes", "Tutti i nodi", COUNTS),
+        CountQuery("count_nodes", "All nodes", COUNTS),
         Activities(),
         ActivityFrequency(),
         EntityKeys(),

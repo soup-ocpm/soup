@@ -218,13 +218,13 @@ class AnalysisFilter(ABC):
 
 def entity_field(types: Sequence[str]) -> Field:
     if types:
-        return Field("entity", "Tipo di entità", type="select", required=True,
+        return Field("entity", "Entity type", type="select", required=True,
                      choices=cast("tuple[Choice, ...]", tuple(types)), default=types[0])
-    return Field("entity", "Tipo di entità", required=True, help="Il grafo non ha entità.")
+    return Field("entity", "Entity type", required=True, help="The graph has no entities.")
 
 
 def operator_field() -> Field:
-    return Field("operator", "Operatore", type="select", required=True,
+    return Field("operator", "Operator", type="select", required=True,
                  choices=tuple(Choice(value) for value in OPERATORS), default=">=")
 
 
@@ -269,15 +269,15 @@ class EntityConditionFilter(AnalysisFilter):
 # ---------------------------------------------------------------------- #
 class TimestampFilter(AnalysisFilter):
     key = "timestamp"
-    label = "Intervallo temporale"
-    description = "Toglie le coppie di eventi consecutivi (:DF) che cadono entrambi fuori dall'intervallo."
+    label = "Time range"
+    description = "Remove pairs of consecutive events (:DF) when both fall outside the time range."
     order = 100
 
     def fields(self, obj: ObjectRef, tools: ToolAccess) -> list[Field]:
         first, last = time_range(obj, tools)
         return [
-            Field("startDate", "Dal", type="datetime", required=True, default=first),
-            Field("endDate", "Al", type="datetime", required=True, default=last),
+            Field("startDate", "From", type="datetime", required=True, default=first),
+            Field("endDate", "To", type="datetime", required=True, default=last),
         ]
 
     def validate(self, spec: Any) -> dict[str, Any]:
@@ -296,12 +296,14 @@ class TimestampFilter(AnalysisFilter):
 
 class PerformanceFilter(EntityConditionFilter):
     key = "performance"
-    label = "Durata delle tracce"
-    description = ("Toglie gli eventi delle entità del tipo scelto la cui traccia (dal primo all'ultimo evento) "
-                   "ha una durata che soddisfa la condizione.")
+    label = "Trace duration"
+    description = (
+        "Remove events belonging to entities of the selected type whose trace duration, from first to last "
+        "event, satisfies the condition."
+    )
     order = 200
     value_field = "seconds"
-    value_label = "Secondi"
+    value_label = "Seconds"
     integer = False
 
     def condition_query(self, entity: str, operator: str, value: Any) -> Query:
@@ -344,9 +346,9 @@ class _ActivitiesFilter(AnalysisFilter):
     def fields(self, obj: ObjectRef, tools: ToolAccess) -> list[Field]:
         names = activities(obj, tools)
         if names:
-            return [Field("activities", "Attività", type="multiselect", required=True,
+            return [Field("activities", "Activities", type="multiselect", required=True,
                           choices=cast("tuple[Choice, ...]", tuple(names)))]
-        return [Field("activities", "Attività", type="columns", required=True, help="Il grafo non ha attività.")]
+        return [Field("activities", "Activities", type="columns", required=True, help="The graph has no activities.")]
 
     def validate(self, spec: Any) -> dict[str, Any]:
         return {"activities": require_activities(_mapping(spec))}
@@ -354,8 +356,8 @@ class _ActivitiesFilter(AnalysisFilter):
 
 class IncludeActivitiesFilter(_ActivitiesFilter):
     key = "includeActivities"
-    label = "Solo queste attività"
-    description = "Tiene solo gli eventi delle attività scelte; i loro predecessori e successori vengono collegati."
+    label = "Include activities"
+    description = "Keep only events with the selected activities, linking their predecessors and successors."
     order = 300
 
     def to_queries(self, spec: Mapping[str, Any], ctx: FilterContext) -> list[Query]:
@@ -365,8 +367,8 @@ class IncludeActivitiesFilter(_ActivitiesFilter):
 
 class ExcludeActivitiesFilter(_ActivitiesFilter):
     key = "excludeActivities"
-    label = "Senza queste attività"
-    description = "Toglie gli eventi delle attività scelte; i loro predecessori e successori vengono collegati."
+    label = "Exclude activities"
+    description = "Remove events with the selected activities, linking their predecessors and successors."
     order = 400
 
     def to_queries(self, spec: Mapping[str, Any], ctx: FilterContext) -> list[Query]:
@@ -375,12 +377,14 @@ class ExcludeActivitiesFilter(_ActivitiesFilter):
 
 class FrequenceFilter(EntityConditionFilter):
     key = "frequence"
-    label = "Frequenza delle attività"
-    description = ("Tiene gli eventi delle attività che, sulle entità del tipo scelto, hanno un numero di occorrenze "
-                   "che soddisfa la condizione; gli altri vengono tolti collegando predecessori e successori.")
+    label = "Activity frequency"
+    description = (
+        "Keep events whose activity frequency for the selected entity type satisfies the condition. Remove "
+        "other events and link their predecessors and successors."
+    )
     order = 500
     value_field = "frequency"
-    value_label = "Occorrenze"
+    value_label = "Occurrences"
 
     def condition_query(self, entity: str, operator: str, value: Any) -> Query:
         # filter_activity_frequency.
@@ -402,12 +406,14 @@ class FrequenceFilter(EntityConditionFilter):
 
 class VariantFilter(EntityConditionFilter):
     key = "variant"
-    label = "Varianti"
-    description = ("Toglie gli eventi delle entità del tipo scelto la cui variante (la sequenza delle attività) "
-                   "ha un numero di occorrenze che soddisfa la condizione.")
+    label = "Variants"
+    description = (
+        "Remove events belonging to entities of the selected type whose variant (activity sequence) frequency "
+        "satisfies the condition."
+    )
     order = 600
     value_field = "variant"
-    value_label = "Occorrenze della variante"
+    value_label = "Variant occurrences"
 
     def condition_query(self, entity: str, operator: str, value: Any) -> Query:
         # filter_entity_variant.

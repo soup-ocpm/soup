@@ -20,15 +20,15 @@
     <!--State of the tools (/api/v3/health)-->
     <section
       class="tools"
-      aria-label="Stato dei tool">
+      aria-label="Tool status">
       @if (this.engineOff()) {
-        <p class="tools-state off">Engine non raggiungibile</p>
+        <p class="tools-state off">Engine unreachable</p>
       }
       @if (this.health(); as state) {
         <p
           class="tools-state"
           [class.degraded]="state.status === 'degraded'">
-          {{ state.status === 'ok' ? 'Tutti i tool sono attivi' : 'Alcuni tool non rispondono' }}
+          {{ state.status === 'ok' ? 'All tools are active' : 'Some tools are not responding' }}
         </p>
         <ul>
           @for (tool of state.tools; track tool.name) {

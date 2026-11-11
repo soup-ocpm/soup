@@ -43,7 +43,7 @@ PHASES = (("Class queries", "class"), ("OBS queries", "obs"), ("DF_C queries", "
 
 class ClassGraphVisualizer(GraphVisualizer):
     id = "graph"
-    label = "Grafo aggregato"
+    label = "Aggregated graph"
     element = "soup-pkg-ekg-class-graph"
     accepts = (CLASS_KIND,)
     requires_tools = (MEMGRAPH,)
@@ -74,12 +74,12 @@ def process_chart(process_info: Any) -> dict[str, Any] | None:
     if all(value is None for value in durations):
         return None
     return {"chart": "pie", "labels": [label for label, _ in PHASES],
-            "datasets": [{"label": "secondi", "data": [value or 0 for value in durations]}]}
+            "datasets": [{"label": "seconds", "data": [value or 0 for value in durations]}]}
 
 
 class ClassStatsVisualizer(Visualizer):
     id = "stats"
-    label = "Statistiche del grafo aggregato"
+    label = "Aggregated graph statistics"
     element = "soup-pkg-ekg-class-stats"
     accepts = (CLASS_KIND,)
     requires_tools = (MEMGRAPH,)
@@ -88,7 +88,7 @@ class ClassStatsVisualizer(Visualizer):
         ekg.ensure_loaded(obj, tools)
         counts = class_counts(cast(ekg.GraphDatabase, tools.get(MEMGRAPH)).run)
         composition = {"chart": "pie", "labels": ["Class Nodes", "OBS", "DF_C"],
-                       "datasets": [{"label": "numero",
+                       "datasets": [{"label": "Count",
                            "data": [counts["class_nodes"], counts["obs_rel"], counts["dfc_rel"]]}]}
         return {
             "counts": counts,

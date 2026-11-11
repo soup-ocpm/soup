@@ -124,10 +124,10 @@ export class SoupPkgEkgInsights extends HTMLElement implements SoupVisualizerEle
   private drawEntity(): void {
     if (!this.entitySection) return;
     if (!this.data.entity_types.length) {
-      this.entitySection.replaceChildren(h('p', { className: 'info', text: 'Il grafo non ha tipi di entità.' }));
+      this.entitySection.replaceChildren(h('p', { className: 'info', text: 'The graph has no entity types.' }));
       return;
     }
-    const parts: (Node | string)[] = [h('div', { className: 'bar' }, h('label', {}, 'Tipo di entità', this.entitySelect()))];
+    const parts: (Node | string)[] = [h('div', { className: 'bar' }, h('label', {}, 'Entity type', this.entitySelect()))];
     const indicators = this.indicators;
     if (indicators && indicators.entity === this.entity) parts.push(...indicatorParts(indicators));
     this.entitySection.replaceChildren(...parts);
@@ -136,7 +136,7 @@ export class SoupPkgEkgInsights extends HTMLElement implements SoupVisualizerEle
   /** The select of the entity types, the current one selected. */
   private entitySelect(): HTMLSelectElement {
     const select = h('select', {
-      attrs: { 'aria-label': 'Tipo di entità' },
+      attrs: { 'aria-label': 'Entity type' },
       on: { change: (event) => void this.chooseEntity((event.target as HTMLSelectElement).value) }
     });
     for (const name of this.data.entity_types) {
@@ -150,16 +150,16 @@ export class SoupPkgEkgInsights extends HTMLElement implements SoupVisualizerEle
   private drawFrequency(): void {
     if (!this.frequencySection) return;
     const minimum = h('input', {
-      attrs: { type: 'number', min: '1', 'aria-label': 'Occorrenze minime' },
+      attrs: { type: 'number', min: '1', 'aria-label': 'Minimum occurrences' },
       on: { change: (event) => void this.setMinimum(Number((event.target as HTMLInputElement).value)) }
     });
     minimum.value = String(this.minimum);
     const frequency = card(
-      'Frequenza delle attività',
-      h('div', { className: 'bar' }, h('label', {}, 'Almeno', minimum, 'eventi')),
+      'Activity frequency',
+      h('div', { className: 'bar' }, h('label', {}, 'At least', minimum, 'events')),
       this.frequency.length
-        ? table({ columns: ['attività', 'eventi'], rows: this.frequency.map((item) => [item.activity, item.frequency]) })
-        : h('p', { className: 'info', text: 'Nessuna attività con questa frequenza.' })
+        ? table({ columns: ['activity', 'events'], rows: this.frequency.map((item) => [item.activity, item.frequency]) })
+        : h('p', { className: 'info', text: 'No activities with this frequency.' })
     );
     frequency.classList.add('wide');
     this.frequencySection.replaceChildren(h('div', { className: 'cards' }, frequency));
@@ -173,16 +173,16 @@ function indicatorParts(indicators: Indicators): Node[] {
   summary.setAttribute('variant', 'tiles');
   summary.data = {
     items: [
-      { key: 'Durata media delle tracce', value: indicators.duration?.formatted ?? '—' },
-      { key: 'Durata media (secondi)', value: indicators.duration?.average_seconds ?? '—' },
-      { key: 'Tracce con una durata', value: indicators.duration?.count ?? 0 },
-      { key: 'Varianti', value: indicators.variants.length }
+      { key: 'Average trace duration', value: indicators.duration?.formatted ?? '—' },
+      { key: 'Average duration (seconds)', value: indicators.duration?.average_seconds ?? '—' },
+      { key: 'Traces with a duration', value: indicators.duration?.count ?? 0 },
+      { key: 'Variants', value: indicators.variants.length }
     ]
   };
   const variants = card(
-    'Varianti',
+    'Variants',
     table({
-      columns: ['variante', 'occorrenze', 'durata media', 'secondi'],
+      columns: ['variant', 'occurrences', 'average duration', 'seconds'],
       rows: indicators.variants.map((item) => [item.variant.join(' → '), item.occurrences, item.formatted ?? '—', item.average_seconds ?? '—'])
     })
   );
@@ -193,14 +193,14 @@ function indicatorParts(indicators: Indicators): Node[] {
       'div',
       { className: 'cards' },
       card(
-        'Occorrenze delle attività',
+        'Activity occurrences',
         chart({
           chart: 'bar',
           labels: indicators.activities.map((item) => item.activity),
-          datasets: [{ label: 'occorrenze', data: indicators.activities.map((item) => item.occurrences) }]
+          datasets: [{ label: 'occurrences', data: indicators.activities.map((item) => item.occurrences) }]
         })
       ),
-      card('Attività', table({ columns: ['attività', 'occorrenze'], rows: indicators.activities.map((item) => [item.activity, item.occurrences]) })),
+      card('Activities', table({ columns: ['activity', 'occurrences'], rows: indicators.activities.map((item) => [item.activity, item.occurrences]) })),
       variants
     )
   ];

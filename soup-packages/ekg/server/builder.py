@@ -279,7 +279,8 @@ def build_ekg(  # noqa: PLR0913 - public API (soup_pkg_ekg.api.build_ekg)
 
     def loader(run: Run) -> None:
         service = EkgService(RunDatabase(run), runtime.build_steps)
-        service.build(ctx, times if save_process_times else None)
+        # Keep save_process_times in the public API; timings are always recorded.
+        service.build(ctx, times)
         with import_phase("graph counts"):
             counts.update(service.counts())
 

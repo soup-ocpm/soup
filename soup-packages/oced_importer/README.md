@@ -34,8 +34,9 @@ Neo4j needs HTTP(S) LOAD, graph-write and index permissions. No filesystem mount
 
 CSV content is temporary and in-memory: random capability URLs expire after one
 hour and are revoked after success or failure. Tokens are not logged, configuration
-files are not served, and there is no directory listing. A read-only LOAD CSV check
-runs through Neo4j before any schema/data writes to validate actual reachability.
+files are not served, and there is no directory listing. Read-only EXPLAIN checks compile all original queries before loading. Each CSV is
+fetched and converted once by its real LOAD CSV query; HTTP/type failures identify
+the failing load without clearing any database.
 
 ## Scope
 
@@ -44,21 +45,37 @@ runs through Neo4j before any schema/data writes to validate actual reachability
 Only the generated CSV source literal is adapted to HTTP in `loader.py`.
 Configuration binding is request-local; no vendor loader or runtime exec remains.
 
-Use a dedicated database with no concurrent external writers: the original queries
-are database-wide. A nonempty database shows Cancel / Delete existing dataset and
-import new one. Explicit confirmation authorizes deletion of ALL nodes and
-relationships, irreversibly, when SOUP's Import action runs. Confirmation is bound
-to the current CSVs/options, expires after 15 minutes and is single-use. Changing
-the configuration or retrying a failed attempt requires confirmation again.
+Each import creates a new database through `system`, using a sanitized name and the
+SOUP dataset UUID. Neo4j Enterprise multi-database support and CREATE/DROP DATABASE
+permissions are required, in addition to access, graph-write, LOAD CSV and index
+permissions. The catalog records the exact database name and ownership before loading.
+Failed imports remain marked as incomplete so their database can be explicitly deleted.
+Do not write to these databases concurrently: the original queries are database-wide.
 
-SOUP validates all CSVs and their conversions through Neo4j, and compiles the
-original import queries before deletion. It then executes exactly
-`MATCH (e) DETACH DELETE e` once, separately from the import transaction. Deletion
-failure stops the import. Import failure rolls back the new graph, cannot restore
-the deleted dataset and never triggers another deletion. Existing indexes are kept. Neo4j must support the original functions, including `ID(e)`. Large imports
-still use memory and one transaction within SOUP's upload limit.
+All graph operations explicitly select the dataset database. `NEO4J_DATABASE` is not
+a dataset fallback. Older entries without a database mapping must be reimported or
+explicitly mapped by an administrator; SOUP never guesses their database.
 
-Workspace deletion removes only its catalog entry. Source paths in metadata are
-provenance, not reusable URLs. Neo4j uses its own catalog/package volumes; existing
-Memgraph volumes/data are untouched. Old `ocean_ekg` catalog entries are not migrated
-between deployment volumes automatically. This package provides import only, not analysis.
+Workspace deletion warns that the registered database and ALL its nodes and
+relationships will be irreversibly dropped, and requires explicit confirmation.
+Protected (`system`, `neo4j`), shared and unmanaged databases cannot be dropped.
+Failed deletion retains the catalog entry. Import failure never automatically drops
+a database. Removing an entry whose package is unavailable with the catalog-only
+option leaves its database untouched.
+
+CSV checks, index setup and original Event/Entity/CORR/DF queries run only in the
+new dataset database. Neo4j must support the original functions, including `ID(e)`.
+Each unchanged loading/CORR/DF query commits separately to release transaction memory;
+Event rows still load in one query, preserving internal-ID tie ordering. A failed
+step leaves earlier commits in the dedicated database, marked incomplete and blocked
+from graph visualization. SOUP never automatically clears, retries or resumes it.
+A single large LOAD CSV or relationship query can still exceed Neo4j memory/time limits;
+row batching would require changing the original queries and is not enabled.
+
+Phase durations, per-step completion/failure, commit time and HTTP request/byte counts
+are persisted in catalog `process_info`, including failed imports. Backend logs show
+phase starts and finishes without polling. HTTP timing measures server write time,
+overlapping Event/Entity loading, not isolated Neo4j parsing/network latency.
+CSV preparation and database creation are included in the total import duration.
+Source paths in metadata are provenance, not reusable URLs. Memgraph volumes/data
+and queries remain unchanged. This package provides import, not analysis.

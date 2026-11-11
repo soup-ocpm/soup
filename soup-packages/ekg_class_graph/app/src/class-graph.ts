@@ -40,8 +40,8 @@ export interface ClassGraphData extends GraphResult {
 }
 
 const SHAPES: [NodeShape, string][] = [
-  ['rect', 'Rettangoli'],
-  ['circle', 'Cerchi']
+  ['rect', 'Rectangles'],
+  ['circle', 'Circles']
 ];
 
 const CSS = `
@@ -80,7 +80,7 @@ export class SoupPkgEkgClassGraph extends HTMLElement implements SoupVisualizerE
     graph.search = (query, target, offset) => this.search(query, target, offset);
     graph.nodeDetails = (id) => this.context.action<GraphNodeModel>('node', { view: this.view, id });
     this.graph = graph;
-    this.bar = h('div', { className: 'bar', attrs: { role: 'toolbar', 'aria-label': 'Comandi del grafo' } });
+    this.bar = h('div', { className: 'bar', attrs: { role: 'toolbar', 'aria-label': 'Graph controls' } });
     this.root.replaceChildren(h('style', { text: CSS + GRAPH_BAR_CSS + NOTICE_CSS }), ...noticeBox(this.data.notice), this.bar, graph);
 
     // Only the first drawing becomes the preview of the object.
@@ -151,8 +151,8 @@ export class SoupPkgEkgClassGraph extends HTMLElement implements SoupVisualizerE
   /** "N nodi, M archi · massimo mostrabile X elementi" (the part known). */
   public summary(): string {
     const parts: string[] = [];
-    if (this.drawn) parts.push(`${this.drawn.nodes.length} nodi, ${this.drawn.edges.length} archi`);
-    if (this.maxData !== null) parts.push(`massimo mostrabile: ${this.maxData} elementi`);
+    if (this.drawn) parts.push(`${this.drawn.nodes.length} nodes, ${this.drawn.edges.length} edges`);
+    if (this.maxData !== null) parts.push(`maximum displayable: ${this.maxData} items`);
     const text = parts.join(' · ');
     return text.charAt(0).toUpperCase() + text.slice(1);
   }
@@ -169,14 +169,14 @@ export class SoupPkgEkgClassGraph extends HTMLElement implements SoupVisualizerE
 
   private drawBar(): void {
     if (!this.bar) return;
-    const views = h('select', { attrs: { 'aria-label': 'Vista' }, on: { change: (event) => void this.chooseView((event.target as HTMLSelectElement).value) } });
+    const views = h('select', { attrs: { 'aria-label': 'View' }, on: { change: (event) => void this.chooseView((event.target as HTMLSelectElement).value) } });
     for (const view of this.data.views) {
       const option = h('option', { text: view.label, attrs: { value: view.key } });
       option.selected = view.key === this.view;
       views.append(option);
     }
     const limit = h('input', {
-      attrs: { type: 'number', min: '1', max: String(this.data.max_limit), 'aria-label': 'Limite' },
+      attrs: { type: 'number', min: '1', max: String(this.data.max_limit), 'aria-label': 'Limit' },
       on: { change: (event) => void this.setLimit(Number((event.target as HTMLInputElement).value)) }
     });
     limit.value = String(this.limit);
@@ -191,12 +191,12 @@ export class SoupPkgEkgClassGraph extends HTMLElement implements SoupVisualizerE
     const relations = h(
       'details',
       { className: 'relations', on: { toggle: (event) => (this.relationsOpen = (event.target as HTMLDetailsElement).open) } },
-      h('summary', { text: `Relazioni (${this.relations.length}/${types.length})` }),
+      h('summary', { text: `Relationships (${this.relations.length}/${types.length})` }),
       list
     );
     (relations as HTMLDetailsElement).open = this.relationsOpen;
 
-    const shape = h('select', { attrs: { 'aria-label': 'Forma dei nodi' }, on: { change: (event) => this.setShape((event.target as HTMLSelectElement).value as NodeShape) } });
+    const shape = h('select', { attrs: { 'aria-label': 'Node shape' }, on: { change: (event) => this.setShape((event.target as HTMLSelectElement).value as NodeShape) } });
     for (const [value, label] of SHAPES) {
       const option = h('option', { text: label, attrs: { value } });
       option.selected = value === this.shape;
@@ -205,14 +205,14 @@ export class SoupPkgEkgClassGraph extends HTMLElement implements SoupVisualizerE
 
     const searching = this.graph?.searchVisible ?? false;
     const searchButton = h('button', {
-      text: searching ? 'Chiudi ricerca' : 'Cerca',
+      text: searching ? 'Close search' : 'Search',
       attrs: { type: 'button', 'aria-pressed': String(searching) },
       on: { click: () => this.toggleSearch() }
     });
-    const exportButton = h('button', { text: 'Esporta SVG', attrs: { type: 'button' }, on: { click: () => this.exportSvg() } });
+    const exportButton = h('button', { text: 'Export SVG', attrs: { type: 'button' }, on: { click: () => this.exportSvg() } });
 
     this.bar.replaceChildren(
-      h('div', { className: 'group' }, h('label', {}, 'Vista', views), h('label', {}, 'Limite', limit), relations, h('label', {}, 'Forma', shape)),
+      h('div', { className: 'group' }, h('label', {}, 'View', views), h('label', {}, 'Limit', limit), relations, h('label', {}, 'Shape', shape)),
       h('div', { className: 'group' }, searchButton),
       h('div', { className: 'group' }, exportButton),
       h('span', { className: 'info', text: this.summary(), attrs: { 'aria-live': 'polite' } })

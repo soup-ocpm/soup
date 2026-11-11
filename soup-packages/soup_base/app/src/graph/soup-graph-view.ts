@@ -21,7 +21,7 @@ const MAX_THUMBNAIL_CHARS = 512 * 1024;
 // below 768 px, where the area is narrow); --soup-graph-height sets it.
 // Below 768 px the side panel goes under it.
 const CSS = `
-  :host { position: relative; --soup-graph-area: var(--soup-graph-height, clamp(420px, calc(100dvh - 300px), 900px)); }
+  :host { position: relative; --soup-graph-area: var(--soup-graph-height, clamp(520px, calc(100dvh - 160px), 1400px)); }
   .toolbar { display: flex; flex-wrap: wrap; gap: var(--soup-space-2, 8px) var(--soup-space-3, 12px); align-items: center; margin-bottom: var(--soup-space-2, 8px); }
   .toolbar[hidden] { display: none; }
   .toolbar .group { display: flex; flex-wrap: wrap; gap: var(--soup-space-2, 8px); align-items: center; }
@@ -33,7 +33,7 @@ const CSS = `
   .side { flex: 0 0 300px; min-width: 0; display: flex; flex-direction: column; gap: var(--soup-space-2, 8px); max-height: var(--soup-graph-area); }
   .side[hidden] { display: none; }
   @media (max-width: 767.98px) {
-    :host { --soup-graph-area: var(--soup-graph-height, 420px); }
+    :host { --soup-graph-area: var(--soup-graph-height, clamp(360px, 70dvh, 800px)); }
     .layout { flex-direction: column; }
     .side { flex-basis: auto; max-height: none; }
     .results { max-height: 240px; }
@@ -372,7 +372,7 @@ export class SoupGraphView extends HTMLElement {
         if (this.selected?.id === node.id) row.className = 'selected';
         return row;
       }),
-      ...(this.results.length < this.resultsTotal ? [h('li', { className: 'muted more', text: `${this.results.length} di ${this.resultsTotal}…` })] : [])
+      ...(this.results.length < this.resultsTotal ? [h('li', { className: 'muted more', text: `${this.results.length} of ${this.resultsTotal}…` })] : [])
     );
   }
 

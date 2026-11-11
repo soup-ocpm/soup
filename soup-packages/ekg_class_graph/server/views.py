@@ -29,7 +29,7 @@ _CLASS_KEYS = ("Event_Id", "Type", "Count")
 
 class ClassGraphView(EdgeListGraphView):
     key = "class"
-    label = "Grafo aggregato"
+    label = "Aggregated graph"
     kinds = (CLASS_KIND,)
     relationships = {DF_C: (CLASS, CLASS), OBSERVED: (EVENT, CLASS)}
     default_relations = (DF_C,)

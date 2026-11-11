@@ -305,7 +305,7 @@ REL = "REL"
 
 class StandardGraphView(EdgeListGraphView):
     key = "standard"
-    label = "Grafo standard"
+    label = "Standard graph"
     kinds = STANDARD_KINDS
     relationships = {DF: (EVENT, EVENT), CORR: (EVENT, ENTITY)}
     default_relations = (DF,)
@@ -337,7 +337,7 @@ class StandardGraphView(EdgeListGraphView):
 
 class ObjectGraphView(StandardGraphView):
     key = "object"
-    label = "Grafo degli oggetti"
+    label = "Object graph"
     relationships = {REL: (ENTITY, ENTITY), CORR: (EVENT, ENTITY)}
     default_relations = (REL,)
 

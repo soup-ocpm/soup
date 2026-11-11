@@ -14,13 +14,13 @@ import { GraphNodeModel, SearchTarget } from './model';
 import { NodeShape } from './renderer';
 
 const SHAPES: [NodeShape, string][] = [
-  ['rect', 'Rettangoli'],
-  ['circle', 'Cerchi']
+  ['rect', 'Rectangles'],
+  ['circle', 'Circles']
 ];
 
 const TARGETS: [SearchTarget, string][] = [
-  ['nodes', 'Nodi'],
-  ['edges', 'Archi']
+  ['nodes', 'Nodes'],
+  ['edges', 'Edges']
 ];
 
 interface RelationshipToggle {
@@ -46,7 +46,7 @@ interface ToolbarActions {
 
 function shapeSelect(shape: NodeShape, actions: ToolbarActions): HTMLSelectElement {
   const select = h('select', {
-    attrs: { 'aria-label': 'Forma dei nodi' },
+    attrs: { 'aria-label': 'Node shape' },
     on: { change: (event) => actions.setShape((event.target as HTMLSelectElement).value as NodeShape) }
   });
   for (const [value, label] of SHAPES) {
@@ -67,9 +67,9 @@ function relationshipsMenu(relationships: readonly RelationshipToggle[], actions
     box.checked = entry.visible;
     const swatch = h('span', { className: 'swatch' });
     swatch.style.background = entry.color;
-    list.append(h('label', {}, box, swatch, entry.name || '(senza tipo)'));
+    list.append(h('label', {}, box, swatch, entry.name || '(no type)'));
   }
-  return h('details', { className: 'relationships' }, h('summary', { text: 'Relazioni' }), list);
+  return h('details', { className: 'relationships' }, h('summary', { text: 'Relationships' }), list);
 }
 
 /** A command of the toolbar of <soup-graph-view> (its `toolbar` property). */
@@ -94,9 +94,9 @@ export function toolbarCommands(setting: ToolbarSetting | string | null | undefi
   return TOOLBAR_COMMANDS.filter((command) => wanted.has(command));
 }
 
-/** "N nodi, M archi" */
+/** "N nodes, M edges" */
 function countsText(nodes: number, edges: number): string {
-  return `${nodes} nodi, ${edges} archi`;
+  return `${nodes} nodes, ${edges} edges`;
 }
 
 /**
@@ -111,11 +111,11 @@ export function toolbarControls(state: ToolbarState, actions: ToolbarActions, co
     relationships: () => relationshipsMenu(state.relationships, actions),
     search: () =>
       h('button', {
-        text: state.searchOpen ? 'Chiudi ricerca' : 'Cerca',
+        text: state.searchOpen ? 'Close search' : 'Search',
         attrs: { type: 'button', 'aria-pressed': String(state.searchOpen) },
         on: { click: () => actions.toggleSearch() }
       }),
-    export: () => h('button', { text: 'Esporta SVG', attrs: { type: 'button' }, on: { click: () => actions.exportSvg() } }),
+    export: () => h('button', { text: 'Export SVG', attrs: { type: 'button' }, on: { click: () => actions.exportSvg() } }),
     counts: () => h('span', { className: 'muted counts', text: countsText(state.nodes, state.edges) })
   };
   const groups: ToolbarCommand[][] = [['shape', 'relationships'], ['search'], ['export'], ['counts']];
@@ -144,7 +144,7 @@ export function searchPanel(target: SearchTarget, query: string, actions: Search
     );
   }
   const input = h('input', {
-    attrs: { type: 'search', placeholder: 'Cerca', 'aria-label': 'Cerca nel grafo' },
+    attrs: { type: 'search', placeholder: 'Search', 'aria-label': 'Search graph' },
     on: { input: (event) => actions.setQuery((event.target as HTMLInputElement).value) }
   });
   input.value = query;
@@ -159,6 +159,6 @@ export function propertiesPanel(node: GraphNodeModel, close: () => void): HTMLEl
   for (const [key, value] of Object.entries(node.props)) {
     list.append(h('dt', { text: key }), h('dd', { text: display(value) }));
   }
-  const button = h('button', { text: '×', attrs: { type: 'button', 'aria-label': 'Chiudi' }, on: { click: close } });
+  const button = h('button', { text: '×', attrs: { type: 'button', 'aria-label': 'Close' }, on: { click: close } });
   return h('div', { className: 'properties' }, h('div', { className: 'toolbar' }, h('strong', { text: node.label }), button), list);
 }

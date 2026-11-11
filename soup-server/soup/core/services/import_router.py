@@ -132,7 +132,14 @@ class ImportRouter:
                     raise TypeError(f"Importer '{importer.id}'.import_() must return a dict, not {type(meta).__name__}")
                 obj = replace(obj, meta=dict(meta or {}))
                 with import_phase("catalog registration", importer=importer_id, file=upload.filename):
-                    catalog.add(obj)
+                    staged = self._core_tools.catalog_reader().get(obj.id)
+                    if (
+                        staged is not None and staged.created_by == obj.created_by
+                        and staged.created_at == obj.created_at and staged.meta.get("import_status") == "loading"
+                    ):
+                        catalog.update(obj)
+                    else:
+                        catalog.add(obj)
             except Exception:
                 self._compensate(importer, obj, tools)
                 raise

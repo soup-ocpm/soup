@@ -85,13 +85,13 @@ export class SoupPkgOcelTables extends HTMLElement implements SoupVisualizerElem
       type: this.type
     });
     if (this.info) {
-      this.info.textContent = page.total === tab.total ? `${tab.total} righe` : `${page.total} righe su ${tab.total}`;
+      this.info.textContent = page.total === tab.total ? `${tab.total} rows` : `${page.total} of ${tab.total} rows`;
     }
     return page;
   }
 
   private render(): void {
-    const tablist = h('div', { attrs: { role: 'tablist', 'aria-label': 'Tabelle del log' } });
+    const tablist = h('div', { attrs: { role: 'tablist', 'aria-label': 'Log tables' } });
     this.data.tables.forEach((tab, index) => {
       const selected = index === this.selected;
       tablist.append(
@@ -115,10 +115,10 @@ export class SoupPkgOcelTables extends HTMLElement implements SoupVisualizerElem
       on: { change: (event) => void this.setType((event.target as HTMLSelectElement).value) }
     });
     filter.append(
-      h('option', { text: 'Tutti i tipi', attrs: { value: ALL_TYPES } }),
+      h('option', { text: 'All types', attrs: { value: ALL_TYPES } }),
       ...tab.types.map((type) => h('option', { text: type, attrs: { value: type } }))
     );
-    this.info = h('span', { className: 'info', text: `${tab.total} righe` });
+    this.info = h('span', { className: 'info', text: `${tab.total} rows` });
     const bar = h('div', { className: 'bar' }, h('label', {}, `${tab.type_label} `, filter), this.info);
 
     const table = document.createElement('soup-table') as SoupTableElement;

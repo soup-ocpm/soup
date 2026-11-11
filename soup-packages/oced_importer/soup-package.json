@@ -10,7 +10,7 @@
   "requires": [
     "tool_storage"
   ],
-  "requires_tools": [],
+  "requires_tools": ["catalog"],
   "provides_tools": [],
   "extension_points": [],
   "python_dependencies": [],

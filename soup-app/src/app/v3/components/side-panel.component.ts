@@ -54,8 +54,8 @@ let panels = 0;
         <button
           type="button"
           class="btn btn-sm btn-outline-secondary soup-icon-btn soup-side-close"
-          aria-label="Chiudi"
-          title="Chiudi"
+          aria-label="Close"
+          title="Close"
           (click)="this.closed.emit()">
           <i
             class="bi bi-x-lg"

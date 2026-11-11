@@ -66,7 +66,21 @@ export class ImportComponent {
           id: 'source',
           label: this.file()?.name ?? 'CSV',
           rows: source.data.rows,
-          roles: fields.map((field) => ({ key: field.name, label: field.label, help: field.help })),
+          roles: fields.length
+            ? [
+                ...fields.map((field) => ({
+                  key: field.name,
+                  label:
+                    field.name === 'values' || field.name === 'columns'
+                      ? 'Property'
+                      : field.name === 'entities'
+                        ? 'Entity / Object reference'
+                        : field.label,
+                  help: field.help
+                })),
+                { key: '__ignore', label: 'Ignore' }
+              ]
+            : [],
           columns: source.data.columns.map((name) => {
             const roles = fields
               .filter((field) => {
@@ -76,7 +90,11 @@ export class ImportComponent {
               .map((field) => field.name);
             return {
               name,
-              roles,
+              roles: roles.length
+                ? [roles.find((role) => role !== 'values' && role !== 'columns') ?? roles[0]]
+                : fields.length
+                  ? ['__ignore']
+                  : [],
               property: !fields.length || !!roles.length,
               type: fields.length ? undefined : 'String',
               disabledRoles: fields
@@ -135,13 +153,13 @@ export class ImportComponent {
   public onSelectFile(event: { addedFiles: File[] }): void {
     const [chosen] = event.addedFiles ?? [];
     if (!chosen || event.addedFiles.length !== 1) {
-      notify(this.notifications, 'Scegli un solo file', 'error');
+      notify(this.notifications, 'Choose one file', 'error');
       return;
     }
     this.reset();
     this.file.set(chosen);
     this.name.set(chosen.name.replace(/\.[^.]+$/, ''));
-    this.run('Ricerca degli importer...', () =>
+    this.run('Finding importers...', () =>
       this.api.importers(chosen.name).subscribe({
         next: (importers) => {
           this.importers.set(importers);
@@ -169,7 +187,7 @@ export class ImportComponent {
     this.importer.set(importer);
     this.inspection.set(null);
     this.options.set({});
-    this.run(`Analisi di ${file.name}...`, () =>
+    this.run(`Inspecting ${file.name}...`, () =>
       this.api.inspect(importer.id, file).subscribe({
         next: (inspection) => {
           this.inspection.set(inspection);
@@ -197,15 +215,21 @@ export class ImportComponent {
   }
 
   public onColumnChange(change: TabularChange): void {
-    const field = this.roleFields().find((item) => item.name === change.role);
-    if (!field || change.kind !== 'role') return;
-    const value = this.options()[field.name];
-    if (field.type === 'column') {
-      this.options.update((options) => ({ ...options, [field.name]: change.value ? change.column : '' }));
-    } else {
-      const selected = (Array.isArray(value) ? (value as string[]) : []).filter((name) => name !== change.column);
-      this.options.update((options) => ({ ...options, [field.name]: change.value ? [...selected, change.column] : selected }));
-    }
+    if (change.kind !== 'role') return;
+    this.options.update((current) => {
+      const options = { ...current };
+      for (const field of this.roleFields()) {
+        const value = options[field.name];
+        if (field.type === 'column') {
+          if (value === change.column) options[field.name] = '';
+          if (field.name === change.role) options[field.name] = change.column;
+        } else {
+          const selected = (Array.isArray(value) ? (value as string[]) : []).filter((name) => name !== change.column);
+          options[field.name] = field.name === change.role ? [...selected, change.column] : selected;
+        }
+      }
+      return options;
+    });
   }
 
   private validOptions(): boolean {
@@ -217,7 +241,7 @@ export class ImportComponent {
     const labels = this.inspection()
       ?.fields.filter((field) => missing.includes(field.name))
       .map((field) => field.label);
-    this.error.set(`Configura i campi richiesti: ${labels?.join(', ')}`);
+    this.error.set(`Configure the required fields: ${labels?.join(', ')}`);
     return false;
   }
 
@@ -227,14 +251,14 @@ export class ImportComponent {
     if (!file || !importer || !this.validOptions()) {
       return;
     }
-    this.run('Aggiornamento anteprima...', () =>
+    this.run('Updating preview...', () =>
       this.api.preview(importer.id, file, this.options()).subscribe({
         next: (blocks) => {
           if (blocks.length) {
             this.blocks.set(blocks);
             this.columns.set(columnsOf(blocks));
           } else {
-            notify(this.notifications, "L'importer non offre un'anteprima aggiornata", 'info');
+            notify(this.notifications, 'This importer does not provide an updated preview.', 'info');
           }
           this.done();
         },
@@ -267,16 +291,16 @@ export class ImportComponent {
       return;
     }
     if (!this.name().trim()) {
-      this.error.set("Dai un nome all'oggetto");
+      this.error.set('Enter an object name');
       return;
     }
-    this.run(`Import di ${file.name}...`, () =>
+    this.run(`Importing ${file.name}...`, () =>
       this.api
         .import({ importerId: importer.id, file, name: this.name().trim(), description: this.description(), options: this.options() })
         .subscribe({
           next: (object) => {
             this.done();
-            notify(this.notifications, `'${object.name}' importato`, 'success');
+            notify(this.notifications, `Imported '${object.name}'`, 'success');
             void this.router.navigate(['/o', object.id]);
           },
           error: (error) => this.fail(error)

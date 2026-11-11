@@ -59,7 +59,10 @@ def build_workspace_blueprint(engine: Engine) -> Blueprint:
 
     @blueprint.route("/api/v3/objects/<object_id>", methods=["DELETE"])
     def delete_object(object_id: str) -> ResponseReturnValue:
-        deleted = workspace.delete(object_id, cascade=request_args.flag("cascade"), force=request_args.flag("force"))
+        deleted = workspace.delete(
+            object_id, cascade=request_args.flag("cascade"), force=request_args.flag("force"),
+            confirm_database_drop=request_args.flag("confirm_database_drop"),
+        )
         return serializers.ok("Object deleted", {"deleted": deleted})
 
     @blueprint.route("/api/v3/objects/<object_id>/thumbnail", methods=["GET"])

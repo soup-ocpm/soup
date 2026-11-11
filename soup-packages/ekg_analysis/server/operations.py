@@ -56,10 +56,10 @@ from .analysis import ANALYSIS_PROVIDER, Analysis, analysis_file
 from .filters import MEMGRAPH, AnalysisFilter, activities, entity_types, time_range
 from .service import STORAGE, AnalysisRuntime, AnalysisService, remove_file
 
-GROUP = "Analisi"
+GROUP = "Analysis"
 UNCHANGED = "unchanged"
 CHANGED = "changed"
-UNCHANGED_NOTICE = "L'analisi non ha modificato il grafo: è uguale a quello di partenza."
+UNCHANGED_NOTICE = "The analysis made no changes to the original graph."
 
 
 # The values of a field listed in the example configuration.
@@ -67,8 +67,8 @@ SHOWN_VALUES = 8
 
 
 def name_field() -> Field:
-    return Field("name", "Nome dell'analisi", required=True,
-                 help="Diventa anche il nome del file in Analyses/ del dataset: deve essere unico.")
+    return Field("name", "Analysis name", required=True,
+                 help="Also used as the filename in the dataset's Analyses/ directory; it must be unique.")
 
 
 class _AnalysisOperation(Operation):
@@ -108,8 +108,8 @@ class _AnalysisOperation(Operation):
 
 class NewAnalysis(_AnalysisOperation):
     id = "new"
-    label = "Nuova analisi"
-    description = "Filtra l'EKG con una lista di condizioni e ne fa un nuovo oggetto."
+    label = "New analysis"
+    description = "Apply filter conditions to the EKG and create a new object."
 
     def fields(self, inputs: Mapping[str, ObjectRef], tools: ToolAccess) -> list[Field]:
         obj = inputs["ekg"]
@@ -119,9 +119,9 @@ class NewAnalysis(_AnalysisOperation):
         )
         return [
             name_field(),
-            Field("description", "Descrizione", type="textarea"),
-            Field("filters", "Filtri", type="items", required=True, variants=variants,
-                  help="Si applicano nell'ordine dei filtri, non in quello della lista."),
+            Field("description", "Description", type="textarea"),
+            Field("filters", "Filters", type="items", required=True, variants=variants,
+                  help="Conditions are applied in filter order rather than list order."),
         ]
 
     def run(self, inputs: Mapping[str, ObjectRef], params: Mapping[str, Any], tools: ToolAccess) -> list[ObjectDraft]:
@@ -132,14 +132,13 @@ class NewAnalysis(_AnalysisOperation):
 
 class ImportAnalysis(_AnalysisOperation):
     id = "import"
-    label = "Importa configurazione di analisi"
+    label = "Import analysis configuration"
     description = (
-        "Crea un'analisi da un file JSON nel formato delle analisi salvate "
-        "(vedi \"Esempio di configurazione\")."
+        "Create an analysis from a saved JSON configuration (see \"Example configuration\")."
     )
 
     def fields(self, inputs: Mapping[str, ObjectRef], tools: ToolAccess) -> list[Field]:
-        return [name_field(), Field("file", "File di configurazione (.json)", type="file", required=True)]
+        return [name_field(), Field("file", "Configuration file (.json)", type="file", required=True)]
 
     def run(self, inputs: Mapping[str, ObjectRef], params: Mapping[str, Any], tools: ToolAccess) -> list[ObjectDraft]:
         upload = params["file"]
@@ -187,28 +186,29 @@ def _field_text(spec: Field) -> str:
 
 def explanation(filters: list[AnalysisFilter], obj: ObjectRef, tools: ToolAccess) -> str:
     lines = [
-        "Una configurazione è un file JSON con una chiave per filtro; ogni chiave ha una lista di condizioni.",
-        "I filtri si applicano in quest'ordine, qualunque sia l'ordine delle chiavi nel file: "
+        "A configuration is a JSON file with one key per filter, each containing a list of conditions.",
+        "Filters are applied in this order, regardless of key order in the file: "
         + ", ".join(f"`{item.key}`" for item in filters) + ".",
-        "Le chiavi `dataset_name`, `analysis_name` e `analysis_description` sono facoltative e vengono ignorate "
-        "all'import (il nome lo scegli nell'operazione).",
+        (
+            "The optional keys `dataset_name`, `analysis_name` and `analysis_description` are ignored during "
+            "import; choose the name in the operation form."
+        ),
         "",
     ]
     for item in filters:
         lines += [f"### `{item.key}`: {item.label or item.key}", "", item.description, "",
-                  "| campo | significato | tipo | valori |", "|---|---|---|---|"]
+                  "| Field | Meaning | Type | Values |", "|---|---|---|---|"]
         lines += [_field_text(spec) for spec in item.fields(obj, tools)]
         lines.append("")
-    lines.append("Operatori: `<`, `<=`, `=`, `!=`, `>`, `>=`. Le date sono ISO-8601; il fuso orario viene ignorato.")
+    lines.append("Operators: `<`, `<=`, `=`, `!=`, `>`, `>=`. Dates use ISO 8601; timezone information is ignored.")
     return "\n".join(lines)
 
 
 class ExampleConfiguration(Operation):
     id = "example"
-    label = "Esempio di configurazione"
+    label = "Example configuration"
     description = (
-        "Un report con un file di configurazione di esempio, costruito su questo EKG, "
-        "e la spiegazione delle chiavi."
+        "A report with an example configuration for this EKG and an explanation of its keys."
     )
     group = GROUP
     inputs = (OperationInput("ekg", (ekg.EKG_KIND,)),)
@@ -227,8 +227,8 @@ class ExampleConfiguration(Operation):
             example.setdefault(item.key, [])
         content = json.dumps(example, ensure_ascii=False, indent=2).encode("utf-8")
         blocks = [
-            report.markdown(explanation(filters, obj, tools), title="Come è fatta una configurazione"),
-            report.file("analysis_example.json", content, "application/json", title="Esempio"),
+            report.markdown(explanation(filters, obj, tools), title="Configuration format"),
+            report.file("analysis_example.json", content, "application/json", title="Example"),
         ]
-        return [report.report(f"Esempio di configurazione di {obj.name}", blocks,
-                              description="Da usare con \"Importa configurazione di analisi\".")]
+        return [report.report(f"Example configuration for {obj.name}", blocks,
+                              description="Use with \"Import analysis configuration\".")]

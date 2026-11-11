@@ -31,7 +31,7 @@ export interface Distribution {
 }
 
 const TOP_VALUES = 20;
-const OTHER_LABEL = '(altri)';
+const OTHER_LABEL = '(other)';
 
 const CSS = `
   :host { display: block; font-family: system-ui, -apple-system, 'Segoe UI', sans-serif; font-size: 0.95rem; }
@@ -82,24 +82,24 @@ export class SoupPkgCsvProfile extends HTMLElement implements SoupVisualizerElem
   }
 
   private render(): void {
-    const info = h('span', { className: 'info', text: `${this.data.rows} righe · ${this.data.columns.length} colonne` });
+    const info = h('span', { className: 'info', text: `${this.data.rows} rows · ${this.data.columns.length} columns` });
 
     const table = document.createElement('soup-table') as SoupTableElement;
     table.data = {
-      columns: ['colonna', 'valori distinti', 'celle vuote', 'esempi'],
+      columns: ['column', 'distinct values', 'empty cells', 'examples'],
       rows: this.data.columns.map((column) => [column.name, column.distinct, column.empty, column.examples.join(', ')])
     };
 
     const select = h('select', {
-      attrs: { 'aria-label': 'Colonna della distribuzione' },
+      attrs: { 'aria-label': 'Distribution column' },
       on: { change: (event) => void this.showDistribution(Number((event.target as HTMLSelectElement).value)) }
     });
     select.append(...this.data.columns.map((column, index) => h('option', { text: column.name, attrs: { value: String(index) } })));
-    const choose = h('label', { className: 'choose' }, 'Distribuzione di', select);
+    const choose = h('label', { className: 'choose' }, 'Distribution of', select);
 
     const chart = document.createElement('soup-chart') as SoupChartElement;
     this.chart = chart;
 
-    this.root.replaceChildren(h('style', { text: CSS }), info, h('h4', { text: 'Colonne' }), table, choose, chart);
+    this.root.replaceChildren(h('style', { text: CSS }), info, h('h4', { text: 'Columns' }), table, choose, chart);
   }
 }

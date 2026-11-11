@@ -32,18 +32,18 @@ from soup_pkg_ekg_views.api import (
 from .classes import CLASS, DF_C, EVENT, OBSERVED
 from .views import CLASS_KIND
 
-GROUP = "Grafo aggregato"
+GROUP = "Aggregated graph"
 KINDS = (CLASS_KIND,)
 
 
 def class_queries() -> list[GraphQuery]:
     queries: list[GraphQuery] = [
-        NodeListQuery("class.nodes", "Nodi Class", GROUP, node_label=CLASS),
-        RelationshipListQuery("class.obs", "Relazioni OBSERVED", GROUP, EVENT, OBSERVED, CLASS),
-        RelationshipListQuery("class.dfc", "Relazioni DF_C", GROUP, CLASS, DF_C, CLASS),
-        CountQuery("class.count_nodes", "Numero di nodi Class", GROUP, node_label=CLASS),
-        CountQuery("class.count_obs", "Numero di relazioni OBSERVED", GROUP, relationship=OBSERVED),
-        CountQuery("class.count_dfc", "Numero di relazioni DF_C", GROUP, relationship=DF_C),
+        NodeListQuery("class.nodes", "Class nodes", GROUP, node_label=CLASS),
+        RelationshipListQuery("class.obs", "OBSERVED relationships", GROUP, EVENT, OBSERVED, CLASS),
+        RelationshipListQuery("class.dfc", "DF_C relationships", GROUP, CLASS, DF_C, CLASS),
+        CountQuery("class.count_nodes", "Number of Class nodes", GROUP, node_label=CLASS),
+        CountQuery("class.count_obs", "Number of OBSERVED relationships", GROUP, relationship=OBSERVED),
+        CountQuery("class.count_dfc", "Number of DF_C relationships", GROUP, relationship=DF_C),
     ]
     for query in queries:
         query.kinds = KINDS

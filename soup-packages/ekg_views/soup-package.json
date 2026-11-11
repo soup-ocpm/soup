@@ -2,7 +2,7 @@
   "name": "ekg_views",
   "version": "1.0.0",
   "api_version": "4.0",
-  "label": "Viste dell'EKG",
+  "label": "EKG views",
   "description": "Visualizers and exporter of Memgraph 'ekg' and Neo4j 'oced_importer.log' objects: the graph (views contributed to ekg.graph_views), the statistics, the queries contributed to ekg.queries and the JSON of the graph (parts contributed to ekg.json_parts); the statistics show the notices contributed to ekg.stats_notices.",
   "author": "SOUP",
   "contributors": [{"name": "Alessio Pianaroli", "email": "alessiopianaroli.it@gmail.com"}],

@@ -64,7 +64,7 @@ export class SoupTemplateText extends HTMLElement implements SoupVisualizerEleme
 
     const button = document.createElement('button');
     button.type = 'button';
-    button.textContent = 'Statistiche';
+    button.textContent = 'Statistics';
     button.addEventListener('click', () => void this.showStats(stats));
 
     const header = document.createElement('header');
@@ -79,7 +79,7 @@ export class SoupTemplateText extends HTMLElement implements SoupVisualizerEleme
   private async showStats(target: HTMLElement): Promise<void> {
     try {
       const stats = await this.context.action<TextStats>('stats');
-      target.textContent = `${stats.lines} righe, ${stats.words} parole, ${stats.characters} caratteri`;
+      target.textContent = `${stats.lines} lines, ${stats.words} words, ${stats.characters} characters`;
     } catch (error) {
       this.context.notify(error instanceof Error ? error.message : String(error), 'error');
     }

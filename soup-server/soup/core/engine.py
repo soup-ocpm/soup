@@ -98,6 +98,7 @@ def build_engine(settings: Settings, extra_plugins: Iterable[Any] = ()) -> Engin
         report.add_warning(problem)
 
     core_tools = CoreTools(ctx.tool_registry)
+    ctx.database.bind_catalog(core_tools.catalog)
 
     return Engine(
         settings=settings,
@@ -118,6 +119,7 @@ def build_engine(settings: Settings, extra_plugins: Iterable[Any] = ()) -> Engin
             event_bus,
             package_status=package_manager.package_status,
             orphaned_data=OrphanedDataLog(Path(settings.installed_packages_dir) / ORPHANED_DATA_FILE),
+            database=ctx.database,
         ),
         frontend=PackageFrontend(package_manager),
         system=SystemService(ctx.tool_registry, core_tools, package_manager),

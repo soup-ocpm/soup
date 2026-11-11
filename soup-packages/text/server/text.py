@@ -167,7 +167,7 @@ def _int(params: Mapping[str, Any], name: str, default: int, low: int, high: int
 
 class TextImporter(_Cached, Importer):
     id = "text"
-    label = "Testo"
+    label = "Text"
     description = "Keeps the file as is; shows it as text, or as markdown for .md files."
     extensions = EXTENSIONS
     produces = KIND
@@ -175,7 +175,7 @@ class TextImporter(_Cached, Importer):
 
     def inspect(self, upload: Upload, tools: ToolAccess) -> Inspection:
         lines = decode(upload.read())[0].splitlines()
-        title = f"Prime {PREVIEW_LINES} righe ({len(lines)} in totale)"
+        title = f"First {PREVIEW_LINES} lines ({len(lines)} in total)"
         return Inspection(preview=(report.text("\n".join(lines[:PREVIEW_LINES]), title=title),))
 
     def import_(self, upload: Upload, obj: ObjectRef, options: Mapping[str, Any], tools: ToolAccess) -> dict[str, Any]:
@@ -204,7 +204,7 @@ class TextImporter(_Cached, Importer):
 
 class TextVisualizer(_Cached, Visualizer):
     id = "text"
-    label = "Testo"
+    label = "Text"
     accepts = (KIND,)
     element = "soup-pkg-text-viewer"
     requires_tools = (STORAGE,)
@@ -251,7 +251,7 @@ class OriginalFileExporter(Exporter):
     """
 
     id = "original"
-    label = "File originale"
+    label = "Original file"
     accepts = (KIND,)
     extension = DEFAULT_EXTENSION
     mime = DEFAULT_MIME

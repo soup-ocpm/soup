@@ -34,7 +34,7 @@ interface OperationGroup {
 function groupOperations(operations: readonly OperationInfo[]): OperationGroup[] {
   const groups = new Map<string, OperationInfo[]>();
   for (const operation of operations) {
-    const group = operation.group || 'Altro';
+    const group = operation.group || 'Other';
     groups.set(group, [...(groups.get(group) ?? []), operation]);
   }
   return Array.from(groups, ([name, items]) => ({ name, items }));
@@ -216,7 +216,7 @@ export class ObjectComponent implements OnInit {
     this.api.runOperation(form.item.id, [object.id], form.values).subscribe({
       next: (created) => {
         this.busy.set('');
-        notify(this.notifications, `${form.item.label}: ${created.length} oggetto/i creati`, 'success');
+        notify(this.notifications, `${form.item.label}: ${created.length} object(s) created`, 'success');
         if (created.length) {
           void this.router.navigate(['/o', created[0].id]);
         }
@@ -270,7 +270,7 @@ export class ObjectComponent implements OnInit {
     if (!object) {
       return;
     }
-    this.busy.set(`Esportazione ${exporter.label}...`);
+    this.busy.set(`Exporting ${exporter.label}...`);
     this.api.export(object.id, exporter, values).subscribe({
       next: (file) => {
         this.busy.set('');

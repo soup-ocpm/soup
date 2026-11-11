@@ -2,7 +2,7 @@
   "name": "ekg_class_graph",
   "version": "1.0.0",
   "api_version": "4.0",
-  "label": "Grafo aggregato dell'EKG",
+  "label": "EKG aggregate graph",
   "description": "The aggregate (class) graph of an 'ekg' object as an 'ekg_class' object: Class nodes, OBSERVED and DF_C relationships, its view, queries and JSON parts, its visualizers, and an Observer that removes the classes before the graph is reset or filtered.",
   "author": "SOUP",
   "contributors": [{"name": "Alessio Pianaroli", "email": "alessiopianaroli.it@gmail.com"}],

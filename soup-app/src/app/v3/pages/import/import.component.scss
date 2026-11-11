@@ -1,5 +1,9 @@
 @use '../v3-page';
 
+.soup-import {
+  --soup-content-max: 1800px;
+}
+
 // The drop zone, with the look of ngx-dropzone 3.1.0 (deprecated, replaced by
 // a native zone): dashed border, solid while a file is dragged over it.
 .ngx-dropzone {

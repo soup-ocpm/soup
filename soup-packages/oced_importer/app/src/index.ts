@@ -22,6 +22,13 @@ const STYLE = `
   progress { width: 100%; } h3 { font-size: 1rem; margin: 8px 0; }
 `;
 
+const PHASE_LABELS: Record<string, string> = {
+  csv_preparation: 'CSV preparation', database_creation: 'Database creation',
+  database_validation: 'Database validation', query_validation: 'Query validation',
+  index: 'Indexes', http_transfer: 'HTTP serving (included in loading)',
+  event: 'Events', entity: 'Entities', corr: 'CORR', df: 'DF', commit: 'Commit', total: 'Total construction'
+};
+
 function select(label: string, choices: string[], value: string, change: (value: string) => void): HTMLLabelElement {
   const input = h(
     'select',
@@ -43,8 +50,6 @@ class OcedConfig extends HTMLElement implements SoupConfigElement {
   private busy = false;
   private message = '';
   private failed = false;
-  private replacementToken = '';
-  private replacementConfirmed = false;
 
   public connectedCallback(): void {
     if (!this.context.tabular) {
@@ -61,8 +66,6 @@ class OcedConfig extends HTMLElement implements SoupConfigElement {
   private changed(): void {
     this.generation++;
     this.review = [];
-    this.replacementToken = '';
-    this.replacementConfirmed = false;
     this.failed = false;
     this.message = this.workflow.validate();
     this.context.emit({
@@ -88,15 +91,14 @@ class OcedConfig extends HTMLElement implements SoupConfigElement {
       h('style', { text: STYLE }),
       h('p', {
         className: 'hint',
-        text: 'Click a preview header to configure its role, Keep selection and type. Object tables may be uploaded or generated. Review the tables, then use SOUP’s Import action.'
+        text: 'Click a preview header to configure its role and data type. Object tables may be uploaded or generated. Review the tables, then use SOUP’s Import action.'
       }),
       fields,
       h('p', {
         className: this.failed ? 'error' : 'hint',
         attrs: { role: this.failed ? 'alert' : 'status' },
         text: this.message
-      }),
-      ...this.replacementWarning()
+      })
     );
     if (this.busy) this.root.append(h('progress', { attrs: { 'aria-label': this.message } }));
   }
@@ -113,14 +115,14 @@ class OcedConfig extends HTMLElement implements SoupConfigElement {
         : mappings.map(([column]) => ({ key: `id:${column}`, label: `ID (${column})` }));
       return {
         id: table.source.filename, label: table.source.filename, rows: table.source.rows,
-        propertiesEditable: true, types: [...TYPES], roles,
+        propertiesEditable: true, types: [...TYPES], roles: [{ key: '__property', label: 'Property' }, ...roles, { key: '__ignore', label: 'Ignore' }],
         columns: table.source.columns.map((name) => ({
           name, property: table.keep.has(name), type: table.types[name],
-          disabledRoles: table === event && Object.values(this.workflow.roles).includes(name) ? ['object'] : [],
-          roles: table === event
+          disabledRoles: [],
+          roles: !table.keep.has(name) ? ['__ignore'] : table === event
             ? [...Object.keys(DEFAULTS).filter((key) => this.workflow.roles[key] === name),
-              ...(this.workflow.mappings.has(name) ? ['object'] : [])]
-            : mappings.filter(([, mapping]) => mapping.id === name).map(([column]) => `id:${column}`)
+              ...(this.workflow.mappings.has(name) ? ['object'] : [])].concat(Object.values(this.workflow.roles).includes(name) || this.workflow.mappings.has(name) ? [] : ['__property'])
+            : [mappings.find(([, mapping]) => mapping.id === name)?.[0]].map((column) => column ? `id:${column}` : '__property')
         }))
       };
     });
@@ -148,23 +150,29 @@ class OcedConfig extends HTMLElement implements SoupConfigElement {
     this.changed();
   }
 
+  // eslint-disable-next-line complexity -- Update inclusion and exclusive role mappings atomically.
   private roleChanged(table: TableState, change: TabularChange): void {
     const role = String(change.role);
+    if (role === '__ignore') table.keep.delete(change.column);
+    else table.keep.add(change.column);
     if (table === this.workflow.eventTable()) {
-      if (role === 'object') {
-        this.workflow.selectObject(change.column, Boolean(change.value));
-      } else if (role in DEFAULTS) {
-        this.workflow.roles[role] = change.value ? change.column : '';
-        if (change.value) {
-          this.workflow.mappings.delete(change.column);
-          if (role === 'event_timestamp') table.types[change.column] = 'Datetime';
-        }
+      for (const key of Object.keys(DEFAULTS)) {
+        if (this.workflow.roles[key] === change.column) this.workflow.roles[key] = '';
+      }
+      if (role !== 'object') this.workflow.mappings.delete(change.column);
+      if (role === 'object' && !this.workflow.mappings.has(change.column)) this.workflow.selectObject(change.column, true);
+      if (role in DEFAULTS) {
+        this.workflow.roles[role] = change.column;
+        if (role === 'event_timestamp') table.types[change.column] = 'Datetime';
       }
     } else {
-      const mapping = this.workflow.mappings.get(role.slice(3));
+      for (const mapping of this.workflow.mappings.values()) {
+        if (mapping.table === table.source.filename && mapping.id === change.column) mapping.id = '';
+      }
+      const mapping = role.startsWith('id:') ? this.workflow.mappings.get(role.slice(3)) : undefined;
       if (mapping) {
-        mapping.id = change.value ? change.column : '';
-        if (change.value) table.types[change.column] = 'String';
+        mapping.id = change.column;
+        table.types[change.column] = 'String';
       }
     }
   }
@@ -206,30 +214,6 @@ class OcedConfig extends HTMLElement implements SoupConfigElement {
     return row;
   }
 
-  private replacementWarning(): HTMLElement[] {
-    if (!this.replacementToken) return [];
-    const cancel = h('button', { text: 'Cancel', attrs: { type: 'button' } });
-    cancel.disabled = this.busy;
-    cancel.addEventListener('click', () => {
-      this.replacementConfirmed = false;
-      this.message = 'Replacement cancelled. No further deletion is authorized.';
-      this.context.emit({ ...this.workflow.options(), config_error: this.message });
-      this.render();
-    });
-    const confirm = h('button', {
-      text: 'Delete existing dataset to import new one', attrs: { type: 'button' }
-    });
-    confirm.disabled = this.busy;
-    confirm.addEventListener('click', () => { void this.preview(true); });
-    return [h('section', { attrs: { role: 'alert' } },
-      h('h3', { text: 'Neo4j already contains data' }),
-      h('p', { text: 'Replacement irreversibly deletes ALL nodes and relationships in the selected Neo4j database. This cannot be undone, even if the new import fails.' }),
-      h('p', { text: 'Choose Cancel to keep the data, or explicitly confirm replacement below. Then use SOUP’s Import action to execute the deletion and import.' }),
-      ...(this.replacementConfirmed ? [h('p', { text: 'Replacement confirmed for these CSVs. A failed attempt requires a new confirmation.' })] : []),
-      h('div', { className: 'grid' }, cancel, confirm)
-    )];
-  }
-
   private async upload(column: string, file: File): Promise<void> {
     if (this.busy) return;
     this.generation++;
@@ -256,34 +240,22 @@ class OcedConfig extends HTMLElement implements SoupConfigElement {
     }
   }
 
-  private reviewOptions(confirmReplacement: boolean): void {
-    const confirmation = this.review.find((block) => block.title === 'Neo4j replacement confirmation');
-    const item = confirmation?.type === 'keyvalue' ? confirmation.data.items[0] : undefined;
-    this.replacementToken = String(item?.value ?? '');
-    this.replacementConfirmed = Boolean(this.replacementToken && confirmReplacement);
-    this.message = this.replacementToken && !this.replacementConfirmed
-      ? 'Neo4j contains data. Choose Cancel or explicitly confirm replacement.'
-      : 'Ready to import. Object IDs and timestamp mappings validated.';
-    this.context.emit({
-      ...this.workflow.options(),
-      ...(this.replacementConfirmed
-        ? { replace_existing: true, replacement_token: this.replacementToken }
-        : this.replacementToken ? { config_error: this.message } : {})
-    });
+  private reviewOptions(): void {
+    this.message = 'Ready to import into a dedicated Neo4j database. Queries commit separately to limit memory use; live phase progress appears in the backend logs.';
+    this.context.emit(this.workflow.options());
   }
 
-  private async preview(confirmReplacement = false): Promise<void> {
+  private async preview(): Promise<void> {
     const generation = ++this.generation;
     this.busy = true;
     this.message = 'Validating mappings and preparing object tables…';
-    this.replacementConfirmed = false;
     this.context.emit({ ...this.workflow.options(), config_error: this.message });
     this.render();
     try {
       const review = await this.context.preview(this.workflow.options());
       if (generation !== this.generation) return;
       this.review = review;
-      this.reviewOptions(confirmReplacement);
+      this.reviewOptions();
     } catch (error) {
       if (generation !== this.generation) return;
       this.failed = true;
@@ -302,9 +274,15 @@ class OcedSummary extends HTMLElement implements SoupVisualizerElement<Record<st
   public context!: VisualizerContext;
   public data: Record<string, unknown> = {};
   public connectedCallback(): void {
+    const incomplete = String(this.data['import_status'] ?? 'complete') !== 'complete';
     const counts = this.data['counts'] as { events?: number; entities?: Record<string, number> } | undefined;
+    const times = (this.data['process_info'] as { duration_seconds?: Record<string, number> } | undefined)?.duration_seconds ?? {};
     this.replaceChildren(
-      h('p', { text: `${counts?.events ?? 0} events imported into Neo4j.` }),
+      h('p', { text: `Neo4j database: ${String(this.data['neo4j_database'] ?? 'No dataset database mapping')}` }),
+      ...(incomplete
+        ? [h('p', { attrs: { role: 'alert' }, text: 'This import did not complete. Earlier steps may remain committed. Review the phase timings, then explicitly delete this dataset through the workspace before retrying.' })]
+        : [h('p', { text: `${counts?.events ?? 0} events imported into Neo4j.` })]),
+      ...Object.entries(times).map(([phase, seconds]) => h('p', { text: `${PHASE_LABELS[phase] ?? phase} time: ${seconds.toFixed(3)} s` })),
       ...Object.entries(counts?.entities ?? {}).map(([type, count]) => h('p', { text: `${type}: ${count} objects` }))
     );
   }

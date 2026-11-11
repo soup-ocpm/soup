@@ -4,9 +4,9 @@
  * Only the look: any group works without an entry.
  */
 const GROUP_ICONS: readonly [string, string][] = [
-  ['analisi', 'bi-funnel'],
+  ['analysis', 'bi-funnel'],
   ['ekg', 'bi-diagram-3'],
-  ['grafo', 'bi-diagram-3'],
+  ['graph', 'bi-diagram-3'],
   ['ocel', 'bi-boxes'],
   ['tabell', 'bi-table'],
   ['table', 'bi-table'],

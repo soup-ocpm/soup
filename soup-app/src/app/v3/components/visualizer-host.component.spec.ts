@@ -141,7 +141,7 @@ describe('VisualizerHostComponent', () => {
   it('without a visualizer says none is installed for the kind and shows the meta as JSON', () => {
     render(null);
 
-    expect(text()).toContain('nessun visualizzatore installato per table');
+    expect(text()).toContain('no visualizer installed for table');
     expect(text()).toContain('"rows": 3');
     expect(loader.ensureLoaded).not.toHaveBeenCalled();
     expect((fixture.nativeElement as HTMLElement).querySelector('soup-fake-viewer')).toBeNull();

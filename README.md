@@ -163,6 +163,13 @@ Packages declare `"databases": ["memgraph"]`, `["neo4j"]`, or both; omission mea
 Memgraph only. Incompatible packages stay disabled during automatic discovery and
 cannot be enabled, installed or loaded into the frontend for the selected backend.
 The file-backed storage, SOUP base, text and CSV-table packages support both modes.
-New packages use `ctx.database.execute(cypher, parameters)` and
-`with ctx.database.transaction() as tx: tx.execute(cypher, parameters)`; SOUP does not
-translate database-specific Cypher. Existing Memgraph graph queries remain unchanged.
+Neo4j OCED imports require multi-database Enterprise support and CREATE/DROP DATABASE,
+access, LOAD CSV, graph-write and index privileges. Each import creates its own database;
+workspace deletion requires explicit confirmation and drops only its registered database.
+`NEO4J_DATABASE` remains a legacy/administrative setting, never a dataset fallback.
+
+Packages select `db = ctx.database.for_dataset(object.id)` before calling
+`db.execute(cypher, parameters)` or `with db.transaction() as tx:`. Derived objects
+resolve their database through catalog parents; ambiguous or missing mappings fail.
+Administrative commands explicitly use `ctx.database.for_database("system")`.
+SOUP does not translate Cypher. Existing Memgraph graph queries remain unchanged.

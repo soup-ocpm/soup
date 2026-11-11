@@ -27,8 +27,8 @@ from soup.core.contracts import ValidationError
 COMMA, SEMICOLON, TAB = ",", ";", "\t"
 SEPARATORS = (COMMA, SEMICOLON, TAB)
 SNIFF_BYTES = 64 * 1024
-EMPTY_LABEL = "(vuoto)"
-OTHER_LABEL = "(altri)"
+EMPTY_LABEL = "(empty)"
+OTHER_LABEL = "(other)"
 SORT_DIRECTIONS = ("asc", "desc")
 
 Row = list[str]

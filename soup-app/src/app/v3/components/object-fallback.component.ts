@@ -14,7 +14,7 @@ import { Component, input } from '@angular/core';
     <div class="soup-fallback">
       <p class="text-muted mb-2">
         <i class="bi bi-puzzle"></i>
-        nessun visualizzatore installato per {{ this.kind() }}
+        no visualizer installed for {{ this.kind() }}
       </p>
       @if (this.data() !== undefined) {
         <pre class="soup-fallback-json">{{ this.data() | json }}</pre>

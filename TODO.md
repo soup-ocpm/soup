@@ -1,0 +1,4 @@
+- [] Translate Italian labels in English
+- [] Enlarge the Graph div size and enlarge the csv table preview size
+- [] Always store the constrution times
+- [] The choice of options should be uniform among the loading and you can select only one of that values. Of course if a column is marked as entity, it will also be stored as property.

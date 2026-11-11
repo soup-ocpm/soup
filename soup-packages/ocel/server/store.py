@@ -63,10 +63,10 @@ def import_meta(log: OcelLog, filename: str) -> dict[str, Any]:
 def summary_block(log: OcelLog) -> dict[str, Any]:
     counts = log.counts()
     return report.keyvalue({
-        "eventi": counts["events"],
-        "oggetti": counts["objects"],
-        "tipi di evento": counts["event_types"],
-        "tipi di oggetto": counts["object_types"],
+        "Events": counts["events"],
+        "Objects": counts["objects"],
+        "Event types": counts["event_types"],
+        "Object types": counts["object_types"],
     }, title="OCEL 2.0")
 
 

@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "databases": ["memgraph", "neo4j"],
   "api_version": "4.1",
-  "label": "CSV come tabella",
+  "label": "CSV as table",
   "description": "Imports CSV/TSV files as tables (Python's csv module): remote paging, sorting and column filters, a column profile, the distribution of a column as a report and the CSV export.",
   "author": "SOUP",
   "contributors": [{"name": "Alessio Pianaroli", "email": "alessiopianaroli.it@gmail.com"}],

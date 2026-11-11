@@ -86,27 +86,25 @@ export class PackagesComponent implements OnInit {
       return;
     }
     this.installError.set('');
-    const installed = await this.change(
-      `Installazione di ${archive.name}...`,
-      this.api.installPackage(archive, this.allowOverride()),
-      (error) => this.installError.set(errorMessage(error))
+    const installed = await this.change(`Installing ${archive.name}...`, this.api.installPackage(archive, this.allowOverride()), (error) =>
+      this.installError.set(errorMessage(error))
     );
     if (installed) {
       this.archive.set(null);
-      notify(this.notifications, `Package '${installed.name}' ${installed.version} installato`, 'success');
+      notify(this.notifications, `Package '${installed.name}' ${installed.version} installed`, 'success');
     }
   }
 
   // --- enable / disable / uninstall ---------------------------------------- //
   public async enable(pkg: PackageInfo): Promise<void> {
-    if (await this.change(`Attivazione di ${pkg.name}...`, this.api.enablePackage(pkg.name))) {
-      notify(this.notifications, `Package '${pkg.name}' attivato`, 'success');
+    if (await this.change(`Enabling ${pkg.name}...`, this.api.enablePackage(pkg.name))) {
+      notify(this.notifications, `Package '${pkg.name}' enabled`, 'success');
     }
   }
 
   public async disable(pkg: PackageInfo, cascade = false): Promise<void> {
     this.pending.set(null);
-    const disabled = await this.change(`Disattivazione di ${pkg.name}...`, this.api.disablePackage(pkg.name, cascade), (error) => {
+    const disabled = await this.change(`Disabling ${pkg.name}...`, this.api.disablePackage(pkg.name, cascade), (error) => {
       const dependents = (error as ApiResponse<{ dependents?: string[] }>)?.responseData?.dependents ?? [];
       if ((error as ApiResponse)?.statusCode === 409 && dependents.length) {
         this.pending.set({ kind: 'disable-cascade', pkg, dependents });
@@ -115,7 +113,7 @@ export class PackagesComponent implements OnInit {
       }
     });
     if (disabled) {
-      notify(this.notifications, `Disattivati: ${disabled.join(', ')}`, 'success');
+      notify(this.notifications, `Disabled: ${disabled.join(', ')}`, 'success');
     }
   }
 
@@ -125,8 +123,8 @@ export class PackagesComponent implements OnInit {
 
   public async uninstall(pkg: PackageInfo): Promise<void> {
     this.pending.set(null);
-    if (await this.change(`Disinstallazione di ${pkg.name}...`, this.api.uninstallPackage(pkg.name))) {
-      notify(this.notifications, `Package '${pkg.name}' disinstallato`, 'success');
+    if (await this.change(`Uninstalling ${pkg.name}...`, this.api.uninstallPackage(pkg.name))) {
+      notify(this.notifications, `Package '${pkg.name}' uninstalled`, 'success');
     }
   }
 

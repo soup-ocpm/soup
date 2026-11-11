@@ -27,7 +27,7 @@ from .analysis import Analysis, analysis_file, is_analysis
 
 class AnalysisConfigExporter(Exporter):
     id = "config"
-    label = "Configurazione dell'analisi"
+    label = "Analysis configuration"
     accepts = (ekg.EKG_KIND,)
     extension = ".json"
     mime = "application/json"

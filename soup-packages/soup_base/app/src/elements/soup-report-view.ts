@@ -84,7 +84,7 @@ export class SoupReportView extends HTMLElement implements SoupVisualizerElement
     const blocks = Array.isArray(this.value.blocks) ? this.value.blocks : [];
     this.root.replaceChildren(
       style(BASE_CSS + CSS),
-      ...(blocks.length ? blocks.map((block) => this.block(block)) : [h('p', { className: 'empty', text: 'Il report non contiene blocchi.' })])
+      ...(blocks.length ? blocks.map((block) => this.block(block)) : [h('p', { className: 'empty', text: 'The report contains no blocks.' })])
     );
   }
 
@@ -108,7 +108,7 @@ function unknownBlock(block: Block): HTMLElement {
   return h(
     'div',
     { className: 'unknown', attrs: { role: 'note' } },
-    `Tipo di blocco sconosciuto: ${String(block?.type)}`,
+    `Unknown block type: ${String(block?.type)}`,
     h('pre', { text: json(block?.data ?? block) })
   );
 }

@@ -63,8 +63,8 @@ def count_of(records: Sequence[Mapping[str, Any]], column: str = "count") -> int
 
 def limit_fields(default: int = DEFAULT_ROWS) -> list[Field]:
     return [
-        Field("limit", "Righe", type="number", default=default, help=f"Al massimo {MAX_ROWS}."),
-        Field("offset", "Dalla riga", type="number", default=0),
+        Field("limit", "Rows", type="number", default=default, help=f"Up to {MAX_ROWS}."),
+        Field("offset", "Starting row", type="number", default=0),
     ]
 
 
@@ -149,7 +149,7 @@ class CountQuery(GraphQuery):
     node_label: str = ""
     relationship: str = ""
 
-    def __init__(self, key: str = "", label: str = "", group: str = "Conteggi",
+    def __init__(self, key: str = "", label: str = "", group: str = "Counts",
         node_label: str = "", relationship: str = ""):
         self.key = key or self.key
         self.label = label or self.label
@@ -177,7 +177,7 @@ class NodeListQuery(GraphQuery):
     node_label: str = ""
     where: str = ""
 
-    def __init__(self, key: str = "", label: str = "", group: str = "Nodi", node_label: str = ""):
+    def __init__(self, key: str = "", label: str = "", group: str = "Nodes", node_label: str = ""):
         self.key = key or self.key
         self.label = label or self.label
         self.group = group
@@ -222,7 +222,7 @@ class RelationshipListQuery(GraphQuery):
     target_label: str = ""
     where: str = ""
 
-    def __init__(self, key: str = "", label: str = "", group: str = "Relazioni",  # noqa: PLR0913, PLR0917 - public API (soup_pkg_ekg_views.api)
+    def __init__(self, key: str = "", label: str = "", group: str = "Relationships",  # noqa: PLR0913, PLR0917 - public API (soup_pkg_ekg_views.api)
                  source_label: str = "", relationship: str = "", target_label: str = ""):
         self.key = key or self.key
         self.label = label or self.label

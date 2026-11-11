@@ -59,6 +59,7 @@ from datetime import datetime
 from typing import Any, Protocol, cast
 
 from soup.core.contracts import (
+    Catalog,
     Choice,
     Exporter,
     Field,
@@ -171,14 +172,19 @@ class _EkgContribution:
         if self._database is not None and self._database.backend == "neo4j":
             if obj.kind != OCED_KIND:
                 raise ValidationError("Neo4j EKG views require an OCED-imported graph")
-            rows = self._database.execute(
+            database = self._database.for_dataset(obj.id)
+            if obj.meta.get("import_status", "complete") != "complete":
+                raise ValidationError(
+                    "This dataset import did not complete; inspect its import summary before retrying."
+                )
+            rows = database.execute(
                 "MATCH (n) WHERE n:Event OR n:Entity "
                 "RETURN count(n) AS total, count(CASE WHEN n.Log = $log THEN 1 END) AS matching",
                 {"log": obj.id},
             )
             if not rows or not rows[0]["total"] or rows[0]["total"] != rows[0]["matching"]:
                 raise ValidationError("The configured Neo4j database does not exclusively contain this OCED log")
-            return Neo4jQueries(self._database, obj)
+            return Neo4jQueries(database, obj)
         ekg = self._ekg()
         graph_tools = ekg.graph_tools()
         ekg.ensure_loaded(obj, graph_tools)
@@ -190,7 +196,7 @@ class _EkgContribution:
 # ---------------------------------------------------------------------- #
 class GraphVisualizer(_EkgContribution, Visualizer):
     id = "graph"
-    label = "Grafo"
+    label = "Graph"
     element = "soup-pkg-ekg-graph"
 
     def __init__(self, contributions: Contributions, max_limit: int = DEFAULT_MAX_LIMIT,
@@ -299,15 +305,24 @@ def _seconds(start: Any, finish: Any) -> float | None:
     return delta.total_seconds()
 
 
+def construction_seconds(process_info: Any, phase: str = "total") -> float | None:
+    info = process_info if isinstance(process_info, Mapping) else {}
+    measured = info.get("duration_seconds", {}).get(phase)
+    if isinstance(measured, (int, float)):
+        return float(measured)
+    prefix = "" if phase == "total" else f"{phase}_"
+    return _seconds(info.get(f"init_{prefix}time"), info.get(f"finish_{prefix}time"))
+
+
 def phase_times(process_info: Any) -> dict[str, Any] | None:
     """The "pie" chart of the build phases, or None if no phase has both times."""
 
     info = process_info if isinstance(process_info, Mapping) else {}
-    durations = [_seconds(info.get(f"init_{phase}_time"), info.get(f"finish_{phase}_time")) for _, phase in PHASES]
+    durations = [construction_seconds(info, phase) for _, phase in PHASES]
     if all(value is None for value in durations):
         return None
     return {"chart": "pie", "labels": [label for label, _ in PHASES],
-            "datasets": [{"label": "secondi", "data": [value or 0 for value in durations]}]}
+            "datasets": [{"label": "seconds", "data": [value or 0 for value in durations]}]}
 
 
 # The roles of the mapping in meta.mapping, in the order they are shown.
@@ -344,12 +359,12 @@ def dataset_columns(meta: Mapping[str, Any]) -> list[dict[str, str]]:
 def warning_label(count: int) -> str:
     """getEntityWarningLabel."""
 
-    return f"{count} nodi hanno valore NaN."
+    return f"{count} nodes have NaN values."
 
 
 class StatsVisualizer(_EkgContribution, Visualizer):
     id = "stats"
-    label = "Statistiche"
+    label = "Statistics"
     element = "soup-pkg-ekg-stats"
 
     def data(self, obj: ObjectRef, params: Mapping[str, Any], tools: ToolAccess) -> Any:
@@ -357,6 +372,8 @@ class StatsVisualizer(_EkgContribution, Visualizer):
         if problem:
             return self._metadata_only(obj, problem)
         graph = self._loaded(obj, tools)
+        if obj.kind != OCED_KIND:
+            obj = self._ekg().graph_tools().typed("catalog", Catalog).get(obj.id) or obj
 
         def rows(query: GraphQuery) -> list[dict[str, Any]]:
             return _run(graph, query.build({}))
@@ -378,13 +395,14 @@ class StatsVisualizer(_EkgContribution, Visualizer):
         # A derived object (an analysis) has the columns of its dataset.
         source = obj if obj.kind == OCED_KIND or obj.meta.get("columns") else self._ekg().root_of(obj)
         composition = {"chart": "pie", "labels": ["Event", "Entity", "CORR", "DF"],
-                       "datasets": [{"label": "numero", "data": list(counts.values())}]}
+                       "datasets": [{"label": "count", "data": list(counts.values())}]}
         return {
             "counts": counts,
             "timestamps": timestamps.rows(rows(timestamps)),
             "activities": activities.rows(rows(activities)),
             "entities": entities,
             "columns": dataset_columns(source.meta),
+            "construction_seconds": construction_seconds(obj.meta.get("process_info")),
             "charts": {"data": composition, "process": phase_times(obj.meta.get("process_info"))},
             "notice": self._notice(obj, tools),
         }
@@ -404,13 +422,14 @@ class StatsVisualizer(_EkgContribution, Visualizer):
         stored: Mapping[str, Any] = meta_counts if isinstance(meta_counts, Mapping) else {}
         counts = {key: count_of([stored], key) for key in ("event_nodes", "entity_nodes", "corr_rel", "df_rel")}
         composition = {"chart": "pie", "labels": ["Event", "Entity", "CORR", "DF"],
-                       "datasets": [{"label": "numero", "data": list(counts.values())}]}
+                       "datasets": [{"label": "count", "data": list(counts.values())}]}
         return {
             "counts": counts,
             "timestamps": {"min": None, "max": None},
             "activities": [],
             "entities": [],
             "columns": dataset_columns(source.meta),
+            "construction_seconds": construction_seconds(source.meta.get("process_info")),
             "charts": {"data": composition, "process": phase_times(source.meta.get("process_info"))},
             "notice": problem,
         }
@@ -421,7 +440,7 @@ class StatsVisualizer(_EkgContribution, Visualizer):
 # ---------------------------------------------------------------------- #
 class QueriesVisualizer(_EkgContribution, Visualizer):
     id = "queries"
-    label = "Interrogazioni"
+    label = "Queries"
     element = "soup-pkg-ekg-queries"
 
     @property
@@ -434,7 +453,7 @@ class QueriesVisualizer(_EkgContribution, Visualizer):
     def data(self, obj: ObjectRef, params: Mapping[str, Any], tools: ToolAccess) -> Any:
         groups: dict[str, list[dict[str, Any]]] = {}
         for query in self.queries(obj.kind).values():
-            groups.setdefault(query.group or "Altro", []).append(query.describe())
+            groups.setdefault(query.group or "Other", []).append(query.describe())
         return {"groups": [{"group": group, "queries": items} for group, items in groups.items()],
                 "notice": notice_of(obj)}
 
@@ -461,7 +480,7 @@ class QueriesVisualizer(_EkgContribution, Visualizer):
 # ---------------------------------------------------------------------- #
 class GraphJsonExporter(_EkgContribution, Exporter):
     id = "json"
-    label = "JSON del grafo"
+    label = "Graph JSON"
     extension = ".json"
     mime = "application/json"
 
@@ -474,9 +493,9 @@ class GraphJsonExporter(_EkgContribution, Exporter):
 
     def fields(self, obj: ObjectRef, tools: ToolAccess) -> list[Field]:
         parts = self.parts(obj.kind)
-        return [Field("parts", "Contenuto", type="multiselect", required=True,
+        return [Field("parts", "Content", type="multiselect", required=True,
                       choices=tuple(Choice(key, part.label or key) for key, part in parts.items()),
-                      default=list(parts), help="Le parti del grafo da esportare, ognuna sotto la propria chiave.")]
+                      default=list(parts), help="Select the graph parts to export, each under its own key.")]
 
     def export(self, obj: ObjectRef, params: Mapping[str, Any], tools: ToolAccess) -> bytes:
         parts = self.parts(obj.kind)

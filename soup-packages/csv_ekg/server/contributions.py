@@ -95,21 +95,20 @@ def mapping_fields(columns: Sequence[str]) -> list[Field]:
     columns = [str(column) for column in columns]
     choices = cast("tuple[Choice, ...]", columns or None)
     return [
-        Field("event_id", "ID evento", type="column", required=True, choices=choices,
+        Field("event_id", "Event ID", type="column", required=True, choices=choices,
               default=_guess(columns, "event_id")),
         Field("timestamp", "Timestamp", type="column", required=True, choices=choices,
               default=_guess(columns, "timestamp")),
-        Field("activity", "Attività", type="column", required=True, choices=choices,
+        Field("activity", "Activity", type="column", required=True, choices=choices,
               default=_guess(columns, "activity")),
-        Field("entities", "Colonne entità", type="columns", choices=choices,
-              help="Diventano nodi :Entity collegati agli eventi con :CORR e :DF. "
-                   "Con almeno due, l'anteprima mostra le loro molteplicità."),
-        Field("values", "Colonne valore", type="columns", choices=choices,
-              help="Restano proprietà dei nodi :Event."),
-        Field("trigger_target", "Coppie trigger/target", type="pairs", choices=choices,
-              help="Coppie di colonne entità per il :DF causale (package causal_df)."),
-        Field("save_process_times", "Salva i tempi delle fasi", type="bool", default=False,
-              help="Registra inizio e fine di ogni fase della costruzione nella configurazione."),
+        Field("entities", "Entity columns", type="columns", choices=choices,
+              help="Create :Entity nodes linked to events through :CORR and :DF. "
+                   "With at least two, the preview shows their multiplicities."),
+        Field("values", "Property columns", type="columns", choices=choices,
+              help="Keep as properties of :Event nodes."),
+        Field("trigger_target", "Trigger/target pairs", type="pairs", choices=choices,
+              help="Entity-column pairs for causal :DF (causal_df package)."),
+
     ]
 
 
@@ -199,7 +198,7 @@ def parse_options(options: Mapping[str, Any], columns: Sequence[str]) -> Options
 
 def _preview_table(table: Table) -> dict[str, Any]:
     rows = [["" if cell is None else cell for cell in row] for row in table.rows[:PREVIEW_ROWS]]
-    return report.table(list(table.columns), rows, total=len(table), title=f"Prime {PREVIEW_ROWS} righe")
+    return report.table(list(table.columns), rows, total=len(table), title=f"First {PREVIEW_ROWS} rows")
 
 
 def _optional_list(options: Mapping[str, Any], name: str) -> list[str] | None:
@@ -213,10 +212,10 @@ def _optional_list(options: Mapping[str, Any], name: str) -> list[str] | None:
 
 class CsvEkgImporter(Importer):
     id = "csv"
-    label = "CSV come event log (EKG su Memgraph)"
+    label = "CSV as event log (EKG on Memgraph)"
     description = (
-        "Reads the file as an event log (one row per event), normalizes it and builds its "
-        "event knowledge graph on Memgraph."
+        "Reads the file as an event log (one row per event), normalizes it and builds its event knowledge graph"
+        " on Memgraph."
     )
     extensions = (".csv",)
     produces = EKG_KIND
@@ -269,7 +268,7 @@ def _child_name(source: ObjectRef) -> str:
 
 class TableToEkg(Operation):
     id = "to_ekg"
-    label = "Converti in EKG"
+    label = "Convert to EKG"
     description = "Reads the table as an event log and builds its event knowledge graph on Memgraph."
     group = "EKG"
     inputs = (OperationInput("table", (TABLE_KIND,)),)

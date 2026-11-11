@@ -67,7 +67,7 @@ export class SoupText extends BlockElement<TextData> {
 
   protected draw(): Node[] {
     const input = h('input', {
-      attrs: { type: 'search', placeholder: 'Cerca nel testo', 'aria-label': 'Cerca nel testo' },
+      attrs: { type: 'search', placeholder: 'Search in text', 'aria-label': 'Search in text' },
       on: { input: (event) => this.search((event.target as HTMLInputElement).value) }
     });
     input.value = this.query;
@@ -94,6 +94,6 @@ export class SoupText extends BlockElement<TextData> {
         return row;
       })
     );
-    count.textContent = query ? `${this.matchCount} risultati` : '';
+    count.textContent = query ? `${this.matchCount} results` : '';
   }
 }

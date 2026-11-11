@@ -14,6 +14,7 @@ interface PendingDelete {
   node: WorkspaceNode;
   descendants: number;
   cascade: boolean;
+  confirmDatabaseDrop: boolean;
   // The packages that must be active to delete the data (409)
   missingPackages: string[];
   error: string;
@@ -121,7 +122,7 @@ export class WorkspaceComponent implements OnInit {
     this.api.updateObject(current.id, { name: current.name.trim(), description: current.description.trim() }).subscribe({
       next: (updated) => {
         this.renaming.set(null);
-        notify(this.notifications, `Salvato '${updated.name}'`, 'success');
+        notify(this.notifications, `Saved '${updated.name}'`, 'success');
         this.refresh();
       },
       error: (error) => notify(this.notifications, errorMessage(error), 'error')
@@ -138,6 +139,7 @@ export class WorkspaceComponent implements OnInit {
       node,
       descendants: countDescendants(node),
       cascade: false,
+      confirmDatabaseDrop: false,
       missingPackages: [],
       error: '',
       busy: false
@@ -145,7 +147,18 @@ export class WorkspaceComponent implements OnInit {
   }
 
   public setCascade(event: Event): void {
-    this.updateDelete({ cascade: (event.target as HTMLInputElement).checked });
+    this.updateDelete({ cascade: (event.target as HTMLInputElement).checked, confirmDatabaseDrop: false });
+  }
+
+  public databaseNames(): string[] {
+    const pending = this.pendingDelete();
+    if (!pending) return [];
+    const nodes = pending.cascade ? flatten([pending.node]) : [pending.node];
+    return nodes.filter((node) => node.object.meta['neo4j_managed'] === true).map((node) => String(node.object.meta['neo4j_database']));
+  }
+
+  public confirmDatabaseDrop(event: Event): void {
+    this.updateDelete({ confirmDatabaseDrop: (event.target as HTMLInputElement).checked });
   }
 
   public cancelDelete(): void {
@@ -159,10 +172,10 @@ export class WorkspaceComponent implements OnInit {
       return;
     }
     this.updateDelete({ busy: true, error: '' });
-    this.api.deleteObject(pending.node.object.id, pending.cascade, force).subscribe({
+    this.api.deleteObject(pending.node.object.id, pending.cascade, force, pending.confirmDatabaseDrop).subscribe({
       next: (deleted) => {
         this.pendingDelete.set(null);
-        notify(this.notifications, `${deleted.length} oggetto/i eliminati`, 'success');
+        notify(this.notifications, `${deleted.length} object(s) deleted`, 'success');
         this.refresh();
       },
       error: (error: ApiResponse<{ packages?: string[] }>) => {

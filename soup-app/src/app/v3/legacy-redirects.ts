@@ -52,7 +52,7 @@ export const legacyObjectRedirect: CanActivateFn = (route: ActivatedRouteSnapsho
   const analysis = route.paramMap.get('analysisName');
   const searched = analysis ?? dataset;
   const notFound = () => {
-    notify(notifications, `'${searched}' non è nel workspace`, 'warning');
+    notify(notifications, `'${searched}' is not in the workspace`, 'warning');
     return router.createUrlTree(['/workspace'], { queryParams: { search: searched } });
   };
   return api.objects().pipe(

@@ -22,7 +22,7 @@
   min-width: 0;
 }
 .table-scroll {
-  max-height: 65dvh;
+  max-height: 78dvh;
   overflow: auto;
   border: 1px solid var(--soup-border);
   border-radius: var(--soup-radius-sm);
@@ -100,6 +100,6 @@ td {
     }
   }
   .table-scroll {
-    max-height: 45dvh;
+    max-height: 65dvh;
   }
 }

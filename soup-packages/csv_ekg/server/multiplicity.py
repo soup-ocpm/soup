@@ -102,4 +102,4 @@ def multiplicity_block(table: Table, columns: Sequence[str]) -> dict[str, Any] |
                 "props": {"multiplicity": overall, "source_side": left, "target_side": right},
             })
     nodes = [{"id": column, "label": column, "group": "entity", "props": {}} for column in columns]
-    return report.graph(nodes, edges, directed=False, title="Molteplicità tra le colonne entità")
+    return report.graph(nodes, edges, directed=False, title="Multiplicity between entity columns")

@@ -20,7 +20,7 @@ class CsvServer:
         self._server: ThreadingHTTPServer | None = None
         self._thread: threading.Thread | None = None
         self._lock = threading.Lock()
-        self._sessions: dict[str, tuple[float, dict[str, bytes]]] = {}
+        self._sessions: dict[str, tuple[float, dict[str, bytes], dict[str, float]]] = {}
 
     def _start(self) -> None:
         parsed = urlsplit(self.public_url)
@@ -49,14 +49,23 @@ class CsvServer:
                 if content is None:
                     self.send_error(404)
                     return
+                assert session is not None
                 self.send_response(200)
                 self.send_header("Content-Type", "text/csv; charset=utf-8")
                 self.send_header("Content-Length", str(len(content)))
                 self.send_header("Cache-Control", "no-store")
                 self.send_header("X-Content-Type-Options", "nosniff")
                 self.end_headers()
-                with suppress(BrokenPipeError, ConnectionResetError):
-                    self.wfile.write(content)
+                started, sent = time.perf_counter(), 0
+                try:
+                    with suppress(BrokenPipeError, ConnectionResetError):
+                        sent = self.wfile.write(content)
+                finally:
+                    with owner._lock:
+                        metrics = session[2]
+                        metrics["requests"] = metrics.get("requests", 0) + 1
+                        metrics["bytes"] = metrics.get("bytes", 0) + sent
+                        metrics["send_seconds"] = metrics.get("send_seconds", 0.0) + time.perf_counter() - started
 
             def log_message(self, format: str, *args: object) -> None:
                 # Capability URLs must never enter access logs.
@@ -70,12 +79,17 @@ class CsvServer:
         self._thread.start()
 
     @contextmanager
-    def publish(self, files: Mapping[str, bytes]) -> Iterator[dict[str, str]]:
+    def publish(
+        self, files: Mapping[str, bytes], *, metrics: dict[str, float] | None = None
+    ) -> Iterator[dict[str, str]]:
         with self._lock:
             self._start()
             token = secrets.token_urlsafe(32)
             paths = {name: f"/{token}/{quote(name, safe='/')}" for name in files if name.endswith(".csv")}
-            self._sessions[token] = (time.monotonic() + 3600, {path: files[name] for name, path in paths.items()})
+            self._sessions[token] = (
+                time.monotonic() + 3600, {path: files[name] for name, path in paths.items()},
+                metrics if metrics is not None else {},
+            )
         # Base paths allow a TLS reverse proxy to forward the dedicated CSV port.
         urls = {name: self.public_url + path for name, path in paths.items()}
         try:

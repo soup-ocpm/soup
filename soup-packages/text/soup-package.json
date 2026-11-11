@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "databases": ["memgraph", "neo4j"],
   "api_version": "4.1",
-  "label": "Testo",
+  "label": "Text",
   "description": "Imports text files (.txt, .md, .log) into the package's storage space and shows them as text or markdown.",
   "author": "SOUP",
   "contributors": [{"name": "Alessio Pianaroli", "email": "alessiopianaroli.it@gmail.com"}],

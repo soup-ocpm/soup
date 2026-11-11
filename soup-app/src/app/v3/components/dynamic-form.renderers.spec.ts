@@ -55,12 +55,12 @@ describe('DynamicFormComponent renderers', () => {
   });
 
   it('formats every type of value with its own formatter', () => {
-    expect(formatValue(field('b', 'bool'), true)).toBe('sì');
+    expect(formatValue(field('b', 'bool'), true)).toBe('yes');
     expect(formatValue(field('s', 'select'), 'a')).toBe('A');
     expect(formatValue(field('m', 'multiselect'), ['a', 'x'])).toBe('A, x');
     expect(formatValue(field('p', 'pairs'), [['a', 'b']])).toBe('a → b');
     expect(formatValue(field('f', 'file'), { filename: 'x.csv', base64: '' })).toBe('x.csv');
-    expect(formatValue(field('i', 'items'), [{ variant: 'v', values: {} }])).toBe('1 elementi');
+    expect(formatValue(field('i', 'items'), [{ variant: 'v', values: {} }])).toBe('1 items');
     expect(formatValue(field('c', 'columns'), ['a', 'b'])).toBe('a, b');
     expect(formatValue(field('t', 'text'), '')).toBe('-');
   });

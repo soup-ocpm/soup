@@ -8,13 +8,13 @@
         <i
           class="bi bi-upload"
           aria-hidden="true"></i>
-        Importa
+        Import
       </a>
       <button
         type="button"
         class="btn btn-outline-secondary soup-icon-btn"
-        aria-label="Aggiorna il workspace"
-        title="Aggiorna"
+        aria-label="Refresh workspace"
+        title="Refresh"
         (click)="this.refresh()">
         <i
           class="bi bi-arrow-clockwise"
@@ -28,8 +28,8 @@
       <input
         type="search"
         class="form-control"
-        placeholder="Cerca per nome o descrizione"
-        aria-label="Cerca"
+        placeholder="Search by name or description"
+        aria-label="Search"
         [value]="this.search()"
         (input)="this.onFilter('search', $event)" />
     </div>
@@ -38,7 +38,7 @@
         class="form-select"
         aria-label="Kind"
         (change)="this.onFilter('kind', $event)">
-        <option value="">Tutti i kind</option>
+        <option value="">All kinds</option>
         @for (item of this.kinds(); track item) {
           <option
             [value]="item"
@@ -53,7 +53,7 @@
         class="form-select"
         aria-label="Package"
         (change)="this.onFilter('package', $event)">
-        <option value="">Tutti i package</option>
+        <option value="">All packages</option>
         @for (pkg of this.packages(); track pkg) {
           <option
             [value]="pkg"
@@ -80,18 +80,18 @@
       <span
         class="spinner-border spinner-border-sm"
         aria-hidden="true"></span>
-      Caricamento...
+      Loading...
     </div>
   } @else if (this.total() === 0) {
     <div class="soup-card soup-empty">
       <i
         class="bi bi-inbox"
         aria-hidden="true"></i>
-      <p>Il workspace è vuoto: importa un file per iniziare.</p>
+      <p>The workspace is empty: import a file to get started.</p>
       <a
         class="btn btn-primary"
         routerLink="/import">
-        Vai a Import
+        Go to Import
       </a>
     </div>
   } @else if (this.visible().length === 0) {
@@ -99,7 +99,7 @@
       <i
         class="bi bi-search"
         aria-hidden="true"></i>
-      <p>Nessun oggetto corrisponde ai filtri.</p>
+      <p>No objects match the filters.</p>
     </div>
   } @else {
     <ul class="soup-tree soup-card list-unstyled">
@@ -138,7 +138,7 @@
               <input
                 type="text"
                 class="form-control"
-                aria-label="Nuovo nome"
+                aria-label="New name"
                 [value]="this.renaming()?.name"
                 (input)="this.onRenameInput($event)"
                 (keyup.enter)="this.saveRename()"
@@ -147,20 +147,20 @@
                 type="button"
                 class="btn btn-primary"
                 (click)="this.saveRename()">
-                Salva
+                Save
               </button>
               <button
                 type="button"
                 class="btn btn-outline-secondary"
                 (click)="this.cancelRename()">
-                Annulla
+                Cancel
               </button>
             </div>
             <textarea
               class="form-control form-control-sm soup-description-input"
               rows="2"
-              aria-label="Descrizione"
-              placeholder="Descrizione"
+              aria-label="Description"
+              placeholder="Description"
               [value]="this.renaming()?.description"
               (input)="this.onRenameInput($event, 'description')"
               (keyup.escape)="this.cancelRename()"></textarea>
@@ -196,8 +196,8 @@
           <button
             type="button"
             class="btn btn-sm btn-outline-secondary soup-icon-btn"
-            title="Rinomina e descrivi"
-            [attr.aria-label]="'Rinomina e descrivi ' + node.object.name"
+            title="Edit name and description"
+            [attr.aria-label]="'Edit name and description of ' + node.object.name"
             (click)="this.startRename(node)">
             <i
               class="bi bi-pencil"
@@ -206,8 +206,8 @@
           <button
             type="button"
             class="btn btn-sm btn-outline-danger soup-icon-btn"
-            title="Elimina"
-            [attr.aria-label]="'Elimina ' + node.object.name"
+            title="Delete"
+            [attr.aria-label]="'Delete ' + node.object.name"
             (click)="this.askDelete(node)">
             <i
               class="bi bi-trash"
@@ -231,8 +231,8 @@
     aria-modal="true"
     aria-labelledby="soup-delete-title">
     <div class="soup-dialog">
-      <h5 id="soup-delete-title">Eliminare '{{ pending.node.object.name }}'?</h5>
-      <p class="text-muted">I dati dell'oggetto vengono eliminati dal package che lo ha creato.</p>
+      <h5 id="soup-delete-title">Delete '{{ pending.node.object.name }}'?</h5>
+      <p class="text-muted">The object's data will be deleted.</p>
       @if (pending.descendants > 0) {
         <div class="form-check mb-2">
           <input
@@ -244,7 +244,27 @@
           <label
             class="form-check-label"
             for="soup-delete-cascade">
-            Anche gli oggetti derivati ({{ pending.descendants }})
+            Also delete derived objects ({{ pending.descendants }})
+          </label>
+        </div>
+      }
+      @if (this.databaseNames().length) {
+        <div
+          class="soup-notice soup-notice-danger"
+          role="alert">
+          <p>
+            This irreversibly drops the Neo4j database(s)
+            <strong>{{ this.databaseNames().join(', ') }}</strong>
+            and ALL their nodes and relationships. Other dataset databases are unaffected.
+          </p>
+          <label class="form-check">
+            <input
+              type="checkbox"
+              class="form-check-input"
+              [checked]="pending.confirmDatabaseDrop"
+              [disabled]="pending.busy"
+              (change)="this.confirmDatabaseDrop($event)" />
+            <span class="form-check-label">I confirm permanent deletion of these dataset databases.</span>
           </label>
         </div>
       }
@@ -261,7 +281,7 @@
           class="btn btn-outline-secondary"
           [disabled]="pending.busy"
           (click)="this.cancelDelete()">
-          Annulla
+          Cancel
         </button>
         @if (pending.missingPackages.length) {
           <button
@@ -269,15 +289,15 @@
             class="btn btn-warning"
             [disabled]="pending.busy"
             (click)="this.confirmDelete(true)">
-            Rimuovi solo dal catalogo
+            Remove from catalog only
           </button>
         }
         <button
           type="button"
           class="btn btn-danger soup-confirm-delete"
-          [disabled]="pending.busy"
+          [disabled]="pending.busy || (this.databaseNames().length > 0 && !pending.confirmDatabaseDrop)"
           (click)="this.confirmDelete()">
-          Elimina
+          Delete
         </button>
       </div>
     </div>

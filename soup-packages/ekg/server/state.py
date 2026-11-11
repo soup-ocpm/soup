@@ -44,6 +44,7 @@ from __future__ import annotations
 import logging
 from abc import ABC, abstractmethod
 from collections.abc import Callable, Mapping
+from dataclasses import replace
 from typing import Any, cast
 
 from soup_pkg_tool_memgraph.api import GraphDatabase, Run
@@ -203,6 +204,13 @@ def ensure_loaded(obj: ObjectRef, tools: Any, force: bool = False) -> bool:
     process_info["finish_time"] = timer.finished_at
     config["process_info"] = process_info
     repository.save_config(dataset, config)
+    catalog = runtime.tools.typed(CATALOG, Catalog)
+    for item in {root.id: root, obj.id: obj}.values():
+        recorded = {
+            **(item.meta.get("process_info") or {}),
+            **{key: value for key, value in process_info.items() if value is not None},
+        }
+        catalog.update(replace(item, meta={**item.meta, "process_info": recorded}))
 
     runtime.publish(EKG_BUILT, {"object": obj.id, "graph_key": graph_key, "dataset": dataset, "counts": dict(counts)})
     return True

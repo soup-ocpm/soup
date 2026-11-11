@@ -113,7 +113,7 @@ export class SoupPkgTextViewer extends HTMLElement implements SoupVisualizerElem
             'li',
             {},
             h('button', {
-              text: `riga ${match.line}`,
+              text: `line ${match.line}`,
               attrs: { type: 'button' },
               on: { click: () => void this.reveal(match.line, query) }
             }),
@@ -123,7 +123,7 @@ export class SoupPkgTextViewer extends HTMLElement implements SoupVisualizerElem
       );
       const shown = result.matches.length;
       this.resultsNote.textContent =
-        result.total > shown ? `${result.total} righe trovate (mostrate ${shown})` : `${result.total} righe trovate`;
+        result.total > shown ? `${result.total} lines found (showing ${shown})` : `${result.total} lines found`;
     } catch (error) {
       this.context.notify(errorMessage(error), 'error');
     }
@@ -151,7 +151,7 @@ export class SoupPkgTextViewer extends HTMLElement implements SoupVisualizerElem
 
   private render(): void {
     const name = this.data.filename || this.context?.object.name || '';
-    const info = [`${this.total} righe`, formatSize(this.data.size ?? 0), this.data.encoding].filter(Boolean).join(' · ');
+    const info = [`${this.total} lines`, formatSize(this.data.size ?? 0), this.data.encoding].filter(Boolean).join(' · ');
     const header = h('header', {}, h('h3', { text: name }), h('span', { className: 'info', text: info }));
 
     let body: HTMLElement;
@@ -168,7 +168,7 @@ export class SoupPkgTextViewer extends HTMLElement implements SoupVisualizerElem
       body = text;
       this.moreButton = h('button', {
         className: 'load-more',
-        text: 'Carica altre righe',
+        text: 'Load more lines',
         attrs: { type: 'button' },
         on: { click: () => void this.loadMore() }
       });
@@ -176,10 +176,10 @@ export class SoupPkgTextViewer extends HTMLElement implements SoupVisualizerElem
       more = h('div', { className: 'more' }, this.moreButton, this.loadedNote);
     }
 
-    const input = h('input', { attrs: { type: 'search', placeholder: 'Cerca nel file', 'aria-label': 'Cerca nel file' } });
+    const input = h('input', { attrs: { type: 'search', placeholder: 'Search in file', 'aria-label': 'Search in file' } });
     const searchButton = h('button', {
       className: 'search-file',
-      text: 'Cerca nel file',
+      text: 'Search in file',
       attrs: { type: 'button' },
       on: { click: () => void this.searchFile(input.value) }
     });
@@ -199,6 +199,6 @@ export class SoupPkgTextViewer extends HTMLElement implements SoupVisualizerElem
     if (!this.moreButton || !this.loadedNote) return;
     const complete = this.lines.length >= this.total;
     this.moreButton.hidden = complete;
-    this.loadedNote.textContent = complete ? '' : `${this.lines.length} di ${this.total} righe caricate`;
+    this.loadedNote.textContent = complete ? '' : `${this.lines.length} of ${this.total} lines loaded`;
   }
 }

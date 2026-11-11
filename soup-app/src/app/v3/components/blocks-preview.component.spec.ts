@@ -86,7 +86,7 @@ describe('BlocksPreviewComponent', () => {
     api.visualizersForKind.mockReturnValue(of([]));
     render();
 
-    await until(() => (host().textContent ?? '').includes('nessun visualizzatore installato per report'), fixture);
+    await until(() => (host().textContent ?? '').includes('no visualizer installed for report'), fixture);
     expect(host().textContent).toContain('First lines');
   });
 
@@ -101,7 +101,7 @@ describe('BlocksPreviewComponent', () => {
     fixture.detectChanges();
 
     await until(() => host().querySelector('soup-fake-report-view') === null, fixture);
-    expect(host().textContent).toContain('nessun visualizzatore installato per report');
+    expect(host().textContent).toContain('no visualizer installed for report');
     expect(api.visualizersForKind).toHaveBeenCalledTimes(2);
   });
 });

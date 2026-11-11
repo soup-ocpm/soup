@@ -40,6 +40,7 @@ from soup.core.contracts import (
     ValidationError,
     validate_name,
 )
+from soup.core.contracts.database import Database
 from soup.core.event_bus import EventBus
 from soup.core.events import OBJECT_BEFORE_DELETE
 from soup.core.registry import Registry
@@ -86,6 +87,7 @@ class WorkspaceService:
         event_bus: EventBus,
         package_status: PackageStatus = _always_active,
         orphaned_data: OrphanedDataLog | None = None,
+        database: Database | None = None,
     ):
         self._importers = importers
         self._operations = operations
@@ -93,6 +95,7 @@ class WorkspaceService:
         self._event_bus = event_bus
         self._package_status = package_status
         self._orphaned_data = orphaned_data
+        self._database = database
 
     def list(self) -> builtins.list[WorkspaceNode]:
         """
@@ -180,7 +183,9 @@ class WorkspaceService:
         ref = self.get(object_id)
         self._core_tools.catalog_writer().set_thumbnail(ref.id, svg)
 
-    def delete(self, object_id: str, cascade: bool = False, force: bool = False) -> builtins.list[str]:
+    def delete(
+        self, object_id: str, cascade: bool = False, force: bool = False, *, confirm_database_drop: bool = False
+    ) -> builtins.list[str]:
         """
         Return the ids deleted, children before parents.
         :raises ConflictError: the object has children and cascade is
@@ -217,8 +222,17 @@ class WorkspaceService:
                 "or use force=true to remove the objects from the catalog only",
                 details={"packages": packages, "objects": [obj.id for obj in orphans]},
             )
+        databases = [
+            obj.meta["neo4j_database"] for obj in ordered
+            if obj.meta.get("neo4j_managed") is True and self._contributor(obj) is not None
+        ]
+        if databases and not confirm_database_drop:
+            raise ValidationError(
+                "Deletion irreversibly drops the registered Neo4j database and ALL its nodes and relationships. "
+                "Explicitly confirm database deletion.", details={"databases": databases},
+            )
         for obj in ordered:
-            self._delete_one(obj)
+            self._delete_one(obj, confirm_database_drop=confirm_database_drop)
         return [obj.id for obj in ordered]
 
     # ------------------------------------------------------------------ #
@@ -236,7 +250,7 @@ class WorkspaceService:
             return None
         return contributor
 
-    def _delete_one(self, obj: ObjectRef) -> None:
+    def _delete_one(self, obj: ObjectRef, *, confirm_database_drop: bool = False) -> None:
         self._event_bus.publish(OBJECT_BEFORE_DELETE, {"object": obj.to_dict()})
         creator = obj.created_by
         contributor = self._contributor(obj)
@@ -250,5 +264,9 @@ class WorkspaceService:
                 self._orphaned_data.record(obj)
         else:
             tools = self._core_tools.toolbox(f"{creator.type} '{creator.contributor_id}'", contributor.requires_tools)
+            if obj.meta.get("neo4j_managed") is True:
+                if self._database is None or self._database.backend != "neo4j":
+                    raise ValidationError("Neo4j is required to delete this managed dataset database.")
+                self._database.drop_dataset(obj.id, confirmed=confirm_database_drop)
             contributor.dispose(obj, tools)
         self._core_tools.catalog_writer().remove(obj.id)

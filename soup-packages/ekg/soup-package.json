@@ -2,7 +2,7 @@
   "name": "ekg",
   "version": "1.0.0",
   "api_version": "4.0",
-  "label": "Event log ed EKG",
+  "label": "Event log and EKG",
   "description": "Event log (normalization, entities, canonical CSV), datasets on the volume and the EKG on Memgraph: build pipeline, graph state of the 'ekg' objects and the datasets already on the volume added to the catalog.",
   "author": "SOUP",
   "contributors": [{"name": "Alessio Pianaroli", "email": "alessiopianaroli.it@gmail.com"}],

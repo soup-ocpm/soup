@@ -25,12 +25,12 @@ interface OcelSummaryData {
 }
 
 const LABELS: [keyof OcelCounts, string][] = [
-  ['events', 'Eventi'],
-  ['objects', 'Oggetti'],
-  ['event_types', 'Tipi di evento'],
-  ['object_types', 'Tipi di oggetto'],
-  ['event_objects', 'Relazioni evento-oggetto'],
-  ['object_objects', 'Relazioni oggetto-oggetto']
+  ['events', 'Events'],
+  ['objects', 'Objects'],
+  ['event_types', 'Event types'],
+  ['object_types', 'Object types'],
+  ['event_objects', 'Event-object relationships'],
+  ['object_objects', 'Object-object relationships']
 ];
 
 // The counts as stat tiles, the chart in a card (the design tokens of the host, with fallbacks).
@@ -48,7 +48,7 @@ export function eventsChart(perType: Record<string, number>): ChartData {
   return {
     chart: 'bar',
     labels: Object.keys(perType),
-    datasets: [{ label: 'Eventi', data: Object.values(perType).map(Number) }]
+    datasets: [{ label: 'Events', data: Object.values(perType).map(Number) }]
   };
 }
 
@@ -85,7 +85,7 @@ export class SoupPkgOcelSummary extends HTMLElement implements SoupVisualizerEle
     const chart = document.createElement('soup-chart') as SoupChartElement;
     chart.data = eventsChart(this.data.events_per_type);
     this.chart = chart;
-    this.root.replaceChildren(h('style', { text: CSS }), counts, h('section', { className: 'card' }, h('h3', { text: 'Eventi per tipo' }), chart));
+    this.root.replaceChildren(h('style', { text: CSS }), counts, h('section', { className: 'card' }, h('h3', { text: 'Events per type' }), chart));
     this.context?.setThumbnail(thumbnailOf(Object.values(this.data.events_per_type).map(Number)));
   }
 }

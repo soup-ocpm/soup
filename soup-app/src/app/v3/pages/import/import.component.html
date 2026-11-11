@@ -1,6 +1,6 @@
 <div class="soup-page soup-import">
   <div class="soup-page-head">
-    <h2>Importa un file</h2>
+    <h2>Import a file</h2>
   </div>
 
   <!-- 1. File -->
@@ -12,12 +12,12 @@
           class="bi bi-file-earmark"
           aria-hidden="true"></i>
         <strong class="soup-file-name">{{ chosen.name }}</strong>
-        <span class="text-muted small">{{ chosen.size }} byte</span>
+        <span class="text-muted small">{{ chosen.size }} bytes</span>
         <button
           type="button"
           class="btn btn-sm btn-outline-secondary"
           (click)="this.removeFile()">
-          Cambia file
+          Change file
         </button>
       </div>
     } @else {
@@ -34,7 +34,7 @@
           accept="*"
           (click)="$event.stopPropagation()"
           (change)="this.onInputChange(fileInput)" />
-        <div class="ngx-dropzone-label">Trascina qui un file o fai clic per sceglierlo</div>
+        <div class="ngx-dropzone-label">Drag a file here or click to choose one</div>
       </div>
     }
   </section>
@@ -63,9 +63,9 @@
       <h3 class="soup-panel-title">2. Importer</h3>
       @if (importers.length === 0) {
         <p class="text-muted m-0">
-          Nessun importer installato legge questo file. Installa un package dalla pagina
-          <a routerLink="/packages">Package</a>
-          .
+          No installed importer can read this file. Install a package from the
+          <a routerLink="/packages">Packages</a>
+          page.
         </p>
       } @else if (this.importer()) {
         <div class="d-flex flex-wrap align-items-center gap-2">
@@ -77,7 +77,7 @@
               type="button"
               class="btn btn-sm btn-link"
               (click)="this.changeImporter()">
-              Scegli un altro importer
+              Choose another importer
             </button>
           }
         </div>
@@ -105,7 +105,7 @@
   <!-- 3. Preview and options -->
   @if (this.inspection(); as inspection) {
     <section class="soup-panel">
-      <h3 class="soup-panel-title">3. Anteprima e opzioni</h3>
+      <h3 class="soup-panel-title">3. Preview and options</h3>
       <soup-tabular-import [configuration]="this.tabular()">
         @if (!this.tabular()) {
           <div class="soup-preview">
@@ -145,18 +145,18 @@
         <i
           class="bi bi-arrow-repeat"
           aria-hidden="true"></i>
-        Aggiorna anteprima
+        Refresh preview
       </button>
     </section>
 
     <!-- 4. Name and import -->
     <section class="soup-panel">
-      <h3 class="soup-panel-title">4. Nome e descrizione</h3>
+      <h3 class="soup-panel-title">4. Name and description</h3>
       <div class="mb-2">
         <label
           class="form-label"
           for="soup-import-name">
-          Nome
+          Name
         </label>
         <input
           id="soup-import-name"
@@ -166,14 +166,14 @@
           (input)="this.onName($event)"
           (blur)="this.checkName()" />
         @if (this.nameTaken()) {
-          <div class="form-text text-warning">Esiste già un oggetto con questo nome.</div>
+          <div class="form-text text-warning">An object with this name already exists.</div>
         }
       </div>
       <div class="mb-3">
         <label
           class="form-label"
           for="soup-import-description">
-          Descrizione
+          Description
         </label>
         <textarea
           id="soup-import-description"
@@ -190,7 +190,7 @@
         <i
           class="bi bi-box-arrow-in-down"
           aria-hidden="true"></i>
-        Importa
+        Import
       </button>
     </section>
   }

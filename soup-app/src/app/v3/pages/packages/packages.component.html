@@ -1,18 +1,18 @@
 <div class="soup-page soup-packages">
   <div class="soup-page-head">
-    <h2>Package</h2>
+    <h2>Packages</h2>
   </div>
 
   <!-- Install -->
   <section class="soup-panel">
-    <h3 class="soup-panel-title">Installa da zip</h3>
-    <p class="text-muted small">Un package esegue codice con i privilegi del server e del browser: installa solo package di cui ti fidi.</p>
+    <h3 class="soup-panel-title">Install from zip</h3>
+    <p class="text-muted small">A package runs code with the privileges of the server and the browser: only install packages you trust.</p>
     <div class="d-flex flex-wrap align-items-center gap-2">
       <input
         type="file"
         class="form-control w-auto mw-100 soup-archive"
         accept=".zip"
-        aria-label="Archivio del package"
+        aria-label="Package archive"
         (change)="this.onArchive($event)" />
       <div class="form-check">
         <input
@@ -24,7 +24,7 @@
         <label
           class="form-check-label"
           for="soup-allow-override">
-          Sostituisci un package fornito (versione superiore)
+          Replace a bundled package (higher version)
         </label>
       </div>
       <button
@@ -35,7 +35,7 @@
         <i
           class="bi bi-box-arrow-in-down"
           aria-hidden="true"></i>
-        Installa
+        Install
       </button>
     </div>
     @if (this.installError()) {
@@ -97,38 +97,38 @@
               <button
                 type="button"
                 class="btn btn-sm btn-outline-secondary"
-                [attr.aria-label]="'Disattiva ' + pkg.name"
+                [attr.aria-label]="'Disable ' + pkg.name"
                 [disabled]="!!this.busy()"
                 (click)="this.disable(pkg)">
                 <i
                   class="bi bi-toggle-on"
                   aria-hidden="true"></i>
-                Disattiva
+                Disable
               </button>
             } @else {
               <button
                 type="button"
                 class="btn btn-sm btn-outline-success soup-enable"
-                [attr.aria-label]="'Attiva ' + pkg.name"
+                [attr.aria-label]="'Enable ' + pkg.name"
                 [disabled]="!!this.busy()"
                 (click)="this.enable(pkg)">
                 <i
                   class="bi bi-toggle-off"
                   aria-hidden="true"></i>
-                Attiva
+                Enable
               </button>
             }
             @if (pkg.origin === 'installed') {
               <button
                 type="button"
                 class="btn btn-sm btn-outline-danger"
-                [attr.aria-label]="'Disinstalla ' + pkg.name"
+                [attr.aria-label]="'Uninstall ' + pkg.name"
                 [disabled]="!!this.busy()"
                 (click)="this.askUninstall(pkg)">
                 <i
                   class="bi bi-trash"
                   aria-hidden="true"></i>
-                Disinstalla
+                Uninstall
               </button>
             }
           </span>
@@ -155,10 +155,10 @@
         }
         <div class="small text-muted">
           @if (pkg.requires.length) {
-            <div>Richiede: {{ pkg.requires.join(', ') }}</div>
+            <div>Requires: {{ pkg.requires.join(', ') }}</div>
           }
           @if (pkg.dependents.length) {
-            <div>Richiesto da: {{ pkg.dependents.join(', ') }}</div>
+            <div>Required by: {{ pkg.dependents.join(', ') }}</div>
           }
           @if (pkg.provides_tools.length) {
             <div>Tool: {{ pkg.provides_tools.join(', ') }}</div>
@@ -181,7 +181,7 @@
           <i
             class="bi bi-box-seam"
             aria-hidden="true"></i>
-          <p>Nessun package installato: installane uno da zip.</p>
+          <p>No packages installed: install one from a zip.</p>
         </div>
       }
     }
@@ -196,32 +196,32 @@
     aria-labelledby="soup-pending-title">
     <div class="soup-dialog">
       @if (change.kind === 'disable-cascade') {
-        <h5 id="soup-pending-title">Disattivare anche i package che dipendono da '{{ change.pkg.name }}'?</h5>
-        <p>Verranno disattivati anche: {{ change.dependents.join(', ') }}.</p>
+        <h5 id="soup-pending-title">Also disable the packages that depend on '{{ change.pkg.name }}'?</h5>
+        <p>These will also be disabled: {{ change.dependents.join(', ') }}.</p>
       } @else {
-        <h5 id="soup-pending-title">Disinstallare '{{ change.pkg.name }}'?</h5>
-        <p class="text-muted">Gli oggetti creati dal package restano nel workspace, segnalati come package mancante.</p>
+        <h5 id="soup-pending-title">Uninstall '{{ change.pkg.name }}'?</h5>
+        <p class="text-muted">Objects created by the package stay in the workspace, flagged as missing package.</p>
       }
       <div class="d-flex justify-content-end gap-2">
         <button
           type="button"
           class="btn btn-outline-secondary"
           (click)="this.cancelPending()">
-          Annulla
+          Cancel
         </button>
         @if (change.kind === 'disable-cascade') {
           <button
             type="button"
             class="btn btn-warning"
             (click)="this.disable(change.pkg, true)">
-            Disattiva tutti
+            Disable all
           </button>
         } @else {
           <button
             type="button"
             class="btn btn-danger"
             (click)="this.uninstall(change.pkg)">
-            Disinstalla
+            Uninstall
           </button>
         }
       </div>

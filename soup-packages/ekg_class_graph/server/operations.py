@@ -68,10 +68,10 @@ def entity_type_choices(types: list[str], tools: ToolAccess) -> tuple[Choice, ..
 
 class BuildClassGraph(Operation):
     id = "build"
-    label = "Costruisci grafo aggregato"
+    label = "Build aggregated graph"
     description = (
-        "Aggrega gli eventi in classi secondo i tipi di entità scelti (nodi Class, "
-        "relazioni OBSERVED e DF_C)."
+        "Group events into classes using the selected entity types (Class nodes, OBSERVED and DF_C "
+        "relationships)."
     )
     group = "EKG"
     inputs = (OperationInput("ekg", (ekg.EKG_KIND,)),)
@@ -81,13 +81,13 @@ class BuildClassGraph(Operation):
     def fields(self, inputs: Mapping[str, ObjectRef], tools: ToolAccess) -> list[Field]:
         obj = inputs["ekg"]
         types = graph_entity_types(obj, tools)
-        entity = (Field("entity_types", "Tipi di entità", type="multiselect", required=True,
+        entity = (Field("entity_types", "Entity types", type="multiselect", required=True,
                         choices=entity_type_choices(types, tools),
-                        help="Una classe per ogni combinazione distinta dei loro valori negli eventi.")
+                        help="One class for each distinct combination of their values across events.")
                   if types else
-                  Field("entity_types", "Tipi di entità", type="columns", required=True,
-                      help="Il grafo non ha entità."))
-        return [Field("name", "Nome", required=True, default=f"{obj.name} aggregato"), entity]
+                  Field("entity_types", "Entity types", type="columns", required=True,
+                      help="The graph has no entities."))
+        return [Field("name", "Name", required=True, default=f"{obj.name} aggregated"), entity]
 
     def run(self, inputs: Mapping[str, ObjectRef], params: Mapping[str, Any], tools: ToolAccess) -> list[ObjectDraft]:
         parent = inputs["ekg"]

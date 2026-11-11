@@ -126,7 +126,7 @@ def _as_int(value: Any, name: str, default: int, low: int) -> int:
 
 class InsightsVisualizer(Visualizer):
     id = "insights"
-    label = "Indicatori di processo"
+    label = "Process indicators"
     element = "soup-pkg-ekg-insights"
     accepts = (ekg.EKG_KIND,)
     requires_tools = (MEMGRAPH,)

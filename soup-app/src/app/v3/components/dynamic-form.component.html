@@ -171,7 +171,7 @@
     <input
       type="text"
       class="form-control"
-      placeholder="colonna1, colonna2"
+      placeholder="column1, column2"
       [id]="this.id(field)"
       [value]="this.list(field).join(', ')"
       (change)="this.onList(field, $event)" />
@@ -229,7 +229,7 @@
         <button
           type="button"
           class="btn btn-outline-danger soup-remove-pair"
-          title="Rimuovi"
+          title="Remove"
           (click)="this.removePair(field, i)">
           <i class="bi bi-x"></i>
         </button>
@@ -240,7 +240,7 @@
       class="btn btn-sm btn-outline-secondary soup-add-pair"
       (click)="this.addPair(field)">
       <i class="bi bi-plus"></i>
-      Aggiungi coppia
+      Add pair
     </button>
   </div>
 </ng-template>
@@ -275,7 +275,7 @@
         type="button"
         class="btn btn-sm btn-outline-danger"
         (click)="this.clearFile(field)">
-        Rimuovi
+        Remove
       </button>
     </div>
   } @else {
@@ -313,8 +313,8 @@
               <button
                 type="button"
                 class="btn btn-sm btn-outline-secondary soup-icon-btn soup-edit-item"
-                title="Modifica"
-                [attr.aria-label]="'Modifica elemento ' + (i + 1) + ' di ' + field.label"
+                title="Edit"
+                [attr.aria-label]="'Edit item ' + (i + 1) + ' of ' + field.label"
                 (click)="this.startEdit(field, i)">
                 <i
                   class="bi bi-pencil"
@@ -323,8 +323,8 @@
               <button
                 type="button"
                 class="btn btn-sm btn-outline-danger soup-icon-btn soup-remove-item"
-                title="Elimina"
-                [attr.aria-label]="'Elimina elemento ' + (i + 1) + ' di ' + field.label"
+                title="Delete"
+                [attr.aria-label]="'Delete item ' + (i + 1) + ' of ' + field.label"
                 (click)="this.removeItem(field, i)">
                 <i
                   class="bi bi-trash"
@@ -335,7 +335,7 @@
         }
       </ol>
     } @else {
-      <p class="soup-items-empty">Nessun elemento: aggiungine uno.</p>
+      <p class="soup-items-empty">No items yet: add one.</p>
     }
 
     @if (this.order(field); as order) {
@@ -346,14 +346,14 @@
           <i
             class="bi bi-sort-down"
             aria-hidden="true"></i>
-          Ordine di applicazione diverso da quello di inserimento.
+          Application order differs from the order added.
         </strong>
-        I filtri si applicano in quest'ordine:
+        Filters are applied in this order:
         <ol class="soup-order-list">
           @for (entry of order; track entry.index) {
             <li>
               {{ this.variantOf(field, entry.item.variant)?.label ?? entry.item.variant }}
-              <span class="text-muted">(n. {{ entry.index + 1 }})</span>
+              <span class="text-muted">(#{{ entry.index + 1 }})</span>
             </li>
           }
         </ol>
@@ -364,9 +364,9 @@
       <div
         class="soup-item-editor"
         role="group"
-        [attr.aria-label]="(editor.index === null ? 'Nuovo: ' : 'Modifica: ') + (this.variantOf(field, editor.variant)?.label ?? '')">
+        [attr.aria-label]="(editor.index === null ? 'New: ' : 'Edit: ') + (this.variantOf(field, editor.variant)?.label ?? '')">
         <h6>
-          {{ editor.index === null ? 'Nuovo' : 'Modifica' }}:
+          {{ editor.index === null ? 'New' : 'Edit' }}:
           {{ this.variantOf(field, editor.variant)?.label }}
         </h6>
         @if (this.variantOf(field, editor.variant)?.description) {
@@ -391,13 +391,13 @@
             type="button"
             class="btn btn-sm btn-outline-secondary"
             (click)="this.closeEditor(field)">
-            Annulla
+            Cancel
           </button>
           <button
             type="button"
             class="btn btn-sm btn-primary soup-save-item"
             (click)="this.saveEditor(field)">
-            Salva
+            Save
           </button>
         </div>
       </div>
@@ -414,14 +414,14 @@
           <i
             class="bi bi-plus-lg"
             aria-hidden="true"></i>
-          Aggiungi {{ field.label.toLowerCase() === 'filtri' ? 'filtro' : 'elemento' }}
+          Add {{ field.label.toLowerCase() === 'filters' ? 'filter' : 'item' }}
         </button>
         @if (this.addMenu() === field.name) {
           <ul
             class="soup-variant-menu"
             role="menu"
             [id]="this.id(field, '-variants')"
-            [attr.aria-label]="'Tipi di ' + field.label"
+            [attr.aria-label]="'Types of ' + field.label"
             (keydown)="this.onMenuKey(field, $event)">
             @for (variant of field.variants; track variant.key) {
               <li role="none">

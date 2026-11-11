@@ -41,16 +41,16 @@ export class SoupPkgEkgClassStats extends HTMLElement implements SoupVisualizerE
     summary.setAttribute('variant', 'tiles');
     summary.data = {
       items: [
-        { key: 'Nodi Class', value: counts.class_nodes },
-        { key: 'Relazioni OBSERVED', value: counts.obs_rel },
-        { key: 'Relazioni DF_C', value: counts.dfc_rel },
-        { key: 'Tipi di entità', value: this.data.entity_types.join(', ') || '—' }
+        { key: 'Class nodes', value: counts.class_nodes },
+        { key: 'OBSERVED relationships', value: counts.obs_rel },
+        { key: 'DF_C relationships', value: counts.dfc_rel },
+        { key: 'Entity types', value: this.data.entity_types.join(', ') || '—' }
       ]
     };
 
-    const charts = h('div', { className: 'cards charts' }, this.chart('Dati aggregati', this.data.charts.data));
-    if (this.data.charts.process) charts.append(this.chart('Tempi di costruzione (secondi)', this.data.charts.process));
-    else charts.append(card('Tempi di costruzione', h('p', { className: 'info', text: 'Tempi di costruzione non disponibili per questo grafo.' })));
+    const charts = h('div', { className: 'cards charts' }, this.chart('Aggregate data', this.data.charts.data));
+    if (this.data.charts.process) charts.append(this.chart('Build times (seconds)', this.data.charts.process));
+    else charts.append(card('Build times', h('p', { className: 'info', text: 'Build times are not available for this graph.' })));
 
     this.root.replaceChildren(h('style', { text: CSS + CARDS_CSS + NOTICE_CSS }), ...noticeBox(this.data.notice), summary, charts);
   }
