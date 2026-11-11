@@ -49,14 +49,14 @@ Project : soup-packages/ekg_views
 
 from __future__ import annotations
 
+import copy
+import importlib
 import json
+import sys
 from abc import ABC, abstractmethod
 from collections.abc import Callable, Mapping, Sequence
 from datetime import datetime
 from typing import Any, Protocol, cast
-
-import soup_pkg_ekg.api as ekg
-from soup_pkg_ekg.api import Query
 
 from soup.core.contracts import (
     Choice,
@@ -64,27 +64,32 @@ from soup.core.contracts import (
     Field,
     NotFoundError,
     ObjectRef,
+    ServiceUnavailableError,
     ToolAccess,
     ValidationError,
     Visualizer,
     report,
 )
+from soup.core.contracts.database import Database
 
 from . import builtin_queries as builtin
+from .database import Neo4jQueries, Query
 from .json_parts import JsonPart
-from .kinds import accepted_kinds, applies_to
+from .kinds import EKG_KIND, OCED_KIND, accepted_kinds, applies_to
 from .queries import GraphQuery, count_of
 from .values import as_choice, as_int, as_limit, as_list, as_text
-from .views import SEARCH_KINDS, GraphView
+from .views import SEARCH_KINDS, GraphView, ObjectGraphView, StandardGraphView
 
 GRAPH_VIEWS_POINT = "ekg.graph_views"
 QUERIES_POINT = "ekg.queries"
 JSON_PARTS_POINT = "ekg.json_parts"
 STATS_NOTICES_POINT = "ekg.stats_notices"
 
+ekg = sys.modules.get("soup_pkg_ekg.api")
+
 MEMGRAPH = "memgraph"
 STORAGE = "storage"
-TOOLS = (MEMGRAPH, STORAGE)
+TOOLS = (STORAGE,)
 
 DEFAULT_LIMIT = 200
 DEFAULT_MAX_LIMIT = 2000
@@ -100,8 +105,7 @@ class GraphQueries(Protocol):
     def run(self, query: Query) -> list[dict[str, Any]]: ...
 
 
-def _run(tools: ToolAccess, query: Query) -> list[dict[str, Any]]:
-    graph = cast(GraphQueries, tools.get(MEMGRAPH))
+def _run(graph: GraphQueries, query: Query) -> list[dict[str, Any]]:
     return graph.run(query)
 
 
@@ -140,14 +144,45 @@ def notice_of(obj: ObjectRef) -> str | None:
 
 
 class _EkgContribution:
-    accepts: Any = (ekg.EKG_KIND,)
+    accepts: Any = (EKG_KIND,)
     requires_tools: Sequence[str] = TOOLS
 
-    def __init__(self, contributions: Contributions):
+    def __init__(self, contributions: Contributions, database: Database | None = None):
         self._contributions = contributions
+        self._database = database
 
-    def _loaded(self, obj: ObjectRef, tools: ToolAccess) -> None:
-        ekg.ensure_loaded(obj, tools)
+    def _accepted(self, items: Sequence[Any]) -> tuple[str, ...]:
+        if self._database is not None and self._database.backend == "neo4j":
+            return (OCED_KIND,)
+        return tuple(kind for kind in accepted_kinds(items) if kind != OCED_KIND)
+
+    @staticmethod
+    def _ekg() -> Any:
+        # The Memgraph lifecycle is optional on Neo4j; importing it at module
+        # load would make this package depend on the Memgraph-only EKG builder.
+        global ekg  # noqa: PLW0603 - preserve the optional API binding across package reloads
+        try:
+            ekg = importlib.import_module("soup_pkg_ekg.api")
+            return ekg
+        except ImportError as exc:
+            raise ServiceUnavailableError("Memgraph EKG views require the active ekg package") from exc
+
+    def _loaded(self, obj: ObjectRef, tools: ToolAccess) -> GraphQueries:
+        if self._database is not None and self._database.backend == "neo4j":
+            if obj.kind != OCED_KIND:
+                raise ValidationError("Neo4j EKG views require an OCED-imported graph")
+            rows = self._database.execute(
+                "MATCH (n) WHERE n:Event OR n:Entity "
+                "RETURN count(n) AS total, count(CASE WHEN n.Log = $log THEN 1 END) AS matching",
+                {"log": obj.id},
+            )
+            if not rows or not rows[0]["total"] or rows[0]["total"] != rows[0]["matching"]:
+                raise ValidationError("The configured Neo4j database does not exclusively contain this OCED log")
+            return Neo4jQueries(self._database, obj)
+        ekg = self._ekg()
+        graph_tools = ekg.graph_tools()
+        ekg.ensure_loaded(obj, graph_tools)
+        return cast(GraphQueries, graph_tools.get(MEMGRAPH))
 
 
 # ---------------------------------------------------------------------- #
@@ -158,11 +193,12 @@ class GraphVisualizer(_EkgContribution, Visualizer):
     label = "Grafo"
     element = "soup-pkg-ekg-graph"
 
-    def __init__(self, contributions: Contributions, max_limit: int = DEFAULT_MAX_LIMIT):
-        super().__init__(contributions)
+    def __init__(self, contributions: Contributions, max_limit: int = DEFAULT_MAX_LIMIT,
+                 database: Database | None = None):
+        super().__init__(contributions, database)
         self.max_limit = max_limit
 
-    def views(self, kind: str = ekg.EKG_KIND) -> dict[str, GraphView]:
+    def views(self, kind: str = EKG_KIND) -> dict[str, GraphView]:
         return _keyed(self._contributions(GRAPH_VIEWS_POINT), "graph views", kind)
 
     def _view(self, params: Mapping[str, Any], kind: str) -> GraphView:
@@ -170,12 +206,23 @@ class GraphVisualizer(_EkgContribution, Visualizer):
         key = as_choice(params.get("view"), "view", list(views), next(iter(views)))
         return views[key]
 
+    def _configured_view(self, params: Mapping[str, Any], obj: ObjectRef, graph: GraphQueries) -> GraphView:
+        view = self._view(params, obj.kind)
+        if isinstance(graph, Neo4jQueries):
+            view = copy.copy(view)
+            if isinstance(view, StandardGraphView):
+                view.activity_property = graph.activity
+                view.entity_id_property = graph.entity_id
+            if isinstance(view, ObjectGraphView):
+                view.default_relations = ("CORR",)
+        return view
+
     @staticmethod
     def _relations(view: GraphView, params: Mapping[str, Any]) -> list[str]:
         return as_list(params.get("relations"), "relations", view.relationship_types,
             view.default_relations or view.relationship_types)
 
-    def _graph(self, view: GraphView, params: Mapping[str, Any], tools: ToolAccess) -> dict[str, Any]:
+    def _graph(self, view: GraphView, params: Mapping[str, Any], tools: GraphQueries) -> dict[str, Any]:
         limit = as_limit(params.get("limit"), DEFAULT_LIMIT, self.max_limit)
         relations = self._relations(view, params)
         if not relations:
@@ -191,32 +238,33 @@ class GraphVisualizer(_EkgContribution, Visualizer):
         return {"view": view.key, "limit": limit, "relations": relations, "max_data": max_data, "graph": graph}
 
     def data(self, obj: ObjectRef, params: Mapping[str, Any], tools: ToolAccess) -> Any:
-        self._loaded(obj, tools)
+        graph = self._loaded(obj, tools)
+        configured = [self._configured_view({"view": key}, obj, graph) for key in self.views(obj.kind)]
         views = [
             {"key": view.key, "label": view.label or view.key,
              "relationship_types": list(view.relationship_types), "default_relations": list(view.default_relations),
              "node_labels": list(view.node_labels)}
-            for view in self.views(obj.kind).values()
+            for view in configured
         ]
         return {"views": views, "max_limit": self.max_limit, "notice": notice_of(obj),
-                **self._graph(self._view(params, obj.kind), params, tools)}
+                **self._graph(self._configured_view(params, obj, graph), params, graph)}
 
     def action(self, obj: ObjectRef, name: str, params: Mapping[str, Any], tools: ToolAccess) -> Any:
         if name not in ("graph", "search", "node"):
             raise NotFoundError(f"Visualizer '{self.id}' has no action '{name}'")
-        self._loaded(obj, tools)
-        view = self._view(params, obj.kind)
+        graph = self._loaded(obj, tools)
+        view = self._configured_view(params, obj, graph)
         if name == "graph":
-            return self._graph(view, params, tools)
+            return self._graph(view, params, graph)
         if name == "search":
-            return self._search(view, params, tools)
+            return self._search(view, params, graph)
         query = view.node_query(as_int(params.get("id"), "id", -1, -1))
-        node = view.to_node(_run(tools, query)) if query is not None else None
+        node = view.to_node(_run(graph, query)) if query is not None else None
         if node is None:
             raise NotFoundError(f"Node {params.get('id')!r} not found in the view '{view.key}'")
         return node
 
-    def _search(self, view: GraphView, params: Mapping[str, Any], tools: ToolAccess) -> dict[str, Any]:
+    def _search(self, view: GraphView, params: Mapping[str, Any], tools: GraphQueries) -> dict[str, Any]:
         text = as_text(params.get("text"), "text").strip()
         kind = as_choice(params.get("kind"), "kind", SEARCH_KINDS, "node")
         offset = as_int(params.get("offset"), "offset", 0, 0)
@@ -274,6 +322,12 @@ def dataset_columns(meta: Mapping[str, Any]) -> list[dict[str, str]]:
     panel of the datasets page.
     """
 
+    log = meta.get("log_config")
+    if isinstance(log, Mapping) and not meta.get("columns"):
+        meta = {"columns": log.get("events", {}).get("attr", []), "mapping": {
+            "event_id": log.get("event_id"), "activity": log.get("event_activity"),
+            "timestamp": log.get("event_timestamp"), "entities": list(log.get("entities", {})),
+        }}
     mapping = cast("Mapping[str, Any]", meta.get("mapping")) if isinstance(meta.get("mapping"), Mapping) else {}
     roles: dict[str, str] = {}
     for column in mapping.get("values") or ():
@@ -299,13 +353,13 @@ class StatsVisualizer(_EkgContribution, Visualizer):
     element = "soup-pkg-ekg-stats"
 
     def data(self, obj: ObjectRef, params: Mapping[str, Any], tools: ToolAccess) -> Any:
-        problem = ekg.buildable_problem(obj)
+        problem = None if obj.kind == OCED_KIND else self._ekg().buildable_problem(obj)
         if problem:
             return self._metadata_only(obj, problem)
-        self._loaded(obj, tools)
+        graph = self._loaded(obj, tools)
 
         def rows(query: GraphQuery) -> list[dict[str, Any]]:
-            return _run(tools, query.build({}))
+            return _run(graph, query.build({}))
 
         counts = {
             "event_nodes": builtin.COUNT_EVENTS.count(rows(builtin.COUNT_EVENTS)),
@@ -322,7 +376,7 @@ class StatsVisualizer(_EkgContribution, Visualizer):
             entities.append({"name": name, "nan_nodes": nan_nodes,
                 "warning": warning_label(nan_nodes) if nan_nodes else None})
         # A derived object (an analysis) has the columns of its dataset.
-        source = obj if obj.meta.get("columns") else ekg.root_of(obj)
+        source = obj if obj.kind == OCED_KIND or obj.meta.get("columns") else self._ekg().root_of(obj)
         composition = {"chart": "pie", "labels": ["Event", "Entity", "CORR", "DF"],
                        "datasets": [{"label": "numero", "data": list(counts.values())}]}
         return {
@@ -342,11 +396,10 @@ class StatsVisualizer(_EkgContribution, Visualizer):
         notices += [item.notice(obj, tools) for item in self._contributions(STATS_NOTICES_POINT)]
         return " ".join(notice for notice in notices if notice) or None
 
-    @staticmethod
-    def _metadata_only(obj: ObjectRef, problem: str) -> dict[str, Any]:
+    def _metadata_only(self, obj: ObjectRef, problem: str) -> dict[str, Any]:
         """A graph that cannot be built: the metadata of the dataset and why, with no query."""
 
-        source = obj if obj.meta.get("columns") else ekg.root_of(obj)
+        source = obj if obj.kind == OCED_KIND or obj.meta.get("columns") else self._ekg().root_of(obj)
         meta_counts = source.meta.get("counts")
         stored: Mapping[str, Any] = meta_counts if isinstance(meta_counts, Mapping) else {}
         counts = {key: count_of([stored], key) for key in ("event_nodes", "entity_nodes", "corr_rel", "df_rel")}
@@ -373,9 +426,9 @@ class QueriesVisualizer(_EkgContribution, Visualizer):
 
     @property
     def accepts(self) -> tuple[str, ...]:  # type: ignore[override]  # computed from the active contributions instead of declared
-        return accepted_kinds(self._contributions(QUERIES_POINT))
+        return self._accepted(self._contributions(QUERIES_POINT))
 
-    def queries(self, kind: str = ekg.EKG_KIND) -> dict[str, GraphQuery]:
+    def queries(self, kind: str = EKG_KIND) -> dict[str, GraphQuery]:
         return _keyed(self._contributions(QUERIES_POINT), "queries", kind)
 
     def data(self, obj: ObjectRef, params: Mapping[str, Any], tools: ToolAccess) -> Any:
@@ -394,8 +447,12 @@ class QueriesVisualizer(_EkgContribution, Visualizer):
             raise NotFoundError(f"No active package contributes the query {key!r}")
         query = queries[key]
         values = query.values(params.get("params"))
-        self._loaded(obj, tools)
-        blocks = query.transform(_run(tools, query.build(values)), values)
+        graph = self._loaded(obj, tools)
+        rows = _run(graph, query.build(values))
+        if isinstance(graph, Neo4jQueries):
+            values = {**values, "activity_property": graph.activity,
+                      "entity_id_property": graph.entity_id, "event_id_property": graph.event_id}
+        blocks = query.transform(rows, values)
         return {"key": key, "label": query.label, "blocks": report.validate_blocks(blocks)}
 
 
@@ -410,9 +467,9 @@ class GraphJsonExporter(_EkgContribution, Exporter):
 
     @property
     def accepts(self) -> tuple[str, ...]:  # type: ignore[override]  # computed from the active contributions instead of declared
-        return accepted_kinds(self._contributions(JSON_PARTS_POINT))
+        return self._accepted(self._contributions(JSON_PARTS_POINT))
 
-    def parts(self, kind: str = ekg.EKG_KIND) -> dict[str, JsonPart]:
+    def parts(self, kind: str = EKG_KIND) -> dict[str, JsonPart]:
         return _keyed(self._contributions(JSON_PARTS_POINT), "JSON parts", kind)
 
     def fields(self, obj: ObjectRef, tools: ToolAccess) -> list[Field]:
@@ -426,9 +483,9 @@ class GraphJsonExporter(_EkgContribution, Exporter):
         chosen = as_list(params.get("parts"), "parts", parts, list(parts))
         if not chosen:
             raise ValidationError("Choose at least one part of the graph")
-        self._loaded(obj, tools)
+        graph = self._loaded(obj, tools)
         content = {}
         for key in chosen:
             part = parts[key]
-            content[part.label or key] = part.transform(_run(tools, part.query()))
+            content[part.label or key] = part.transform(_run(graph, part.query()))
         return json.dumps(content, ensure_ascii=False, indent=2, default=str).encode("utf-8")

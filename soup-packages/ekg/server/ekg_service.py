@@ -74,8 +74,14 @@ class EkgService:
 
         self._db.run(schema.delete_events_query())
         self._db.run(schema.delete_entities_query())
-        for factory in schema.DROPPED_INDEXES:
-            self._db.run(factory())
+        existing = {
+            (row.get("label"), row.get("property"))
+            for row in self._db.run(Query("SHOW INDEX INFO"))
+            if row.get("index type") == "label+property"
+        }
+        for key, factory in zip(schema.INDEXES, schema.DROPPED_INDEXES, strict=True):
+            if key in existing:
+                self._db.run(factory())
 
     def rebuild(self, ctx: BuildContext) -> None:
         self.reset()

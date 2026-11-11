@@ -110,6 +110,8 @@ export interface PackageInfo {
 }
 
 export interface FrontendModule {
+  databases?: ('memgraph' | 'neo4j')[];
+  database?: 'memgraph' | 'neo4j';
   name: string;
   version: string;
   module_url: string;

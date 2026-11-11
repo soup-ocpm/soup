@@ -94,6 +94,7 @@ def plugin_factory(source: PackageSource) -> PluginFactory:
 def configure(plugin: SoupPlugin, manifest: PackageManifest) -> SoupPlugin:
     """The manifest is the source of truth for the plugin's identity and dependencies."""
 
+    plugin.databases = manifest.databases
     plugin.name = manifest.name
     plugin.version = manifest.version
     plugin.api_version = manifest.api_version

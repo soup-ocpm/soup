@@ -3,7 +3,7 @@ services:
     build:
       context: . # Repository root: the app compiles @soup/sdk from soup-packages/sdk
       dockerfile: soup-app/Dockerfile
-    container_name: soup-app
+    container_name: soup-app-2
     restart: unless-stopped
     ports:
       # Local use only: every port is published on 127.0.0.1, never on the network.
@@ -17,13 +17,14 @@ services:
     build:
       context: . # Repository root: the image also needs soup-packages/
       dockerfile: soup-server/Dockerfile
-    container_name: soup-engine
+    container_name: soup-engine-2
     restart: unless-stopped
     ports:
       - "127.0.0.1:8080:8080" # The API, called by the app from the browser (CORS: SOUP_CORS_ORIGINS)
     networks:
       - app-network
     environment:
+      - SOUP_DATABASE=memgraph
       - MEMGRAPH_HOST=memgraph
       - MEMGRAPH_PORT=7687
       # Development: allow installing packages at runtime. A package runs
@@ -67,7 +68,7 @@ services:
   # with "SHOW VERSION;" (wiki, Installation). Update both tags together.
   memgraph:
     image: memgraph/memgraph:3.13.2
-    container_name: soup-database
+    container_name: soup-database-2
     restart: unless-stopped
     # No persistence: the graph is always rebuilt from the dataset files in
     # soup-volume, so snapshots, the WAL and the recovery at startup would
@@ -81,7 +82,7 @@ services:
       - --data-recovery-on-startup=false
     ports:
       # Memgraph has no user and no password: only this machine can reach it.
-      - "127.0.0.1:7687:7687" # Memgraph Bolt protocol
+      - "127.0.0.1:7689:7687" # Memgraph Bolt protocol
       - "127.0.0.1:7444:7444" # Memgraph HTTP (logs)
     networks:
       - app-network

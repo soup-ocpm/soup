@@ -20,10 +20,11 @@ from __future__ import annotations
 from collections.abc import Iterable
 from typing import Any
 
-from soup_pkg_ekg.api import EKG_KIND
+EKG_KIND = "ekg"
+OCED_KIND = "oced_importer.log"
 
 DEFAULT_KINDS = (EKG_KIND,)
-STANDARD_KINDS = (EKG_KIND, "ekg_class")
+STANDARD_KINDS = (EKG_KIND, "ekg_class", OCED_KIND)
 
 
 def kinds_of(item: Any) -> tuple[str, ...]:
@@ -39,6 +40,8 @@ def accepted_kinds(items: Iterable[Any]) -> tuple[str, ...]:
     accepted = [EKG_KIND]
     for item in items:
         kinds = kinds_of(item)
+        if OCED_KIND in kinds and OCED_KIND not in accepted:
+            accepted.append(OCED_KIND)
         if EKG_KIND in kinds:
             continue
         accepted.extend(kind for kind in kinds if kind not in accepted)

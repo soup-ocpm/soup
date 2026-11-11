@@ -38,6 +38,7 @@ class PackageInfo:
     origin: str = ""
     error: str | None = None
     requires: tuple[str, ...] = ()
+    databases: tuple[str, ...] = ("memgraph",)
     requires_tools: tuple[str, ...] = ()
     provides_tools: tuple[str, ...] = ()
     extension_points: tuple[str, ...] = ()
@@ -48,6 +49,7 @@ class PackageInfo:
 
     def to_dict(self) -> dict[str, Any]:
         return {
+            "databases": list(self.databases),
             "name": self.name,
             "status": self.status,
             "version": self.version,

@@ -56,6 +56,7 @@ class PackageManifest:
     server_module: str
     server_plugin: str
     app_entry: str | None = None
+    databases: tuple[str, ...] = ("memgraph",)
 
     @property
     def parsed_version(self) -> Version:
@@ -69,6 +70,7 @@ class PackageManifest:
 
     def to_dict(self) -> dict[str, Any]:
         return {
+            "databases": list(self.databases),
             "name": self.name,
             "version": self.version,
             "api_version": self.api_version,
@@ -220,6 +222,9 @@ def parse_manifest(data: Any, package_dir: Path | None = None) -> PackageManifes
     server_module, server_plugin = _parse_server(data.get("server"), reader.errors)
     app_entry = _parse_app(data.get("app"), reader.errors)
     reader.check_server_module(package_dir, server_module)
+    databases = reader.names("databases") if "databases" in data else ("memgraph",)
+    if not databases or any(db not in {"memgraph", "neo4j"} for db in databases):
+        reader.errors["databases"] = "must list memgraph, neo4j, or both"
     reader.raise_errors(name)
 
     return PackageManifest(
@@ -237,6 +242,7 @@ def parse_manifest(data: Any, package_dir: Path | None = None) -> PackageManifes
         server_module=server_module,
         server_plugin=server_plugin,
         app_entry=app_entry,
+        databases=databases,
     )
 
 

@@ -34,7 +34,7 @@ You need [Git](https://git-scm.com/downloads) and
 [Docker Desktop](https://www.docker.com/products/docker-desktop/).
 
 ```sh
-git clone https://github.com/AlessioPiana54/soup.git
+git clone -b plugin-based https://github.com/soup-ocpm/soup.git
 cd soup
 docker compose -p soup-tool up --build
 ```
@@ -128,3 +128,41 @@ The original project is [soup-ocpm/soup](https://github.com/soup-ocpm/soup).
 ## License
 
 SOUP is released under the [MIT License](LICENSE).
+
+## External Neo4j
+
+Memgraph remains the default (`docker compose -p soup-tool up --build`).
+Neo4j uses a separate, standalone configuration and its own catalog/package volumes:
+
+```sh
+export NEO4J_URI=bolt://your-neo4j-host:7687
+export NEO4J_USERNAME=neo4j
+export NEO4J_PASSWORD='your-password'
+export NEO4J_DATABASE=neo4j
+export SOUP_NEO4J_CSV_BASE_URL=http://your-soup-host:8081
+export SOUP_NEO4J_CSV_BIND_ADDRESS=0.0.0.0
+docker compose -p soup-neo4j -f docker-compose.neo4j.yaml up --build
+```
+
+```sh
+export NEO4J_URI=bolt://host.docker.internal:7687
+export NEO4J_USERNAME=neo4j
+export NEO4J_PASSWORD='12341234'
+export NEO4J_DATABASE=neo4j
+export SOUP_NEO4J_CSV_BASE_URL=http://localhost:8081
+export SOUP_NEO4J_CSV_BIND_ADDRESS=0.0.0.0
+docker compose -p soup-neo4j -f docker-compose.neo4j.yaml up --build
+```
+
+Do not combine this file with `docker-compose.yaml`. It has no Memgraph services or
+volumes and does not delete existing deployments. The two modes use the same browser
+ports, so run one at a time. The CSV URL must be reachable **from Neo4j**; no shared
+filesystem is needed. See [OCED importer setup](soup-packages/oced_importer/README.md).
+
+Packages declare `"databases": ["memgraph"]`, `["neo4j"]`, or both; omission means
+Memgraph only. Incompatible packages stay disabled during automatic discovery and
+cannot be enabled, installed or loaded into the frontend for the selected backend.
+The file-backed storage, SOUP base, text and CSV-table packages support both modes.
+New packages use `ctx.database.execute(cypher, parameters)` and
+`with ctx.database.transaction() as tx: tx.execute(cypher, parameters)`; SOUP does not
+translate database-specific Cypher. Existing Memgraph graph queries remain unchanged.

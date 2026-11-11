@@ -46,13 +46,15 @@ def datetime_to_string(value: Any) -> str:
     return text
 
 
-def clean(value: Any) -> Any:
+def clean(value: Any, *, neo4j: bool = False) -> Any:
+    if neo4j and callable(getattr(value, "iso_format", None)):
+        return value.iso_format()
     if isinstance(value, float) and math.isnan(value):
         return None
     if isinstance(value, Mapping):
-        return {str(key): clean(item) for key, item in value.items()}
+        return {str(key): clean(item, neo4j=neo4j) for key, item in value.items()}
     if isinstance(value, (list, tuple)):
-        return [clean(item) for item in value]
+        return [clean(item, neo4j=neo4j) for item in value]
     if is_datetime(value):
         return datetime_to_string(value)
     return value

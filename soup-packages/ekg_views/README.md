@@ -1,18 +1,29 @@
 # ekg_views
 
 Package fornito e attivo di default: visualizzatori **Grafo**, **Statistiche** e **Interrogazioni**
-ed exporter **JSON del grafo** per gli oggetti di kind `ekg`, con i punti di estensione
+ed exporter **JSON del grafo** per gli oggetti di kind `ekg` e `oced_importer.log`, con i punti di estensione
 `ekg.graph_views`, `ekg.queries`, `ekg.json_parts` ed `ekg.stats_notices` (gli avvisi di
 **Statistiche**, `StatsNotice`). Contratti, azioni e formati sono descritti
 nella sezione "Viste dell'EKG" di [../README.md](../README.md).
 
-`requires: ["ekg", "soup_base"]`, `requires_tools: ["memgraph", "storage"]`. Ogni contributo
-chiama prima `ensure_loaded(obj, tools)` del package `ekg`.
+Supports Memgraph `ekg` objects and Neo4j `oced_importer.log` objects with the same frontend,
+including graph/search/node details, statistics, all built-in queries and JSON export.
+`requires: ["soup_base"]`, `requires_tools: ["storage"]`. In Memgraph mode the active `ekg`
+package supplies its existing graph-loading lifecycle through its public API; enable it alongside
+`ekg_views`. Neo4j reads the external database directly through `ctx.database`, using the imported
+log's configured property names. It refuses a missing or mixed log rather than displaying another
+object's graph. No import/rebuild/clear is performed on Neo4j.
+
+Neo4j retains native timestamp precision/time zones. The existing numeric graph IDs work on
+Neo4j versions supporting `id()` (validated on 2026.06); element-ID-only servers are unsupported.
+The OCEAN loader does not create object-object `REL` relationships or build-phase timings, so
+these are absent on its graphs. Memgraph analysis/class-graph packages remain Memgraph-only.
 
 Ogni vista, interrogazione e parte dichiara i kind a cui si applica (`kinds`, `kinds.py`): quelle di
-ekg_views valgono per `ekg` ed `ekg_class` (il grafo aggregato contiene anche l'EKG del padre).
+ekg_views valgono per `ekg`, `ekg_class` e `oced_importer.log` (il grafo aggregato contiene anche l'EKG del padre).
 Interrogazioni e JSON del grafo accettano `ekg_class` solo mentre un package (`ekg_class_graph`)
-contribuisce qualcosa di dedicato a quel kind; Grafo e Statistiche restano per `ekg`.
+contribuisce qualcosa di dedicato a quel kind; Grafo e Statistiche accettano `ekg` su Memgraph
+e `oced_importer.log` su Neo4j.
 
 In **Interrogazioni** un'interrogazione il cui form è già valido con i default (nessun campo, oppure
 campi tutti facoltativi o con un default, come `Righe`) parte appena la si sceglie; quelle con un

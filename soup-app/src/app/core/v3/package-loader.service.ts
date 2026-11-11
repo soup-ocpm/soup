@@ -151,6 +151,10 @@ export class PackageLoaderService {
       error
     });
 
+    if (!(module.databases ?? ['memgraph']).includes(module.database ?? 'memgraph')) {
+      return status('failed', `Package '${module.name}' does not support database '${module.database}'`);
+    }
+
     const failed = module.requires.filter((name) => done.get(name)?.state === 'failed');
     if (failed.length) {
       return status('failed', `Not loaded: required package ${failed.join(', ')} failed to load`);

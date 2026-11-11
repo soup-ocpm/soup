@@ -99,12 +99,11 @@ def load_entities_query(csv_path: str) -> Query:
 
 
 # ---------------------------------------------------------------------- #
-# Indexes - an explicit list, created and dropped together (correction of
-# the legacy bug where drop_event_index() in Utils/general_query_lib.py
-# tried to drop :Event(Event_Id), an index the build never actually
-# creates - see Services/generic_graph_service.py's create_complete_graphs_s,
-# which only ever calls create_entity_index() and create_event_index()).
+# Indexes created before loading: Entity.Value speeds MERGE/CORR, Entity.Type
+# supports typed DF/causal matches, Event.Event_Id supports OCEL lookups.
+# Keep the existing ActivityName index and paired drop factories for reset.
 # ---------------------------------------------------------------------- #
+
 
 def create_entity_value_index() -> Query:
     return Query("CREATE INDEX ON :Entity(Value)")
@@ -122,8 +121,30 @@ def drop_event_activity_index() -> Query:
     return Query("DROP INDEX ON :Event(ActivityName)")
 
 
-CREATED_INDEXES = (create_entity_value_index, create_event_activity_index)
-DROPPED_INDEXES = (drop_entity_value_index, drop_event_activity_index)
+def create_event_id_index() -> Query:
+    return Query("CREATE INDEX ON :Event(Event_Id)")
+
+
+def create_entity_type_index() -> Query:
+    return Query("CREATE INDEX ON :Entity(Type)")
+
+
+def drop_event_id_index() -> Query:
+    return Query("DROP INDEX ON :Event(Event_Id)")
+
+
+def drop_entity_type_index() -> Query:
+    return Query("DROP INDEX ON :Entity(Type)")
+
+
+INDEXES = {
+    ("Entity", "Value"): create_entity_value_index,
+    ("Event", "ActivityName"): create_event_activity_index,
+    ("Event", "Event_Id"): create_event_id_index,
+    ("Entity", "Type"): create_entity_type_index,
+}
+CREATED_INDEXES = tuple(INDEXES.values())
+DROPPED_INDEXES = (drop_entity_value_index, drop_event_activity_index, drop_event_id_index, drop_entity_type_index)
 
 
 def create_corr_relationships_query(entity_type: str) -> Query:

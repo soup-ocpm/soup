@@ -1,0 +1,48 @@
+# Standalone deployment: do NOT combine with docker-compose.yaml.
+# docker compose -p soup-neo4j -f docker-compose.neo4j.yaml up --build
+services:
+  angular:
+    build:
+      context: .
+      dockerfile: soup-app/Dockerfile
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:4200:80"
+    depends_on:
+      - flask
+    networks:
+      - app-network
+
+  flask:
+    build:
+      context: .
+      dockerfile: soup-server/Dockerfile
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8080:8080"
+      # Allow another machine/container only when explicitly configured.
+      - "${SOUP_NEO4J_CSV_BIND_ADDRESS:-127.0.0.1}:8081:8081"
+    environment:
+      - SOUP_DATABASE=neo4j
+      - NEO4J_URI=${NEO4J_URI:?Set NEO4J_URI to your external Neo4j URI}
+      - NEO4J_USERNAME=${NEO4J_USERNAME:-neo4j}
+      - NEO4J_PASSWORD=${NEO4J_PASSWORD:?Set NEO4J_PASSWORD}
+      - NEO4J_DATABASE=${NEO4J_DATABASE:-neo4j}
+      - SOUP_NEO4J_CSV_BASE_URL=${SOUP_NEO4J_CSV_BASE_URL:-}
+      - SOUP_ALLOW_PACKAGE_INSTALL=true
+      - SOUP_INSTALLED_PACKAGES_DIR=/data/soup-packages
+      - SOUP_STORAGE_KIND=local
+      - SOUP_LOCAL_STORAGE_ROOT=/soup
+    volumes:
+      - neo4j-catalog:/soup
+      - neo4j-installed-packages:/data/soup-packages
+    networks:
+      - app-network
+
+volumes:
+  neo4j-catalog:
+  neo4j-installed-packages:
+
+networks:
+  app-network:
+    driver: bridge

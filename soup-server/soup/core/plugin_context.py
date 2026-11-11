@@ -26,6 +26,7 @@ from soup.core.contracts import (
     Visualizer,
     contribution_key,
 )
+from soup.core.database import CypherDatabase, DatabaseConfig
 from soup.core.event_bus import EventBus
 from soup.core.extension_points import ExtensionPoints
 from soup.core.registry import Registry
@@ -57,7 +58,8 @@ class DefaultPluginContext:
     name and must be declared by the package.
     """
 
-    def __init__(self, event_bus: EventBus | None = None) -> None:
+    def __init__(self, event_bus: EventBus | None = None, database: CypherDatabase | None = None) -> None:
+        self.database = database if database is not None else CypherDatabase(DatabaseConfig())
         self.importers: Registry[Importer] = Registry("importer")
         self.operations: Registry[Operation] = Registry("operation")
         self.visualizers: Registry[Visualizer] = Registry("visualizer")

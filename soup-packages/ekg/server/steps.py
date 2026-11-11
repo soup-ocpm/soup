@@ -7,10 +7,9 @@ Description: The EKG build steps of this package (moved here from
              runs, split into ordered, independently testable
              EkgBuildStep units:
 
+                  50  CreateIndexesStep     missing lookup indexes, before MERGE
                  100  LoadEventsStep        LOAD CSV -> :Event
                  200  LoadEntitiesStep      LOAD CSV -> :Entity
-                 300  CreateIndexesStep     the two indexes the build
-                                            actually creates today
                  400  CorrelationStep       :CORR per entity column
                  500  DirectlyFollowsStep   :DF per entity column,
                                             skipping types a contributed
@@ -24,7 +23,7 @@ Project : soup-packages/ekg
 
 from __future__ import annotations
 
-from soup_pkg_tool_memgraph.api import GraphDatabase
+from soup_pkg_tool_memgraph.api import GraphDatabase, Query
 
 from . import schema
 from .build import BuildContext, EkgBuildStep
@@ -86,12 +85,18 @@ class LoadEntitiesStep(EkgBuildStep):
 
 class CreateIndexesStep(EkgBuildStep):
     key = "create_indexes"
-    order = 300
+    order = 50
     phase = "index"
 
     def execute(self, ctx: BuildContext, db: GraphDatabase) -> None:
-        for factory in schema.CREATED_INDEXES:
-            db.run(factory())
+        existing = {
+            (row.get("label"), row.get("property"))
+            for row in db.run(Query("SHOW INDEX INFO"))
+            if row.get("index type") == "label+property"
+        }
+        for key, factory in schema.INDEXES.items():
+            if key not in existing:
+                db.run(factory())
 
 
 class CorrelationStep(EkgBuildStep):

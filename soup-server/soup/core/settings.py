@@ -3,7 +3,8 @@
 File : settings.py
 Description: Engine settings, read from the environment with explicit
              defaults. Only what the host
-             itself needs: Memgraph and file storage are configured by
+             itself needs, including the database for new packages.
+             Legacy Memgraph and file storage are configured by
              the packages providing those tools (tool_memgraph reads
              MEMGRAPH_HOST/MEMGRAPH_PORT, tool_storage reads
              SOUP_STORAGE_KIND, SOUP_CONTAINER_NAME and
@@ -18,8 +19,10 @@ from __future__ import annotations
 
 import os
 from collections.abc import Mapping
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
+
+from soup.core.database import DatabaseConfig
 
 DEFAULT_STRICT = False
 
@@ -94,6 +97,7 @@ class Settings:
     strict: bool = DEFAULT_STRICT
     max_upload_mb: int = DEFAULT_MAX_UPLOAD_MB
     cors_origins: tuple[str, ...] = DEFAULT_CORS_ORIGINS
+    database: DatabaseConfig = field(default_factory=DatabaseConfig)
 
     @property
     def max_upload_bytes(self) -> int:
@@ -116,6 +120,7 @@ class Settings:
             packages_path = (*packages_path, installed_dir)
 
         return cls(
+            database=DatabaseConfig.from_env(source),
             packages=_split_csv(raw_packages) if raw_packages is not None else None,
             packages_path=packages_path,
             installed_packages_dir=installed_dir,

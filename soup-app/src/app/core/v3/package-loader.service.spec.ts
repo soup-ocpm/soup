@@ -61,6 +61,19 @@ describe('PackageLoaderService', () => {
   // Like Jasmine's spies, the console spies of a test end with it.
   afterEach(() => vi.restoreAllMocks());
 
+  it('rejects incompatible bundles before their components or navigation register', async () => {
+    manifest = () =>
+      of([
+        { ...module('legacy'), database: 'neo4j' },
+        { ...module('dependent', ['legacy']), database: 'neo4j', databases: ['neo4j'] },
+        { ...module('native'), database: 'neo4j', databases: ['neo4j'] }
+      ]);
+    await loader.reload();
+    expect(names()).toEqual(['native']);
+    expect(loader.statuses().get('legacy')?.state).toBe('failed');
+    await expect(loader.ensureLoaded('legacy')).rejects.toThrow('does not support');
+  });
+
   const names = () => imported.map((url) => new URL(url).pathname.split('/')[4]);
 
   it('imports the bundles in the order of the manifest, with the version in the URL', async () => {

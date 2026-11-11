@@ -50,10 +50,9 @@ from abc import ABC, abstractmethod
 from collections.abc import Iterable, Mapping, Sequence
 from typing import Any, cast
 
-from soup_pkg_ekg.api import Query, ident
-
 from soup.core.contracts import ValidationError, report
 
+from .database import Query, ident
 from .kinds import DEFAULT_KINDS, STANDARD_KINDS
 from .values import as_list, clean
 
@@ -311,10 +310,13 @@ class StandardGraphView(EdgeListGraphView):
     relationships = {DF: (EVENT, EVENT), CORR: (EVENT, ENTITY)}
     default_relations = (DF,)
 
+    activity_property = "ActivityName"
+    entity_id_property = "Value"
+
     def node_label(self, labels: Sequence[str], props: Mapping[str, Any]) -> str:
         if ENTITY in labels:
-            return str(props.get("Value", ""))
-        return str(props.get("ActivityName", super().node_label(labels, props)))
+            return str(props.get(self.entity_id_property, ""))
+        return str(props.get(self.activity_property, super().node_label(labels, props)))
 
     def node_group(self, labels: Sequence[str], props: Mapping[str, Any]) -> str:
         # Events by node type, entities by entity type.

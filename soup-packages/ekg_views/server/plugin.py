@@ -36,6 +36,7 @@ from .contributions import (
     StatsVisualizer,
 )
 from .json_parts import builtin_parts
+from .kinds import EKG_KIND, OCED_KIND
 from .views import ObjectGraphView, StandardGraphView
 
 MAX_LIMIT_ENV = "SOUP_EKG_VIEWS_MAX_LIMIT"
@@ -71,7 +72,9 @@ class Plugin(SoupPlugin):
         for part in builtin_parts():
             ctx.contribute(JSON_PARTS_POINT, part, key=part.key)
 
-        ctx.add_visualizer(GraphVisualizer(ctx.contributions, max_limit))
-        ctx.add_visualizer(StatsVisualizer(ctx.contributions))
-        ctx.add_visualizer(QueriesVisualizer(ctx.contributions))
-        ctx.add_exporter(GraphJsonExporter(ctx.contributions))
+        for visualizer in (GraphVisualizer(ctx.contributions, max_limit, ctx.database),
+                           StatsVisualizer(ctx.contributions, ctx.database)):
+            visualizer.accepts = (OCED_KIND,) if ctx.database.backend == "neo4j" else (EKG_KIND,)
+            ctx.add_visualizer(visualizer)
+        ctx.add_visualizer(QueriesVisualizer(ctx.contributions, ctx.database))
+        ctx.add_exporter(GraphJsonExporter(ctx.contributions, ctx.database))

@@ -157,6 +157,7 @@ class PluginManager:
             self._fail(report, plugin.name, PluginError(f"Package '{plugin.name}' is already loaded"))
             plugins.remove(plugin)
 
+        plugins = self._database_compatible(plugins, ctx, report)
         by_name = {plugin.name: plugin for plugin in plugins}
         # Tools registered by the host, or by packages already loaded, count as provided.
         host_tools = set(ctx.tool_registry.keys())
@@ -225,6 +226,19 @@ class PluginManager:
         self._loaded_plugins = tuple(loaded for loaded in self._loaded_plugins if loaded is not plugin)
         self._ctx.publish(PACKAGE_UNLOADED, {"package": plugin.name, "version": plugin.version})
         return plugin
+
+    def _database_compatible(
+        self, plugins: list[SoupPlugin], ctx: DefaultPluginContext, report: PackageReport,
+    ) -> list[SoupPlugin]:
+        compatible = []
+        for plugin in plugins:
+            if ctx.database.backend not in plugin.databases:
+                self._fail(report, plugin.name, PluginError(
+                    f"Package '{plugin.name}' does not support database '{ctx.database.backend}'"
+                ))
+            else:
+                compatible.append(plugin)
+        return compatible
 
     def _verify(
         self,

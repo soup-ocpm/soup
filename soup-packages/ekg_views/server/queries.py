@@ -37,10 +37,9 @@ from abc import ABC, abstractmethod
 from collections.abc import Iterable, Mapping, Sequence
 from typing import Any
 
-from soup_pkg_ekg.api import Query, ident
-
 from soup.core.contracts import Field, ValidationError, report
 
+from .database import Query, ident
 from .kinds import DEFAULT_KINDS
 from .values import as_choice, as_int, as_limit, as_text, clean
 
@@ -78,10 +77,13 @@ def display(value: Any) -> Any:
     return value
 
 
-def node_text(props: Mapping[str, Any]) -> str:
+def node_text(props: Mapping[str, Any], params: Mapping[str, Any] | None = None) -> str:
     """How a node is named in a table: its activity, its value, its id."""
 
-    for key in ("ActivityName", "Value", "Event_Id", "name"):
+    params = params or {}
+    for key in (str(params.get("activity_property", "ActivityName")),
+                str(params.get("entity_id_property", "Value")),
+                str(params.get("event_id_property", "Event_Id")), "name"):
         if props.get(key) not in (None, ""):
             return str(props[key])
     return json.dumps(clean(dict(props)), ensure_ascii=False, default=str)
@@ -258,9 +260,9 @@ class RelationshipListQuery(GraphQuery):
         rows = [
             [
                 record.get("id"),
-                node_text(record.get("source") or {}),
+                node_text(record.get("source") or {}, params),
                 record.get("type"),
-                node_text(record.get("target") or {}),
+                node_text(record.get("target") or {}, params),
                 *(display(item.get(column)) for column in columns),
             ]
             for record, item in zip(records, props, strict=False)

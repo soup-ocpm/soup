@@ -13,3 +13,6 @@ soup-server/tests
 soup-packages/dist
 soup-packages/sdk/dist
 soup-packages/*/app/dist
+
+# Local CSV staging for the external Neo4j import root.
+neo4j-import/

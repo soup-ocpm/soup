@@ -142,6 +142,8 @@ def frontend_module(module: FrontendModule) -> dict[str, Any]:
     return {
         "name": module.name,
         "version": module.version,
+        "databases": list(module.databases),
+        "database": module.database,
         "module_url": module_url(module.name, module.entry),
         "requires": list(module.requires),
     }

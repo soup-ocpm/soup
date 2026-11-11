@@ -1,6 +1,7 @@
 {
   "name": "soup_base",
   "version": "1.0.0",
+  "databases": ["memgraph", "neo4j"],
   "api_version": "4.0",
   "label": "SOUP base",
   "description": "Reusable elements (text, markdown, image, table, chart, graph...), the Report visualizer and the JSON export of reports.",

@@ -1,0 +1,24 @@
+{
+  "name": "oced_importer",
+  "version": "1.1.0",
+  "api_version": "4.0",
+  "label": "OCED event-log importer",
+  "description": "Import OCED CSV events and optional object tables into external Neo4j.",
+  "databases": [
+    "neo4j"
+  ],
+  "requires": [
+    "tool_storage"
+  ],
+  "requires_tools": [],
+  "provides_tools": [],
+  "extension_points": [],
+  "python_dependencies": [],
+  "server": {
+    "module": "server",
+    "plugin": "plugin:Plugin"
+  },
+  "app": {
+    "entry": "dist/index.js"
+  }
+}

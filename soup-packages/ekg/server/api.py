@@ -38,12 +38,14 @@ Project : soup-packages/ekg
 
 from soup_pkg_tool_memgraph.api import GraphDatabase, Query, ident
 
+from soup.core.contracts import ToolAccess
+
 from .build import BuildContext, EkgBuildStep
 from .builder import EKG_BEFORE_RESET, EKG_BUILT, EKG_KIND, build_ekg, new_graph_key
 from .dataset_repository import ANALYSES_FOLDER, DatasetRepository, StorageSpaceTool
 from .event_log import ColumnMapping, EventLog, EventLogData, mapping_problem, normalize_text, validate_mapping
 from .migration import LEGACY_IMPORTER, LEGACY_PACKAGE
-from .runtime import BUILD_STEPS_POINT, STATE_PROVIDERS_POINT
+from .runtime import BUILD_STEPS_POINT, STATE_PROVIDERS_POINT, current
 from .schema import load_csv_clause
 from .state import (
     StateProvider,
@@ -56,6 +58,12 @@ from .state import (
     root_of,
 )
 from .tables import Table, from_dataframe, to_dataframe
+
+
+def graph_tools() -> ToolAccess:
+    """Tools owned by the Memgraph EKG runtime, for optional read-only consumers."""
+    return current().tools
+
 
 __all__ = [
     "ANALYSES_FOLDER",
@@ -84,6 +92,7 @@ __all__ = [
     "ensure_loaded",
     "from_dataframe",
     "graph_key_of",
+    "graph_tools",
     "ident",
     "is_derived",
     "load_csv_clause",

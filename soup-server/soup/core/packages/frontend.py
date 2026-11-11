@@ -63,6 +63,8 @@ class FrontendModule:
     version: str
     entry: str
     requires: tuple[str, ...]
+    databases: tuple[str, ...] = ("memgraph",)
+    database: str = "memgraph"
 
 
 @dataclass(frozen=True)
@@ -106,7 +108,10 @@ class PackageFrontend:
             if entry is None or source is None:
                 continue
             manifest = source.manifest
-            modules.append(FrontendModule(manifest.name, manifest.version, entry, tuple(manifest.requires)))
+            modules.append(FrontendModule(
+                manifest.name, manifest.version, entry, tuple(manifest.requires),
+                manifest.databases, self._packages.ctx.database.backend,
+            ))
         return modules
 
     def app_file(self, package: str, path: str) -> StaticFile:

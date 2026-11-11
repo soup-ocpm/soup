@@ -31,10 +31,9 @@ from __future__ import annotations
 from collections.abc import Mapping, Sequence
 from typing import Any
 
-from soup_pkg_ekg.api import Query, ident
-
 from soup.core.contracts import Field, report
 
+from .database import Query, ident
 from .kinds import STANDARD_KINDS
 from .queries import (
     Block,
@@ -102,7 +101,8 @@ class EntityPerType(GraphQuery):
             ORDER BY type""")
 
     def transform(self, records: Sequence[Mapping[str, Any]], params: Mapping[str, Any]) -> list[Block]:
-        rows = [[record.get("type"), display((record.get("props") or {}).get("Value"))] for record in records]
+        property_name = str(params.get("entity_id_property", "Value"))
+        rows = [[record.get("type"), display((record.get("props") or {}).get(property_name))] for record in records]
         return [report.table(["tipo", "valore"], rows, title=self.label)]
 
 
@@ -295,10 +295,14 @@ class Timestamps(GraphQuery):
                  + n.Timestamp.hour * 10000 + n.Timestamp.minute * 100 + n.Timestamp.second AS stamp
             RETURN min(stamp) AS min_timestamp, max(stamp) AS max_timestamp""")
 
+    @staticmethod
+    def _timestamp(value: Any) -> str | None:
+        return value if isinstance(value, str) else _iso_of_number(clean(value))
+
     def rows(self, records: Sequence[Mapping[str, Any]]) -> dict[str, str | None]:
         record = records[0] if records else {}
-        return {"min": _iso_of_number(clean(record.get("min_timestamp"))),
-            "max": _iso_of_number(clean(record.get("max_timestamp")))}
+        return {"min": self._timestamp(record.get("min_timestamp")),
+            "max": self._timestamp(record.get("max_timestamp"))}
 
     def transform(self, records: Sequence[Mapping[str, Any]], params: Mapping[str, Any]) -> list[Block]:
         values = self.rows(records)

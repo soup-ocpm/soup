@@ -9,8 +9,8 @@ Description: build_engine() is the single composition root: it
              reaches the catalog/preferences tools, plus the packages'
              frontend (PackageFrontend) and the server state
              (SystemService). Every tool is provided by a package
-             (tool_memgraph, tool_storage): the core builds no database
-             or storage adapter. The event log and the EKG are the ekg
+             (tool_memgraph, tool_storage). The core also exposes a lazy
+             Cypher adapter for new database-aware packages. The event log and the EKG are the ekg
              package's (commit 8): the core has no import path of its
              own. If a tool is missing the engine still starts: the
              report lists the problem and the services that need it
@@ -27,6 +27,7 @@ from pathlib import Path
 from typing import Any
 
 from soup.core.contracts import CONTRACTS_API_VERSION
+from soup.core.database import CypherDatabase
 from soup.core.event_bus import EventBus
 from soup.core.packages import PackageManager, PackageManagerConfig
 from soup.core.packages.frontend import PackageFrontend
@@ -63,7 +64,10 @@ class Engine:
     def shutdown(self) -> None:
         # The packages release their own resources in on_shutdown (e.g.
         # tool_memgraph closes the Memgraph driver).
-        self.plugin_manager.shutdown()
+        try:
+            self.plugin_manager.shutdown()
+        finally:
+            self.ctx.database.close()
 
 
 def build_engine(settings: Settings, extra_plugins: Iterable[Any] = ()) -> Engine:
@@ -76,7 +80,7 @@ def build_engine(settings: Settings, extra_plugins: Iterable[Any] = ()) -> Engin
 
     manager = PluginManager(contracts_api_version=CONTRACTS_API_VERSION, strict=settings.strict)
     event_bus = EventBus()
-    ctx = DefaultPluginContext(event_bus)
+    ctx = DefaultPluginContext(event_bus, CypherDatabase(settings.database))
 
     package_manager = PackageManager(
         manager,

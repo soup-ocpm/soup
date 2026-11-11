@@ -35,8 +35,7 @@ from abc import ABC, abstractmethod
 from collections.abc import Mapping, Sequence
 from typing import Any
 
-from soup_pkg_ekg.api import Query, ident
-
+from .database import Query, ident
 from .kinds import DEFAULT_KINDS, STANDARD_KINDS
 from .values import clean
 from .views import CORR, DF, ENTITY, EVENT, REL

@@ -15,6 +15,7 @@ from abc import ABC, abstractmethod
 from collections.abc import Callable, Mapping, Sequence
 from typing import Any, Protocol
 
+from soup.core.contracts.database import Database
 from soup.core.contracts.version import CONTRACTS_API_VERSION
 
 EventHandler = Callable[[Mapping[str, Any]], None]
@@ -58,6 +59,10 @@ class PluginContext(Protocol):
       does not stop the others, unless it subscribed as critical: then
       its error propagates to the publisher.
     """
+
+    @property
+    def database(self) -> Database:
+        ...
 
     @property
     def tools(self) -> Any:
@@ -108,6 +113,7 @@ class SoupPlugin(ABC):
     package on disk, all of these come from soup-package.json.
     """
 
+    databases: Sequence[str] = ("memgraph",)
     name: str = ""
     version: str = "0.0.0"
     requires: Sequence[str] = ()
