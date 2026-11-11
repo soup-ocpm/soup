@@ -11,7 +11,16 @@ import {
   SimpleChanges,
   ViewChild
 } from '@angular/core';
-import { ConfigChangeDetail, createConfigContext, Field, FormValues, isValidElementName, SOUP_EVENTS, SoupConfigElement } from '@soup/sdk';
+import {
+  ConfigChangeDetail,
+  createConfigContext,
+  Field,
+  FormValues,
+  isValidElementName,
+  SOUP_EVENTS,
+  SoupConfigElement,
+  TabularConfiguration
+} from '@soup/sdk';
 import { firstValueFrom } from 'rxjs';
 
 import { PackageLoaderService } from '../../core/v3/package-loader.service';
@@ -59,6 +68,7 @@ export class ConfigElementHostComponent implements OnChanges, AfterViewInit, OnD
 
   // The options emitted by the element
   public valueChange = output<FormValues>();
+  public tabularChange = output<TabularConfiguration>();
 
   public readonly error = signal('');
 
@@ -128,6 +138,9 @@ export class ConfigElementHostComponent implements OnChanges, AfterViewInit, OnD
         fields: this.fields(),
         columns: this.columns(),
         value: this.value(),
+        tabular: (configuration) => {
+          if (generation === this.generation) this.tabularChange.emit(configuration);
+        },
         preview: async (options) => {
           try {
             return await firstValueFrom(this.api.preview(importer.id, file, options));

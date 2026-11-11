@@ -21,6 +21,8 @@ from typing import cast
 
 from soup_pkg_tool_memgraph.api import GraphDatabase, Query
 
+from soup.core.contracts import import_phase
+
 from . import schema
 from .build import BuildContext, EkgBuildStep
 from .process_timer import ProcessTimer
@@ -54,14 +56,27 @@ class EkgService:
     def build(self, ctx: BuildContext, times: dict[str, str] | None = None) -> None:
         """Run the pipeline; with `times`, record each phase's start/end in it."""
 
+        phases = {
+            "event": "event creation",
+            "entity": "entity creation",
+            "corr": "CORR",
+            "df": "DF",
+            "index": "index setup",
+        }
         for step in self.build_pipeline():
-            if not step.applies(ctx):
-                continue
-            with ProcessTimer() as timer:
-                step.execute(ctx, self._db)
-            if times is not None and step.phase in PHASE_TIMES:
-                times.setdefault(f"init_{step.phase}_time", cast(str, timer.started_at))
-                times[f"finish_{step.phase}_time"] = cast(str, timer.finished_at)
+            hint = (
+                "Check SHOW INDEX INFO label/property metadata and index privileges."
+                if step.phase == "index"
+                else "Check the mapped columns, database connectivity and server resources."
+            )
+            with import_phase(phases.get(step.phase, step.key), step=step.key, dataset=ctx.dataset_name, hint=hint):
+                if not step.applies(ctx):
+                    continue
+                with ProcessTimer() as timer:
+                    step.execute(ctx, self._db)
+                if times is not None and step.phase in PHASE_TIMES:
+                    times.setdefault(f"init_{step.phase}_time", cast(str, timer.started_at))
+                    times[f"finish_{step.phase}_time"] = cast(str, timer.finished_at)
 
     def reset(self) -> None:
         """

@@ -49,6 +49,7 @@ from soup.core.contracts import (
     ToolAccess,
     Upload,
     ValidationError,
+    import_phase,
     report,
 )
 
@@ -122,7 +123,13 @@ class Options:
 def _column(options: Mapping[str, Any], name: str, columns: Sequence[str]) -> str:
     value = options.get(name)
     if value is None or value == "":
-        raise ValidationError(f"'{name}' is required")
+        raise ValidationError(f"'{name}' is required", details={"phase": "column mapping", "field": name})
+    if not isinstance(value, str):
+        raise ValidationError(
+            f"'{name}' must select one column name, not a {type(value).__name__}. "
+            "Choose a single column for this role; use entity/value selections for multiple columns.",
+            details={"phase": "column mapping", "field": name, "value_type": type(value).__name__},
+        )
     if not isinstance(value, str) or value not in columns:
         raise ValidationError(f"'{name}' must be one of the columns {list(columns)}, got {value!r}")
     return value
@@ -222,7 +229,9 @@ class CsvEkgImporter(Importer):
     def preview(self, upload: Upload, options: Mapping[str, Any], tools: ToolAccess) -> list[dict[str, Any]]:
         table = read_csv(upload.stream).events
         blocks = [_preview_table(table)]
-        standard = {options.get(name) for name in STANDARD_FIELDS}
+        with import_phase("column mapping"):
+            standard = {_column(options, name, table.columns) for name in STANDARD_FIELDS
+                        if options.get(name) is not None and options.get(name) != ""}
         entities = [column for column in _columns(options, "entities", table.columns) if column not in standard]
         graph = multiplicity_block(table, entities)
         if graph is not None:
@@ -231,7 +240,8 @@ class CsvEkgImporter(Importer):
 
     def import_(self, upload: Upload, obj: ObjectRef, options: Mapping[str, Any], tools: ToolAccess) -> dict[str, Any]:
         data = read_csv(upload.stream)
-        parsed = parse_options(options, data.events.columns)
+        with import_phase("column mapping"):
+            parsed = parse_options(options, data.events.columns)
         # Optional: "dataset" names the folder (default: the object name),
         # "all_columns" the columns recorded in the config (default: the header).
         dataset = options.get("dataset")

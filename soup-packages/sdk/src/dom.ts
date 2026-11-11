@@ -34,7 +34,25 @@ export function h<K extends keyof HTMLElementTagNameMap>(
   return element;
 }
 
-/** The message of an Error, or the value as text. */
+/** Understand both SOUP's API envelope and native Error objects. */
+function errorRecord(value: unknown): Record<string, unknown> {
+  return value && typeof value === 'object' ? value as Record<string, unknown> : {};
+}
+
+function errorLocation(details: Record<string, unknown>): string {
+  return [['phase', 'Phase'], ['file', 'File'], ['field', 'Field'],
+    ['column', 'Column'], ['row', 'Data row'], ['line', 'Line']].flatMap(([key, label]) => {
+    const value = details[key];
+    return (typeof value === 'string' && value) || typeof value === 'number' ? [`${label}: ${value}`] : [];
+  }).join(' · ');
+}
+
+/** Preserve safe import phase/location details through the API boundary. */
 export function errorMessage(error: unknown): string {
-  return error instanceof Error ? error.message : String(error);
+  const info = errorRecord(error);
+  const body = errorRecord(info['error']);
+  const message = String(body['message'] ?? info['message'] ?? error);
+  const details = errorRecord(info['responseData'] ?? info['response_data'] ?? info['details'] ?? body['response_data']);
+  const hint = typeof details['hint'] === 'string' && !message.includes(details['hint']) ? details['hint'] : '';
+  return [errorLocation(details), message, hint].filter(Boolean).join('\n');
 }

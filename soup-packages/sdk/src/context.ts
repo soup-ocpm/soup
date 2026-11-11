@@ -8,7 +8,7 @@
  */
 
 import { dispatchSoupEvent, SOUP_EVENTS } from './events';
-import { Block, Field, FormValues, Json, NotifyLevel, ObjectRef, Theme } from './types';
+import { Block, Field, FormValues, Json, NotifyLevel, ObjectRef, TabularConfiguration, Theme } from './types';
 
 export type DownloadData = string | Blob | ArrayBuffer | Uint8Array;
 
@@ -71,6 +71,8 @@ export interface ConfigContext {
   readonly value: FormValues;
   /** An updated preview for these options (POST /imports/preview). */
   preview(options: FormValues): Promise<Block[]>;
+  /** Publish tables/column controls to the host's shared Angular import editor. */
+  tabular?(configuration: TabularConfiguration): void;
   /** Send the current options to the host (the ones used by the import). */
   emit(options: FormValues): void;
 }
@@ -115,6 +117,7 @@ export interface ConfigContextInit {
   columns?: readonly string[];
   value?: FormValues;
   preview: (options: FormValues) => Promise<Block[]>;
+  tabular?: (configuration: TabularConfiguration) => void;
 }
 
 export function createConfigContext(target: EventTarget, init: ConfigContextInit): ConfigContext {
@@ -124,6 +127,7 @@ export function createConfigContext(target: EventTarget, init: ConfigContextInit
     columns: Object.freeze([...(init.columns ?? [])]),
     value: { ...(init.value ?? {}) },
     preview: (options: FormValues) => init.preview(options),
+    ...(init.tabular ? { tabular: init.tabular } : {}),
     emit: (options: FormValues) => {
       dispatchSoupEvent(target, SOUP_EVENTS.configChange, { value: { ...options } });
     }

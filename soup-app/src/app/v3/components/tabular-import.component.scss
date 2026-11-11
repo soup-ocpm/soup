@@ -1,0 +1,105 @@
+:host {
+  display: block;
+  min-width: 0;
+}
+.tabular-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 7fr) minmax(260px, 3fr);
+  gap: var(--soup-space-4);
+  align-items: start;
+  > aside {
+    position: sticky;
+    top: var(--soup-space-3);
+    max-height: calc(100dvh - 2rem);
+    overflow: auto;
+    padding: var(--soup-space-3);
+    border: 1px solid var(--soup-border);
+    border-radius: var(--soup-radius-md);
+    background: var(--soup-surface);
+  }
+}
+.preview-panel {
+  min-width: 0;
+}
+.table-scroll {
+  max-height: 65dvh;
+  overflow: auto;
+  border: 1px solid var(--soup-border);
+  border-radius: var(--soup-radius-sm);
+}
+th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: var(--soup-surface-alt);
+  border-bottom: 4px solid transparent;
+  &.included {
+    background: color-mix(in srgb, #15803d 14%, var(--soup-surface));
+    border-bottom-color: #15803d;
+  }
+  &.assigned {
+    background: color-mix(in srgb, var(--role-color) 14%, var(--soup-surface));
+    border-bottom-color: var(--role-color);
+  }
+}
+td {
+  white-space: nowrap;
+  max-width: 28rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.column-button {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.25rem;
+  width: 100%;
+  padding: 0.5rem;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  text-align: left;
+  font-weight: 600;
+  &:focus-visible,
+  &.active-column {
+    outline: 2px solid var(--soup-focus);
+    outline-offset: -2px;
+  }
+}
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin-bottom: 0.5rem;
+}
+.role-badge,
+.property-badge {
+  display: inline-block;
+  padding: 0.15rem 0.35rem;
+  border-radius: var(--soup-radius-sm);
+  font-size: 0.75rem;
+}
+.role-badge {
+  border-left: 3px solid var(--role-color);
+  background: color-mix(in srgb, var(--role-color) 14%, var(--soup-surface));
+  color: var(--soup-text);
+}
+.property-badge {
+  border-left: 3px solid #15803d;
+  background: color-mix(in srgb, #15803d 14%, var(--soup-surface));
+}
+.column-options {
+  min-width: 0;
+}
+@media (max-width: 800px) {
+  .tabular-layout {
+    grid-template-columns: minmax(0, 1fr);
+    > aside {
+      position: static;
+      max-height: none;
+    }
+  }
+  .table-scroll {
+    max-height: 45dvh;
+  }
+}

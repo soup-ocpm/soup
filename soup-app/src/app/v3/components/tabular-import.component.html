@@ -1,0 +1,148 @@
+<div [class.tabular-layout]="this.table()">
+  @if (this.table(); as table) {
+    <section
+      class="preview-panel"
+      aria-label="Anteprima delle tabelle">
+      @if ((this.configuration()?.tables?.length ?? 0) > 1) {
+        <label
+          class="form-label"
+          [for]="this.uid + '-table'">
+          Tabella
+        </label>
+        <select
+          [id]="this.uid + '-table'"
+          class="form-select mb-2"
+          [value]="table.id"
+          (change)="this.tableId.set($any($event.target).value)">
+          @for (item of this.configuration()?.tables; track item.id) {
+            <option [value]="item.id">{{ item.label }}</option>
+          }
+        </select>
+      } @else {
+        <h4 class="h6">{{ table.label }}</h4>
+      }
+      <div
+        class="legend small"
+        aria-label="Legenda delle colonne">
+        <span class="property-badge">Proprietà inclusa</span>
+        @for (role of table.roles ?? []; track role.key) {
+          <span
+            class="role-badge"
+            [style.--role-color]="this.color(role.key)">
+            {{ role.label }}
+          </span>
+        }
+      </div>
+      <p class="small text-muted">Fai clic su un'intestazione per configurare la colonna.</p>
+      <div
+        class="table-scroll"
+        tabindex="0"
+        role="region"
+        aria-label="Anteprima CSV scorrevole">
+        <table class="table table-sm mb-0">
+          <thead>
+            <tr>
+              @for (column of table.columns; track column.name) {
+                <th
+                  scope="col"
+                  [class.included]="column.property"
+                  [class.assigned]="!!column.roles?.length"
+                  [style.--role-color]="this.color(column.roles?.[0])">
+                  <button
+                    type="button"
+                    class="column-button"
+                    [class.active-column]="this.column()?.name === column.name"
+                    [attr.aria-pressed]="this.column()?.name === column.name"
+                    (click)="this.selectColumn(column.name)">
+                    {{ column.name }}
+                    @for (role of this.roles(column); track role.key) {
+                      <span
+                        class="role-badge"
+                        [style.--role-color]="this.color(role.key)">
+                        {{ role.label }}
+                      </span>
+                    }
+                  </button>
+                </th>
+              }
+            </tr>
+          </thead>
+          <tbody>
+            @for (row of table.rows; track $index) {
+              <tr>
+                @for (column of table.columns; track column.name; let index = $index) {
+                  <td>{{ row[index] }}</td>
+                }
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </section>
+  }
+  <aside>
+    @if (this.column(); as column) {
+      <h4
+        #columnHeading
+        tabindex="-1"
+        class="h6">
+        {{ column.name }}
+      </h4>
+      <fieldset
+        [disabled]="this.disabled()"
+        class="column-options">
+        @if (column.property !== undefined) {
+          <label class="form-check">
+            <input
+              class="form-check-input"
+              type="checkbox"
+              [checked]="column.property"
+              [disabled]="!this.table()?.propertiesEditable"
+              (change)="this.change('property', $any($event.target).checked)" />
+            <span class="form-check-label">Mantieni proprietà</span>
+          </label>
+        }
+        @for (role of this.table()?.roles ?? []; track role.key) {
+          <label class="form-check">
+            <input
+              class="form-check-input"
+              type="checkbox"
+              [checked]="column.roles?.includes(role.key) ?? false"
+              [disabled]="column.disabledRoles?.includes(role.key) ?? false"
+              (change)="this.change('role', $any($event.target).checked, role.key)" />
+            <span
+              class="form-check-label role-badge"
+              [style.--role-color]="this.color(role.key)">
+              {{ role.label }}
+            </span>
+            @if (role.help) {
+              <small class="d-block text-muted">{{ role.help }}</small>
+            }
+          </label>
+        }
+        @if (column.type) {
+          <label
+            class="form-label mt-2"
+            [for]="this.uid + '-type'">
+            Tipo di dato
+          </label>
+          @if (this.table()?.types?.length) {
+            <select
+              [id]="this.uid + '-type'"
+              class="form-select"
+              [value]="column.type"
+              (change)="this.change('type', $any($event.target).value)">
+              @for (type of this.table()?.types; track type) {
+                <option [value]="type">{{ type }}</option>
+              }
+            </select>
+          } @else {
+            <p class="small text-muted">{{ column.type }}</p>
+          }
+        }
+      </fieldset>
+      <hr />
+    }
+    <ng-content></ng-content>
+  </aside>
+</div>

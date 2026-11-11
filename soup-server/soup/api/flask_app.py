@@ -23,7 +23,7 @@ import logging
 from flask import Flask, Request, current_app, jsonify, request
 from flask.typing import ResponseReturnValue
 from flask_cors import CORS
-from werkzeug.exceptions import HTTPException
+from werkzeug.exceptions import HTTPException, RequestEntityTooLarge
 
 from soup.api.import_routes import build_import_blueprint
 from soup.api.operation_routes import build_operation_blueprint
@@ -32,7 +32,7 @@ from soup.api.security import CLIENT_HEADER, mutation_refusal
 from soup.api.system_routes import build_system_blueprint
 from soup.api.visualizer_routes import build_visualizer_blueprint
 from soup.api.workspace_routes import build_workspace_blueprint
-from soup.core.contracts.errors import DomainError
+from soup.core.contracts.errors import DomainError, log_error
 from soup.core.engine import Engine
 from soup.core.results import Result
 
@@ -111,6 +111,16 @@ def _register_error_handlers(app: Flask) -> None:
 
     @app.errorhandler(DomainError)
     def _handle_domain_error(error: DomainError) -> ResponseReturnValue:
+        if request.path.startswith("/api/v3/imports"):
+            error.details.setdefault("phase", "request validation")
+            upload = request.files.get("file")
+            if upload is not None:
+                error.details.setdefault("file", upload.filename)
+            importer = request.form.get("importer_id")
+            if importer:
+                error.details.setdefault("importer", importer)
+        if error.details.get("phase"):
+            log_error(error, error.details)
         # `details` (e.g. the packages blocking a disable) go in response_data.
         result = Result(error.http_status_code, str(error), error.details or None)
         return jsonify(result.to_dict()), error.http_status_code
@@ -120,9 +130,26 @@ def _register_error_handlers(app: Flask) -> None:
         # Flask/Werkzeug's own routing errors (404 Not Found, 405 Method
         # Not Allowed, ...) are already well-formed responses - let them
         # through as-is instead of flattening them into a 500.
+        if request.path.startswith("/api/v3/imports"):
+            message = error.description or error.name
+            if error.code == RequestEntityTooLarge.code:
+                message = "The upload exceeds SOUP's file-size limit. Choose a smaller file."
+            status = error.code or 500
+            return jsonify(Result(status, message, {"phase": "request validation"}).to_dict()), status
         return error
 
     @app.errorhandler(Exception)
     def _handle_unexpected_error(error: Exception) -> ResponseReturnValue:
-        result = Result(500, f"Internal Server Error: {error}")
+        log_error(error, {"endpoint": request.endpoint or request.path})
+        message = (
+            "Import processing failed unexpectedly. Check the backend logs and workspace before retrying."
+            if request.path.startswith("/api/v3/imports")
+            else f"Internal Server Error: {error}"
+        )
+        details = (
+            {"phase": "import request", "error_type": type(error).__name__}
+            if request.path.startswith("/api/v3/imports")
+            else None
+        )
+        result = Result(500, message, details)
         return jsonify(result.to_dict()), 500

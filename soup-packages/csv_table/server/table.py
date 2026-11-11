@@ -22,6 +22,8 @@ from collections.abc import Iterable, Sequence
 from dataclasses import dataclass
 from typing import Any
 
+from soup.core.contracts import ValidationError
+
 COMMA, SEMICOLON, TAB = ",", ";", "\t"
 SEPARATORS = (COMMA, SEMICOLON, TAB)
 SNIFF_BYTES = 64 * 1024
@@ -88,7 +90,14 @@ def parse(text: str, separator: str, header: bool) -> tuple[list[str], list[Row]
     padded with "" and columns without a name are called column_N.
     """
 
-    records = [row for row in csv.reader(io.StringIO(text, newline=""), delimiter=separator) if row]
+    reader = csv.reader(io.StringIO(text, newline=""), delimiter=separator)
+    try:
+        records = [row for row in reader if row]
+    except csv.Error as exc:
+        raise ValidationError(
+            "A CSV record could not be parsed. Check quoting, delimiter and field size.",
+            details={"phase": "CSV parsing", "line": reader.line_num},
+        ) from exc
     names = records.pop(0) if header and records else []
     width = max([len(names), *(len(row) for row in records)])
     rows = [row + [""] * (width - len(row)) for row in records]

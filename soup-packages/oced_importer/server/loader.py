@@ -3,22 +3,20 @@
 from __future__ import annotations
 
 import json
-import logging
 import re
 import threading
-import traceback
 from typing import Any
 from uuid import UUID
 
-from soup.core.contracts import ServiceUnavailableError, ValidationError
+from soup.core.contracts import ServiceUnavailableError, ValidationError, import_phase
 from soup.core.contracts.database import Database
+from soup.core.contracts.errors import log_error
 
 from . import queries
 from .csv_data import NodeConfig, Prepared
 from .csv_http import CsvServer
 
 _IMPORT_LOCK = threading.Lock()
-_LOG = logging.getLogger(__name__)
 
 
 def _failure(exc: Exception, phase: str, query: str = "") -> str:
@@ -26,12 +24,7 @@ def _failure(exc: Exception, phase: str, query: str = "") -> str:
     def redact(text: str) -> str:
         return re.sub(r"(?:https?|neo4j(?:\+s|\+ssc)?|bolt(?:\+s|\+ssc)?)://[^\s\"'<>]+", "[redacted URL]", text)
 
-    _LOG.error(
-        "OCED import failed during %s; query=%s\n%s",
-        phase,
-        redact(query),
-        redact(traceback.format_exc()),
-    )
+    log_error(exc, {"phase": phase, "query": query, "error_type": type(exc).__name__})
     code = getattr(exc, "code", None) or type(exc).__name__
     return f"{phase}: {code}: {redact(str(exc))[:1200]}"
 
@@ -47,7 +40,8 @@ def _require_empty(database: Any) -> None:
     if has_data(database):
         raise ValidationError(
             "The selected Neo4j database contains data. Import stopped; review the replacement warning "
-            "and explicitly confirm deletion before importing."
+            "and explicitly confirm deletion before importing.",
+            details={"phase": "database validation"},
         )
 
 
@@ -117,8 +111,9 @@ def _validate_import(
         detail = _failure(exc, phase, query)
         raise ValidationError(
             f"Neo4j CSV/query validation failed during {detail}. No data was deleted. "
-            "Check CSV types, timestamp formats and HTTP access from Neo4j."
-        ) from None
+            "Check CSV types, timestamp formats and HTTP access from Neo4j.",
+            details={"phase": phase, "error_type": type(exc).__name__},
+        ) from exc
     return steps
 
 
@@ -136,9 +131,10 @@ def load(
             detail = _failure(exc, "database connection / empty-database check")
             raise ServiceUnavailableError(
                 "Cannot connect to the configured Neo4j database. Check NEO4J_URI, "
-                f"credentials, database name and TLS settings. {detail}"
-            ) from None
-        with csv_server.publish(prepared.files) as urls:
+                f"credentials, database name and TLS settings. {detail}",
+                details={"phase": "database connection", "error_type": type(exc).__name__},
+            ) from exc
+        with import_phase("temporary CSV serving"), csv_server.publish(prepared.files) as urls:
             steps = _validate_import(database, urls, object_id, prepared)
             try:
                 _indexes(database, prepared)
@@ -146,8 +142,9 @@ def load(
                 detail = _failure(exc, "index setup")
                 raise ValidationError(
                     "Neo4j index setup failed. Check index-list/create privileges and existing schema; "
-                    f"no graph data was loaded. {detail}"
-                ) from None
+                    f"no graph data was loaded. {detail}",
+                    details={"phase": "index setup", "error_type": type(exc).__name__},
+                ) from exc
             deleted = False
             if replace_existing:
                 try:
@@ -158,8 +155,9 @@ def load(
                     detail = _failure(exc, "delete existing dataset", "MATCH (e) DETACH DELETE e")
                     raise ValidationError(
                         f"Neo4j deletion failed or could not be confirmed: {detail}. Import stopped. "
-                        "Verify the database before retrying; deletion was not retried."
-                    ) from None
+                        "Verify the database before retrying; deletion was not retried.",
+                        details={"phase": "delete existing dataset", "error_type": type(exc).__name__},
+                    ) from exc
             phase = "begin transaction"
             query = ""
             try:
@@ -180,6 +178,7 @@ def load(
                 )
                 raise ValidationError(
                     f"Neo4j OCED import failed during {detail}. "
-                    f"Rollback was attempted; verify the database before retrying. {state}"
-                ) from None
+                    f"Rollback was attempted; verify the database before retrying. {state}",
+                    details={"phase": phase, "error_type": type(exc).__name__},
+                ) from exc
     return prepared.metadata()

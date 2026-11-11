@@ -32,7 +32,8 @@ from typing import Any
 
 from soup_pkg_tool_memgraph.api import GraphDatabase, Query, Run
 
-from soup.core.contracts import ConflictError, ValidationError, validate_name
+from soup.core.contracts import ConflictError, ValidationError, import_phase, validate_name
+from soup.core.contracts.errors import log_error
 
 from .build import BuildContext
 from .dataset_repository import DatasetRepository
@@ -221,17 +222,24 @@ def build_ekg(  # noqa: PLR0913 - public API (soup_pkg_ekg.api.build_ekg)
     :raises ConflictError: `dataset` already exists
     """
 
-    validate_mapping(mapping.event_id, mapping.timestamp, mapping.activity)
+    with import_phase("column mapping"):
+        validate_mapping(mapping.event_id, mapping.timestamp, mapping.activity)
     runtime = current()
     memgraph = tools.get(MEMGRAPH)
     repository = DatasetRepository(tools.get(STORAGE))
 
-    log = EventLog.from_data(data, mapping)
+    with import_phase("event normalization"):
+        log = EventLog.from_data(data, mapping)
     trigger_target_rows = normalize_pairs(trigger_target, log.mapping.entity_columns)
     name = _dataset_name(repository, obj, dataset)
     columns = data.events.columns if all_columns is None else all_columns
 
-    repository.save_event_log(name, log.events_csv(), log.entities_csv())
+    with import_phase("CSV preparation"):
+        events_csv = log.events_csv()
+    with import_phase("entity preparation"):
+        entities_csv = log.entities_csv()
+    with import_phase("dataset staging"):
+        repository.save_event_log(name, events_csv, entities_csv)
     if extra_files:
         repository.save_extra_files(name, extra_files)
 
@@ -272,16 +280,22 @@ def build_ekg(  # noqa: PLR0913 - public API (soup_pkg_ekg.api.build_ekg)
     def loader(run: Run) -> None:
         service = EkgService(RunDatabase(run), runtime.build_steps)
         service.build(ctx, times if save_process_times else None)
-        counts.update(service.counts())
+        with import_phase("graph counts"):
+            counts.update(service.counts())
 
     runtime.publish(EKG_BEFORE_RESET, {"object": object_id, "active": memgraph.current_state(), "reason": "build"})
     try:
-        with ProcessTimer() as timer:
+        with ProcessTimer() as timer, import_phase(
+            "Memgraph graph initialization", hint="Check Memgraph connectivity and privileges."
+        ):
             memgraph.ensure_loaded(graph_key, loader, force=True)
     except Exception:
         # Compensating action: a dataset is never left half-built -
         # either both the staged files AND the graph exist, or neither.
-        repository.delete(name)
+        try:
+            repository.delete(name)
+        except Exception as cleanup:
+            log_error(cleanup, {"phase": "failed dataset cleanup", "dataset": name})
         raise
 
     config.update(counts)

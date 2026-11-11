@@ -25,6 +25,8 @@ from __future__ import annotations
 
 from soup_pkg_tool_memgraph.api import GraphDatabase, Query
 
+from soup.core.contracts import import_phase
+
 from . import schema
 from .build import BuildContext, EkgBuildStep
 
@@ -89,11 +91,19 @@ class CreateIndexesStep(EkgBuildStep):
     phase = "index"
 
     def execute(self, ctx: BuildContext, db: GraphDatabase) -> None:
-        existing = {
-            (row.get("label"), row.get("property"))
-            for row in db.run(Query("SHOW INDEX INFO"))
-            if row.get("index type") == "label+property"
-        }
+        existing: set[tuple[object, object]] = set()
+        for record, row in enumerate(db.run(Query("SHOW INDEX INFO")), start=1):
+            if row.get("index type") != "label+property":
+                continue
+            for field in ("label", "property"):
+                with import_phase(
+                    "index setup",
+                    field=f"index metadata record {record}.{field}",
+                    value_type=type(row.get(field)).__name__,
+                    hint="Check the label/property shapes returned by SHOW INDEX INFO; this is not a CSV cell.",
+                ):
+                    hash(row.get(field))
+            existing.add((row.get("label"), row.get("property")))
         for key, factory in schema.INDEXES.items():
             if key not in existing:
                 db.run(factory())
@@ -106,7 +116,8 @@ class CorrelationStep(EkgBuildStep):
 
     def execute(self, ctx: BuildContext, db: GraphDatabase) -> None:
         for entity_type in _entity_types(ctx):
-            db.run(schema.create_corr_relationships_query(entity_type))
+            with import_phase("CORR", column=entity_type):
+                db.run(schema.create_corr_relationships_query(entity_type))
 
 
 class DirectlyFollowsStep(EkgBuildStep):
@@ -118,7 +129,8 @@ class DirectlyFollowsStep(EkgBuildStep):
         for entity_type in _entity_types(ctx):
             if entity_type in ctx.df_handled_types:
                 continue
-            db.run(schema.create_df_relationships_query(entity_type))
+            with import_phase("DF", column=entity_type):
+                db.run(schema.create_df_relationships_query(entity_type))
 
 
 def core_steps() -> list[EkgBuildStep]:

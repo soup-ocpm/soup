@@ -17,12 +17,13 @@ Project : soup-packages/csv_ekg
 
 from __future__ import annotations
 
+import re
 from typing import BinaryIO
 
 import pandas as pd
 from soup_pkg_ekg.api import EventLogData, from_dataframe
 
-from soup.core.contracts import ValidationError
+from soup.core.contracts import ValidationError, import_phase
 
 FORMAT_ID = "csv"
 
@@ -30,8 +31,11 @@ FORMAT_ID = "csv"
 def read_csv(stream: BinaryIO) -> EventLogData:
     """:raises ValidationError: not a readable CSV"""
 
-    try:
-        frame = pd.read_csv(stream, dtype=str)
-    except (pd.errors.ParserError, pd.errors.EmptyDataError, UnicodeDecodeError) as exc:
-        raise ValidationError(f"The file is not a readable CSV: {exc}") from exc
-    return EventLogData(events=from_dataframe(frame))
+    with import_phase("CSV parsing", hint="Check UTF-8 encoding, delimiter, quoting and the header row."):
+        try:
+            frame = pd.read_csv(stream, dtype=str)
+        except (pd.errors.ParserError, pd.errors.EmptyDataError, UnicodeDecodeError) as exc:
+            line = re.search(r"\bline (\d+)", str(exc))
+            details = {"line": int(line[1])} if line else None
+            raise ValidationError(f"The file is not a readable CSV: {exc}", details=details) from exc
+        return EventLogData(events=from_dataframe(frame))

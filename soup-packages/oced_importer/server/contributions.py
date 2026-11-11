@@ -20,6 +20,7 @@ from soup.core.contracts import (
     Upload,
     ValidationError,
     Visualizer,
+    import_phase,
     report,
 )
 from soup.core.contracts.database import Database
@@ -58,14 +59,16 @@ class OcedImporter(Importer):
         ).hexdigest()
 
     def inspect(self, upload: Upload, tools: ToolAccess) -> Inspection:
-        source = describe(upload)
+        with import_phase("CSV parsing"):
+            source = describe(upload)
         return Inspection(
             preview=(),
             fields=(Field("source", default=source),),
         )
 
     def preview(self, upload: Upload, options: Mapping[str, Any], tools: ToolAccess) -> list[dict[str, Any]]:
-        prepared = prepare(upload, options, "preview")
+        with import_phase("CSV preparation"):
+            prepared = prepare(upload, options, "preview")
         blocks = [
             report.keyvalue(prepared.counts, title="Rows to load"),
         ]
@@ -75,7 +78,9 @@ class OcedImporter(Importer):
             blocks.append(
                 report.table(table.columns, table.rows[:10], title=f"{entity} — {mode} ({len(table.rows)} rows)")
             )
-        if has_data(self._database):
+        with import_phase("database validation", hint="Check Neo4j URI, credentials, database name and TLS settings."):
+            nonempty = has_data(self._database)
+        if nonempty:
             token = secrets.token_urlsafe(32)
             with self._confirmation_lock:
                 now = time.monotonic()
@@ -94,7 +99,8 @@ class OcedImporter(Importer):
         tools: ToolAccess,
     ) -> dict[str, Any]:
         object_id = str(UUID(obj.id))
-        prepared = prepare(upload, options, f"oced_importer/{object_id}")
+        with import_phase("CSV preparation"):
+            prepared = prepare(upload, options, f"oced_importer/{object_id}")
         replacement = options.get("replace_existing") is True
         if replacement:
             with self._confirmation_lock:
@@ -106,7 +112,8 @@ class OcedImporter(Importer):
             ):
                 raise ValidationError(
                     "Replacement confirmation is missing, expired or already used. "
-                    "Review the CSVs and explicitly confirm replacement again. No data was deleted."
+                    "Review the CSVs and explicitly confirm replacement again. No data was deleted.",
+                    details={"phase": "replacement confirmation"},
                 )
         return load(self._database, self._csv_server, object_id, prepared, replace_existing=replacement)
 

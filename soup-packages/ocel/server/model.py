@@ -119,7 +119,8 @@ def _per_type(declared: Sequence[TypeDecl], types: Iterable[str]) -> dict[str, i
 # ---------------------------------------------------------------------- #
 def _fail(path: str, message: str) -> ValidationError:
     where = f"{path}: " if path else ""
-    return ValidationError(f"Not a valid OCEL 2.0 JSON file: {where}{message}")
+    return ValidationError(f"Not a valid OCEL 2.0 JSON file: {where}{message}",
+                           details={"phase": "OCEL parsing", "field": path})
 
 
 def _object(value: Any, path: str) -> Mapping[str, Any]:
@@ -260,9 +261,11 @@ def _document(data: bytes) -> Mapping[str, Any]:
     try:
         root = json.loads(data.decode("utf-8-sig"))
     except UnicodeDecodeError as error:
-        raise _fail("", f"not UTF-8 text ({error.reason} at byte {error.start})") from None
+        raise _fail("", f"not UTF-8 text ({error.reason} at byte {error.start})") from error
     except json.JSONDecodeError as error:
-        raise _fail("", f"not JSON (line {error.lineno}, column {error.colno}: {error.msg})") from None
+        failure = _fail("", f"not JSON (line {error.lineno}, column {error.colno}: {error.msg})")
+        failure.details.update(line=error.lineno, column=error.colno)
+        raise failure from error
     if not isinstance(root, dict):
         raise _fail("", f"the document must be a JSON object with 'events' and 'objects', got {_json_type(root)}")
     return root

@@ -1,4 +1,4 @@
-import { NotifyLevel } from '@soup/sdk';
+import { errorMessage as formatError, NotifyLevel } from '@soup/sdk';
 
 import { NotificationService } from '../../shared/components/s-toast/toast.service';
 import { ToastLevel } from '../../shared/components/s-toast/toast_type.enum';
@@ -23,8 +23,5 @@ export function notify(notifications: NotificationService, message: string, leve
 
 /** The message of an error answered by V3ApiService (an ApiResponse) or thrown. */
 export function errorMessage(error: unknown): string {
-  if (error && typeof error === 'object' && 'message' in error) {
-    return String((error as { message: unknown }).message);
-  }
-  return String(error);
+  return formatError(error);
 }

@@ -18,6 +18,7 @@ from soup.core.contracts.errors import (
     NotFoundError,
     ServiceUnavailableError,
     ValidationError,
+    import_phase,
 )
 from soup.core.contracts.exceptions import (
     ExtensionPointError,
@@ -73,6 +74,7 @@ __all__ = [
     "ExtensionPointError",
     "ExtensionPointNotDeclaredError",
     "DomainError",
+    "import_phase",
     "ValidationError",
     "NotFoundError",
     "ConflictError",

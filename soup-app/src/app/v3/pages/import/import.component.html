@@ -106,27 +106,36 @@
   @if (this.inspection(); as inspection) {
     <section class="soup-panel">
       <h3 class="soup-panel-title">3. Anteprima e opzioni</h3>
-      <div class="soup-preview">
-        <soup-blocks-preview
-          [blocks]="this.blocks()"
-          [name]="this.name()"></soup-blocks-preview>
-      </div>
-
-      @if (this.importer(); as selected) {
-        @if (selected.config_element && this.file()) {
-          <soup-config-element-host
-            [importer]="selected"
-            [file]="$any(this.file())"
-            [fields]="inspection.fields"
-            [columns]="this.columns()"
-            [value]="this.options()"
-            (valueChange)="this.onOptions($event)"></soup-config-element-host>
-        } @else if (inspection.fields.length) {
-          <soup-dynamic-form
-            [fields]="inspection.fields"
-            [columns]="this.columns()"
-            (valueChange)="this.onOptions($event)"></soup-dynamic-form>
+      <soup-tabular-import [configuration]="this.tabular()">
+        @if (!this.tabular()) {
+          <div class="soup-preview">
+            <soup-blocks-preview
+              [blocks]="this.blocks()"
+              [name]="this.name()"></soup-blocks-preview>
+          </div>
         }
+        @if (this.importer(); as selected) {
+          @if (selected.config_element && this.file()) {
+            <soup-config-element-host
+              [importer]="selected"
+              [file]="$any(this.file())"
+              [fields]="inspection.fields"
+              [columns]="this.columns()"
+              [value]="this.options()"
+              (tabularChange)="this.packageTabular.set($event)"
+              (valueChange)="this.onOptions($event)"></soup-config-element-host>
+          } @else if (this.configurationFields().length) {
+            <soup-dynamic-form
+              [fields]="this.configurationFields()"
+              [columns]="this.columns()"
+              (valueChange)="this.onOptions($event)"></soup-dynamic-form>
+          }
+        }
+      </soup-tabular-import>
+      @if (this.tabular() && this.remainingBlocks().length) {
+        <soup-blocks-preview
+          [blocks]="this.remainingBlocks()"
+          [name]="this.name()"></soup-blocks-preview>
       }
       <button
         type="button"

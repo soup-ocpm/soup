@@ -51,6 +51,7 @@ from soup.core.contracts import (
     Upload,
     ValidationError,
     Visualizer,
+    import_phase,
     report,
 )
 
@@ -98,10 +99,14 @@ def separator_name(separator: str) -> str:
 def separator_char(value: Any) -> str:
     """The character of a separator name (the characters themselves are accepted too)."""
 
+    if not isinstance(value, str):
+        raise ValidationError("Choose a single CSV separator", details={
+            "phase": "CSV options", "field": "separator", "value_type": type(value).__name__,
+        })
     if value in SEPARATOR_NAMES:
         return SEPARATOR_NAMES[value]
     if value in table.SEPARATORS:
-        return cast(str, value)
+        return value
     raise ValidationError(f"Unknown separator {value!r}; expected one of {sorted(SEPARATOR_NAMES)}")
 
 
@@ -162,9 +167,10 @@ def _options(text: str, filename: str, options: Mapping[str, Any]) -> tuple[str,
 
 
 def _parsed(upload: Upload, options: Mapping[str, Any]) -> tuple[list[str], list[table.Row], str, bool, str]:
-    text, encoding = table.decode(upload.read())
-    separator, header = _options(text, upload.filename, options)
-    columns, rows = table.parse(text, separator, header)
+    with import_phase("CSV parsing", hint="Check the delimiter, quoting, header and file encoding."):
+        text, encoding = table.decode(upload.read())
+        separator, header = _options(text, upload.filename, options)
+        columns, rows = table.parse(text, separator, header)
     return columns, rows, separator, header, encoding
 
 

@@ -19,7 +19,6 @@ Project : soup-server
 
 from __future__ import annotations
 
-import logging
 from collections.abc import Callable, Mapping
 from dataclasses import replace
 from datetime import datetime
@@ -34,16 +33,16 @@ from soup.core.contracts import (
     ObjectRef,
     Upload,
     ValidationError,
+    import_phase,
     validate_name,
 )
+from soup.core.contracts.errors import log_error
 from soup.core.contracts.report import validate_blocks
 from soup.core.event_bus import EventBus
 from soup.core.events import OBJECT_CREATED
 from soup.core.registry import Registered, Registry
 from soup.core.services.core_tools import CoreTools, new_object_id, timestamp
 from soup.core.toolbox import ToolBox
-
-_LOGGER = logging.getLogger("soup.import")
 
 
 class ImportRouter:
@@ -63,7 +62,8 @@ class ImportRouter:
         """Every importer that accepts `filename` and whose tools are available, by label."""
 
         candidates = [
-            entry for entry in self._importers.entries()
+            entry
+            for entry in self._importers.entries()
             if entry.item.accepts(filename) and self._core_tools.available(entry.item.requires_tools)
         ]
         return sorted(candidates, key=lambda entry: (entry.item.label.lower(), entry.key))
@@ -80,18 +80,20 @@ class ImportRouter:
 
     def inspect(self, importer_id: str, upload: Upload) -> Inspection:
         importer = self._accepting(importer_id, upload)
-        inspection = importer.inspect(upload, self._toolbox(importer_id, importer))
-        if not isinstance(inspection, Inspection):
-            raise TypeError(f"Importer '{importer.id}'.inspect() must return an Inspection")
-        validate_blocks(list(inspection.preview))
+        with import_phase("file inspection", importer=importer_id, file=upload.filename):
+            inspection = importer.inspect(upload, self._toolbox(importer_id, importer))
+            if not isinstance(inspection, Inspection):
+                raise TypeError(f"Importer '{importer.id}'.inspect() must return an Inspection")
+            validate_blocks(list(inspection.preview))
         return inspection
 
     def preview(
         self, importer_id: str, upload: Upload, options: Mapping[str, Any] | None = None
     ) -> list[dict[str, Any]]:
         importer = self._accepting(importer_id, upload)
-        blocks = importer.preview(upload, dict(options or {}), self._toolbox(importer_id, importer)) or []
-        return validate_blocks(list(blocks))
+        with import_phase("preview validation", importer=importer_id, file=upload.filename):
+            blocks = importer.preview(upload, dict(options or {}), self._toolbox(importer_id, importer)) or []
+            return validate_blocks(list(blocks))
 
     def import_(
         self,
@@ -123,17 +125,25 @@ class ImportRouter:
             description=description or "",
         )
         tools = self._toolbox(importer_id, importer)
-        try:
-            meta = importer.import_(upload, obj, dict(options or {}), tools)
-            if meta is not None and not isinstance(meta, Mapping):
-                raise TypeError(f"Importer '{importer.id}'.import_() must return a dict, not {type(meta).__name__}")
-            obj = replace(obj, meta=dict(meta or {}))
-            catalog.add(obj)
-        except Exception:
-            self._compensate(importer, obj, tools)
-            raise
+        with import_phase("import", importer=importer_id, file=upload.filename):
+            try:
+                meta = importer.import_(upload, obj, dict(options or {}), tools)
+                if meta is not None and not isinstance(meta, Mapping):
+                    raise TypeError(f"Importer '{importer.id}'.import_() must return a dict, not {type(meta).__name__}")
+                obj = replace(obj, meta=dict(meta or {}))
+                with import_phase("catalog registration", importer=importer_id, file=upload.filename):
+                    catalog.add(obj)
+            except Exception:
+                self._compensate(importer, obj, tools)
+                raise
 
-        self._event_bus.publish(OBJECT_CREATED, {"object": obj.to_dict()})
+        with import_phase(
+            "import completion",
+            importer=importer_id,
+            file=upload.filename,
+            hint="Check the workspace before retrying; the object may already be registered.",
+        ):
+            self._event_bus.publish(OBJECT_CREATED, {"object": obj.to_dict()})
         return obj
 
     # ------------------------------------------------------------------ #
@@ -153,6 +163,5 @@ class ImportRouter:
     def _compensate(importer: Importer, obj: ObjectRef, tools: ToolBox) -> None:
         try:
             importer.dispose(obj, tools)
-        except Exception:  # noqa: BLE001 - the original error is the one to report
-            _LOGGER.exception("Compensation failed: importer '%s' could not dispose of object '%s'",
-                importer.id, obj.id)
+        except Exception as exc:  # noqa: BLE001 - preserve the original error after logging cleanup failure
+            log_error(exc, {"phase": "import cleanup", "importer": importer.id})

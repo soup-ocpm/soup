@@ -397,13 +397,22 @@ class EventLog:
         timestamp_index = normalized_columns.index(normalized_mapping.timestamp)
 
         normalized_rows = []
-        for row in table.rows:
+        for row_number, row in enumerate(table.rows, start=1):
             new_row: list[str | None] = []
             for index, value in enumerate(row):
                 if value is None:
                     new_row.append(None)
                     continue
-                cleaned = _normalize_text(value)
+                try:
+                    cleaned = _normalize_text(value)
+                except (AttributeError, TypeError) as exc:
+                    raise ValidationError(
+                        f"Column '{table.columns[index]}', data row {row_number} contains a "
+                        f"{type(value).__name__}; EKG cells must contain scalar text or null. "
+                        "Flatten structured values or encode object references as comma-separated text.",
+                        details={"phase": "event normalization", "column": table.columns[index],
+                                 "row": row_number, "value_type": type(value).__name__},
+                    ) from exc
                 if index == timestamp_index:
                     cleaned = _fix_millis_comma(cleaned)
                 new_row.append(cleaned)

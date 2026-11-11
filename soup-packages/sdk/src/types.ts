@@ -180,3 +180,43 @@ export function columnsOf(blocks: readonly Block[]): string[] {
   const table = blocks.find((block): block is TableBlock => block.type === 'table');
   return table ? [...table.data.columns] : [];
 }
+
+/** Presentation only: packages retain ownership of their options and validation. */
+export interface TabularColumn {
+  name: string;
+  property?: boolean;
+  roles?: string[];
+  disabledRoles?: string[];
+  type?: string;
+}
+
+export interface TabularRole {
+  key: string;
+  label: string;
+  help?: string;
+}
+
+export interface TabularTable {
+  id: string;
+  label: string;
+  columns: TabularColumn[];
+  rows: unknown[][];
+  roles?: TabularRole[];
+  types?: string[];
+  propertiesEditable?: boolean;
+  readOnly?: boolean;
+}
+
+export interface TabularChange {
+  table: string;
+  column: string;
+  kind: 'property' | 'role' | 'type';
+  value: string | boolean;
+  role?: string;
+}
+
+export interface TabularConfiguration {
+  tables: TabularTable[];
+  disabled?: boolean;
+  onChange(change: TabularChange): void;
+}

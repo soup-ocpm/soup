@@ -6,17 +6,19 @@ import {
   h,
   SoupConfigElement,
   SoupVisualizerElement,
+  TabularChange,
+  TabularTable,
   VisualizerContext
 } from '@soup/sdk';
 import { inspect } from './api';
 import { DEFAULTS, Source, tableState, TableState, TYPES, Workflow } from './workflow';
 
 const STYLE = `
-  :host { display: block; font: inherit; color: inherit; }
-  section, details { margin: 12px 0; } label { display: block; margin: 6px 0; }
+  :host { display: block; min-width: 0; font: inherit; color: inherit; }
+  section { margin: 12px 0; } label { display: block; margin: 6px 0; }
   select { padding: 6px; max-width: 100%; } .grid { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
-  table { border-collapse: collapse; width: 100%; } th, td { border: 1px solid #d6dce5; padding: 5px; text-align: left; }
-  .scroll { overflow: auto; max-height: 240px; } .hint { opacity: .75; } .error { color: #b42318; }
+  .hint { opacity: .75; } .error { color: #b42318; white-space: pre-line; }
+  .grid > * { min-width: 0; max-width: 100%; } input[type=file] { max-width: 100%; }
   progress { width: 100%; } h3 { font-size: 1rem; margin: 8px 0; }
 `;
 
@@ -32,23 +34,6 @@ function select(label: string, choices: string[], value: string, change: (value:
   return h('label', { text: label + ' ' }, input);
 }
 
-function previewTable(columns: string[], rows: unknown[][]): HTMLElement {
-  return h(
-    'div',
-    { className: 'scroll' },
-    h(
-      'table',
-      {},
-      h('thead', {}, h('tr', {}, ...columns.map((column) => h('th', { text: column })))),
-      h(
-        'tbody',
-        {},
-        ...rows.slice(0, 10).map((row) => h('tr', {}, ...row.map((value) => h('td', { text: String(value ?? '') }))))
-      )
-    )
-  );
-}
-
 class OcedConfig extends HTMLElement implements SoupConfigElement {
   public context!: ConfigContext;
   private readonly root = this.attachShadow({ mode: 'open' });
@@ -62,6 +47,12 @@ class OcedConfig extends HTMLElement implements SoupConfigElement {
   private replacementConfirmed = false;
 
   public connectedCallback(): void {
+    if (!this.context.tabular) {
+      const message = 'Update SOUP to use the shared tabular import editor.';
+      this.root.textContent = message;
+      this.context.emit({ config_error: message });
+      return;
+    }
     const source = this.context.fields.find((field) => field.name === 'source')?.default as Source | undefined;
     if (source) this.workflow.add(tableState(source));
     this.changed();
@@ -83,45 +74,21 @@ class OcedConfig extends HTMLElement implements SoupConfigElement {
   }
 
   private render(): void {
-    const firstRender = !this.root.childElementCount;
-    const opened = new Set(
-      [...this.root.querySelectorAll<HTMLDetailsElement>('details[data-table][open]')].map(
-        (item) => item.dataset['table']
-      )
-    );
+    this.publishTables();
     const fields = h('fieldset');
     fields.style.cssText = 'border:0;padding:0;margin:0';
     fields.disabled = this.busy;
     const event = this.workflow.eventTable();
     if (event) {
-      fields.append(this.roles(event));
-      const objects = h('section', {}, h('h3', { text: 'Object-reference columns' }));
-      for (const column of event.source.columns.filter((name) => !Object.values(this.workflow.roles).includes(name))) {
-        objects.append(this.objectMapping(column));
-      }
+      const objects = h('section', {}, h('h3', { text: 'Object tables (optional)' }));
+      for (const column of this.workflow.mappings.keys()) objects.append(this.objectMapping(column));
       fields.append(objects);
-      for (const table of this.workflow.tables) {
-        fields.append(
-          h(
-            'details',
-            {
-              attrs: {
-                'data-table': table.source.filename,
-                ...(opened.has(table.source.filename) || (firstRender && table === event) ? { open: '' } : {})
-              }
-            },
-            h('summary', { text: `${table.source.filename} — preview and column types` }),
-            previewTable(table.source.columns, table.source.rows),
-            h('div', { className: 'grid' }, ...table.source.columns.map((column) => this.attribute(table, column)))
-          )
-        );
-      }
     }
     this.root.replaceChildren(
       h('style', { text: STYLE }),
       h('p', {
         className: 'hint',
-        text: 'Select object types below. Each may use an uploaded CSV or generated IDs. Review the tables, then use SOUP’s Import action below. Neo4j must be dedicated to this log. Replacing existing data requires explicit confirmation.'
+        text: 'Click a preview header to configure its role, Keep selection and type. Object tables may be uploaded or generated. Review the tables, then use SOUP’s Import action.'
       }),
       fields,
       h('p', {
@@ -129,40 +96,81 @@ class OcedConfig extends HTMLElement implements SoupConfigElement {
         attrs: { role: this.failed ? 'alert' : 'status' },
         text: this.message
       }),
-      h('section', { attrs: { 'data-review': '' } }, ...this.reviewElements()),
       ...this.replacementWarning()
     );
     if (this.busy) this.root.append(h('progress', { attrs: { 'aria-label': this.message } }));
   }
 
-  private roles(event: TableState): HTMLElement {
-    const row = h('div', { className: 'grid' });
+  private publishTables(): void {
+    const event = this.workflow.eventTable();
     const labels: Record<string, string> = {
-      event_id: 'Event ID',
-      event_activity: 'Activity',
-      event_timestamp: 'Timestamp → eventDatetime'
+      event_id: 'Event ID', event_activity: 'Activity', event_timestamp: 'Timestamp'
     };
-    for (const role of Object.keys(DEFAULTS)) {
-      row.append(
-        select(labels[role], [...event.keep], this.workflow.roles[role], (value) => {
-          this.workflow.roles[role] = value;
-          this.workflow.mappings.delete(value);
-          if (role === 'event_timestamp') event.types[value] = 'Datetime';
-          this.changed();
-        })
-      );
+    const tables: TabularTable[] = this.workflow.tables.map((table) => {
+      const mappings = [...this.workflow.mappings].filter(([, mapping]) => mapping.table === table.source.filename);
+      const roles = table === event
+        ? [...Object.keys(DEFAULTS).map((key) => ({ key, label: labels[key] })), { key: 'object', label: 'Object reference' }]
+        : mappings.map(([column]) => ({ key: `id:${column}`, label: `ID (${column})` }));
+      return {
+        id: table.source.filename, label: table.source.filename, rows: table.source.rows,
+        propertiesEditable: true, types: [...TYPES], roles,
+        columns: table.source.columns.map((name) => ({
+          name, property: table.keep.has(name), type: table.types[name],
+          disabledRoles: table === event && Object.values(this.workflow.roles).includes(name) ? ['object'] : [],
+          roles: table === event
+            ? [...Object.keys(DEFAULTS).filter((key) => this.workflow.roles[key] === name),
+              ...(this.workflow.mappings.has(name) ? ['object'] : [])]
+            : mappings.filter(([, mapping]) => mapping.id === name).map(([column]) => `id:${column}`)
+        }))
+      };
+    });
+    for (const block of this.review) {
+      if (block.type !== 'table') continue;
+      tables.push({
+        id: `review:${block.title}`, label: block.title ?? 'Prepared table', readOnly: true,
+        columns: block.data.columns.map((name) => ({ name, property: true })), rows: block.data.rows
+      });
     }
-    return row;
+    this.context.tabular?.({ tables, disabled: this.busy, onChange: (change) => this.columnChanged(change) });
+  }
+
+  private columnChanged(change: TabularChange): void {
+    const table = this.workflow.tables.find((item) => item.source.filename === change.table);
+    if (!table || this.busy) return;
+    if (change.kind === 'property') {
+      if (change.value) table.keep.add(change.column);
+      else table.keep.delete(change.column);
+    } else if (change.kind === 'type') {
+      table.types[change.column] = String(change.value);
+    } else {
+      this.roleChanged(table, change);
+    }
+    this.changed();
+  }
+
+  private roleChanged(table: TableState, change: TabularChange): void {
+    const role = String(change.role);
+    if (table === this.workflow.eventTable()) {
+      if (role === 'object') {
+        this.workflow.selectObject(change.column, Boolean(change.value));
+      } else if (role in DEFAULTS) {
+        this.workflow.roles[role] = change.value ? change.column : '';
+        if (change.value) {
+          this.workflow.mappings.delete(change.column);
+          if (role === 'event_timestamp') table.types[change.column] = 'Datetime';
+        }
+      }
+    } else {
+      const mapping = this.workflow.mappings.get(role.slice(3));
+      if (mapping) {
+        mapping.id = change.value ? change.column : '';
+        if (change.value) table.types[change.column] = 'String';
+      }
+    }
   }
 
   private objectMapping(column: string): HTMLElement {
-    const check = h('input', { attrs: { type: 'checkbox', 'aria-label': `Object type ${column}` } });
-    check.checked = this.workflow.mappings.has(column);
-    check.addEventListener('change', () => {
-      this.workflow.selectObject(column, check.checked);
-      this.changed();
-    });
-    const row = h('div', { className: 'grid' }, h('label', {}, check, ` ${column}`));
+    const row = h('div', { className: 'grid' }, h('strong', { text: column }));
     const mapping = this.workflow.mappings.get(column);
     if (!mapping) return row;
     const files = h(
@@ -196,40 +204,6 @@ class OcedConfig extends HTMLElement implements SoupConfigElement {
         })
       );
     return row;
-  }
-
-  private attribute(table: TableState, column: string): HTMLElement {
-    const keep = h('input', { attrs: { type: 'checkbox', 'aria-label': `Keep ${table.source.filename} ${column}` } });
-    keep.checked = table.keep.has(column);
-    keep.addEventListener('change', () => {
-      if (keep.checked) table.keep.add(column);
-      else table.keep.delete(column);
-      this.changed();
-    });
-    return h(
-      'div',
-      {},
-      h('label', {}, keep, ` Keep ${column}`),
-      select(`Type ${column}`, [...TYPES], table.types[column], (value) => {
-        table.types[column] = value;
-        this.changed();
-      })
-    );
-  }
-
-  private reviewElements(): HTMLElement[] {
-    return this.review.flatMap((block) =>
-      block.type !== 'table'
-        ? []
-        : [
-            h(
-              'details',
-              { attrs: { open: '' } },
-              h('summary', { text: block.title }),
-              previewTable(block.data.columns, block.data.rows)
-            )
-          ]
-    );
   }
 
   private replacementWarning(): HTMLElement[] {

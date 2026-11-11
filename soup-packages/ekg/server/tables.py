@@ -19,6 +19,8 @@ from dataclasses import dataclass, field
 
 import pandas as pd
 
+from soup.core.contracts import ValidationError
+
 
 @dataclass(frozen=True)
 class Table:
@@ -47,17 +49,14 @@ class Table:
         for index, row in enumerate(self.rows):
             if len(row) != expected_length:
                 raise ValueError(
-                    f"Row {index} has {len(row)} cells, expected {expected_length} "
-                    f"(one per column {self.columns!r})"
+                    f"Row {index} has {len(row)} cells, expected {expected_length} (one per column {self.columns!r})"
                 )
 
     # ------------------------------------------------------------------ #
     # Constructors
     # ------------------------------------------------------------------ #
     @classmethod
-    def from_records(
-        cls, records: Iterable[Mapping[str, str | None]], columns: Sequence[str] | None = None
-    ) -> Table:
+    def from_records(cls, records: Iterable[Mapping[str, str | None]], columns: Sequence[str] | None = None) -> Table:
         """Build a Table from an iterable of {column: value} dicts."""
 
         records = list(records)
@@ -108,8 +107,22 @@ def from_dataframe(frame: pd.DataFrame) -> Table:
     """
 
     columns = tuple(str(column) for column in frame.columns)
-    rows = tuple(
-        tuple(None if pd.isna(value) else str(value) for value in record)
-        for record in frame.itertuples(index=False, name=None)
-    )
-    return Table(columns, rows)
+    rows = []
+    for row_number, record in enumerate(frame.itertuples(index=False, name=None), start=1):
+        cells = []
+        for column, value in zip(columns, record, strict=True):
+            try:
+                cells.append(None if pd.isna(value) else str(value))
+            except (TypeError, ValueError) as exc:
+                raise ValidationError(
+                    f"Column '{column}', data row {row_number} cannot be converted from "
+                    f"{type(value).__name__} to scalar text. Flatten structured values first.",
+                    details={
+                        "phase": "table conversion",
+                        "column": column,
+                        "row": row_number,
+                        "value_type": type(value).__name__,
+                    },
+                ) from exc
+        rows.append(tuple(cells))
+    return Table(columns, tuple(rows))

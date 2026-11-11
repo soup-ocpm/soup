@@ -1,6 +1,6 @@
-import { Component, signal, ViewChild } from '@angular/core';
+import { Component, computed, signal, ViewChild } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
-import { Block, columnsOf, FormValues } from '@soup/sdk';
+import { Block, columnsOf, FormValues, TabularChange, TabularConfiguration } from '@soup/sdk';
 
 import { ImporterInfo, Inspection } from '../../../core/v3/v3.models';
 import { V3ApiService } from '../../../core/v3/v3-api.service';
@@ -8,7 +8,9 @@ import { NotificationService } from '../../../shared/components/s-toast/toast.se
 import { BlocksPreviewComponent } from '../../components/blocks-preview.component';
 import { ConfigElementHostComponent } from '../../components/config-element-host.component';
 import { DynamicFormComponent } from '../../components/dynamic-form.component';
+import { initialValues, requiredErrors } from '../../components/form-values';
 import { errorMessage, notify } from '../../components/notify';
+import { TabularImportComponent } from '../../components/tabular-import.component';
 
 /**
  * /import - file -> the importers able to read it (several may: the user
@@ -20,7 +22,7 @@ import { errorMessage, notify } from '../../components/notify';
  */
 @Component({
   selector: 'app-import',
-  imports: [RouterLink, DynamicFormComponent, ConfigElementHostComponent, BlocksPreviewComponent],
+  imports: [RouterLink, DynamicFormComponent, ConfigElementHostComponent, BlocksPreviewComponent, TabularImportComponent],
   templateUrl: './import.component.html',
   styleUrl: './import.component.scss'
 })
@@ -34,6 +36,59 @@ export class ImportComponent {
   public readonly columns = signal<string[]>([]);
   public readonly blocks = signal<Block[]>([]);
   public readonly options = signal<FormValues>({});
+  public readonly packageTabular = signal<TabularConfiguration | null>(null);
+  public readonly roleFields = computed(() =>
+    (this.inspection()?.fields ?? []).filter((field) => field.type === 'column' || field.type === 'columns')
+  );
+  public readonly sourceTable = computed(() => {
+    if (this.importer()?.config_element) return undefined;
+    const isCsv = /\.(csv|tsv)$/i.test(this.file()?.name ?? '');
+    if (!isCsv && !this.roleFields().length) return undefined;
+    return this.blocks().find((block) => block.type === 'table');
+  });
+  public readonly genericTabular = computed(() => !!this.sourceTable());
+  public readonly configurationFields = computed(() => {
+    const fields = this.inspection()?.fields ?? [];
+    return this.genericTabular() ? fields.filter((field) => field.type !== 'column' && field.type !== 'columns') : fields;
+  });
+  public readonly remainingBlocks = computed(() =>
+    this.packageTabular() ? [] : this.blocks().filter((block) => block !== this.sourceTable())
+  );
+  public readonly tabular = computed<TabularConfiguration | null>(() => {
+    if (this.packageTabular()) return this.packageTabular();
+    const source = this.sourceTable();
+    if (source?.type !== 'table') return null;
+    const fields = this.roleFields();
+    return {
+      disabled: !!this.busy(),
+      tables: [
+        {
+          id: 'source',
+          label: this.file()?.name ?? 'CSV',
+          rows: source.data.rows,
+          roles: fields.map((field) => ({ key: field.name, label: field.label, help: field.help })),
+          columns: source.data.columns.map((name) => {
+            const roles = fields
+              .filter((field) => {
+                const value = this.options()[field.name];
+                return Array.isArray(value) ? value.includes(name) : value === name;
+              })
+              .map((field) => field.name);
+            return {
+              name,
+              roles,
+              property: !fields.length || !!roles.length,
+              type: fields.length ? undefined : 'String',
+              disabledRoles: fields
+                .filter((field) => field.choices.length && !field.choices.some((choice) => choice.value === name))
+                .map((field) => field.name)
+            };
+          })
+        }
+      ],
+      onChange: (change) => this.onColumnChange(change)
+    };
+  });
 
   public readonly name = signal('');
   public readonly description = signal('');
@@ -110,6 +165,7 @@ export class ImportComponent {
     if (!file) {
       return;
     }
+    this.packageTabular.set(null);
     this.importer.set(importer);
     this.inspection.set(null);
     this.options.set({});
@@ -117,6 +173,7 @@ export class ImportComponent {
       this.api.inspect(importer.id, file).subscribe({
         next: (inspection) => {
           this.inspection.set(inspection);
+          if (!importer.config_element) this.options.set(initialValues(inspection.fields, null));
           this.columns.set(columnsOf(inspection.preview));
           this.blocks.set(inspection.preview);
           this.done();
@@ -127,6 +184,7 @@ export class ImportComponent {
   }
 
   public changeImporter(): void {
+    this.packageTabular.set(null);
     this.importer.set(null);
     this.inspection.set(null);
     this.blocks.set([]);
@@ -135,13 +193,38 @@ export class ImportComponent {
 
   // --- 3. options and preview ---------------------------------------------- //
   public onOptions(options: FormValues): void {
-    this.options.set(options);
+    this.options.set(this.importer()?.config_element ? options : { ...this.options(), ...options });
+  }
+
+  public onColumnChange(change: TabularChange): void {
+    const field = this.roleFields().find((item) => item.name === change.role);
+    if (!field || change.kind !== 'role') return;
+    const value = this.options()[field.name];
+    if (field.type === 'column') {
+      this.options.update((options) => ({ ...options, [field.name]: change.value ? change.column : '' }));
+    } else {
+      const selected = (Array.isArray(value) ? (value as string[]) : []).filter((name) => name !== change.column);
+      this.options.update((options) => ({ ...options, [field.name]: change.value ? [...selected, change.column] : selected }));
+    }
+  }
+
+  private validOptions(): boolean {
+    if (this.form && !this.form.validate()) return false;
+    if (this.importer()?.config_element) return true;
+    const errors = requiredErrors(this.inspection()?.fields ?? [], this.options());
+    const missing = Object.keys(errors);
+    if (!missing.length) return true;
+    const labels = this.inspection()
+      ?.fields.filter((field) => missing.includes(field.name))
+      .map((field) => field.label);
+    this.error.set(`Configura i campi richiesti: ${labels?.join(', ')}`);
+    return false;
   }
 
   public refreshPreview(): void {
     const file = this.file();
     const importer = this.importer();
-    if (!file || !importer || (this.form && !this.form.validate())) {
+    if (!file || !importer || !this.validOptions()) {
       return;
     }
     this.run('Aggiornamento anteprima...', () =>
@@ -149,6 +232,7 @@ export class ImportComponent {
         next: (blocks) => {
           if (blocks.length) {
             this.blocks.set(blocks);
+            this.columns.set(columnsOf(blocks));
           } else {
             notify(this.notifications, "L'importer non offre un'anteprima aggiornata", 'info');
           }
@@ -179,7 +263,7 @@ export class ImportComponent {
   public importFile(): void {
     const file = this.file();
     const importer = this.importer();
-    if (!file || !importer || (this.form && !this.form.validate())) {
+    if (!file || !importer || !this.validOptions()) {
       return;
     }
     if (!this.name().trim()) {
@@ -204,6 +288,7 @@ export class ImportComponent {
   private reset(): void {
     this.file.set(null);
     this.importers.set(null);
+    this.packageTabular.set(null);
     this.importer.set(null);
     this.inspection.set(null);
     this.columns.set([]);

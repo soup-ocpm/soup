@@ -13,7 +13,7 @@ from dataclasses import asdict, dataclass
 from datetime import datetime
 from typing import Any
 
-from soup.core.contracts import Upload, ValidationError
+from soup.core.contracts import Upload, ValidationError, import_phase
 
 TYPES = {"String", "Integer", "Float", "Boolean", "Datetime"}
 _IDENTIFIER = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
@@ -188,30 +188,32 @@ def _object_table(raw: Mapping[str, Any], ids: set[str], entity_id: str) -> Tabl
     if file is None:
         return Table([entity_id], [[item] for item in sorted(ids)])
     file = _mapping(file, "Object table file")
-    try:
-        data = base64.b64decode(file["base64"], validate=True)
-    except (KeyError, TypeError, ValueError, binascii.Error) as exc:
-        raise ValidationError("Object table file needs valid base64 content") from exc
-    table = _select(read_table(data, raw.get("delimiter", ",")), raw)
-    source_id = raw.get("id_column", entity_id)
-    if source_id not in table.columns:
-        raise ValidationError("Keep and select the object table's ID column")
-    if source_id != entity_id and entity_id in table.columns:
-        raise ValidationError(
-            f"Mapping the object ID would duplicate the '{entity_id}' column; discard the other column"
-        )
-    index = table.columns.index(source_id)
-    table.columns[index] = entity_id
-    for column in table.columns:
-        identifier(column)
-    for row in table.rows:
-        row[index] = row[index].strip()
-    values = table.values(entity_id)
-    if any(value.lower() in {"", "null", "nan", "none"} for value in values) or len(set(values)) != len(values):
-        raise ValidationError("Object table IDs must be non-null and unique after trimming whitespace")
-    if not ids.issubset(set(values)):
-        raise ValidationError("Object table is missing IDs referenced by the event table")
-    return table
+    filename = file.get("filename")
+    with import_phase("object CSV validation", file=filename if isinstance(filename, str) else "object CSV"):
+        try:
+            data = base64.b64decode(file["base64"], validate=True)
+        except (KeyError, TypeError, ValueError, binascii.Error) as exc:
+            raise ValidationError("Object table file needs valid base64 content") from exc
+        table = _select(read_table(data, raw.get("delimiter", ",")), raw)
+        source_id = raw.get("id_column", entity_id)
+        if source_id not in table.columns:
+            raise ValidationError("Keep and select the object table's ID column")
+        if source_id != entity_id and entity_id in table.columns:
+            raise ValidationError(
+                f"Mapping the object ID would duplicate the '{entity_id}' column; discard the other column"
+            )
+        index = table.columns.index(source_id)
+        table.columns[index] = entity_id
+        for column in table.columns:
+            identifier(column)
+        for row in table.rows:
+            row[index] = row[index].strip()
+        values = table.values(entity_id)
+        if any(value.lower() in {"", "null", "nan", "none"} for value in values) or len(set(values)) != len(values):
+            raise ValidationError("Object table IDs must be non-null and unique after trimming whitespace")
+        if not ids.issubset(set(values)):
+            raise ValidationError("Object table is missing IDs referenced by the event table")
+        return table
 
 
 def _entity_types(raw: Mapping[str, Any], columns: list[str], entity_id: str) -> dict[str, str]:
@@ -237,11 +239,14 @@ def _event_columns(table: Table, options: Mapping[str, Any]) -> tuple[str, str, 
     ids = table.values(event_id)
     if not ids or "" in ids or len(set(ids)) != len(ids):
         raise ValidationError("Event IDs must be nonempty and unique, with at least one event")
-    try:
-        for value in table.values(timestamp):
+    for row_number, value in enumerate(table.values(timestamp), start=1):
+        try:
             datetime.fromisoformat(value.replace("Z", "+00:00"))
-    except ValueError as exc:
-        raise ValidationError("eventDatetime must contain valid ISO datetime values in every event row") from exc
+        except ValueError as exc:
+            raise ValidationError(
+                f"Column '{timestamp}', data row {row_number} must contain a valid ISO datetime for eventDatetime",
+                details={"phase": "timestamp validation", "column": timestamp, "row": row_number},
+            ) from exc
     return event_id, activity, timestamp
 
 
@@ -290,7 +295,8 @@ def prepare(upload: Upload, options: Mapping[str, Any], relative_dir: str) -> Pr
     seen_ids: set[str] = set()
     for column, raw_options in entity_options.items():
         raw = _mapping(raw_options, f"entities.{column}")
-        entity = _object_table(raw, reference_ids(table.values(column)), entity_id)
+        with import_phase("object table preparation", column=column):
+            entity = _object_table(raw, reference_ids(table.values(column)), entity_id)
         if {"Log", type_tag}.intersection(entity.columns):
             raise ValidationError("Object tables must not contain Log or the configured type_tag")
         ids = set(entity.values(entity_id))
