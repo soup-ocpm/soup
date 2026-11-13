@@ -161,6 +161,7 @@ class MemgraphTool(Tool, GraphDatabase):
             self._state = None
 
     def close(self) -> None:
-        close = getattr(self._db, "close", None)
-        if callable(close):
-            close()
+        with self._lock:
+            close = getattr(self._db, "close", None)
+            if callable(close):
+                close()

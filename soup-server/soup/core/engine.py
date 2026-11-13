@@ -62,8 +62,8 @@ class Engine:
     system: SystemService
 
     def shutdown(self) -> None:
-        # The packages release their own resources in on_shutdown (e.g.
-        # tool_memgraph closes the Memgraph driver).
+        # Packages release their resources first; close any remaining
+        # shared database connections afterwards.
         try:
             self.plugin_manager.shutdown()
         finally:

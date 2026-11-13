@@ -4,9 +4,9 @@ File : settings.py
 Description: Engine settings, read from the environment with explicit
              defaults. Only what the host
              itself needs, including the database for new packages.
-             Legacy Memgraph and file storage are configured by
-             the packages providing those tools (tool_memgraph reads
-             MEMGRAPH_HOST/MEMGRAPH_PORT, tool_storage reads
+             Memgraph and Neo4j connection settings are shared with the
+             graph tools. File storage is configured by tool_storage
+             (which reads
              SOUP_STORAGE_KIND, SOUP_CONTAINER_NAME and
              SOUP_LOCAL_STORAGE_ROOT). SOUP_MAX_UPLOAD_MB caps the
              request body of /api/v3; SOUP_CORS_ORIGINS lists the

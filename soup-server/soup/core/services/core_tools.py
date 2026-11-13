@@ -34,6 +34,7 @@ from soup.core.contracts import (
     ValidationError,
 )
 from soup.core.contracts.database import Database
+from soup.core.database import resolve_graph_context
 from soup.core.registry import Registry
 from soup.core.services.catalog_ports import CatalogReader, CatalogWriter
 from soup.core.toolbox import ToolBox
@@ -86,24 +87,8 @@ class CoreTools:
         self._package_databases = package_databases
 
     def backend(self, obj: ObjectRef) -> str | None:
-        pending, seen, found = [obj], set(), set()
-        while pending:
-            current = pending.pop()
-            if current.id in seen:
-                continue
-            seen.add(current.id)
-            backend = current.meta.get("backend")
-            if backend is None:
-                backend = ("neo4j" if current.meta.get("neo4j_database")
-                           else "memgraph" if current.meta.get("dataset") else None)
-            if backend:
-                found.add(backend)
-            else:
-                pending.extend(parent for key in current.parents
-                               if (parent := self.catalog_reader().get(key)) is not None)
-        if len(found) > 1:
-            raise ValidationError("The object has ambiguous graph backend ancestry")
-        return next(iter(found), None)
+        target = resolve_graph_context(obj, lambda key: self.catalog_reader().get(key))
+        return target[0] if target is not None else None
 
     def supports(self, package: str, objects: Iterable[ObjectRef] = ()) -> bool:
         if self._package_databases is None or self.database is None:
@@ -154,7 +139,6 @@ class CoreTools:
         backend = self.backend(ref)
         if backend and ref.meta.get("backend") != backend:
             ref = replace(ref, meta={**ref.meta, "backend": backend})
-            self.catalog_writer().update(ref)
         return ref
 
     def available(self, names: Iterable[str]) -> bool:

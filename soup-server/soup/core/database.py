@@ -6,7 +6,7 @@ import re
 import threading
 from collections.abc import Callable, Iterator, Mapping
 from contextlib import AbstractContextManager, contextmanager, nullcontext
-from dataclasses import dataclass, field, replace
+from dataclasses import dataclass, field
 from typing import Any
 from uuid import UUID, uuid4
 
@@ -17,6 +17,7 @@ from soup.core.contracts import (
     ConflictError,
     ForbiddenError,
     NotFoundError,
+    ObjectRef,
     ServiceUnavailableError,
     ValidationError,
     import_phase,
@@ -70,6 +71,52 @@ class _Executor:
         return rows
 
 
+def resolve_graph_context(  # noqa: C901, PLR0912 - catalog mapping/ownership validation stays together
+    obj: ObjectRef | str, lookup: Callable[[str], ObjectRef | None],
+) -> tuple[str, str] | None:
+    """Resolve one graph target without changing the catalog; neutral objects return None."""
+    pending: list[ObjectRef | str] = [obj]
+    visited: set[str] = set()
+    targets: set[tuple[str, str]] = set()
+    backends: set[str] = set()
+    while pending:
+        current = pending.pop()
+        object_id = current.id if isinstance(current, ObjectRef) else current
+        if object_id in visited:
+            continue
+        visited.add(object_id)
+        ref = current if isinstance(current, ObjectRef) else lookup(current)
+        if ref is None:
+            raise NotFoundError(f"Dataset/object '{object_id}' is not registered")
+        backend = ref.meta.get("backend")
+        name = ref.meta.get("neo4j_database")
+        dataset = ref.meta.get("dataset")
+        if backend is None:
+            backend = "neo4j" if name is not None else "memgraph" if dataset else None
+        if backend is not None:
+            if backend not in ("memgraph", "neo4j"):
+                raise ValidationError("Invalid graph backend in the dataset catalog")
+            backends.add(backend)
+        if backend is None or (name is None and not dataset and ref.parents):
+            pending.extend(ref.parents)
+            continue
+        if backend == "neo4j":
+            if not isinstance(name, str) or not _DATABASE_NAME.fullmatch(name):
+                raise ValidationError("Select a Neo4j dataset with an explicit database mapping.")
+            if ref.meta.get("neo4j_managed") and ref.meta.get("neo4j_database_owner") != ref.id:
+                raise ValidationError("The dataset's Neo4j database ownership record is invalid")
+            targets.add((backend, name))
+        else:
+            if name is not None:
+                raise ValidationError("A Memgraph dataset cannot target a Neo4j database")
+            if not isinstance(dataset, str) or not dataset:
+                raise ValidationError("The Memgraph dataset mapping is missing or invalid")
+            targets.add((backend, dataset))
+    if len(targets) > 1 or len(backends) > 1 or (backends and not targets):
+        raise ValidationError("Select one graph dataset; missing or ambiguous backend context cannot use a default.")
+    return next(iter(targets), None)
+
+
 class CypherDatabase:
     def __init__(self, config: DatabaseConfig, *, name: str | None = None, root: CypherDatabase | None = None):
         self.config = config
@@ -82,7 +129,8 @@ class CypherDatabase:
         self._root = root or self
         self._catalog: Callable[[], Catalog] | None = None
         self._driver: Driver | None = None
-        self._lock = threading.Lock()
+        self._lock = threading.Condition()
+        self._sessions = 0
 
     @property
     def backend(self) -> str:
@@ -121,48 +169,12 @@ class CypherDatabase:
             raise ValidationError("Invalid Neo4j database name")
         return CypherDatabase(self.config, name=name, root=self._root)
 
-    def for_dataset(self, object_id: str) -> CypherDatabase:  # noqa: C901, PLR0912 - explicit legacy/ownership validation
+    def for_dataset(self, object_id: str) -> CypherDatabase:
         """Resolve catalog provenance on each operation, including future derived objects."""
-        catalog = self._dataset_catalog()
-        pending, visited, targets = [object_id], set(), set()
-        while pending:
-            current = pending.pop()
-            if current in visited:
-                continue
-            visited.add(current)
-            obj = catalog.get(current)
-            if obj is None:
-                raise NotFoundError(f"Dataset/object '{current}' is not registered")
-            backend = obj.meta.get("backend")
-            name = obj.meta.get("neo4j_database")
-            if backend is None:
-                backend = "neo4j" if name is not None else "memgraph" if obj.meta.get("dataset") else None
-            if backend is None:
-                pending.extend(obj.parents)
-                continue
-            if name is None and not obj.meta.get("dataset") and obj.parents:
-                pending.extend(obj.parents)
-                continue
-            if backend not in {"memgraph", "neo4j"}:
-                raise ValidationError("Invalid graph backend in the dataset catalog")
-            if backend == "neo4j":
-                if not isinstance(name, str) or not _DATABASE_NAME.fullmatch(name):
-                    raise ValidationError("Select a Neo4j dataset with an explicit database mapping.")
-                if obj.meta.get("neo4j_managed") and obj.meta.get("neo4j_database_owner") != obj.id:
-                    raise ValidationError("The dataset's Neo4j database ownership record is invalid")
-            elif name is not None:
-                raise ValidationError("A Memgraph dataset cannot target a Neo4j database")
-            dataset = obj.meta.get("dataset")
-            if backend == "memgraph" and (not isinstance(dataset, str) or not dataset):
-                raise ValidationError("The Memgraph dataset mapping is missing or invalid")
-            targets.add((backend, name if backend == "neo4j" else dataset))
-            if "backend" not in obj.meta:
-                catalog.update(replace(obj, meta={**obj.meta, "backend": backend}))
-        if len(targets) != 1:
-            raise ValidationError(
-                "Select one graph dataset; missing or ambiguous backend context cannot use a default."
-            )
-        backend, name = targets.pop()
+        target = resolve_graph_context(object_id, self._dataset_catalog().get)
+        if target is None:
+            raise ValidationError("Select one graph dataset; missing backend context cannot use a default.")
+        backend, name = target
         connection = self.for_backend(backend)
         bound = CypherDatabase(connection.config, name=name if backend == "neo4j" else None, root=connection)
         bound._object_id = object_id
@@ -179,6 +191,8 @@ class CypherDatabase:
     def _session_database(self) -> str | None:
         if self._name is None and self._object_id is None:
             raise ValidationError("Graph access requires a dataset: use database.for_dataset(object_id).")
+        if self.backend == "memgraph":
+            return None  # Memgraph has one graph; do not send a Neo4j database selector.
         return self._name if self._name is not None else self.config.database
 
     def check_multi_database(self) -> None:
@@ -248,16 +262,30 @@ class CypherDatabase:
                 self._driver = GraphDatabase.driver(self.config.uri, auth=(self.config.username, self.config.password))
             return self._driver
 
-    def execute(self, cypher: str, parameters: Mapping[str, Any] | None = None) -> list[dict[str, Any]]:
+    @contextmanager
+    def _session(self) -> Iterator[Any]:
         name = self._session_database()
-        with self._access(), self._get_driver().session(database=name) as session:
+        root = self._root
+        with self._access():
+            with root._lock:
+                session = root._get_driver().session(database=name)
+                root._sessions += 1
+            try:
+                with session:
+                    yield session
+            finally:
+                with root._lock:
+                    root._sessions -= 1
+                    root._lock.notify_all()
+
+    def execute(self, cypher: str, parameters: Mapping[str, Any] | None = None) -> list[dict[str, Any]]:
+        with self._session() as session:
             return _Executor(session).execute(cypher, parameters)
 
     @contextmanager
     def transaction(self) -> Iterator[CypherExecutor]:
         """Commit once; roll back body failures without hiding the original error. No retries."""
-        name = self._session_database()
-        with self._access(), self._get_driver().session(database=name) as session:
+        with self._session() as session:
             tx = session.begin_transaction()
             try:
                 yield _Executor(tx)
@@ -274,14 +302,20 @@ class CypherDatabase:
                 tx.commit()
 
     def close(self) -> None:
-        if self._root is self:
-            for connection in self._connections.values():
-                if connection is not self:
-                    connection._close_driver()
+        if self._root is not self:
+            self._root._close_driver()
+            return
+        for connection in self._connections.values():
+            if connection is not self:
+                connection._close_driver()
         self._close_driver()
 
     def _close_driver(self) -> None:
         with self._lock:
+            # Keep allowing queries until sessions drain: an in-flight operation
+            # may need a nested query to finish before this driver can close.
+            while self._sessions:
+                self._lock.wait()
             if self._driver is not None:
-                self._driver.close()
-                self._driver = None
+                driver, self._driver = self._driver, None
+                driver.close()
