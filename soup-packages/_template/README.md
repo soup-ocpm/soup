@@ -1,31 +1,37 @@
-# Package di esempio (`_template`)
+# Minimal package template
 
-Package minimo da copiare per crearne uno nuovo: un importer `text` (file `.txt`, produce oggetti
-di kind `template.text`), il suo visualizzatore, il Web Component `<soup-template-text>`, e
-un'operazione `stats_report` che da un testo produce un oggetto `report` (disegnato da soup_base).
-La cartella inizia con `_`, quindi la discovery la ignora: non viene mai caricata così com'è.
+Copy this package to start a SOUP extension. Follow the verified
+[getting-started tutorial](../docs/getting-started.md) for copy/rename commands,
+building, ZIP installation and a manual check.
 
+The directory starts with `_`, so discovery ignores it. Its manifest name is
+`template`; `npm run pack -- _template` therefore creates
+`dist/template-1.0.0.zip`, not an archive named `_template`.
+
+| Contribution                             | Implementation                                                                                                                                                     |
+| ---------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `.txt` importer `text` → `template.text` | `TextImporter` in [server/text.py](server/text.py): UTF-8 with replacement, 10 preview lines, configurable retained prefix (default 200), data in catalog metadata |
+| `text` visualizer                        | `TextVisualizer`: initial text data and `stats` action                                                                                                             |
+| `<soup-template-text>`                   | [app/src/index.ts](app/src/index.ts): text rendering, statistics request, numerical SVG thumbnail                                                                  |
+| `stats_report` operation                 | `StatsReport`: counts, longest lines and text as a child `report`                                                                                                  |
+
+Registration is in [server/plugin.py](server/plugin.py). There are no external
+files to remove and no graph queries. The manifest has no required packages or
+tools and no third-party Python requirements. `soup_base` is an optional
+renderer for the operation's output report; the operation can create the report
+without it. The host still needs its normal catalog provider.
+
+The manifest defaults to **Memgraph-only** because it omits `databases`. A
+copied, tested database-independent package can explicitly declare both
+backends.
+
+From `soup-packages/`:
+
+```sh
+npm run build:packages -- _template
+npm run pack -- _template
 ```
-_template/
-  soup-package.json     manifest ("name": "template")
-  server/plugin.py      registra importer, visualizzatore e operazione
-  server/text.py        TextImporter, TextVisualizer e l'operazione StatsReport
-  app/package.json      dipendenze del frontend (@soup/sdk)
-  app/tsconfig.json
-  app/src/index.ts      il custom element, registrato con defineSoupElement
-```
 
-## Creare un package da questo
-
-1. Copia la cartella: `cp -r _template my_package` (il nome della cartella è il nome del package).
-2. In `soup-package.json` cambia `name`, `label`, `description`; in `app/package.json` cambia
-   `name` (`soup-pkg-my-package-app`: due workspace npm non possono avere lo stesso nome).
-3. Cambia gli `id`, il kind prodotto e il tag dell'elemento (`element` in Python e il tag passato
-   a `defineSoupElement` devono coincidere e contenere un `-`).
-4. Dalla radice di `soup-packages`: `npm install` (collega il nuovo workspace), poi
-   `npm run build:packages -- my_package` e, per installarlo su un altro server,
-   `npm run pack -- my_package` (crea `dist/my_package-1.0.0.zip`).
-
-Per provare il template su un server: `npm run pack -- _template` e carica
-`dist/template-1.0.0.zip` dalla pagina `/packages` (installazione abilitata con
-`SOUP_ALLOW_PACKAGE_INSTALL=true`).
+Install dependencies with `npm ci` first. When copying, rename the manifest and
+npm workspace, object kind and custom-element tag together. Contribution IDs are
+scoped to the package, so the importer and visualizer may each retain `text`.

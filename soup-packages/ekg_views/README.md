@@ -1,121 +1,78 @@
 # ekg_views
 
-Package fornito e attivo di default: visualizzatori **Grafo**, **Statistiche** e **Interrogazioni**
-ed exporter **JSON del grafo** per gli oggetti di kind `ekg` e `oced_importer.log`, con i punti di estensione
-`ekg.graph_views`, `ekg.queries`, `ekg.json_parts` ed `ekg.stats_notices` (gli avvisi di
-**Statistiche**, `StatsNotice`). Contratti, azioni e formati sono descritti
-nella sezione "Viste dell'EKG" di [../README.md](../README.md).
+Backend compatibility: **memgraph, neo4j**. Required packages: `soup_base`.
+Manifest-level tools: `storage`. See the [manifest](soup-package.json) for
+Python requirements.
 
-Supports Memgraph `ekg` objects and Neo4j `oced_importer.log` objects with the same frontend,
-including graph/search/node details, statistics, all built-in queries and JSON export.
-`requires: ["soup_base"]`, `requires_tools: ["storage"]`. In Memgraph mode the active `ekg`
-package supplies its existing graph-loading lifecycle through its public API; enable it alongside
-`ekg_views`. Neo4j reads the external database directly through `ctx.database`, using the imported
-log's configured property names. It refuses a missing or mixed log rather than displaying another
-object's graph. No import/rebuild/clear is performed on Neo4j.
+The manifest requires `soup_base` and the `storage` tool. Memgraph views obtain
+the active EKG runtime through its optional public API; Neo4j views bind the
+object's registered database through `ctx.database.for_dataset(obj.id)`.
+Incomplete or mixed OCED imports are refused. The adapter keeps native Neo4j
+identity values intact, normalizes temporal values, and maps the view's legacy
+activity/timestamp property references to the import configuration. This does
+not change original OCEAN import queries.
 
-Neo4j retains native timestamp precision/time zones. The existing numeric graph IDs work on
-Neo4j versions supporting `id()` (validated on 2026.06); element-ID-only servers are unsupported.
-The OCEAN loader does not create object-object `REL` relationships or build-phase timings, so
-these are absent on its graphs. Memgraph analysis/class-graph packages remain Memgraph-only.
+Query structure is fixed. Labels and relationship types are escaped and chosen
+from closed lists; values, offsets and limits use parameters. Invalid view
+selections return `400`.
 
-Ogni vista, interrogazione e parte dichiara i kind a cui si applica (`kinds`, `kinds.py`): quelle di
-ekg_views valgono per `ekg`, `ekg_class` e `oced_importer.log` (il grafo aggregato contiene anche l'EKG del padre).
-Interrogazioni e JSON del grafo accettano `ekg_class` solo mentre un package (`ekg_class_graph`)
-contribuisce qualcosa di dedicato a quel kind; Grafo e Statistiche accettano `ekg` su Memgraph
-e `oced_importer.log` su Neo4j.
+| Contribution                       | Behavior                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| ---------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Graph** (`ekg_views.graph`)      | Toolbar with the graph view (including views from other packages contributed to `ekg.graph_views`), initial limit 200 up to `SOUP_EKG_VIEWS_MAX_LIMIT` (default 2000; a non-positive/non-integer value prevents the package from loading), relationship types, and node shapes. Drawing uses `<soup-graph-view>` from `soup_base`. Provided views: **Standard graph** (`standard`) and **Object graph** (`object`, showing `:REL` edges between entities, qualifiers, and `:CORR` qualifiers; empty without `:REL`). Actions: `graph` `{view, limit, relations}` → `{view, limit, relations, max_data, graph}`, `search` `{view, text, kind: node\|edge, offset, relations, label?}` → `{items, total}` (50-item pages), `node` `{view, id}` → node properties. First rendering emits `soup-thumbnail`. **Export SVG** downloads `<name>.svg` via `context.download`. |
+| **Statistics** (`ekg_views.stats`) | Counts, earliest/latest timestamps, unique activities, entity types with missing/`"nan"`/empty event values (warning `"N nodes have NaN values."`), CSV columns classified by imported role (event ID, timestamp, activity, entity, value, unused), composition charts for Event/Entity/CORR/DF and construction-phase timings in seconds (when `meta.process_info` exists). Shows `meta.notice` and messages contributed to `ekg.stats_notices`.                                                                                                                                                                                                                                                                                                                                                                                                                     |
+| **Queries** (`ekg_views.queries`)  | All `GraphQuery` contributions to `ekg.queries`, grouped by `group`, each with its field form. Action `query` `{key, params}` → `{key, label, blocks}`, displayed with `<soup-report-view>`. The 21 bundled queries cover event/entity nodes; entity by type; events by activity; CORR, DF, type-specific DF; REL/CORR counts by qualifier; counts of event/entity/CORR/DF/all nodes; activities and frequencies; entity keys and types; null values; earliest/latest timestamps; and maximum display count.                                                                                                                                                                                                                                                                                                                                                          |
+| **Graph JSON** (`ekg_views.json`)  | `parts` multiselect from `ekg.json_parts`; output object maps each part label to its data: `Event nodes`, `Entity nodes`, `CORR relationships` with `{corr_data: [{event, relation_type, related_event, relation_id}], corr_count}`, `DF relationships` with `{df_data, df_count}`, and `REL relationships` with `{rel_data: [{source, relation_type, qualifier, target, relation_id}], rel_count}`.                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
 
-In **Interrogazioni** un'interrogazione il cui form è già valido con i default (nessun campo, oppure
-campi tutti facoltativi o con un default, come `Righe`) parte appena la si sceglie; quelle con un
-campo obbligatorio senza default aspettano **Esegui**. Le interrogazioni **senza campi** non hanno né
-form né **Esegui**: si eseguono alla selezione (o mostrano il risultato in memoria) e basta; se
-falliscono, l'errore resta nell'area del risultato con il pulsante **Riprova** (solo in questo
-caso: per le altre l'errore è una notifica). Per quelle con campi **Esegui** resta, per rieseguire
-dopo aver cambiato i parametri (mai a ogni tasto), e forza una nuova esecuzione. Durante l'attesa
-l'area del risultato è `aria-busy`; la risposta di un'interrogazione lasciata nel frattempo è
-scartata. I risultati restano in memoria per la pagina, per interrogazione e parametri: tornando su
-una già eseguita la si vede subito. La regola si calcola dai `fields` (`required`/`default`,
-`canRunAtOnce`).
+Extension points are exported from `soup_pkg_ekg_views.api` (require
+`ekg_views`) and accept `ctx.contribute(POINT, item, key=item.key)`:
 
-## Come sono scritte le query
+| Point                                         | Contract                                                                                                                                                                                                                                                                                    | Provided bases                                                                                                                                                                                                                                                                                                                                                                                                                                               |
+| --------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `GRAPH_VIEWS_POINT` (`"ekg.graph_views"`)     | `GraphView`: `key`, `label`, `relationship_types`, `default_relations`, `node_labels`, `edges_query(limit, relations) -> Query`, `to_graph(records) -> {nodes, edges, directed}`; optional `search_query`, `search_count_query`, `search_items`, `node_query`, `to_node`, `max_data_query`. | `EdgeListGraphView` (Template Method): `relationships` maps `{type: (source label, target label)}`; its fixed list defines `relationship_types` and `node_labels`. Hooks: `node_label`, `node_group`, `edge_type`, `edge_label`. It builds its own queries. `StandardGraphView` (`standard`) uses Event/Entity, CORR/DF (DF by default), grouping by Event or entity type. `ObjectGraphView` (`object`) uses REL between entities and CORR (REL by default). |
+| `QUERIES_POINT` (`"ekg.queries"`)             | `GraphQuery`: `key`, `label`, `group`, `fields`, `build(params) -> Query`, `transform(records, params) -> [block]`. `values(raw)` validates fields and caps `limit` at `max_limit` (1000).                                                                                                  | `CountQuery` (key/value block reading `count`), `NodeListQuery` (paged table with `total`), `RelationshipListQuery`; `where` and `filter_params` for restrictions.                                                                                                                                                                                                                                                                                           |
+| `JSON_PARTS_POINT` (`"ekg.json_parts"`)       | `JsonPart`: `key`, `label` (JSON key), `query() -> Query`, `transform(records)`.                                                                                                                                                                                                            | `NodesPart`, `RelationshipsPart`, `RelPart`.                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| `STATS_NOTICES_POINT` (`"ekg.stats_notices"`) | `StatsNotice`: `key`, `notice(obj, tools) -> str \| None` for an object's Statistics notice, if any.                                                                                                                                                                                        | —                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
 
-- **Etichette e tipi nel pattern**, come il vecchio `MATCH (e1:Event)-[r:DF]->(e2:Event) ... LIMIT`:
-  `MATCH (n:`Event`)`, `MATCH (a:`Event`)-[r:`DF`]->(b:`Event`)`, `MATCH ()-[r:`CORR`]->()`, così
-  Memgraph legge solo i nodi e gli archi che servono. Vengono **solo da liste chiuse**: le
-  `relationships` di una `EdgeListGraphView` (`{tipo: (etichetta sorgente, etichetta destinazione)}`)
-  e i `node_label`/`relationship`/`source_label`/`target_label` di `CountQuery`, `NodeListQuery`,
-  `RelationshipListQuery`, `NodesPart` e `RelationshipsPart`, sempre attraverso `ident()`.
-- **Le scelte dell'utente** (relazioni visibili, etichetta dei nodi cercati) vengono prima
-  confrontate con quella lista (`ValidationError`, cioè `400`, se non ci sono) e servono solo a
-  scegliere quale pattern costruire; più tipi diventano `[r:`DF`|`CORR`]`, e un estremo è
-  etichettato quando tutti i tipi scelti concordano (DF e CORR partono entrambi da `Event`).
-- **I valori** (testo della ricerca, id, offset, filtri delle interrogazioni) e il `LIMIT` restano
-  parametri: `$text`, `$id`, `$offset`, `$limit`.
-- **Niente `ORDER BY` globale** sugli archi del grafo e nei conteggi: `MATCH ... LIMIT $limit`.
-  `ORDER BY` resta solo dove si pagina con un offset: la ricerca incrementale del Grafo e le
-  tabelle paginate di `NodeListQuery` e `RelationshipListQuery`.
+Each contribution declares applicable object kinds with `kinds` (default
+`("ekg",)`). `ekg_views` contributions use
+`STANDARD_KINDS = ("ekg", "ekg_class", "oced_importer.log")` because an
+`ekg_class` graph also contains its parent's EKG. **Graph** and **Statistics**
+accept `ekg` on Memgraph and `oced_importer.log` on Neo4j. Graph only offers
+views applicable to the object kind. **Queries** and **Graph JSON** accept
+`ekg`, compatible OCED contributions, plus any kind that has at least one
+**dedicated** contribution (`kinds` not containing `ekg`); when
+`ekg_class_graph` is active they also accept `ekg_class`, otherwise not. For any
+object, they show only contributions whose `kinds` includes that object kind.
+Graph, Statistics, and Queries include the object's `meta.notice` in `data()`
+and display it as a notice. `GraphVisualizer` is exported for visualizers
+serving other kinds with their own frontend element (such as Aggregated graph).
 
-## Test
+Contributions are re-read on each request: enabling or disabling a package at
+runtime immediately adds or removes its views, queries, and JSON parts.
 
-- `pytest` da `soup-server/` raccoglie `tests/test_*.py` (FakeDatabase, niente Docker): blocchi di
-  ogni interrogazione, pattern etichettato atteso nel testo di ogni query generata e nessun valore
-  dell'utente, relazioni ed etichette non dichiarate rifiutate con `400`, nomi da quotare passati
-  da `ident()`, estensibilità con un package di prova scritto su disco.
-- `npm test` dalla radice di `soup-packages`: gli elementi `<soup-pkg-ekg-graph>`,
-  `<soup-pkg-ekg-stats>`, `<soup-pkg-ekg-queries>` con un context finto.
-- `tests/memgraph_smoke.py` (non raccolto da pytest) esegue ogni query generata contro un Memgraph
-  vero, su un piccolo EKG di esempio (con i qualifier su due `:CORR` e due `:REL` aggiunti dalle
-  query dello step di ocel, su righe passate come parametro invece dei suoi file per `LOAD CSV`), e
-  riporta quelle che falliscono (codice di uscita 1):
+See the [package developer documentation](../README.md) for authoring, packaging
+and lifecycle rules.
 
-  ```sh
-  docker run -d --rm --name ekg-views-smoke -p 17687:7687 memgraph/memgraph:3.13.2
-  cd soup-server
-  python ../soup-packages/ekg_views/tests/memgraph_smoke.py            # default bolt://localhost:17687
-  docker stop ekg-views-smoke
-  ```
+## Query UI and compatibility
 
-  Lo script **svuota il database**: non va mai puntato su un Memgraph con dati da conservare.
-  L'immagine è la stessa di `docker-compose.yaml` (`memgraph/memgraph:3.13.2`, Memgraph 3.13.2): se si
-  aggiorna il tag lì, va aggiornato anche qui e lo script rieseguito (lo controlla
-  `soup-server/tests/test_cypher_compatibility.py`). Ultima esecuzione: `58/58 queries ok` su
-  `memgraph/memgraph:3.13.2` (la versione precedente, con 43 query, anche su
-  `memgraph/memgraph-platform` 2.14.1).
+Selecting a query runs it immediately when all required fields have defaults (or
+there are no fields). Required fields without defaults wait for **Run**. A query
+without fields has no redundant form/run button; an error stays in its result
+area with **Retry**. Queries with fields keep **Run** for an explicit rerun, not
+a request on every keystroke. While loading, results are marked `aria-busy`;
+stale responses are ignored. Results are cached for the current page by query
+and parameter values.
 
-## Verifica con Memgraph
+The existing views use numeric IDs through the original `id()` query functions;
+Neo4j servers that remove support for those functions are not supported by this
+visualizer. Temporal serialization retains Neo4j timestamp precision/time zones.
+The OCEAN loader does not create object-object `REL` relationships; an OCED
+graph therefore has none unless another authorized workflow created them. Its
+import phase timings, when recorded in `meta.process_info`, are available to
+Statistics. Memgraph analysis and class-graph packages remain Memgraph-only.
 
-Passi manuali con l'intero stack (`docker compose` dalla radice del repository):
-
-1. `docker compose up --build`, poi apri `http://localhost:4200`. In `/packages`, `ekg_views` è
-   `active` e il suo bundle è caricato senza errori.
-2. **Import.** In `/import` trascina un CSV di event log (per esempio
-   `soup-server/tests/fixtures/sample_event_log.csv`), scegli **CSV come event log (EKG su
-   Memgraph)**, indica `event_id`, `timestamp`, `activity` e almeno una colonna in `entities`, poi
-   importa. Nel workspace compare un oggetto `ekg`.
-3. **I tre visualizzatori.** Apri l'oggetto: compaiono **Grafo**, **Statistiche** e
-   **Interrogazioni** (e nessun visualizzatore EKG su un oggetto `table` o `text`).
-   - **Grafo**: viene disegnato con al massimo 200 archi DF e la barra indica il massimo mostrabile.
-     Cambia il limite, attiva CORR (compaiono le entità), torna alla sola DF, cambia la forma dei
-     nodi. Dopo il primo disegno, tornando al workspace, l'oggetto ha l'anteprima. "Esporta SVG"
-     scarica `<nome>.svg`. La vista **Grafo degli oggetti** mostra le `:REL` tra le entità, un colore
-     per qualifier (vuota per un CSV), e le `:CORR` con il loro qualifier.
-   - **Statistiche**: conteggi uguali a quelli della config del dataset, primo e ultimo timestamp,
-     attività distinte, tipi di entità con l'avviso "N nodi hanno valore NaN." dove ci sono valori
-     nulli, la torta della composizione e, se l'import ha salvato i tempi, quella dei tempi.
-4. **Ricerca di nodi e archi.** Nel Grafo apri "Cerca": cerca un'attività tra i **Nodi** e scorri i
-   risultati (le pagine successive arrivano scorrendo); seleziona un risultato non disegnato e
-   verifica che il pannello mostri le sue proprietà. Passa ad **Archi**, cerca un tipo di entità e
-   passa col mouse su un risultato per evidenziarne i nodi.
-5. **Ogni interrogazione.** In **Interrogazioni** scegli una per una tutte le 21 voci di tutti i
-   gruppi (Nodi, Relazioni, Conteggi, Attività, Entità, Tempo, Grafo): quelle senza campi
-   obbligatori mostrano subito il risultato (i conteggi senza alcun campo non hanno **Esegui**), le
-   altre dopo aver compilato i campi (un tipo di entità, un'attività) e premuto **Esegui**; cambia
-   `Righe` e `Dalla riga` nelle tabelle paginate e premi **Esegui**: nessuna risponde con un errore e
-   i conteggi coincidono con le Statistiche.
-6. **Export JSON.** Dal menu di export dell'oggetto scegli **JSON del grafo** con tutte le parti:
-   il file ha le chiavi `Event nodes`, `Entity nodes`, `CORR relationships` (`corr_data`,
-   `corr_count`), `DF relationships` (`df_data`, `df_count`) e `REL relationships` (`rel_data` con
-   `source`, `qualifier`, `target`; `rel_count`, 0 per un CSV), con i `Timestamp` come testo. Ripeti
-   con una sola parte: il file ha solo quella chiave.
-7. In Memgraph Lab (`http://localhost:3300`) puoi controllare i conteggi con
-   `MATCH (n:Event) RETURN count(n)` e `MATCH ()-[r:DF]->() RETURN count(r)`.
+For development, use the current source tests under `app/test`. Some existing UI
+tests still expect Italian labels and need updating before the full suite can be
+claimed passing. The old `tests/memgraph_smoke.py` and shared architecture
+helpers are absent; earlier claims of particular live-server versions/check
+counts are not reproducible from this checkout alone.
