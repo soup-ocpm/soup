@@ -1,6 +1,8 @@
 import { Component } from '@angular/core';
 import { Router } from '@angular/router';
 
+import { PackageLoaderService } from '../../../core/v3/package-loader.service';
+
 /**
  * Navigation bar component
  * @version 1.0
@@ -25,12 +27,16 @@ export class NavbarComponent {
    * Constructor for NavbarComponent component
    * @param router the Router
    */
-  constructor(private router: Router) {}
+  constructor(
+    private router: Router,
+    public loader: PackageLoaderService
+  ) {}
 
   /**
    * Navigate to the home page
    */
   public goToHome(): void {
+    this.loader.setDataset(null);
     this.router.navigate(['/welcome']);
   }
 
@@ -39,6 +45,7 @@ export class NavbarComponent {
    * @param path the path of the page
    */
   public goTo(path: string): void {
+    if (path === '/workspace' || path === '/import') this.loader.setDataset(null);
     this.router.navigate([path]);
   }
 

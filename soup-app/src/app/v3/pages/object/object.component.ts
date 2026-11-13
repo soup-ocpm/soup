@@ -4,6 +4,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { download, FormValues } from '@soup/sdk';
 
+import { PackageLoaderService } from '../../../core/v3/package-loader.service';
 import { ExporterInfo, Field, ObjectRef, OperationInfo, VisualizerInfo } from '../../../core/v3/v3.models';
 import { V3ApiService } from '../../../core/v3/v3-api.service';
 import { NotificationService } from '../../../shared/components/s-toast/toast.service';
@@ -109,10 +110,15 @@ export class ObjectComponent implements OnInit {
     private destroyRef: DestroyRef,
     private choice: VisualizerChoiceService,
     private provenance: ObjectProvenanceService,
-    private hint: FirstAccessHintService
+    private hint: FirstAccessHintService,
+    private loader: PackageLoaderService
   ) {}
 
   public ngOnInit(): void {
+    this.destroyRef.onDestroy(() => {
+      this.loadGeneration++;
+      this.object.set(null);
+    });
     // The same component shows the next object after an operation or a link.
     this.route.paramMap.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((params) => this.load(params.get('id') ?? ''));
     // As on the old dataset page: shortly after the page opens.
@@ -123,7 +129,17 @@ export class ObjectComponent implements OnInit {
     this.destroyRef.onDestroy(() => clearTimeout(timer));
   }
 
+  private loadGeneration = 0;
+
   public load(id: string): void {
+    const generation = ++this.loadGeneration;
+    this.busy.set('');
+    this.opening.set(null);
+    this.visualizers.set([]);
+    this.visualizerId.set(null);
+    this.visualizersLoaded.set(false);
+    this.operations.set([]);
+    this.exporters.set([]);
     this.object.set(null);
     this.loadError.set('');
     this.operationForm.set(null);
@@ -133,13 +149,23 @@ export class ObjectComponent implements OnInit {
 
     this.api.object(id).subscribe({
       next: (object) => {
+        if (generation !== this.loadGeneration) return;
         this.object.set(object);
+        this.loader.setDataset(object);
         this.loadVisualizers(object);
         this.loadProvenance(object);
-        this.api.operations([object.id]).subscribe({ next: (items) => this.operations.set(items), error: () => this.operations.set([]) });
-        this.api.exporters(object.id).subscribe({ next: (items) => this.exporters.set(items), error: () => this.exporters.set([]) });
+        this.api.operations([object.id]).subscribe({
+          next: (items) => this.object()?.id === object.id && this.operations.set(items),
+          error: () => this.object()?.id === object.id && this.operations.set([])
+        });
+        this.api.exporters(object.id).subscribe({
+          next: (items) => this.object()?.id === object.id && this.exporters.set(items),
+          error: () => this.object()?.id === object.id && this.exporters.set([])
+        });
       },
-      error: (error) => this.loadError.set(errorMessage(error))
+      error: (error) => {
+        if (generation === this.loadGeneration) this.loadError.set(errorMessage(error));
+      }
     });
   }
 
@@ -156,6 +182,7 @@ export class ObjectComponent implements OnInit {
   private loadVisualizers(object: ObjectRef): void {
     this.visualizersLoaded.set(false);
     this.choice.load(object).subscribe(({ visualizers, chosen }) => {
+      if (this.object()?.id !== object.id) return;
       this.visualizers.set(visualizers);
       this.visualizerId.set(chosen);
       this.visualizersLoaded.set(true);
@@ -165,6 +192,7 @@ export class ObjectComponent implements OnInit {
   private loadProvenance(object: ObjectRef): void {
     this.provenance.of(object).subscribe({
       next: ({ parents, children }) => {
+        if (this.object()?.id !== object.id) return;
         this.parents.set(parents);
         this.children.set(children);
       },
@@ -183,10 +211,12 @@ export class ObjectComponent implements OnInit {
     this.opening.set(operation.id);
     this.api.operationFields(operation.id, [object.id]).subscribe({
       next: (fields) => {
+        if (this.object()?.id !== object.id) return;
         this.opening.set(null);
         this.operationForm.set({ item: operation, fields, values: {} });
       },
       error: (error) => {
+        if (this.object()?.id !== object.id) return;
         this.opening.set(null);
         this.actionError.set(errorMessage(error));
       }
@@ -215,6 +245,7 @@ export class ObjectComponent implements OnInit {
     this.actionError.set('');
     this.api.runOperation(form.item.id, [object.id], form.values).subscribe({
       next: (created) => {
+        if (this.object()?.id !== object.id) return;
         this.busy.set('');
         notify(this.notifications, `${form.item.label}: ${created.length} object(s) created`, 'success');
         if (created.length) {
@@ -222,6 +253,7 @@ export class ObjectComponent implements OnInit {
         }
       },
       error: (error) => {
+        if (this.object()?.id !== object.id) return;
         this.busy.set('');
         this.actionError.set(errorMessage(error));
       }
@@ -273,11 +305,14 @@ export class ObjectComponent implements OnInit {
     this.busy.set(`Exporting ${exporter.label}...`);
     this.api.export(object.id, exporter, values).subscribe({
       next: (file) => {
-        this.busy.set('');
-        this.exportForm.set(null);
+        if (this.object()?.id === object.id) {
+          this.busy.set('');
+          this.exportForm.set(null);
+        }
         download(file.filename, exporter.mime, file.blob);
       },
       error: (error) => {
+        if (this.object()?.id !== object.id) return;
         this.busy.set('');
         this.actionError.set(errorMessage(error));
       }

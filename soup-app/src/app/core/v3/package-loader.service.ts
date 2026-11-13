@@ -1,7 +1,7 @@
-import { Inject, Injectable, InjectionToken, signal } from '@angular/core';
+import { computed, Inject, Injectable, InjectionToken, signal } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 
-import { FrontendModule } from './v3.models';
+import { FrontendModule, ObjectRef } from './v3.models';
 import { V3ApiService } from './v3-api.service';
 
 /** Imports an ES module by URL; replaced in the tests. */
@@ -22,6 +22,7 @@ export const MODULE_IMPORTER = new InjectionToken<ModuleImporter>('MODULE_IMPORT
 export type FrontendLoadState = 'loaded' | 'failed' | 'reload-required';
 
 export interface FrontendPackageStatus {
+  databases?: ('memgraph' | 'neo4j')[];
   name: string;
   version: string;
   url: string;
@@ -44,6 +45,22 @@ export interface FrontendPackageStatus {
   providedIn: 'root'
 })
 export class PackageLoaderService {
+  public readonly dataset = signal<ObjectRef | null>(null);
+  public readonly backend = computed<'memgraph' | 'neo4j' | null>(() => {
+    const value = this.dataset()?.meta['backend'];
+    return value === 'memgraph' || value === 'neo4j' ? value : null;
+  });
+
+  public setDataset(object: ObjectRef | null): void {
+    const next = object?.meta['backend'] ? object : null;
+    if (next?.id === this.dataset()?.id) return;
+    this.dataset.set(next);
+    const backend = this.backend();
+    if (backend)
+      this.statuses.update((states) => new Map([...states].filter(([, status]) => (status.databases ?? ['memgraph']).includes(backend))));
+    void this.reload();
+  }
+
   // Frontend state of the packages of the last manifest, by name
   public readonly statuses = signal<ReadonlyMap<string, FrontendPackageStatus>>(new Map());
 
@@ -124,17 +141,21 @@ export class PackageLoaderService {
   }
 
   private async run(): Promise<void> {
+    const datasetId = this.dataset()?.id;
     let modules: FrontendModule[];
     try {
-      modules = await firstValueFrom(this.api.frontendManifest());
+      modules = await firstValueFrom(this.api.frontendManifest(datasetId));
     } catch (error) {
       console.error('[soup] cannot read the frontend manifest', error);
       return;
     }
 
+    if (datasetId !== this.dataset()?.id) return;
     const next = new Map<string, FrontendPackageStatus>();
     for (const module of modules) {
-      next.set(module.name, await this.load(module, next));
+      const status = await this.load(module, next);
+      if (datasetId !== this.dataset()?.id) return;
+      next.set(module.name, status);
       this.statuses.set(new Map([...this.statuses(), ...next]));
     }
     // Only the packages of this manifest: the disabled ones disappear.
@@ -144,6 +165,7 @@ export class PackageLoaderService {
   private async load(module: FrontendModule, done: ReadonlyMap<string, FrontendPackageStatus>): Promise<FrontendPackageStatus> {
     const url = this.versionedUrl(module);
     const status = (state: FrontendLoadState, error: string | null = null): FrontendPackageStatus => ({
+      databases: module.databases,
       name: module.name,
       version: module.version,
       url,

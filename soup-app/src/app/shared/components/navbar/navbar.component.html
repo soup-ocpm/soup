@@ -19,6 +19,15 @@
       (keydown.enter)="this.goToHome()">
       Home
     </p>
+    @if (this.loader.dataset(); as dataset) {
+      <p
+        role="link"
+        tabindex="0"
+        (click)="this.goTo('/o/' + dataset.id)"
+        (keydown.enter)="this.goTo('/o/' + dataset.id)">
+        {{ dataset.name }} · {{ this.loader.backend() }}
+      </p>
+    }
     @for (item of this.links; track item.path) {
       <p
         role="link"

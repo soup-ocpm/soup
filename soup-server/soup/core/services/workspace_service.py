@@ -265,8 +265,9 @@ class WorkspaceService:
         else:
             tools = self._core_tools.toolbox(f"{creator.type} '{creator.contributor_id}'", contributor.requires_tools)
             if obj.meta.get("neo4j_managed") is True:
-                if self._database is None or self._database.backend != "neo4j":
+                if self._database is None or "neo4j" not in self._database.backends:
                     raise ValidationError("Neo4j is required to delete this managed dataset database.")
-                self._database.drop_dataset(obj.id, confirmed=confirm_database_drop)
-            contributor.dispose(obj, tools)
+                self._database.for_backend("neo4j").drop_dataset(obj.id, confirmed=confirm_database_drop)
+            with self._core_tools.graph_scope((obj,)):
+                contributor.dispose(obj, tools)
         self._core_tools.catalog_writer().remove(obj.id)

@@ -85,7 +85,7 @@ class OcedImporter(Importer):
         catalog = tools.typed("catalog", Catalog)
         with timed_phase(info, "database_creation"):
             name = self._database.create_dataset(object_id, obj.name)
-        metadata = {"neo4j_database": name, "neo4j_database_owner": obj.id, "neo4j_managed": True}
+        metadata = {"backend": "neo4j", "neo4j_database": name, "neo4j_database_owner": obj.id, "neo4j_managed": True}
         staged = replace(obj, meta={**metadata, "import_status": "loading", "process_info": info})
         # Persist ownership before loading so a failed import remains explicitly manageable.
         with import_phase(

@@ -92,6 +92,7 @@ export interface ExportedFile {
 export type PackageStatus = 'active' | 'disabled' | 'failed';
 
 export interface PackageInfo {
+  databases?: ('memgraph' | 'neo4j')[];
   name: string;
   status: PackageStatus;
   version: string;

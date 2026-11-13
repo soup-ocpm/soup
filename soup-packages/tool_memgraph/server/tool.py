@@ -25,7 +25,8 @@ from __future__ import annotations
 
 import logging
 import threading
-from collections.abc import Callable
+from collections.abc import Callable, Iterator
+from contextlib import contextmanager
 from typing import Any
 
 from soup.core.contracts import ConflictError, Tool
@@ -53,8 +54,15 @@ class MemgraphTool(Tool, GraphDatabase):
         self._state: str | None = None
         self._lock = threading.RLock()
 
+    @contextmanager
+    def session(self) -> Iterator[None]:
+        """Keep a complete operation on one graph while other workspaces wait."""
+        with self._lock:
+            yield
+
     def run(self, query: Query) -> list[dict[str, Any]]:
-        return self._db.run(query)
+        with self._lock:
+            return self._db.run(query)
 
     def health(self) -> dict[str, Any]:
         try:

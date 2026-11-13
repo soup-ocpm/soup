@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from collections.abc import Mapping
+from collections.abc import Callable, Mapping
 from contextlib import AbstractContextManager
 from typing import Any, Protocol
 
@@ -16,6 +16,13 @@ class Database(CypherExecutor, Protocol):
     def backend(self) -> str: ...
 
     def transaction(self) -> AbstractContextManager[CypherExecutor]: ...
+
+    @property
+    def backends(self) -> tuple[str, ...]: ...
+
+    def for_backend(self, backend: str) -> Database: ...
+
+    def bind_context(self, backend: str, factory: Callable[[str], AbstractContextManager[None]]) -> None: ...
 
     def for_database(self, name: str) -> Database: ...
 

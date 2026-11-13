@@ -80,7 +80,10 @@ def build_engine(settings: Settings, extra_plugins: Iterable[Any] = ()) -> Engin
 
     manager = PluginManager(contracts_api_version=CONTRACTS_API_VERSION, strict=settings.strict)
     event_bus = EventBus()
-    ctx = DefaultPluginContext(event_bus, CypherDatabase(settings.database))
+    database = CypherDatabase(settings.database)
+    for config in settings.additional_databases:
+        database.add_backend(config)
+    ctx = DefaultPluginContext(event_bus, database)
 
     package_manager = PackageManager(
         manager,
@@ -97,7 +100,10 @@ def build_engine(settings: Settings, extra_plugins: Iterable[Any] = ()) -> Engin
     for problem in missing_core_tools(ctx.tool_registry):
         report.add_warning(problem)
 
-    core_tools = CoreTools(ctx.tool_registry)
+    core_tools = CoreTools(
+        ctx.tool_registry, database=database,
+        package_databases=lambda name: ctx.package_databases.get(name, ("memgraph",)),
+    )
     ctx.database.bind_catalog(core_tools.catalog)
 
     return Engine(

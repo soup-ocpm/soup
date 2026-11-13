@@ -90,7 +90,8 @@ class OperationRouter:
         refs = [self._core_tools.object(obj) for obj in objects]
         applicable = [
             entry for entry in self._operations.entries()
-            if self._core_tools.available(entry.item.requires_tools) and assign_inputs(entry.item, refs) is not None
+            if self._core_tools.available(entry.item.requires_tools) and self._core_tools.supports(entry.package, refs)
+            and assign_inputs(entry.item, refs) is not None
         ]
         return sorted(applicable, key=lambda entry: (entry.item.group.lower(), entry.item.label.lower(), entry.key))
 
@@ -99,7 +100,8 @@ class OperationRouter:
 
     def fields(self, operation_id: str, input_ids: InputIds) -> list[Field]:
         operation, inputs = self._resolve(operation_id, input_ids)
-        return self._fields(operation, inputs, self._toolbox(operation_id, operation))
+        with self._core_tools.graph_scope(inputs.values()):
+            return self._fields(operation, inputs, self._toolbox(operation_id, operation))
 
     def run(
         self, operation_id: str, input_ids: InputIds, params: Mapping[str, Any] | None = None
@@ -114,8 +116,9 @@ class OperationRouter:
 
         operation, inputs = self._resolve(operation_id, input_ids)
         tools = self._toolbox(operation_id, operation)
-        cleaned = validate_values(self._fields(operation, inputs, tools), params)
-        drafts = list(operation.run(inputs, cleaned, tools) or [])
+        with self._core_tools.graph_scope(inputs.values(), memgraph="memgraph" in operation.requires_tools):
+            cleaned = validate_values(self._fields(operation, inputs, tools), params)
+            drafts = list(operation.run(inputs, cleaned, tools) or [])
 
         parents = tuple(dict.fromkeys(inputs[slot.name].id for slot in operation.inputs))
         created_by = CreatedBy(CREATED_BY_OPERATION, operation_id, self.package_of(operation_id))
@@ -164,7 +167,7 @@ class OperationRouter:
         else:
             assigned = assign_inputs(operation, [self._core_tools.object(obj) for obj in input_ids])
 
-        if assigned is None:
+        if assigned is None or not self._core_tools.supports(self.package_of(operation_id), assigned.values()):
             raise NotFoundError(f"Operation '{operation_id}' is not available for the given objects")
         return operation, assigned
 

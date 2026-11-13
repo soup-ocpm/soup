@@ -65,12 +65,14 @@ class ImportRouter:
             entry
             for entry in self._importers.entries()
             if entry.item.accepts(filename) and self._core_tools.available(entry.item.requires_tools)
+            and self._core_tools.supports(entry.package)
         ]
         return sorted(candidates, key=lambda entry: (entry.item.label.lower(), entry.key))
 
     def get(self, importer_id: str) -> Importer:
         importer = self._importers.get(importer_id)
-        if importer is None or not self._core_tools.available(importer.requires_tools):
+        if (importer is None or not self._core_tools.available(importer.requires_tools)
+                or not self._core_tools.supports(self._importers.owner_of(importer_id) or "")):
             raise NotFoundError(f"Importer '{importer_id}' not found")
         return importer
 
@@ -127,7 +129,8 @@ class ImportRouter:
         tools = self._toolbox(importer_id, importer)
         with import_phase("import", importer=importer_id, file=upload.filename):
             try:
-                meta = importer.import_(upload, obj, dict(options or {}), tools)
+                with self._core_tools.graph_scope(memgraph="memgraph" in importer.requires_tools):
+                    meta = importer.import_(upload, obj, dict(options or {}), tools)
                 if meta is not None and not isinstance(meta, Mapping):
                     raise TypeError(f"Importer '{importer.id}'.import_() must return a dict, not {type(meta).__name__}")
                 obj = replace(obj, meta=dict(meta or {}))

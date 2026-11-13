@@ -28,7 +28,7 @@ from __future__ import annotations
 
 from typing import BinaryIO, cast
 
-from flask import Blueprint, send_file
+from flask import Blueprint, request, send_file
 from flask.typing import ResponseReturnValue
 
 from soup.api import request_args, serializers
@@ -75,6 +75,7 @@ def build_package_blueprint(engine: Engine) -> Blueprint:
 
     @blueprint.route("/api/v3/frontend/manifest", methods=["GET"])
     def frontend_manifest() -> ResponseReturnValue:
-        return serializers.ok("Frontend manifest", [serializers.frontend_module(m) for m in frontend.manifest()])
+        modules = frontend.manifest(request.args.get("object_id"))
+        return serializers.ok("Frontend manifest", [serializers.frontend_module(m) for m in modules])
 
     return blueprint

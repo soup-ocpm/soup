@@ -129,10 +129,35 @@ The original project is [soup-ocpm/soup](https://github.com/soup-ocpm/soup).
 
 SOUP is released under the [MIT License](LICENSE).
 
+## Runtime graph backends
+
+Graph datasets record `meta.backend` in the existing catalog; Neo4j datasets also
+record their dedicated database name. Opening a different dataset selects its
+backend for queries, transactions, visualizations and package availability. Graphs
+are never copied between backends. Legacy catalog records are recognized from
+their existing Memgraph dataset or explicit Neo4j database mapping.
+
+For both backends in one application, configure `NEO4J_URI`, `NEO4J_USERNAME`,
+`NEO4J_PASSWORD` and `SOUP_NEO4J_CSV_BASE_URL`, then use the normal
+`docker compose -p soup-tool up --build`. For Neo4j on the Docker host, use
+`bolt://host.docker.internal:7687`. Memgraph remains on host port 7689; the temporary
+CSV server uses 8081. Neo4j must be able to reach that CSV address. The importer
+chosen for each new dataset determines its backend; existing datasets are switched
+through Workspace, not converted. `SOUP_DATABASE` is only the startup default.
+
+Packages bind graph access with `ctx.database.for_dataset(object.id)`; the returned
+connection stays bound to that dataset. Administrative access explicitly selects
+`ctx.database.for_backend("neo4j").for_database("system")`. Missing, ambiguous or
+unconfigured graph contexts fail without falling back. Memgraph keeps its existing
+rebuild behavior and serializes complete operations while another workspace waits.
+The standalone Neo4j Compose file remains available when Memgraph is not needed.
+Runtime switching uses one application's catalog; separate deployment catalogs are
+not merged automatically.
+
 ## External Neo4j
 
 Memgraph remains the default (`docker compose -p soup-tool up --build`).
-Neo4j uses a separate, standalone configuration and its own catalog/package volumes:
+For a Neo4j-only deployment, use the standalone configuration and its own catalog/package volumes:
 
 ```sh
 export NEO4J_URI=bolt://your-neo4j-host:7687
@@ -171,5 +196,5 @@ workspace deletion requires explicit confirmation and drops only its registered 
 Packages select `db = ctx.database.for_dataset(object.id)` before calling
 `db.execute(cypher, parameters)` or `with db.transaction() as tx:`. Derived objects
 resolve their database through catalog parents; ambiguous or missing mappings fail.
-Administrative commands explicitly use `ctx.database.for_database("system")`.
+Administrative commands explicitly use `ctx.database.for_backend("neo4j").for_database("system")`.
 SOUP does not translate Cypher. Existing Memgraph graph queries remain unchanged.

@@ -153,7 +153,7 @@ class PackageManager:
         enabled = []
         for name, source in self._index.sources.items():
             disabled = name not in override if override is not None else self.state.is_disabled(name)
-            if override is None and self.ctx.database.backend not in source.manifest.databases:
+            if override is None and not set(self.ctx.database.backends).intersection(source.manifest.databases):
                 disabled = True
             if disabled:
                 report.add_disabled(name)

@@ -68,7 +68,8 @@ class ExportRouter:
 
     def fields(self, exporter_id: str, obj: ObjectLike) -> list[Field]:
         entry, ref = self._resolve(exporter_id, obj)
-        return self._fields(entry.item, ref, self._toolbox(exporter_id, entry.item))
+        with self._core_tools.graph_scope((ref,)):
+            return self._fields(entry.item, ref, self._toolbox(exporter_id, entry.item))
 
     def listed_file_type(self, exporter_id: str, obj: ObjectLike, fields: list[Field]) -> tuple[str, str]:
         """(extension, mime) of the file exported with the default values of `fields` (those of fields())."""
@@ -98,9 +99,10 @@ class ExportRouter:
         entry, ref = self._resolve(exporter_id, obj)
         exporter = entry.item
         tools = self._toolbox(exporter_id, exporter)
-        cleaned = validate_values(self._fields(exporter, ref, tools), params)
-        extension, mime = self._file_type(entry, ref, cleaned)
-        content = exporter.export(ref, cleaned, tools)
+        with self._core_tools.graph_scope((ref,)):
+            cleaned = validate_values(self._fields(exporter, ref, tools), params)
+            extension, mime = self._file_type(entry, ref, cleaned)
+            content = exporter.export(ref, cleaned, tools)
         if not isinstance(content, (bytes, bytearray)):
             raise TypeError(f"Exporter '{exporter.id}'.export() must return bytes, not {type(content).__name__}")
         return ExportedFile(filename=f"{ref.name}{extension}", mime=mime, content=bytes(content))
@@ -110,8 +112,11 @@ class ExportRouter:
         exporter = entry.item
         if obj.kind not in kinds_of(exporter.accepts) or not self._core_tools.available(exporter.requires_tools):
             return False
+        if not self._core_tools.supports(entry.package, (obj,)):
+            return False
         try:
-            return bool(exporter.applies(obj, self._toolbox(entry.key, exporter)))
+            with self._core_tools.graph_scope((obj,)):
+                return bool(exporter.applies(obj, self._toolbox(entry.key, exporter)))
         except Exception:  # noqa: BLE001 - one broken exporter must not break the list
             _LOGGER.exception("Exporter '%s' of package '%s' failed in applies()", entry.key, entry.package)
             return False

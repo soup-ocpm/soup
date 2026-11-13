@@ -85,8 +85,9 @@ export class V3ApiService {
     return this.unwrap(this.api.delete<{ name: string }>(`${this.base}/packages/${this.segment(name)}`)).pipe(map((data) => data.name));
   }
 
-  public frontendManifest(): Observable<FrontendModule[]> {
-    return this.unwrap(this.api.get<FrontendModule[]>(`${this.base}/frontend/manifest`));
+  public frontendManifest(objectId?: string): Observable<FrontendModule[]> {
+    const params = objectId ? new HttpParams().set('object_id', objectId) : undefined;
+    return this.unwrap(this.api.get<FrontendModule[]>(`${this.base}/frontend/manifest`, params));
   }
 
   // --- workspace ----------------------------------------------------------- //

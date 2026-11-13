@@ -67,7 +67,7 @@
 
   <!-- List -->
   <div class="soup-package-grid">
-    @for (pkg of this.packages(); track pkg.name) {
+    @for (pkg of this.compatiblePackages(); track pkg.name) {
       <section
         class="soup-panel soup-package"
         [attr.data-package]="pkg.name"

@@ -1,5 +1,5 @@
 import { KeyValuePipe } from '@angular/common';
-import { Component, OnInit, signal } from '@angular/core';
+import { Component, computed, OnInit, signal } from '@angular/core';
 import { firstValueFrom, Observable } from 'rxjs';
 
 import { ApiResponse } from '../../../core/models/api_response.model';
@@ -34,6 +34,9 @@ export class PackagesComponent implements OnInit {
   public readonly loadError = signal('');
   public readonly busy = signal('');
 
+  public readonly compatiblePackages = computed(() =>
+    this.packages().filter((pkg) => !this.loader.backend() || (pkg.databases ?? ['memgraph']).includes(this.loader.backend()!))
+  );
   public readonly archive = signal<File | null>(null);
   public readonly allowOverride = signal(false);
   public readonly installError = signal('');

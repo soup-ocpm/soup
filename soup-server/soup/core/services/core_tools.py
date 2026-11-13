@@ -16,7 +16,9 @@ Project : soup-server
 from __future__ import annotations
 
 import uuid
-from collections.abc import Callable, Iterable
+from collections.abc import Callable, Iterable, Iterator
+from contextlib import contextmanager
+from dataclasses import replace
 from datetime import datetime
 from typing import Any, TypeVar
 
@@ -31,6 +33,7 @@ from soup.core.contracts import (
     Tool,
     ValidationError,
 )
+from soup.core.contracts.database import Database
 from soup.core.registry import Registry
 from soup.core.services.catalog_ports import CatalogReader, CatalogWriter
 from soup.core.toolbox import ToolBox
@@ -74,8 +77,55 @@ def check_object_id(object_id: Any) -> str:
 
 
 class CoreTools:
-    def __init__(self, tools: Registry[Tool]):
+    def __init__(
+        self, tools: Registry[Tool], *, database: Database | None = None,
+        package_databases: Callable[[str], tuple[str, ...]] | None = None,
+    ):
         self._tools = tools
+        self.database = database
+        self._package_databases = package_databases
+
+    def backend(self, obj: ObjectRef) -> str | None:
+        pending, seen, found = [obj], set(), set()
+        while pending:
+            current = pending.pop()
+            if current.id in seen:
+                continue
+            seen.add(current.id)
+            backend = current.meta.get("backend")
+            if backend is None:
+                backend = ("neo4j" if current.meta.get("neo4j_database")
+                           else "memgraph" if current.meta.get("dataset") else None)
+            if backend:
+                found.add(backend)
+            else:
+                pending.extend(parent for key in current.parents
+                               if (parent := self.catalog_reader().get(key)) is not None)
+        if len(found) > 1:
+            raise ValidationError("The object has ambiguous graph backend ancestry")
+        return next(iter(found), None)
+
+    def supports(self, package: str, objects: Iterable[ObjectRef] = ()) -> bool:
+        if self._package_databases is None or self.database is None:
+            return True
+        supported = set(self._package_databases(package))
+        if not supported.intersection(self.database.backends):
+            return False
+        return all(self.backend(obj) in supported.intersection(self.database.backends) | {None} for obj in objects)
+
+    @contextmanager
+    def graph_scope(self, objects: Iterable[ObjectRef] = (), *, memgraph: bool = False) -> Iterator[None]:
+        if memgraph or any(self.backend(obj) == "memgraph" for obj in objects):
+            tool = self._tools.get("memgraph")
+            if tool is None:
+                raise ServiceUnavailableError("Memgraph is not available for this dataset")
+            session = getattr(tool, "session", None)
+            if not callable(session):
+                raise ServiceUnavailableError("The Memgraph provider does not support dataset operation sessions")
+            with session():
+                yield
+        else:
+            yield
 
     def catalog(self) -> Catalog:
         return self._port(CATALOG_TOOL, Catalog, "the object catalog")
@@ -101,6 +151,10 @@ class CoreTools:
         ref = self.catalog_reader().get(check_object_id(obj))
         if ref is None:
             raise NotFoundError(f"Object '{obj}' not found")
+        backend = self.backend(ref)
+        if backend and ref.meta.get("backend") != backend:
+            ref = replace(ref, meta={**ref.meta, "backend": backend})
+            self.catalog_writer().update(ref)
         return ref
 
     def available(self, names: Iterable[str]) -> bool:

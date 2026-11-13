@@ -232,7 +232,7 @@ class PluginManager:
     ) -> list[SoupPlugin]:
         compatible = []
         for plugin in plugins:
-            if ctx.database.backend not in plugin.databases:
+            if not set(ctx.database.backends).intersection(plugin.databases):
                 self._fail(report, plugin.name, PluginError(
                     f"Package '{plugin.name}' does not support database '{ctx.database.backend}'"
                 ))

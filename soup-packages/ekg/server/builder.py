@@ -164,6 +164,7 @@ def meta_from_config(
     event_id, timestamp, activity = (mapping.event_id, mapping.timestamp, mapping.activity) if mapping else standard[:3]
     return {
         "dataset": dataset,
+        "backend": "memgraph",
         "graph_key": graph_key or new_graph_key(),
         "columns": list(config.get("all_columns") or []),
         "mapping": {

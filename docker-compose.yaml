@@ -17,14 +17,22 @@ services:
     build:
       context: . # Repository root: the image also needs soup-packages/
       dockerfile: soup-server/Dockerfile
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     container_name: soup-engine-2
     restart: unless-stopped
     ports:
+      - "${SOUP_NEO4J_CSV_BIND_ADDRESS:-127.0.0.1}:8081:8081"
       - "127.0.0.1:8080:8080" # The API, called by the app from the browser (CORS: SOUP_CORS_ORIGINS)
     networks:
       - app-network
     environment:
       - SOUP_DATABASE=memgraph
+      - NEO4J_URI=${NEO4J_URI:-}
+      - NEO4J_USERNAME=${NEO4J_USERNAME:-neo4j}
+      - NEO4J_PASSWORD=${NEO4J_PASSWORD:-}
+      - NEO4J_DATABASE=${NEO4J_DATABASE:-neo4j}
+      - SOUP_NEO4J_CSV_BASE_URL=${SOUP_NEO4J_CSV_BASE_URL:-}
       - MEMGRAPH_HOST=memgraph
       - MEMGRAPH_PORT=7687
       # Development: allow installing packages at runtime. A package runs

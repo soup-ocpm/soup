@@ -153,9 +153,9 @@ class _EkgContribution:
         self._database = database
 
     def _accepted(self, items: Sequence[Any]) -> tuple[str, ...]:
-        if self._database is not None and self._database.backend == "neo4j":
-            return (OCED_KIND,)
-        return tuple(kind for kind in accepted_kinds(items) if kind != OCED_KIND)
+        backends = self._database.backends if self._database is not None else ("memgraph",)
+        return tuple(kind for kind in accepted_kinds(items)
+                     if ("neo4j" if kind == OCED_KIND else "memgraph") in backends)
 
     @staticmethod
     def _ekg() -> Any:
@@ -169,10 +169,10 @@ class _EkgContribution:
             raise ServiceUnavailableError("Memgraph EKG views require the active ekg package") from exc
 
     def _loaded(self, obj: ObjectRef, tools: ToolAccess) -> GraphQueries:
-        if self._database is not None and self._database.backend == "neo4j":
+        database = self._database.for_dataset(obj.id) if self._database is not None else None
+        if database is not None and database.backend == "neo4j":
             if obj.kind != OCED_KIND:
                 raise ValidationError("Neo4j EKG views require an OCED-imported graph")
-            database = self._database.for_dataset(obj.id)
             if obj.meta.get("import_status", "complete") != "complete":
                 raise ValidationError(
                     "This dataset import did not complete; inspect its import summary before retrying."

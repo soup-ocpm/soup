@@ -34,7 +34,7 @@ class VisualizerRouter:
 
     def visualizers_for(self, obj: ObjectLike) -> list[Registered[Visualizer]]:
         ref = self._core_tools.object(obj)
-        found = [entry for entry in self._visualizers.entries() if self._applies(entry.item, ref)]
+        found = [entry for entry in self._visualizers.entries() if self._applies(entry.item, ref, entry.package)]
         return sorted(found, key=lambda entry: (entry.item.label.lower(), entry.key))
 
     def visualizers_for_kind(self, kind: str) -> list[Registered[Visualizer]]:
@@ -50,7 +50,8 @@ class VisualizerRouter:
 
     def data(self, visualizer_id: str, obj: ObjectLike, params: Mapping[str, Any] | None = None) -> Any:
         visualizer, ref = self._resolve(visualizer_id, obj)
-        return visualizer.data(ref, dict(params or {}), self._toolbox(visualizer_id, visualizer))
+        with self._core_tools.graph_scope((ref,)):
+            return visualizer.data(ref, dict(params or {}), self._toolbox(visualizer_id, visualizer))
 
     def action(
         self, visualizer_id: str, obj: ObjectLike, name: str, params: Mapping[str, Any] | None = None
@@ -58,11 +59,12 @@ class VisualizerRouter:
         if not isinstance(name, str) or not name:
             raise ValidationError("Action name must be a non-empty string")
         visualizer, ref = self._resolve(visualizer_id, obj)
-        return visualizer.action(ref, name, dict(params or {}), self._toolbox(visualizer_id, visualizer))
+        with self._core_tools.graph_scope((ref,)):
+            return visualizer.action(ref, name, dict(params or {}), self._toolbox(visualizer_id, visualizer))
 
     # ------------------------------------------------------------------ #
-    def _applies(self, visualizer: Visualizer, obj: ObjectRef) -> bool:
-        return self._accepts_kind(visualizer, obj.kind)
+    def _applies(self, visualizer: Visualizer, obj: ObjectRef, package: str) -> bool:
+        return self._accepts_kind(visualizer, obj.kind) and self._core_tools.supports(package, (obj,))
 
     def _accepts_kind(self, visualizer: Visualizer, kind: str) -> bool:
         return kind in kinds_of(visualizer.accepts) and self._core_tools.available(visualizer.requires_tools)
@@ -70,7 +72,7 @@ class VisualizerRouter:
     def _resolve(self, visualizer_id: str, obj: ObjectLike) -> tuple[Visualizer, ObjectRef]:
         ref = self._core_tools.object(obj)
         visualizer = self._visualizers.get(visualizer_id)
-        if visualizer is None or not self._applies(visualizer, ref):
+        if visualizer is None or not self._applies(visualizer, ref, self.package_of(visualizer_id)):
             raise NotFoundError(f"Visualizer '{visualizer_id}' is not available for object '{ref.id}'")
         return visualizer, ref
 

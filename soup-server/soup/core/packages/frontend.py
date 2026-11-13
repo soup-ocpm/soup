@@ -100,7 +100,8 @@ class PackageFrontend:
             return None
         return source.manifest.app_entry[len(_DIST_PREFIX):]
 
-    def manifest(self) -> list[FrontendModule]:
+    def manifest(self, object_id: str | None = None) -> list[FrontendModule]:
+        selected = self._packages.ctx.database.for_dataset(object_id).backend if object_id else None
         modules = []
         for name in self._packages.active_in_load_order():
             entry = self.entry(name)
@@ -108,9 +109,14 @@ class PackageFrontend:
             if entry is None or source is None:
                 continue
             manifest = source.manifest
+            compatible = set(manifest.databases).intersection(self._packages.ctx.database.backends)
+            if selected and selected not in compatible:
+                continue
             modules.append(FrontendModule(
                 manifest.name, manifest.version, entry, tuple(manifest.requires),
-                manifest.databases, self._packages.ctx.database.backend,
+                manifest.databases, selected or (self._packages.ctx.database.backend
+                                               if self._packages.ctx.database.backend in compatible
+                                               else next(iter(sorted(compatible)))),
             ))
         return modules
 

@@ -68,7 +68,7 @@ class PackageChecks:
 
     def manifest_problem(self, manifest: PackageManifest) -> Exception | None:
         backend = self._ctx.database.backend
-        if backend not in manifest.databases:
+        if not set(self._ctx.database.backends).intersection(manifest.databases):
             return ValidationError(f"Package '{manifest.name}' does not support database '{backend}'")
         if not is_api_compatible(manifest.api_version, self._api_version):
             return PluginApiVersionError(manifest.name, manifest.api_version, self._api_version)

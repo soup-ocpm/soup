@@ -98,6 +98,7 @@ class Settings:
     max_upload_mb: int = DEFAULT_MAX_UPLOAD_MB
     cors_origins: tuple[str, ...] = DEFAULT_CORS_ORIGINS
     database: DatabaseConfig = field(default_factory=DatabaseConfig)
+    additional_databases: tuple[DatabaseConfig, ...] = ()
 
     @property
     def max_upload_bytes(self) -> int:
@@ -119,8 +120,15 @@ class Settings:
         if installed_dir not in packages_path:
             packages_path = (*packages_path, installed_dir)
 
+        primary = DatabaseConfig.from_env(source)
+        additional = []
+        if primary.backend != "neo4j" and source.get("NEO4J_URI"):
+            additional.append(DatabaseConfig.from_env({**source, "SOUP_DATABASE": "neo4j"}))
+        if primary.backend != "memgraph" and source.get("MEMGRAPH_HOST"):
+            additional.append(DatabaseConfig.from_env({**source, "SOUP_DATABASE": "memgraph"}))
         return cls(
-            database=DatabaseConfig.from_env(source),
+            database=primary,
+            additional_databases=tuple(additional),
             packages=_split_csv(raw_packages) if raw_packages is not None else None,
             packages_path=packages_path,
             installed_packages_dir=installed_dir,

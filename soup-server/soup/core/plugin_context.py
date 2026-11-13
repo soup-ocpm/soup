@@ -59,7 +59,8 @@ class DefaultPluginContext:
     """
 
     def __init__(self, event_bus: EventBus | None = None, database: CypherDatabase | None = None) -> None:
-        self.database = database if database is not None else CypherDatabase(DatabaseConfig())
+        self._database = database if database is not None else CypherDatabase(DatabaseConfig())
+        self.package_databases: dict[str, tuple[str, ...]] = {}
         self.importers: Registry[Importer] = Registry("importer")
         self.operations: Registry[Operation] = Registry("operation")
         self.visualizers: Registry[Visualizer] = Registry("visualizer")
@@ -73,6 +74,13 @@ class DefaultPluginContext:
         self._provides_tools: frozenset[str] = frozenset()
         self._declared_points: frozenset[str] = frozenset()
 
+    @property
+    def database(self) -> CypherDatabase:
+        supported = self.package_databases.get(self._current_plugin or "", ())
+        if len(supported) == 1:
+            return self._database.for_backend(supported[0])
+        return self._database
+
     def _registries(self) -> tuple[Registry[Any], ...]:
         return (self.importers, self.operations, self.visualizers, self.exporters, self.tool_registry)
 
@@ -85,6 +93,7 @@ class DefaultPluginContext:
 
     def _begin_plugin(self, plugin: SoupPlugin) -> None:
         self._current_plugin = plugin.name
+        self.package_databases[plugin.name] = tuple(plugin.databases)
         self._provides_tools = frozenset(plugin.provides_tools)
         self._declared_tools = frozenset(plugin.requires_tools) | self._provides_tools
         self._declared_points = frozenset(plugin.extension_points)
