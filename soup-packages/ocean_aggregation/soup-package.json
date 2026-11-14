@@ -1,0 +1,29 @@
+{
+  "name": "ocean_aggregation",
+  "version": "1.0.0",
+  "api_version": "4.0",
+  "label": "Ocean aggregation",
+  "description": "Visually configure Ocean aggregations on an existing OCED Neo4j EKG and explore Class nodes.",
+  "author": "SOUP integration of ocean-lib",
+  "databases": [
+    "neo4j", "memgraph"
+  ],
+  "requires": [
+    "oced_importer",
+    "soup_base"
+  ],
+  "requires_tools": [],
+  "provides_tools": [],
+  "extension_points": [],
+  "python_dependencies": [
+    "neo4j",
+    "PyYAML>=6,<7"
+  ],
+  "server": {
+    "module": "server",
+    "plugin": "plugin:Plugin"
+  },
+  "app": {
+    "entry": "dist/index.js"
+  }
+}
