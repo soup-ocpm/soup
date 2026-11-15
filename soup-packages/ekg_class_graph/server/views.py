@@ -5,7 +5,7 @@ Description: ClassGraphView ("class"), contributed to "ekg.graph_views"
              for "ekg_class" objects: the :DF_C relationships between the
              :Class nodes (the legacy get_limit_class_graph_query) and the
              :OBSERVED ones of the events (hidden by default). A class is
-             named by the values of its entity types (its properties but
+             named by its activity and optional entity dimensions (its properties but
              Event_Id, Type and Count), like the nodes of the old
              aggregate graph page; a :DF_C is grouped by the entity type
              it aggregates (its Type).

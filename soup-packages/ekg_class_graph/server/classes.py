@@ -7,8 +7,8 @@ Description: The aggregate graph on Memgraph (the legacy
              Utils/aggregate_graph_query_lib.py):
              - build_classes(run, entity_types): the properties of the
                events with "nan" or empty values become text (change_nan),
-               one :Class node per distinct combination of the chosen
-               entity types (create_class_multi_query) with its
+               one :Class node per distinct combination of ActivityName
+               and any optionally chosen entity types (create_class_multi_query) with its
                :OBSERVED events, the weight c.Count (set_class_weight) and
                the :DF_C relationships between classes aggregated from :DF
                (class_df_aggregation); returns the times of the phases in
@@ -82,12 +82,21 @@ def as_text_query(prop: str) -> Query:
 
 
 def class_query(entity_types: Sequence[str]) -> Query:
-    """create_class_multi_query: one :Class per distinct combination of the event properties `entity_types`."""
+    """Group by ActivityName AND each optionally selected entity property.
 
-    if not entity_types:
-        raise ValidationError("Choose at least one entity type")
-    variables = [f"v{index}" for index in range(len(entity_types))]
-    pairs = list(zip(entity_types, variables, strict=False))
+    An empty selection still builds the activity-only class graph. Entity
+    properties are event attributes, as in legacy SOUP's filtered_columns;
+    they are *not* entity-node IDs or separate graph joins.
+    """
+
+    # ActivityName is an invariant, not a user-selectable entity dimension.
+    # Deduplicate to keep the Cypher map and event identifier unambiguous.
+    dimensions = ["ActivityName"]
+    for name in entity_types:
+        if name != "ActivityName" and name not in dimensions:
+            dimensions.append(name)
+    variables = [f"v{index}" for index in range(len(dimensions))]
+    pairs = list(zip(dimensions, variables, strict=False))
     distinct = ", ".join(f"e.{ident(name)} AS {var}" for name, var in pairs)
     properties = ", ".join(f"{ident(name)}: {var}" for name, var in pairs)
     event_id = ' + "_" + '.join(f"toString({var})" for var in variables)

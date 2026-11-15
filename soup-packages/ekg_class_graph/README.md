@@ -7,10 +7,12 @@ Backend compatibility: **memgraph**. Required packages: `ekg`, `ekg_views`,
 `requires: ["ekg", "ekg_views", "soup_base"]`, `requires_tools: ["memgraph"]`.
 
 **Build aggregated graph** (`ekg_class_graph.build`, `ekg` → `ekg_class`)
-accepts `name` and `entity_types` (a multiselect of graph entity types, formerly
-`filtered_columns`). A type with null-valued events generates a warning via
+accepts `name` and optional `entity_types` (a multiselect of graph entity types,
+formerly `filtered_columns`). `ActivityName` is always the first aggregation
+dimension; each selected entity type adds an AND grouping dimension. An empty
+selection produces activity-only aggregation. A type with null-valued events generates a warning via
 `NullEntities` in `ekg_views`. Via `ekg.derive_state`, the loaded graph receives
-`:Class` nodes (one for each distinct combination of selected types, with
+`:Class` nodes (one for each distinct activity and selected type combination, with
 `Count`), `:OBSERVED` relationships from events, and `:DF_C` relationships
 between classes. The resulting `ekg_class` is derived:
 `meta.state = {provider: "ekg_class_graph.classes", spec: {entity_types}}`, its

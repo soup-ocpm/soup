@@ -27,10 +27,13 @@ CLASSES_PROVIDER = "ekg_class_graph.classes"
 
 
 def entity_types_of(spec: Mapping[str, Any]) -> list[str]:
-    types = spec.get("entity_types")
-    if not isinstance(types, list) or not types or not all(isinstance(item, str) and item for item in types):
-        raise ValidationError("The aggregate graph needs a non-empty list of entity types")
-    return list(types)
+    types = spec.get("entity_types", [])
+    if types is None:
+        types = []
+    if not isinstance(types, list) or not all(isinstance(item, str) and item for item in types):
+        raise ValidationError("Entity types must be a list of non-empty strings (or omitted)")
+    # The stored specification represents optional entity dimensions only.
+    return list(dict.fromkeys(types))
 
 
 class ClassStateProvider(ekg.StateProvider):

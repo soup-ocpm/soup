@@ -3,9 +3,8 @@
 File : operations.py
 Description: BuildClassGraph ("build", "Costruisci grafo aggregato"; the
              legacy POST /api/v2/graph/class and buildClassGraph of the
-             detail and graph pages): from an "ekg" object, with the
-             entity types to aggregate on (multiselect of the types of the
-             graph, the legacy filtered_columns; a type whose events have
+             detail and graph pages): from an "ekg" object, with ActivityName always selected and optional additional entity
+             types to aggregate on (multiselect of the graph types; a type whose events have
              null values carries the warning of the old entity selection,
              from ekg_views' NullEntities), an "ekg_class" object
              derived from it - meta.state {provider:
@@ -70,8 +69,8 @@ class BuildClassGraph(Operation):
     id = "build"
     label = "Build aggregated graph"
     description = (
-        "Group events into classes using the selected entity types (Class nodes, OBSERVED and DF_C "
-        "relationships)."
+        "Group events by ActivityName and optionally refine classes using selected entity "
+        "types (Class nodes, OBSERVED and DF_C relationships)."
     )
     group = "EKG"
     inputs = (OperationInput("ekg", (ekg.EKG_KIND,)),)
@@ -81,17 +80,20 @@ class BuildClassGraph(Operation):
     def fields(self, inputs: Mapping[str, ObjectRef], tools: ToolAccess) -> list[Field]:
         obj = inputs["ekg"]
         types = graph_entity_types(obj, tools)
-        entity = (Field("entity_types", "Entity types", type="multiselect", required=True,
-                        choices=entity_type_choices(types, tools),
-                        help="One class for each distinct combination of their values across events.")
-                  if types else
-                  Field("entity_types", "Entity types", type="columns", required=True,
-                      help="The graph has no entities."))
+        entity = Field(
+            "entity_types", "Additional entity types", type="multiselect",
+            required=False, choices=entity_type_choices(types, tools) if types else (),
+            help="Optional AND dimensions: ActivityName is always included. "
+                 "Leave empty to aggregate by activity only.",
+        )
         return [Field("name", "Name", required=True, default=f"{obj.name} aggregated"), entity]
 
     def run(self, inputs: Mapping[str, ObjectRef], params: Mapping[str, Any], tools: ToolAccess) -> list[ObjectDraft]:
         parent = inputs["ekg"]
-        chosen = list(params["entity_types"])
+        raw_chosen = params.get("entity_types") or []
+        if not isinstance(raw_chosen, list) or not all(isinstance(name, str) and name for name in raw_chosen):
+            raise ValidationError("Entity types must be a list of non-empty strings")
+        chosen = list(dict.fromkeys(raw_chosen))
         types = graph_entity_types(parent, tools)
         unknown = [name for name in chosen if name not in types]
         if unknown:
