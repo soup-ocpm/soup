@@ -41,6 +41,7 @@ export class Workflow {
   public event = '';
   public roles: Record<string, string> = {};
   public entityId = 'wyId';
+  public missingReferenceStrategy = 'strict';
   public mappings = new Map<string, Mapping>();
 
   public eventTable(): TableState | undefined {
@@ -132,6 +133,7 @@ export class Workflow {
     return {
       ...this.roles,
       entity_id: this.entityId,
+      missing_reference_strategy: this.missingReferenceStrategy,
       events: event ? attributes(event) : {},
       entities
     };

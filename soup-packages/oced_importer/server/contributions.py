@@ -57,7 +57,7 @@ class OcedImporter(Importer):
 
     def preview(self, upload: Upload, options: Mapping[str, Any], tools: ToolAccess) -> list[dict[str, Any]]:
         with import_phase("CSV preparation"):
-            prepared = prepare(upload, options, "preview")
+            prepared = prepare(upload, options, "preview", preview=True)
         blocks = [
             report.keyvalue(prepared.counts, title="Rows to load"),
         ]
@@ -67,6 +67,15 @@ class OcedImporter(Importer):
             blocks.append(
                 report.table(table.columns, table.rows[:10], title=f"{entity} — {mode} ({len(table.rows)} rows)")
             )
+        if prepared.missing_references:
+            blocks.append(report.table(
+                ["Column", "Missing IDs", "Sample values"],
+                [[item["column"], item["count"], ", ".join(item["samples"])]
+                 for item in prepared.missing_references],
+                title="Missing object references",
+            ))
+            if options.get("missing_reference_strategy", "strict") == "strict":
+                return blocks
         self._database.check_multi_database()
         return blocks
 

@@ -9,9 +9,16 @@ FROM node:24.22.0-alpine AS packages
 
 WORKDIR /srv/soup-packages
 
+# Require the workspace lockfile explicitly; a missing file must fail at
+# COPY rather than surface as npm ci's generic EUSAGE error.
+COPY soup-packages/package.json soup-packages/package-lock.json ./
 COPY soup-packages/ .
 
-RUN npm ci && npm run build:packages && rm -rf node_modules
+# RUN npm ci && npm run build:packages && rm -rf node_modules
+RUN --mount=type=cache,target=/root/.npm \
+    npm ci --prefer-offline \
+    && npm run build:packages \
+    && rm -rf node_modules
 
 FROM python:3.12.16-slim
 

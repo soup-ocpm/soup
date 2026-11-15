@@ -3,7 +3,7 @@ services:
     build:
       context: . # Repository root: the app compiles @soup/sdk from soup-packages/sdk
       dockerfile: soup-app/Dockerfile
-    container_name: soup-app-2
+    container_name: soup-studio-app
     restart: unless-stopped
     ports:
       # Local use only: every port is published on 127.0.0.1, never on the network.
@@ -19,7 +19,7 @@ services:
       dockerfile: soup-server/Dockerfile
     extra_hosts:
       - "host.docker.internal:host-gateway"
-    container_name: soup-engine-2
+    container_name: soup-studio-engine
     restart: unless-stopped
     ports:
       - "${SOUP_NEO4J_CSV_BIND_ADDRESS:-127.0.0.1}:8081:8081"
@@ -76,7 +76,7 @@ services:
   # with "SHOW VERSION;" (wiki, Installation). Update both tags together.
   memgraph:
     image: memgraph/memgraph:3.13.2
-    container_name: soup-database-2
+    container_name: soup-studio-memgraph-database
     restart: unless-stopped
     # No persistence: the graph is always rebuilt from the dataset files in
     # soup-volume, so snapshots, the WAL and the recovery at startup would
@@ -104,7 +104,7 @@ services:
 
   lab:
     image: memgraph/lab:3.13.2
-    container_name: soup-lab
+    container_name: soup-studio-memgraph-lab
     restart: unless-stopped
     ports:
       # Memgraph Lab (web interface) on http://localhost:3300: Windows often

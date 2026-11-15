@@ -29,12 +29,12 @@ const PHASE_LABELS: Record<string, string> = {
   event: 'Events', entity: 'Entities', corr: 'CORR', df: 'DF', commit: 'Commit', total: 'Total construction'
 };
 
-function select(label: string, choices: string[], value: string, change: (value: string) => void): HTMLLabelElement {
+function select(label: string, choices: string[], value: string, change: (value: string) => void, labels: Record<string, string> = {}): HTMLLabelElement {
   const input = h(
     'select',
     { attrs: { 'aria-label': label } },
     h('option', { text: 'Choose…', attrs: { value: '' } }),
-    ...choices.map((item) => h('option', { text: item, attrs: { value: item } }))
+    ...choices.map((item) => h('option', { text: labels[item] ?? item, attrs: { value: item } }))
   );
   input.value = value;
   input.addEventListener('change', () => change(input.value));
@@ -50,6 +50,7 @@ class OcedConfig extends HTMLElement implements SoupConfigElement {
   private busy = false;
   private message = '';
   private failed = false;
+  private referenceWarnings: string[] = [];
 
   public connectedCallback(): void {
     if (!this.context.tabular) {
@@ -66,6 +67,7 @@ class OcedConfig extends HTMLElement implements SoupConfigElement {
   private changed(): void {
     this.generation++;
     this.review = [];
+    this.referenceWarnings = [];
     this.failed = false;
     this.message = this.workflow.validate();
     this.context.emit({
@@ -86,6 +88,19 @@ class OcedConfig extends HTMLElement implements SoupConfigElement {
       const objects = h('section', {}, h('h3', { text: 'Object tables (optional)' }));
       for (const column of this.workflow.mappings.keys()) objects.append(this.objectMapping(column));
       fields.append(objects);
+    }
+    if (this.referenceWarnings.length || this.workflow.missingReferenceStrategy !== 'strict') {
+      const warnings = h('section', {}, h('h3', { text: 'Missing object references' }));
+      for (const warning of this.referenceWarnings) warnings.append(h('p', { text: warning }));
+      warnings.append(
+        h('p', { text: 'Discard references keeps every event and removes only missing IDs from its object references. Valid links remain.' }),
+        h('p', { text: 'Create placeholders adds each missing object with its ID and NULL attributes, preserving its event links. Valid objects remain unchanged.' }),
+        select('Missing reference strategy', ['strict', 'discard', 'placeholders'], this.workflow.missingReferenceStrategy, (value) => {
+          this.workflow.missingReferenceStrategy = value;
+          this.changed();
+        }, { strict: 'Choose a strategy (strict validation)', discard: 'Discard references', placeholders: 'Create placeholders' })
+      );
+      fields.append(warnings);
     }
     this.root.replaceChildren(
       h('style', { text: STYLE }),
@@ -242,6 +257,11 @@ class OcedConfig extends HTMLElement implements SoupConfigElement {
 
   private reviewOptions(): void {
     this.message = 'Ready to import into a dedicated Neo4j database. Queries commit separately to limit memory use; live phase progress appears in the backend logs.';
+    if (this.referenceWarnings.length && this.workflow.missingReferenceStrategy === 'strict') {
+      this.message = 'Strict validation: choose Discard references or Create placeholders before importing.';
+      this.context.emit({ ...this.workflow.options(), config_error: this.message });
+      return;
+    }
     this.context.emit(this.workflow.options());
   }
 
@@ -255,6 +275,8 @@ class OcedConfig extends HTMLElement implements SoupConfigElement {
       const review = await this.context.preview(this.workflow.options());
       if (generation !== this.generation) return;
       this.review = review;
+      this.referenceWarnings = review.flatMap((block) => block.type === 'table' && block.title === 'Missing object references'
+        ? block.data.rows.map((row) => `${row[0]}: ${row[1]} distinct missing IDs. Samples: ${row[2]}`) : []);
       this.reviewOptions();
     } catch (error) {
       if (generation !== this.generation) return;

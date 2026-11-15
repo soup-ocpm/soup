@@ -9,11 +9,14 @@ import io
 import json
 import re
 from collections.abc import Mapping
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, field
 from datetime import datetime
 from typing import Any
 
 from soup.core.contracts import Upload, ValidationError, import_phase
+
+MISSING_ID_SAMPLES = 5
+REFERENCE_STRATEGIES = {"strict", "discard", "placeholders"}
 
 TYPES = {"String", "Integer", "Float", "Boolean", "Datetime"}
 _IDENTIFIER = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
@@ -157,6 +160,7 @@ class Prepared:
     ekg: EkgConfig
     files: dict[str, bytes]
     counts: dict[str, Any]
+    missing_references: list[dict[str, Any]] = field(default_factory=list)
 
     def metadata(self) -> dict[str, Any]:
         return {
@@ -183,10 +187,10 @@ def _attr_types(raw: Any, columns: list[str], required: dict[str, str]) -> dict[
     return {**required, **supplied}
 
 
-def _object_table(raw: Mapping[str, Any], ids: set[str], entity_id: str) -> Table:
+def _object_table(raw: Mapping[str, Any], event_values: list[str], entity_id: str) -> Table:
     file = raw.get("file")
     if file is None:
-        return Table([entity_id], [[item] for item in sorted(ids)])
+        return Table([entity_id], [[item] for item in sorted(reference_ids(event_values))])
     file = _mapping(file, "Object table file")
     filename = file.get("filename")
     with import_phase("object CSV validation", file=filename if isinstance(filename, str) else "object CSV"):
@@ -211,8 +215,6 @@ def _object_table(raw: Mapping[str, Any], ids: set[str], entity_id: str) -> Tabl
         values = table.values(entity_id)
         if any(value.lower() in {"", "null", "nan", "none"} for value in values) or len(set(values)) != len(values):
             raise ValidationError("Object table IDs must be non-null and unique after trimming whitespace")
-        if not ids.issubset(set(values)):
-            raise ValidationError("Object table is missing IDs referenced by the event table")
         return table
 
 
@@ -257,11 +259,47 @@ def _normalize_references(table: Table, columns: Mapping[str, Any]) -> None:
             row[index] = ",".join(_tokens(row[index]))
 
 
-def prepare(upload: Upload, options: Mapping[str, Any], relative_dir: str) -> Prepared:
+def _resolve_missing(events: Table, column: str, entity: Table, entity_id: str, strategy: str) -> list[dict[str, Any]]:
+    missing = reference_ids(events.values(column)) - set(entity.values(entity_id))
+    if not missing:
+        return []
+    ordered = sorted(missing)
+    if strategy == "discard":
+        index = events.columns.index(column)
+        for row in events.rows:
+            row[index] = ",".join(item for item in _tokens(row[index]) if item not in missing)
+    elif strategy == "placeholders":
+        index = entity.columns.index(entity_id)
+        for item in ordered:
+            row = [""] * len(entity.columns)
+            row[index] = item
+            entity.rows.append(row)
+    return [{"column": column, "count": len(missing), "samples": ordered[:MISSING_ID_SAMPLES]}]
+
+
+def _check_missing(missing_references: list[dict[str, Any]], strategy: str, preview: bool) -> None:
+    if missing_references and strategy == "strict" and not preview:
+        columns = ", ".join(f"{item['column']} ({item['count']} missing IDs)" for item in missing_references)
+        raise ValidationError(
+            f"Object tables are missing referenced IDs: {columns}. "
+            "Choose Discard references or Create placeholders before importing.",
+            details={"phase": "object reference validation", "missing_references": missing_references},
+        )
+
+
+def _reference_strategy(options: Mapping[str, Any]) -> str:
+    strategy = options.get("missing_reference_strategy", "strict")
+    if not isinstance(strategy, str) or strategy not in REFERENCE_STRATEGIES:
+        raise ValidationError("Choose strict validation, discard references, or create placeholders")
+    return strategy
+
+
+def prepare(upload: Upload, options: Mapping[str, Any], relative_dir: str, *, preview: bool = False) -> Prepared:
     if options.get("config_error"):
         raise ValidationError(str(options["config_error"]))
     if options.get("upload_pending"):
         raise ValidationError("Wait for the object table uploads to finish")
+    strategy = _reference_strategy(options)
     event_options = _mapping(options.get("events", {}), "events")
     table = _select(read_table(upload.read(), options.get("delimiter", ",")), event_options)
     event_id, activity, timestamp = _event_columns(table, options)
@@ -289,16 +327,18 @@ def prepare(upload: Upload, options: Mapping[str, Any], relative_dir: str) -> Pr
         identifier(column)
     events = NodeConfig(f"{relative_dir}/events.csv", table.columns, attr_types)
     entities: dict[str, NodeConfig] = {}
-    files = {events.path: table.csv_bytes()}
+    files: dict[str, bytes] = {}
+    missing_references: list[dict[str, Any]] = []
     entity_counts: dict[str, int] = {}
     counts = {"events": len(table.rows), "entities": entity_counts}
     seen_ids: set[str] = set()
     for column, raw_options in entity_options.items():
         raw = _mapping(raw_options, f"entities.{column}")
         with import_phase("object table preparation", column=column):
-            entity = _object_table(raw, reference_ids(table.values(column)), entity_id)
+            entity = _object_table(raw, table.values(column), entity_id)
         if {"Log", type_tag}.intersection(entity.columns):
             raise ValidationError("Object tables must not contain Log or the configured type_tag")
+        missing_references.extend(_resolve_missing(table, column, entity, entity_id, strategy))
         ids = set(entity.values(entity_id))
         if seen_ids.intersection(ids):
             raise ValidationError(
@@ -314,6 +354,9 @@ def prepare(upload: Upload, options: Mapping[str, Any], relative_dir: str) -> Pr
         entities[column] = node
         files[node.path] = entity.csv_bytes()
         entity_counts[column] = len(entity.rows)
+    _check_missing(missing_references, strategy, preview)
+    files[events.path] = table.csv_bytes()
+    counts["missing_reference_strategy"] = strategy
     log = LogConfig(event_id, activity, timestamp, entity_id, events, entities)
     files[f"{relative_dir}/log_config.yaml"] = configuration_yaml(log).encode("utf-8")
     return Prepared(
@@ -321,6 +364,7 @@ def prepare(upload: Upload, options: Mapping[str, Any], relative_dir: str) -> Pr
         EkgConfig(type_tag),
         files,
         counts,
+        missing_references,
     )
 
 

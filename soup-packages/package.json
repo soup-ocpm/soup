@@ -24,7 +24,8 @@
     "pack": "node sdk/scripts/pack.mjs",
     "lint": "eslint . --max-warnings=0 && knip && tsc -p sdk --noEmit",
     "typecheck": "tsc -p sdk --noEmit",
-    "test": "vitest run"
+    "test": "vitest run",
+    "create:package": "node sdk/scripts/create-package.mjs"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

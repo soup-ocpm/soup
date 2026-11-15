@@ -24,3 +24,6 @@ pandas==2.2.3
 numpy==2.2.6
 neo4j==6.4.1
 docker~=7.1.0
+
+# Imported by ocean_aggregation's unchanged OCEAN configuration module.
+PyYAML==6.0.3

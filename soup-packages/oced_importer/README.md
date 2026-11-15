@@ -79,3 +79,33 @@ overlapping Event/Entity loading, not isolated Neo4j parsing/network latency.
 CSV preparation and database creation are included in the total import duration.
 Source paths in metadata are provenance, not reusable URLs. Memgraph volumes/data
 and queries remain unchanged. This package provides import, not analysis.
+
+## Missing object references
+
+Uploaded object tables are checked against every selected event-reference column.
+The review reports each affected column, its distinct missing-ID count, and up to
+five sample IDs. Strict validation is the default and blocks import until a
+strategy is explicitly chosen:
+
+- **Discard references:** keep every event and all valid references, removing
+  only the missing IDs from the affected reference cells.
+- **Create placeholders:** keep all references and add one object per distinct
+  missing ID to that type's object table. The configured ID is preserved; other
+  user attributes are written as empty CSV fields, loaded as NULL by Neo4j.
+
+The policy applies independently to each object type. Generated object tables
+already include all referenced IDs and need no resolution. The existing
+cross-type ID collision check still applies because original OCEAN CORR queries
+match by ID alone; placeholder IDs cannot conflict with another type's IDs.
+Validation and CSV preparation finish before database creation or graph writes.
+The loader's dataset isolation, transaction handling and rollback behavior are
+unchanged. This feature is Neo4j-only; Memgraph importers are unchanged.
+
+Focused checks:
+
+```sh
+# From soup-server/
+python -m pytest ../soup-packages/oced_importer/test_missing_references.py
+# From soup-packages/
+npm test -- oced_importer/app/test/references.test.ts
+```

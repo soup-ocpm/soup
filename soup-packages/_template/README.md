@@ -1,7 +1,8 @@
 # Minimal package template
 
-Copy this package to start a SOUP extension. Follow the verified
-[getting-started tutorial](../docs/getting-started.md) for copy/rename commands,
+Run `npm run create:package` from `soup-packages/` to generate a focused
+package from this template. Follow the verified
+[getting-started tutorial](../docs/getting-started.md) for scaffolding,
 building, ZIP installation and a manual check.
 
 The directory starts with `_`, so discovery ignores it. Its manifest name is

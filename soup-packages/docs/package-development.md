@@ -12,11 +12,12 @@ is a **separate package** in
 
 ## 1. Declare only the required capabilities
 
-From `soup-packages/`, copy `_template` to an unused `records` directory, rename
-its npm workspace to `soup-pkg-records-app`, and remove the copied
-`server/text.py` from **that new directory only**. Replace the plugin/frontend
-with the files below. Keep `server/__init__.py` and `app/tsconfig.json` from the
-template.
+From `soup-packages/`, run `npm run create:package`. Choose `records`, a
+description, **Importer**, **both**, and frontend **yes**. Remove the generated
+`records/server/contribution.py` from **that new directory only**, then replace
+the plugin/frontend with the files below. Keep `server/__init__.py`,
+`app/package.json` and `app/tsconfig.json`; the npm workspace is already named
+`soup-pkg-records-app`.
 
 Use this complete `records/soup-package.json`:
 

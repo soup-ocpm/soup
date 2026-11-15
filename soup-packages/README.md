@@ -25,8 +25,11 @@ This creates `dist/template-1.0.0.zip`. With ZIP installation enabled on your
 SOUP server (`SOUP_ALLOW_PACKAGE_INSTALL=true`), install it from **Packages**.
 Import a `.txt` file, select **Text file (template)**, and open the resulting
 **Text** view. The `_template` directory is excluded from automatic discovery;
-packaging it is an explicit way to try it. To create your own package, follow
-the tutorial below.
+packaging it is an explicit way to try it. To create your own package, run
+`npm run create:package` from this directory. The interactive scaffolder asks
+for contribution type, database compatibility and frontend support; see
+[getting started](docs/getting-started.md#2-create-a-separate-package) for the
+generated examples and build steps.
 
 Install only trusted code. A package runs with server-process and browser-page
 privileges; manifest/tool declarations are dependency checks, not a sandbox.
@@ -67,4 +70,5 @@ Implementation details belong to the package that owns them:
 | [`ekg_class_graph`](ekg_class_graph/README.md) | Memgraph aggregated graphs and derived state                                            |
 | [`ocel`](ocel/README.md)                       | OCEL 2.0 tables and Memgraph EKG integration                                            |
 | [`oced_importer`](oced_importer/README.md)     | Neo4j OCED imports and per-dataset databases                                            |
+| [`ocean_aggregation`](ocean_aggregation/README.md) | Neo4j-only OCEAN aggregation and Class graph visualization for imported OCED datasets |
 | [`graph_explorer`](graph_explorer/README.md)   | Optional read-only graph exploration and stored scenes                                  |

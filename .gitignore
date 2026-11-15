@@ -11,4 +11,8 @@ AGENTS.md
 # Local CSV staging for the external Neo4j import root.
 /neo4j-import/
 
-/tests/
+*/tests/
+*test*
+
+TODO.md
+

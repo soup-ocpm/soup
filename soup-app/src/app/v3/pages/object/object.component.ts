@@ -203,6 +203,16 @@ export class ObjectComponent implements OnInit {
   // --- operations ---------------------------------------------------------- //
   public openOperation(operation: OperationInfo): void {
     const object = this.object();
+    if (operation.id === 'ocean_aggregation.aggregate') {
+      const studio = this.visualizers().find((v) => v.id === 'ocean_aggregation.studio');
+      if (studio) {
+        this.operationForm.set(null);
+        this.actionError.set('');
+        this.visualizerId.set(studio.id);
+        this.choice.remember(object!.kind, studio.id);
+        return;
+      }
+    }
     // Not disabled while loading: the card keeps the focus, given back when the form closes.
     if (!object || this.opening()) {
       return;

@@ -42,60 +42,62 @@ it. This is a declared compatibility change, not an automatic inference.
 
 ## 2. Create a separate package
 
-Run from `soup-packages/`. Choose an unused package name; the following example
-uses `my_package`.
+From `soup-packages/`, run the interactive SOUP Studio scaffolder:
 
 ```sh
-cp -R _template my_package
-python - <<'PY'
-import json
-from pathlib import Path
+npm run create:package
+```
 
-folder = Path("my_package")
-manifest_path = folder / "soup-package.json"
-manifest = json.loads(manifest_path.read_text())
-manifest.update(name="my_package", label="My package")
-manifest_path.write_text(json.dumps(manifest, indent=2) + "\n")
+Enter an unused lowercase name such as `my_package`, a description, one
+contribution type (**Tool**, **Operation**, **Importer**, **Visualizer** or
+**Exporter**), database support (**Neo4j**, **Memgraph** or **both**), and whether
+to include a frontend (**yes**/**no**). Names follow the manifest's Python module
+rules: a lowercase letter followed by lowercase letters, digits or underscores,
+at most 128 characters. Existing directories are never overwritten. Invalid
+answers are rejected before any package files are written.
 
-app_path = folder / "app/package.json"
-app = json.loads(app_path.read_text())
-app["name"] = "soup-pkg-my-package-app"
-app_path.write_text(json.dumps(app, indent=2) + "\n")
+The generator uses `_template`'s manifest, server module, importer and frontend
+configuration, keeping only the selected contribution and its required files.
+It writes `server/contribution.py` and registers the contribution in
+`server/plugin.py`. It does not change the original template.
 
-for relative in ("server/text.py", "app/src/index.ts"):
-    path = folder / relative
-    text = path.read_text()
-    text = text.replace("template.text", "my_package.text")
-    text = text.replace("soup-template-text", "soup-my-package-text")
-    path.write_text(text)
-PY
+| Selection | Generated behavior |
+| --- | --- |
+| Importer | Template text importer retaining lines in metadata, producing `<name>.text` |
+| Tool | Tool named `<name>` with a working health check |
+| Operation | Accepts a `report`, produces a summary `report` |
+| Visualizer | Displays a `report` |
+| Exporter | Exports a `report`'s metadata as JSON |
+
+Choosing a frontend adds an SDK Web Component displaying object metadata. For
+non-visualizer contributions, it also registers a companion visualizer: importer
+packages display their own text objects; the other packages display reports.
+This is a visualization frontend, not a custom operation/import configuration
+form. Without a frontend, a visualizer reuses `soup-report-view` and declares
+`soup_base` as a dependency. Other choices need no package or tool dependencies;
+the optional report renderer is not required to produce/export reports.
+
+For **Importer**, **both**, **yes**, then run:
+
+```sh
 npm install
 npm run build:packages -- my_package
 npm run pack -- my_package
 ```
 
-`npm install` updates workspace links and the lockfile after adding the new
-`app/package.json`. Keep that lockfile change for reproducible `npm ci` builds.
-The Python command edits only the new copy. It leaves private class names alone;
-those do not have to match the package name.
+The existing `*/app` workspace pattern automatically includes generated
+frontends. `npm install` refreshes workspace links and the lockfile; commit that
+lockfile update for reproducible `npm ci` builds. The scaffolder does not run
+installation or network commands itself. Backend-only packages have no `app/`
+directory or manifest frontend entry and need only the pack command.
 
-The important names now agree:
+The manifest name, directory, kind, registration and custom-element tag agree.
+Selecting a database declares compatibility; it does not provision a graph
+server or implement database access. Generated examples issue no graph queries.
+Use dataset-scoped database access when extending them; see
+[the package API](package-api.md).
 
-| Item                                                   | Value                                                                                                      |
-| ------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------- |
-| Directory and manifest `name`                          | `my_package`                                                                                               |
-| npm workspace `name`                                   | `soup-pkg-my-package-app`                                                                                  |
-| Produced/accepted object kind                          | `my_package.text`                                                                                          |
-| Python `Visualizer.element` and registered browser tag | `soup-my-package-text`                                                                                     |
-| Qualified contribution IDs                             | `my_package.text` (importer and visualizer, in separate registries), `my_package.stats_report` (operation) |
-
-The template's `requires`, `requires_tools`, `provides_tools`,
-`extension_points` and `python_dependencies` remain empty. If you later use
-`<soup-table>` directly, add `soup_base` to `requires`; if you store files,
-declare the storage tool and any public API imports as shown in the next
-tutorial.
-
-## 3. Understand the source files
+## 3. Understand the original template source files
 
 | File                 | Responsibility                                                      |
 | -------------------- | ------------------------------------------------------------------- |
@@ -126,9 +128,10 @@ Choose one route:
   version/override rules; uploading the identical version is not a reinstall
   shortcut.
 
-Create a small text file, inspect/import it, open **Text**, request
-**Statistics**, then run **Text statistics (report)**. Check that the report has
-its parent and, when `soup_base` is active, renders its count/table/text blocks.
+For the generated importer, inspect/import a small text file and open
+**my_package view**. It shows the retained lines and filename as metadata.
+For the unmodified template, use **Text**, **Statistics**, and
+**Text statistics (report)** to try its additional examples.
 Delete the objects through SOUP and confirm there are no external files to clean
 up.
 
