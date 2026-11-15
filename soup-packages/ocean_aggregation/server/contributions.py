@@ -5,12 +5,12 @@ import json
 import logging
 import math
 import re
-import threading
-from collections.abc import Mapping
+from collections.abc import Callable, Mapping
 from types import SimpleNamespace
 from typing import Any
 
 from soup.core.contracts import (
+    Choice,
     Field,
     ObjectDraft,
     ObjectRef,
@@ -21,49 +21,27 @@ from soup.core.contracts import (
     Variant,
     validate_name,
 )
-from soup.core.contracts.database import Database
+from soup.core.contracts.database import CypherExecutor, Database
 
-from .ocean_lib.aggregation.aggregate_ekg import AggregateEkg
+from .compat import AGGREGATION_LOCK as _AGGREGATION_LOCK
+from .compat import (
+    PROVIDER,
+    UNSUPPORTED_FUNCTIONS,
+    RunExecutor,
+    check_queries,
+    ekg_api,
+    execute_ocean,
+    require_no_classes,
+)
 from .ocean_lib.aggregation.grammar import AggregationFunction, AggrSpecification, AggrStep, AttrAggr
-from .ocean_lib.configurator.knowledge import knowledge
 
 SOURCE_KIND = "oced_importer.log"
+SOURCE_KINDS = (SOURCE_KIND, "ekg")
 RESULT_KIND = "ocean_aggregation.graph"
 MAX_STEPS = 30
 # Ocean stores configuration in module-level knowledge; serialize running specifications.
-_AGGREGATION_LOCK = threading.RLock()
 _IDENTIFIER = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
 
-
-class _Record(dict):
-    def __getitem__(self, key):
-        if isinstance(key, int):
-            return list(self.values())[key]
-        return super().__getitem__(key)
-
-
-class _Rows:
-    """Adapt SOUP's database.execute result to the Neo4j Result methods used by Ocean."""
-    def __init__(self, rows: list[dict[str, Any]]):
-        self.rows = rows
-
-    def single(self):
-        row = next(iter(self.rows), None)
-        return _Record(row) if row is not None else None
-
-    def data(self):
-        return self.rows
-
-    def consume(self):
-        return None
-
-
-class _Session:
-    def __init__(self, database: Database):
-        self.database = database
-
-    def run(self, query: str):
-        return _Rows(self.database.execute(query))
 
 
 def _identifier(name: Any) -> str:
@@ -72,7 +50,7 @@ def _identifier(name: Any) -> str:
     return name
 
 
-def _properties(db: Database, label: str, type_tag: str | None = None,
+def _properties(db: CypherExecutor, label: str, type_tag: str | None = None,
                 entity_type: str | None = None) -> tuple[str, ...]:
     """Read existing graph property keys; choices are supplied by Neo4j, not guessed."""
     if label not in ("Event", "Entity"):
@@ -84,7 +62,7 @@ def _properties(db: Database, label: str, type_tag: str | None = None,
                  if isinstance(row.get("prop"), str) and _IDENTIFIER.fullmatch(row["prop"]))
 
 
-def _entity_types(db: Database, type_tag: str) -> tuple[str, ...]:
+def _entity_types(db: CypherExecutor, type_tag: str) -> tuple[str, ...]:
     rows = db.execute(f"MATCH (n:Entity) RETURN DISTINCT n.{_identifier(type_tag)} AS kind "
                       "ORDER BY kind LIMIT 200")
     return tuple(row["kind"] for row in rows
@@ -148,7 +126,7 @@ def _spec(raw: Any, *, event_props: tuple[str, ...],
         raise ValidationError("Add at least one aggregation step")
     if len(raw) > MAX_STEPS:
         raise ValidationError("Maximum 30 aggregation steps")
-    steps = []
+    steps: list[AggrStep] = []
     aggregated_entities: set[str] = set()
     for item in raw:
         if not isinstance(item, dict) or item.get("variant") not in ("EVENTS", "ENTITIES"):
@@ -156,7 +134,7 @@ def _spec(raw: Any, *, event_props: tuple[str, ...],
         values = item.get("values") or {}
         aggr_type = item["variant"]
         ent_type = values.get("ent_type") if aggr_type == "ENTITIES" else None
-        props = event_props if aggr_type == "EVENTS" else entity_properties.get(ent_type, ())
+        props = event_props if aggr_type == "EVENTS" else entity_properties.get(str(ent_type), ())
         group_by = values.get("group_by")
         if not isinstance(group_by, list) or not group_by:
             raise ValidationError("Each aggregation step needs grouping properties")
@@ -167,7 +145,7 @@ def _spec(raw: Any, *, event_props: tuple[str, ...],
             if ent_type not in entity_types:
                 raise ValidationError("Select an existing entity type")
         if aggr_type == "ENTITIES":
-            aggregated_entities.add(ent_type)
+            aggregated_entities.add(str(ent_type))
         elif not aggregated_entities and not set(group_by).intersection(entity_columns):
             raise ValidationError(
                 f"Aggregation step #{len(steps) + 1}: the original OCEAN event query requires entity grouping context. "
@@ -198,10 +176,14 @@ def _spec(raw: Any, *, event_props: tuple[str, ...],
 def _filter_field(properties: tuple[str, ...]) -> Field:
     return Field("filters", "Filters (all conditions must match)", type="items", variants=(
         Variant("condition", "Property condition", fields=(
-            Field("property", "Property", type="select", required=True, choices=properties),
+            Field("property", "Property", type="select", required=True,
+                  choices=tuple(Choice(prop) for prop in properties)),
             Field("operator", "Comparison", type="select", required=True,
-                  choices=("=", "<>", ">", ">=", "<", "<=", "CONTAINS", "STARTS WITH", "ENDS WITH", "IS NULL", "IS NOT NULL")),
-            Field("value_type", "Value type", type="select", choices=("string", "number", "boolean"), default="string"),
+                  choices=tuple(Choice(op) for op in (
+                      "=", "<>", ">", ">=", "<", "<=", "CONTAINS", "STARTS WITH", "ENDS WITH", "IS NULL", "IS NOT NULL"
+                  ))),
+            Field("value_type", "Value type", type="select", default="string",
+                  choices=tuple(Choice(kind) for kind in ("string", "number", "boolean"))),
             Field("value", "Value (omit for IS NULL / IS NOT NULL)", type="text"),
         )),
     ), help="Only existing node properties are available. Conditions are combined using AND.")
@@ -210,24 +192,29 @@ def _filter_field(properties: tuple[str, ...]) -> Field:
 def _attribute_field(properties: tuple[str, ...]) -> Field:
     return Field("attr_aggrs", "Attribute aggregations (optional)", type="items", variants=(
         Variant("attribute", "Aggregate attribute", fields=(
-            Field("name", "Property", type="select", required=True, choices=properties),
+            Field("name", "Property", type="select", required=True, choices=tuple(Choice(prop) for prop in properties)),
             Field("function", "Function", type="select", required=True,
-                  choices=tuple(fn.value for fn in AggregationFunction)),
+                  choices=tuple(Choice(fn.value) for fn in AggregationFunction
+                                if fn.value not in UNSUPPORTED_FUNCTIONS)),
         )),
     ))
 
 
 def _step_fields(properties: tuple[str, ...], entity_types: tuple[str, ...] = ()) -> tuple[Field, ...]:
     fields = [Field("group_by", "Group by properties", type="multiselect", required=True,
-                    choices=properties, help="Choose one or more existing properties"),
+                    choices=tuple(Choice(prop) for prop in properties), help="Choose one or more existing properties"),
               _filter_field(properties), _attribute_field(properties)]
     if entity_types:
         fields.insert(0, Field("ent_type", "Entity type", type="select", required=True,
-                               choices=entity_types))
+                               choices=tuple(Choice(kind) for kind in entity_types)))
     return tuple(fields)
 
 
 def _configs(source: ObjectRef) -> tuple[Any, Any]:
+    if source.kind == "ekg":
+        return (SimpleNamespace(event_id="Event_Id", event_activity="ActivityName", event_timestamp="Timestamp",
+                                entity_id="Value", entities={}),
+                SimpleNamespace(type_tag="Type", entity_type_mode="property"))
     log_config = source.meta.get("log_config")
     ekg_config = source.meta.get("ekg_config")
     if not isinstance(log_config, dict) or not isinstance(ekg_config, dict):
@@ -242,28 +229,36 @@ def _configs(source: ObjectRef) -> tuple[Any, Any]:
     return log, ekg
 
 
-def _source_db(database: Database, dataset_id: str) -> Database:
-    db = database.for_dataset(dataset_id)
-    if db.backend != "neo4j":
-        raise ValidationError("Ocean aggregation requires Neo4j")
+def _source_db(database: Database, obj: ObjectRef) -> Database:
+    db = database.for_dataset(obj.id)
+    if db.backend not in {"neo4j", "memgraph"}:
+        raise ValidationError("Ocean aggregation requires a Neo4j or Memgraph dataset")
+    if db.backend == "neo4j":
+        owner = obj.meta.get("source_id", obj.id)
+        counts = db.execute(
+            "MATCH (n) WHERE NOT n:Class RETURN count(n) AS total, "
+            "count(CASE WHEN n.Log = $owner THEN 1 END) AS owned", {"owner": owner})[0]
+        if not counts["total"] or counts["total"] != counts["owned"]:
+            raise ValidationError("The selected database does not exclusively contain this OCED dataset")
     return db
 
 
 class OceanOperation(Operation):
     id = "aggregate"
     label = "Ocean aggregation"
-    description = "Build Ocean Class/OBS/DF_C/CORR_C structures on an existing Neo4j EKG"
+    description = "Build Ocean Class/OBS/DF_C/CORR_C structures on an existing dataset EKG"
     group = "Aggregation"
-    inputs = (OperationInput("ekg", (SOURCE_KIND,)),)
+    inputs = (OperationInput("ekg", SOURCE_KINDS),)
     produces = (RESULT_KIND,)
 
-    def __init__(self, database: Database):
+    def __init__(self, database: Database, memgraph_ready: Callable[[], bool] = lambda: False):
         self.database = database
+        self.memgraph_ready = memgraph_ready
 
     def fields(self, inputs: Mapping[str, ObjectRef], tools: ToolAccess) -> list[Field]:
         source = inputs["ekg"]
         _, ekg = _configs(source)
-        db = _source_db(self.database, source.id)
+        db = _source_db(self.database, source)
         events, entities = _properties(db, "Event"), _properties(db, "Entity")
         entity_types = _entity_types(db, ekg.type_tag)
         variants = []
@@ -273,13 +268,14 @@ class OceanOperation(Operation):
             variants.append(Variant("ENTITIES", "Aggregate entities", fields=_step_fields(entities, entity_types)))
         if not variants:
             raise ValidationError("Selected dataset has no supported Event/Entity properties and entity types")
-        return [
-            Field("aggregation_name", "Aggregation name", required=True),
-            Field("replace_classes", "Delete existing Class nodes before aggregation", type="bool", default=False,
+        fields = [Field("aggregation_name", "Aggregation name", required=True)]
+        if db.backend == "neo4j":
+            fields.append(Field("replace_classes", "Delete existing Class nodes before aggregation",
+                  type="bool", default=False,
                   help="Irreversible: removes all Class nodes and their attached relationships in this dataset. "
-                       "Event and Entity nodes remain. Existing settings remain, but their graph is replaced."),
-            Field("steps", "Ocean aggregation steps", type="items", required=True, variants=tuple(variants)),
-        ]
+                       "Source nodes and saved settings remain; the previous graph is replaced."))
+        fields.append(Field("steps", "Ocean aggregation steps", type="items", required=True, variants=tuple(variants)))
+        return fields
 
     def run(self, inputs: Mapping[str, ObjectRef], params: Mapping[str, Any], tools: ToolAccess) -> list[ObjectDraft]:
         source = inputs["ekg"]
@@ -287,11 +283,13 @@ class OceanOperation(Operation):
         if source.meta.get("import_status", "complete") != "complete":
             raise ValidationError("Source OCED import has not completed")
         log, ekg = _configs(source)
-        db = _source_db(self.database, source.id)
+        db = _source_db(self.database, source)
         raw = params.get("steps")
         if not isinstance(raw, list) or not raw or len(raw) > MAX_STEPS:
             raise ValidationError("Provide between 1 and 30 aggregation steps")
         types = _entity_types(db, ekg.type_tag)
+        if db.backend == "memgraph":
+            log.entities = {kind: {} for kind in types}
         selected_types = {
             item["values"].get("ent_type") for item in raw
             if isinstance(item, dict) and item.get("variant") == "ENTITIES"
@@ -303,6 +301,9 @@ class OceanOperation(Operation):
         spec = _spec(raw, event_props=_properties(db, "Event"),
                      entity_types=types, entity_columns=tuple(log.entities or ()),
                      entity_properties=properties)
+        check_queries(db, log, ekg, spec)
+        if db.backend == "memgraph":
+            return self._memgraph(source, log, ekg, spec, params)
         # Validate source ownership and replace only derived Class nodes after explicit confirmation.
         with _AGGREGATION_LOCK:
             counts = db.execute("MATCH (n) RETURN count(n) AS all_nodes, "
@@ -331,28 +332,12 @@ class OceanOperation(Operation):
                     raise ValidationError(
                         f"Could not delete existing Class nodes: {exc}. Aggregation was not started."
                     ) from exc
-            old_log, old_ekg, old_entities = knowledge.log, knowledge.ekg, knowledge.entities
-            try:
-                knowledge.log = log
-                knowledge.ekg = ekg
-                knowledge.entities = set()
-                # Deliberately bypass AggregateEkg.__init__: it connects to hardcoded
-                # database 'neo4j', alters indexes and handles EKG initialization.
-                aggregate = AggregateEkg.__new__(AggregateEkg)
-                aggregate.log, aggregate.ekg = log, ekg
-                aggregate.session = _Session(db)
-                aggregate.benchmark, aggregate.verification = {}, {}
-                aggregate.aggregate(spec)
-                aggregate.infer_rels()
-                benchmark = dict(aggregate.benchmark)
-                verification = dict(aggregate.verification)
-            finally:
-                knowledge.log, knowledge.ekg, knowledge.entities = old_log, old_ekg, old_entities
+            result = execute_ocean(db, log, ekg, spec)
         return [ObjectDraft(
             name=aggregation_name, kind=RESULT_KIND,
             description="Ocean class aggregation in the source dataset's Neo4j database",
             meta={"source_id": source.id, "neo4j_database": source.meta.get("neo4j_database"),
-                  "backend": "neo4j", "benchmark": benchmark, "verification": verification,
+                  "backend": "neo4j", **result,
                   "aggregation_name": aggregation_name, "configuration": {"steps": raw},
                   "steps": [{"aggr_type": step.aggr_type, "ent_type": step.ent_type,
                              "group_by": step.group_by, "where": step.where,
@@ -361,7 +346,35 @@ class OceanOperation(Operation):
                   "type_tag": ekg.type_tag},
         )]
 
+    def _memgraph(self, source: ObjectRef, log: Any, ekg: Any, spec: AggrSpecification,
+                  params: Mapping[str, Any]) -> list[ObjectDraft]:
+        raw = params["steps"]
+        aggregation_name = params["aggregation_name"]
+        if not self.memgraph_ready():
+            raise ValidationError(
+                "Enable ekg before ocean_aggregation (re-enable Ocean if needed) "
+                "to register its Memgraph state provider."
+            )
+        require_no_classes(_source_db(self.database, source))
+        api = ekg_api()
+        result: dict[str, Any] = {}
+
+        def mutate(run: Any) -> None:
+            executor = RunExecutor(run)
+            require_no_classes(executor)
+            result.update(execute_ocean(executor, log, ekg, spec))
+
+        graph_key = api.derive_state(source, mutate, api.graph_tools())
+        return [ObjectDraft(aggregation_name, RESULT_KIND, {
+            "source_id": source.id, "backend": "memgraph", "graph_key": graph_key,
+            "state": {"provider": PROVIDER, "spec": {"log_config": vars(log), "ekg_config": vars(ekg),
+                      "configuration": {"steps": raw}}},
+            "aggregation_name": aggregation_name, "configuration": {"steps": raw}, **result,
+        })]
+
     def dispose(self, obj: ObjectRef, tools: ToolAccess) -> None:
-        # Intentionally keep graph data; clearing it would invalidate sibling objects.
-        return None
+        if obj.meta.get("backend") == "memgraph":
+            api = ekg_api()
+            api.dispose(obj, api.graph_tools())
+        # Neo4j graphs remain shared with the source; deleting a result never clears them.
 

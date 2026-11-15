@@ -3,14 +3,15 @@
   "version": "1.0.0",
   "api_version": "4.0",
   "label": "Ocean aggregation",
-  "description": "Visually configure Ocean aggregations on an existing OCED Neo4j EKG and explore Class nodes.",
+  "description": "Configure original OCEAN aggregations on selected Neo4j OCED or Memgraph EKG datasets and explore Class/DF_C graphs.",
   "author": "SOUP integration of ocean-lib",
   "databases": [
-    "neo4j", "memgraph"
+    "memgraph",
+    "neo4j"
   ],
   "requires": [
-    "oced_importer",
-    "soup_base"
+    "soup_base",
+    "tool_storage"
   ],
   "requires_tools": [],
   "provides_tools": [],

@@ -5,7 +5,7 @@ interface GraphEdge {
   id: string; source: string; target: string; label: string; group: string; props: Record<string, unknown>;
 }
 interface GraphData { nodes: GraphNode[]; edges: GraphEdge[]; directed: boolean; }
-interface GraphResult { graph: GraphData; total: number; limit: number; edge_limit: number; }
+interface GraphResult { backend?: string; graph: GraphData; total: number; limit: number; edge_limit: number; }
 interface GraphView extends HTMLElement {
   data: GraphData; context: Context; thumbnail: boolean;
   nodeDetails: (id: string) => Promise<GraphNode | null>;
@@ -66,7 +66,9 @@ export class OceanClassGraph extends HTMLElement {
     });
     const heading = document.createElement('h3'); heading.textContent = context.object.name;
     const note = document.createElement('p');
-    note.textContent = 'This view shows the dataset’s current aggregation. Later runs replace the graph; previously saved settings remain.';
+    note.textContent = this.data.backend === 'memgraph'
+      ? 'This saved aggregation is restored from its own Memgraph dataset state when opened.'
+      : 'This view shows the dataset’s current aggregation. Later runs replace the graph; previously saved settings remain.';
     header.append(title, refresh); this.root.replaceChildren(style, heading, note, header, status, graph);
     graph.thumbnail = true;
     try { show(); } catch (error) { reportError(error); }

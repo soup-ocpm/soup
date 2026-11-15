@@ -5,7 +5,7 @@ export interface Context {
   openObject(id: string): void;
   notify(message: string, level: 'error' | 'success'): void;
 }
-interface Schema { event_properties: string[]; entity_types: string[]; functions: string[]; }
+interface Schema { backend?: string; event_properties: string[]; entity_types: string[]; functions: string[]; }
 export interface Condition { property: string; operator: string; value_type: string; value: string; }
 export interface Attribute { name: string; function: string; }
 export interface Step {
@@ -208,12 +208,13 @@ export class OceanStudio extends HTMLElement {
     const existing = await context.action<{ classes: number }>('replacement');
     if (generation !== this.generation) return null;
     const replace = existing.classes > 0;
+    if (replace && this.data.backend === 'memgraph') throw new Error('This Memgraph state already contains Class nodes. Select its original, unaggregated EKG dataset.');
     if (replace && !window.confirm(
       `This dataset contains ${existing.classes} Class nodes. Delete them and run "${name.trim()}"?\n\n` +
       'This is irreversible. All Class nodes and their attached relationships will be deleted from this dataset. ' +
       'Event and Entity nodes remain. Previous saved settings remain, but their graph will be replaced.'
     )) return null;
-    return { aggregation_name: name.trim(), replace_classes: replace };
+    return { aggregation_name: name.trim(), ...(this.data.backend === 'memgraph' ? {} : { replace_classes: replace }) };
   }
 
   private async execute(): Promise<void> {
