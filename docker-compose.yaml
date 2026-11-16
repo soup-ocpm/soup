@@ -39,6 +39,7 @@ services:
       # code with the privileges of the server and of the browser.
       - SOUP_ALLOW_PACKAGE_INSTALL=true
       - SOUP_INSTALLED_PACKAGES_DIR=/data/soup-packages
+      - SOUP_MAX_UPLOAD_MB=2048 # increased for BPIC datasets requirements
       # The datasets are files in soup-volume, mounted here and in memgraph
       # on the same path: the backend writes them, Memgraph reads them with
       # LOAD CSV. No Docker socket: the backend cannot reach the Docker

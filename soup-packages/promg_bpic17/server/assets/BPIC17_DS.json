@@ -1,0 +1,237 @@
+[
+  {
+    "name": "BPIC17Performance",
+    "file_directory": "data\\",
+    "file_name": "BPI_Challenge_2017.csv",
+    "labels": [
+      "EventRecord",
+      "ApplicationRecord",
+      "ApplicationDetailRecord",
+      "WorkflowRecord",
+      "WorkflowCorrRecord",
+      "OfferRecord",
+      "ResourceRecord"
+    ],
+    "add_log": true,
+    "add_index": true,
+    "sample": {
+      "use_random_sample": false,
+      "population_column": "case",
+      "ids": [
+        "Application_2045572635",
+        "Application_2014483796",
+        "Application_1973871032",
+        "Application_1389621581",
+        "Application_1564472847",
+        "Application_430577010",
+        "Application_889180637",
+        "Application_1974117177",
+        "Application_681547497",
+        "Application_1020381296",
+        "Application_180427873",
+        "Application_2103964126",
+        "Application_55972649",
+        "Application_1076724533",
+        "Application_1639247005",
+        "Application_1465025013",
+        "Application_1244956957",
+        "Application_1974117177",
+        "Application_797323371",
+        "Application_1992048266"
+      ]
+    },
+    "attributes": [
+      {
+        "name": "activity",
+        "columns": [
+          {
+            "name": "event"
+          }
+        ],
+        "optional": false
+      },
+      {
+        "name": "lifecycle",
+        "columns": [
+          {
+            "name": "lifecycle:transition"
+          }
+        ],
+        "optional": false,
+        "use_filter": false,
+        "filter_exclude_values": [
+          "SUSPEND",
+          "RESUME"
+        ]
+      },
+      {
+        "name": "timestamp",
+        "columns": [
+          {
+            "name": "time"
+          }
+        ],
+        "datetime_object": {
+          "format": "y/M/d H:m:s.nX",
+          "timezone_offset": "+01"
+        },
+        "optional": false
+      },
+      {
+        "name": "case",
+        "columns": [
+          {
+            "name": "case"
+          }
+        ],
+        "optional": false
+      },
+      {
+        "name": "applicationType",
+        "columns": [
+          {
+            "name": "ApplicationType"
+          }
+        ],
+        "optional": false
+      },
+      {
+        "name": "loanGoal",
+        "columns": [
+          {
+            "name": "LoanGoal",
+            "nan_values": [
+              "Unknown"
+            ]
+          }
+        ],
+        "optional": true
+      },
+      {
+        "name": "requestedAmount",
+        "columns": [
+          {
+            "name": "RequestedAmount",
+            "dtype": "float"
+          }
+        ],
+        "optional": false
+      },
+      {
+        "name": "monthlyCost",
+        "columns": [
+          {
+            "name": "MonthlyCost",
+            "dtype": "float"
+          }
+        ],
+        "optional": true
+      },
+      {
+        "name": "resourceId",
+        "columns": [
+          {
+            "name": "org:resource"
+          }
+        ],
+        "optional": false
+      },
+      {
+        "name": "selected",
+        "columns": [
+          {
+            "name": "Selected",
+            "dtype": "boolean"
+          }
+        ],
+        "optional": true
+      },
+      {
+        "name": "eventId",
+        "columns": [
+          {
+            "name": "EventID"
+          }
+        ],
+        "optional": false
+      },
+      {
+        "name": "offerId",
+        "columns": [
+          {
+            "name": "OfferID"
+          }
+        ],
+        "optional": true
+      },
+      {
+        "name": "firstWithdrawalAmount",
+        "columns": [
+          {
+            "name": "FirstWithdrawalAmount",
+            "dtype": "float"
+          }
+        ],
+        "optional": true
+      },
+      {
+        "name": "action",
+        "columns": [
+          {
+            "name": "Action"
+          }
+        ],
+        "optional": false
+      },
+      {
+        "name": "accepted",
+        "columns": [
+          {
+            "name": "Accepted",
+            "dtype": "boolean"
+          }
+        ],
+        "optional": true
+      },
+      {
+        "name": "creditScore",
+        "columns": [
+          {
+            "name": "CreditScore",
+            "dtype": "float"
+          }
+        ],
+        "optional": true
+      },
+      {
+        "name": "numberOfTerms",
+        "columns": [
+          {
+            "name": "NumberOfTerms",
+            "dtype": "Int64"
+          }
+        ],
+        "optional": true
+      },
+      {
+        "name": "eventOrigin",
+        "columns": [
+          {
+            "name": "EventOrigin"
+          }
+        ],
+        "optional": false
+      },
+      {
+        "name": "offeredAmount",
+        "columns": [
+          {
+            "name": "OfferedAmount",
+            "dtype": "float"
+          }
+        ],
+        "optional": true
+      }
+    ]
+  }
+]

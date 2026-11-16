@@ -1,0 +1,27 @@
+{
+  "name": "promg_bpic17",
+  "version": "1.1.0",
+  "api_version": "4.0",
+  "label": "PromG BPIC 2017 importer",
+  "description": "PromG BPIC17 Neo4j importer with non-destructive SOUP EKG normalization and legacy dataset migration.",
+  "databases": [
+    "neo4j"
+  ],
+  "requires": [
+    "tool_storage",
+    "ekg_views"
+  ],
+  "requires_tools": [
+    "catalog",
+    "storage"
+  ],
+  "provides_tools": [],
+  "extension_points": [],
+  "python_dependencies": [
+    "promg==2.2.3"
+  ],
+  "server": {
+    "module": "server",
+    "plugin": "plugin:Plugin"
+  }
+}

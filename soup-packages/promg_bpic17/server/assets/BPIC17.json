@@ -1,0 +1,160 @@
+{
+  "name": "BPIC17",
+  "version": "1.0.0",
+  "records": [
+    "(record:EventRecord {timestamp, activity, lifecycle, eventOrigin, action}",
+    "(record:ApplicationRecord {case})",
+    "(record:ApplicationDetailRecord WHERE record.eventOrigin = 'Application' {case, applicationType, requestedAmount, OPTIONAL loanGoal})",
+    "(record:WorkflowRecord {case})",
+    "(record:WorkflowCorrRecord  WHERE record.eventOrigin = 'Workflow' {case})",
+    "(record:OfferRecord:OfferEventIdRecord WHERE record.eventOrigin = 'Offer' AND record.eventId STARTS WITH 'Offer_' {eventId, case, creditScore, firstWithdrawalAmount, monthlyCost, numberOfTerms, offeredAmount})",
+    "(record:OfferRecord:OfferIdRecord WHERE record.eventOrigin = 'Offer' AND record.eventId STARTS WITH 'OfferState_' {offerId})",
+    "(record:ResourceRecord {resourceId})"
+  ],
+  "nodes": [
+    {
+      "type": "Event",
+      "constructor": [
+        {
+          "prevalent_record": "(record:EventRecord)",
+          "result": "(e:Event {timestamp:record.timestamp, activity:record.activity, lifecycle:record.lifecycle})"
+        }
+      ]
+    },
+    {
+      "type": "Activity",
+      "constructor": [
+        {
+          "prevalent_record": "(record:EventRecord)",
+          "result": "(a:Activity {activity:record.activity, lifecycle:record.lifecycle})",
+          "infer_observed": true
+        }
+      ]
+    },
+    {
+      "type": "Application",
+      "constructor": [
+        {
+          "prevalent_record": "(record:ApplicationDetailRecord)",
+          "result": "(a:Entity:Application {sysId: record.case, type:record.applicationType, requestedAmount: record.requestedAmount, OPTIONAL loanGoal: record.loanGoal})",
+          "infer_corr_from_event_record": true
+        },
+        {
+          "prevalent_record": "(record:ApplicationRecord)",
+          "result": "(a:Entity:Application {sysId: record.case})",
+          "infer_corr_from_event_record": false
+        }
+      ],
+      "infer_df": true,
+      "include_label_in_df": true,
+      "merge_duplicate_df": true
+    },
+    {
+      "type": "Workflow",
+      "constructor": [
+        {
+          "prevalent_record": "(record:WorkflowCorrRecord)",
+          "result": "(w:Entity:Workflow {sysId: record.case})",
+          "infer_corr_from_event_record": true
+        },
+        {
+          "prevalent_record": "(record:WorkflowRecord)",
+          "result": "(w:Entity:Workflow {sysId: record.case})",
+          "infer_corr_from_event_record": false
+        }
+      ],
+      "infer_df": true,
+      "include_label_in_df": true,
+      "merge_duplicate_df": true
+    },
+    {
+      "type": "Offer",
+      "constructor": [
+        {
+          "prevalent_record": "(record:OfferEventIdRecord)",
+          "result": "(o:Entity:Offer {sysId: record.eventId, OPTIONAL creditScore: record.creditScore, OPTIONAL firstWithdrawalAmount: record.firstWithdrawalAmount, OPTIONAL monthlyCost: record.monthlyCost, OPTIONAL numberOfTerms: record.numberOfTerms, OPTIONAL offeredAmount: record.offeredAmount})",
+          "infer_corr_from_event_record": true
+        },
+        {
+          "prevalent_record": "(record:OfferIdRecord)",
+          "result": "(o:Entity:Offer {sysId: record.offerId})",
+          "infer_corr_from_event_record": true
+        }
+      ],
+      "infer_df": true,
+      "include_label_in_df": true,
+      "merge_duplicate_df": true
+    },
+    {
+      "type": "Resource",
+      "constructor": [
+        {
+          "prevalent_record": "(record:ResourceRecord)",
+          "result": "(r:Entity:Resource {sysId: record.resourceId})",
+          "infer_corr_from_event_record": true
+        }
+      ],
+      "infer_df": true,
+      "include_label_in_df": true,
+      "merge_duplicate_df": true
+    },
+    {
+      "include": false,
+      "type": "CaseAWO",
+      "constructor": [
+        {
+          "prevalent_record": "(record:EventRecord)",
+          "result": "(case_awo:Entity:CaseAWO {sysId: record.case)}",
+          "infer_corr_from_event_record": true
+        }
+      ],
+      "infer_df": true,
+      "include_label_in_df": true,
+      "merge_duplicate_df": true
+    }
+  ],
+  "relations": [
+    {
+      "type": "CASE_AO",
+      "constructor": {
+        "prevalent_record": "(record:ApplicationRecord:OfferRecord)",
+        "from_node": "(o: Offer)",
+        "to_node": "(a: Application)",
+        "result": "(o) - [:CASE_AO:Entity] -> (a)",
+        "infer_corr_from_reified_parents": true
+      },
+      "model_as_node": true,
+      "infer_df": true,
+      "include_label_in_df": true,
+      "merge_duplicate_df": true
+    },
+    {
+      "type": "CASE_AW",
+      "constructor": {
+        "prevalent_record": "(:ApplicationRecord:WorkflowRecord)",
+        "from_node": "(w: Workflow)",
+        "to_node": "(a: Application)",
+        "result": "(w) - [:CASE_AW:Entity] -> (a)",
+        "infer_corr_from_reified_parents": true
+      },
+      "model_as_node": true,
+      "infer_df": true,
+      "include_label_in_df": true,
+      "merge_duplicate_df": true
+    },
+    {
+      "type": "CASE_WO",
+      "constructor": {
+        "prevalent_record": "(:WorkflowRecord:OfferRecord)",
+        "from_node": "(o: Offer)",
+        "to_node": "(w: Workflow)",
+        "result": "(o) - [:CASE_WO:Entity] -> (w)",
+        "infer_corr_from_reified_parents": true
+      },
+      "model_as_node": true,
+      "infer_df": true,
+      "include_label_in_df": true,
+      "merge_duplicate_df": true
+    }
+  ]
+}
