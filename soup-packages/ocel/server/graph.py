@@ -190,6 +190,12 @@ class OcelEkgImporter(OcelImporterBase):
     produces = EKG_KIND
     requires_tools = (MEMGRAPH, STORAGE)
 
+    def __init__(self, alternatives=None):
+        self._alternatives = alternatives or (lambda: ())
+
+    def accepts(self, filename: str) -> bool:
+        return not any(item.accepts(filename) for item in self._alternatives()) and super().accepts(filename)
+
     def import_(self, upload: Upload, obj: ObjectRef, options: Mapping[str, Any], tools: ToolAccess) -> dict[str, Any]:
         log = parse(upload.read())
         return {**build(obj, log, extension_of(upload.filename), tools), "filename": upload.filename}

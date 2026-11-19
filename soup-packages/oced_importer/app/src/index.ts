@@ -24,6 +24,7 @@ const STYLE = `
 
 const PHASE_LABELS: Record<string, string> = {
   csv_preparation: 'CSV preparation', database_creation: 'Database creation',
+  dataset_staging: 'Dataset staging', loading: 'Loading',
   database_validation: 'Database validation', query_validation: 'Query validation',
   index: 'Indexes', http_transfer: 'HTTP serving (included in loading)',
   event: 'Events', entity: 'Entities', corr: 'CORR', df: 'DF', commit: 'Commit', total: 'Total construction'
@@ -49,6 +50,7 @@ class OcedConfig extends HTMLElement implements SoupConfigElement {
   private generation = 0;
   private busy = false;
   private message = '';
+  private backend = 'neo4j';
   private failed = false;
   private referenceWarnings: string[] = [];
 
@@ -59,9 +61,24 @@ class OcedConfig extends HTMLElement implements SoupConfigElement {
       this.context.emit({ config_error: message });
       return;
     }
+    const backendField = this.context.fields.find((field) => field.name === 'backend');
+    this.backend = String(this.context.value['backend'] ?? backendField?.default ?? 'neo4j');
     const source = this.context.fields.find((field) => field.name === 'source')?.default as Source | undefined;
     if (source) this.workflow.add(tableState(source));
     this.changed();
+  }
+
+  private options(): Record<string, unknown> {
+    return {...this.workflow.options(), backend: this.backend};
+  }
+
+  private backendControls(): HTMLElement[] {
+    const choices = this.context.fields.find((field) => field.name === 'backend')?.choices ?? [];
+    if (choices.length < 2) return [];
+    return [select('Graph backend', choices.map(choice => choice.value), this.backend, value => {
+      this.backend = value;
+      this.changed();
+    }, {neo4j: 'Neo4j', memgraph: 'Memgraph'})];
   }
 
   private changed(): void {
@@ -71,7 +88,7 @@ class OcedConfig extends HTMLElement implements SoupConfigElement {
     this.failed = false;
     this.message = this.workflow.validate();
     this.context.emit({
-      ...this.workflow.options(),
+      ...this.options(),
       config_error: this.message || 'Preparing object tables; please wait.'
     });
     this.render();
@@ -83,6 +100,7 @@ class OcedConfig extends HTMLElement implements SoupConfigElement {
     const fields = h('fieldset');
     fields.style.cssText = 'border:0;padding:0;margin:0';
     fields.disabled = this.busy;
+    fields.append(...this.backendControls());
     const event = this.workflow.eventTable();
     if (event) {
       const objects = h('section', {}, h('h3', { text: 'Object tables (optional)' }));
@@ -234,7 +252,7 @@ class OcedConfig extends HTMLElement implements SoupConfigElement {
     this.generation++;
     this.busy = true;
     this.message = `Reading ${file.name}…`;
-    this.context.emit({ ...this.workflow.options(), upload_pending: true });
+    this.context.emit({ ...this.options(), upload_pending: true });
     this.render();
     try {
       if (
@@ -250,29 +268,29 @@ class OcedConfig extends HTMLElement implements SoupConfigElement {
       this.busy = false;
       this.failed = true;
       this.message = errorMessage(error);
-      this.context.emit({ ...this.workflow.options(), config_error: this.message });
+      this.context.emit({ ...this.options(), config_error: this.message });
       this.render();
     }
   }
 
   private reviewOptions(): void {
-    this.message = 'Ready to import into a dedicated Neo4j database. Queries commit separately to limit memory use; live phase progress appears in the backend logs.';
+    this.message = this.backend === 'neo4j' ? 'Ready to import into a dedicated Neo4j database.' : 'Ready to import into Memgraph. Dataset files are saved for workspace switching and rebuilds.';
     if (this.referenceWarnings.length && this.workflow.missingReferenceStrategy === 'strict') {
       this.message = 'Strict validation: choose Discard references or Create placeholders before importing.';
-      this.context.emit({ ...this.workflow.options(), config_error: this.message });
+      this.context.emit({ ...this.options(), config_error: this.message });
       return;
     }
-    this.context.emit(this.workflow.options());
+    this.context.emit(this.options());
   }
 
   private async preview(): Promise<void> {
     const generation = ++this.generation;
     this.busy = true;
     this.message = 'Validating mappings and preparing object tables…';
-    this.context.emit({ ...this.workflow.options(), config_error: this.message });
+    this.context.emit({ ...this.options(), config_error: this.message });
     this.render();
     try {
-      const review = await this.context.preview(this.workflow.options());
+      const review = await this.context.preview(this.options());
       if (generation !== this.generation) return;
       this.review = review;
       this.referenceWarnings = review.flatMap((block) => block.type === 'table' && block.title === 'Missing object references'
@@ -282,7 +300,7 @@ class OcedConfig extends HTMLElement implements SoupConfigElement {
       if (generation !== this.generation) return;
       this.failed = true;
       this.message = errorMessage(error);
-      this.context.emit({ ...this.workflow.options(), config_error: this.message });
+      this.context.emit({ ...this.options(), config_error: this.message });
     } finally {
       if (generation === this.generation) {
         this.busy = false;
@@ -292,18 +310,31 @@ class OcedConfig extends HTMLElement implements SoupConfigElement {
   }
 }
 
+function backendName(data: Record<string, unknown>): string {
+  return data['backend'] === 'memgraph' ? 'Memgraph' : 'Neo4j';
+}
+
+function datasetHeader(data: Record<string, unknown>): HTMLElement[] {
+  const backend = backendName(data);
+  const key = backend === 'Neo4j' ? 'neo4j_database' : 'dataset';
+  const conversion = data['ocel_conversion'] as {notice?: string} | undefined;
+  return [h('p', {text: `${backend} dataset: ${String(data[key] ?? 'No dataset mapping')}`}),
+    ...(conversion?.notice ? [h('p', {text: conversion.notice})] : [])];
+}
+
 class OcedSummary extends HTMLElement implements SoupVisualizerElement<Record<string, unknown>> {
   public context!: VisualizerContext;
   public data: Record<string, unknown> = {};
   public connectedCallback(): void {
+    const backend = backendName(this.data);
     const incomplete = String(this.data['import_status'] ?? 'complete') !== 'complete';
     const counts = this.data['counts'] as { events?: number; entities?: Record<string, number> } | undefined;
     const times = (this.data['process_info'] as { duration_seconds?: Record<string, number> } | undefined)?.duration_seconds ?? {};
     this.replaceChildren(
-      h('p', { text: `Neo4j database: ${String(this.data['neo4j_database'] ?? 'No dataset database mapping')}` }),
+      ...datasetHeader(this.data),
       ...(incomplete
         ? [h('p', { attrs: { role: 'alert' }, text: 'This import did not complete. Earlier steps may remain committed. Review the phase timings, then explicitly delete this dataset through the workspace before retrying.' })]
-        : [h('p', { text: `${counts?.events ?? 0} events imported into Neo4j.` })]),
+        : [h('p', { text: `${counts?.events ?? 0} events imported into ${backend}.` })]),
       ...Object.entries(times).map(([phase, seconds]) => h('p', { text: `${PHASE_LABELS[phase] ?? phase} time: ${seconds.toFixed(3)} s` })),
       ...Object.entries(counts?.entities ?? {}).map(([type, count]) => h('p', { text: `${type}: ${count} objects` }))
     );

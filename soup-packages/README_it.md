@@ -131,12 +131,12 @@ class JsonLinesImporter(Importer):
     def inspect(self, upload: Upload, tools) -> Inspection:
         rows = parse(upload.read())
         columns = columns_of(rows)
-        first = report.table(columns, [[row.get(column) for column in columns] for row in rows[:10]], title="Primi record")
-        key = Field("key", "Campo chiave", type="select", choices=tuple(columns), default=columns[0] if columns else None)
+        first = report.table(columns, [[row.get(column) for column in columns] for row in rows[:10]], title="First records")
+        key = Field("key", "Key", type="select", choices=tuple(columns), default=columns[0] if columns else None)
         return Inspection(preview=(first,), fields=(key,) if columns else ())
 
     def preview(self, upload: Upload, options: Mapping[str, Any], tools) -> list[dict[str, Any]]:
-        return [report.keyvalue({"record": len(parse(upload.read())), "campo chiave": options.get("key")})]
+        return [report.keyvalue({"record": len(parse(upload.read())), "key": options.get("key")})]
 
     def import_(self, upload: Upload, obj: ObjectRef, options: Mapping[str, Any], tools) -> dict[str, Any]:
         data = upload.read()

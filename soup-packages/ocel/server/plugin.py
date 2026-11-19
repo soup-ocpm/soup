@@ -25,7 +25,7 @@ from soup_pkg_ekg.api import BUILD_STEPS_POINT
 from soup_pkg_ekg_views.api import STATS_NOTICES_POINT
 from soup_pkg_soup_base.api import ParsedCache, limits_from_env
 
-from soup.core.contracts import PluginContext, SoupPlugin
+from soup.core.contracts import ExtensionPointError, PluginContext, SoupPlugin
 
 from .graph import DecomposeToEkg, OcelEkgImporter, OcelRelationshipsNotice
 from .step import OcelRelationshipsStep
@@ -43,7 +43,12 @@ class Plugin(SoupPlugin):
         max_objects, max_bytes = limits_from_env(os.environ, ENV_PREFIX)
         self.cache = cache = new_cache(max_objects, max_bytes)
         ctx.add_importer(OcelTablesImporter(cache))
-        ctx.add_importer(OcelEkgImporter())
+        def alternatives():
+            try:
+                return ctx.contributions('oced.ocel_importers')
+            except ExtensionPointError:
+                return ()
+        ctx.add_importer(OcelEkgImporter(alternatives))
         ctx.add_visualizer(OcelTablesVisualizer(cache))
         ctx.add_visualizer(OcelSummaryVisualizer())
         ctx.add_operation(DecomposeToEkg(cache))

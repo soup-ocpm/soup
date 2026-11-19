@@ -74,7 +74,7 @@ def first_events_block(log: OcelLog) -> dict[str, Any]:
     events = events_table(log, PREVIEW_EVENTS)
     return report.table(
         list(events.columns), [list(row) for row in events.rows], total=len(log.events),
-        title=f"Primi {PREVIEW_EVENTS} eventi",
+        title=f"First {PREVIEW_EVENTS} events",
     )
 
 

@@ -49,7 +49,7 @@ from typing import Any, cast
 
 from soup_pkg_tool_memgraph.api import GraphDatabase, Run
 
-from soup.core.contracts import Catalog, NotFoundError, ObjectRef, ValidationError
+from soup.core.contracts import Catalog, NotFoundError, ObjectRef, ServiceUnavailableError, ValidationError
 
 from .builder import (
     EKG_BEFORE_RESET,
@@ -106,7 +106,7 @@ def chain_of(obj: ObjectRef, catalog: Catalog) -> list[ObjectRef]:
     object of any kind; each parent is an "ekg" object or a derived one.
     """
 
-    if obj.kind != EKG_KIND and not is_derived(obj):
+    if obj.kind not in (EKG_KIND, "oced_importer.log") and not is_derived(obj):
         raise ValidationError(f"Object '{obj.name}' is a {obj.kind!r}, not an EKG")
     chain = [obj]
     while is_derived(chain[-1]):
@@ -114,7 +114,7 @@ def chain_of(obj: ObjectRef, catalog: Catalog) -> list[ObjectRef]:
         parent = None
         for parent_id in current_obj.parents:
             candidate = catalog.get(parent_id)
-            if candidate is not None and (candidate.kind == EKG_KIND or is_derived(candidate)):
+            if candidate is not None and (candidate.kind in (EKG_KIND, "oced_importer.log") or is_derived(candidate)):
                 parent = candidate
                 break
         if parent is None:
@@ -123,7 +123,7 @@ def chain_of(obj: ObjectRef, catalog: Catalog) -> list[ObjectRef]:
             raise ValidationError(f"EKG object '{current_obj.name}' has a cycle in its parents")
         chain.append(parent)
     chain.reverse()
-    if chain[0].kind != EKG_KIND or not chain[0].meta.get("dataset"):
+    if chain[0].kind not in (EKG_KIND, "oced_importer.log") or not chain[0].meta.get("dataset"):
         raise NotFoundError(f"EKG object '{chain[0].name}' has no dataset")
     return chain
 
@@ -163,6 +163,8 @@ def ensure_loaded(obj: ObjectRef, tools: Any, force: bool = False) -> bool:
     """
 
     runtime = current()
+    if obj.kind == 'oced_importer.log' and obj.meta.get('import_status') == 'failed':
+        raise ValidationError('This OCED dataset import failed; retry the import before querying it')
     memgraph = tools.get(MEMGRAPH)
     chain = chain_of(obj, runtime.tools.typed(CATALOG, Catalog))
     graph_key = graph_key_of(obj)
@@ -178,6 +180,11 @@ def ensure_loaded(obj: ObjectRef, tools: Any, force: bool = False) -> bool:
     if problem:
         raise ValidationError(unbuildable_message(dataset, problem))
     ctx = build_context(repository, dataset, config)
+    if config.get('source_format') == 'oced':
+        if 'oced_events.csv' not in ctx.extra_files or set(config.get('extra_files', ())) - ctx.extra_files.keys():
+            raise NotFoundError('OCED dataset property tables are missing; restore them before rebuilding this dataset')
+        if not any(step.key == 'oced_properties' for step in runtime.build_steps()):
+            raise ServiceUnavailableError('Enable oced_importer to rebuild this OCED dataset without losing its properties')
     counts: dict[str, int] = {}
     times: dict[str, str] = {}
 

@@ -1,6 +1,6 @@
 {
   "name": "ocel",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "api_version": "4.1",
   "label": "OCEL 2.0",
   "description": "Imports OCEL 2.0 JSON logs (.json, .jsonocel) as tables in the package's storage space or as EKGs on Memgraph, shows the tables and a summary, decomposes the tables into an EKG (with the qualifiers on :CORR and the object-object relationships as :REL, through its step in ekg.build_steps) and exports them as OCEL 2.0 JSON.",

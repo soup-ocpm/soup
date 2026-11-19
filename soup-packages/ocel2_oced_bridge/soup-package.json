@@ -1,0 +1,25 @@
+{
+  "name": "ocel2_oced_bridge",
+  "version": "1.1.0",
+  "api_version": "4.0",
+  "label": "OCEL 2.0 to OCED",
+  "description": "Import OCEL 2.0 JSON as a dedicated Neo4j EKG through the existing OCED importer. For native OCEL tables and PM4Py, select the existing OCEL 2.0 as tables importer.",
+  "databases": [
+    "memgraph",
+    "neo4j"
+  ],
+  "requires": [
+    "oced_importer"
+  ],
+  "requires_tools": [
+    "catalog",
+    "storage"
+  ],
+  "provides_tools": [],
+  "extension_points": [],
+  "python_dependencies": [],
+  "server": {
+    "module": "server",
+    "plugin": "plugin:Plugin"
+  }
+}

@@ -40,6 +40,10 @@ RUN python -c "import numpy, pandas, neo4j, docker, waitress; print(numpy.__vers
 COPY soup-server/ .
 COPY --from=packages /srv/soup-packages/ /srv/soup-packages/
 
+# Uploaded package directories may have owner-only permissions on the host.
+# Bundled code must remain readable and traversable by the runtime user.
+RUN chmod -R a+rX /srv/soup-packages
+
 # The server runs as an unprivileged user with the UID/GID of the
 # "memgraph" user of the Memgraph image of docker-compose.yaml, so the
 # files one writes in the shared soup-volume (/soup) are readable and

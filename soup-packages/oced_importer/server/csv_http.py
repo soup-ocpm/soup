@@ -107,3 +107,15 @@ class CsvServer:
             self._thread.join(timeout=5)
         with self._lock:
             self._sessions.clear()
+
+
+_shared: CsvServer | None = None
+
+
+def shared_server() -> CsvServer:
+    """OCED owns the HTTP server; adapters borrow it rather than binding port 8081 again."""
+    global _shared
+    if _shared is None:
+        import os
+        _shared = CsvServer(os.environ.get('SOUP_NEO4J_CSV_BASE_URL', ''))
+    return _shared

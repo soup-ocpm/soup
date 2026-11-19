@@ -74,8 +74,7 @@ class Plugin(SoupPlugin):
 
         for visualizer in (GraphVisualizer(ctx.contributions, max_limit, ctx.database),
                            StatsVisualizer(ctx.contributions, ctx.database)):
-            visualizer.accepts = tuple(kind for backend, kind in (("memgraph", EKG_KIND), ("neo4j", OCED_KIND))
-                                       if backend in ctx.database.backends)
+            visualizer.accepts = ((EKG_KIND,) if "memgraph" in ctx.database.backends else ()) + (OCED_KIND,)
             ctx.add_visualizer(visualizer)
         ctx.add_visualizer(QueriesVisualizer(ctx.contributions, ctx.database))
         ctx.add_exporter(GraphJsonExporter(ctx.contributions, ctx.database))

@@ -155,7 +155,7 @@ class _EkgContribution:
     def _accepted(self, items: Sequence[Any]) -> tuple[str, ...]:
         backends = self._database.backends if self._database is not None else ("memgraph",)
         return tuple(kind for kind in accepted_kinds(items)
-                     if ("neo4j" if kind == OCED_KIND else "memgraph") in backends)
+                     if (kind == OCED_KIND and bool(backends)) or (kind != OCED_KIND and "memgraph" in backends))
 
     @staticmethod
     def _ekg() -> Any:
@@ -185,6 +185,8 @@ class _EkgContribution:
             if not rows or not rows[0]["total"] or rows[0]["total"] != rows[0]["matching"]:
                 raise ValidationError("The configured Neo4j database does not exclusively contain this OCED log")
             return Neo4jQueries(database, obj)
+        if obj.kind == OCED_KIND and obj.meta.get('import_status', 'complete') != 'complete':
+            raise ValidationError('This OCED dataset import did not complete')
         ekg = self._ekg()
         graph_tools = ekg.graph_tools()
         ekg.ensure_loaded(obj, graph_tools)

@@ -18,7 +18,7 @@ import threading
 from collections.abc import Mapping
 from typing import Any
 
-from soup.core.contracts import PluginContext, ServiceUnavailableError, ToolAccess
+from soup.core.contracts import ExtensionPointError, PluginContext, ServiceUnavailableError, ToolAccess
 
 # Extension points this package opens (declared in soup-package.json).
 BUILD_STEPS_POINT = "ekg.build_steps"
@@ -35,7 +35,14 @@ class EkgRuntime:
         self._ctx.publish(event, payload)
 
     def build_steps(self) -> list[Any]:
-        return self._ctx.contributions(BUILD_STEPS_POINT)
+        steps = self._ctx.contributions(BUILD_STEPS_POINT)
+        # Optional OCED owns these contributions so enabling/reloading EKG does
+        # not discard its property loader; Neo4j-only OCED needs no EKG dependency.
+        try:
+            steps += self._ctx.contributions('oced.memgraph_steps')
+        except ExtensionPointError:
+            pass
+        return steps
 
     def state_provider(self, key: str) -> Any:
         """:raises ServiceUnavailableError: no active package contributes provider `key`"""

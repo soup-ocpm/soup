@@ -2,19 +2,22 @@
 
 from __future__ import annotations
 
-import os
-
 from soup.core.contracts import PluginContext, SoupPlugin
 
 from .contributions import OcedImporter, OcedSummary
-from .csv_http import CsvServer
+from .csv_http import CsvServer, shared_server
 
 
 class Plugin(SoupPlugin):
     csv_server: CsvServer | None = None
 
     def register(self, ctx: PluginContext) -> None:
-        self.csv_server = CsvServer(os.environ.get("SOUP_NEO4J_CSV_BASE_URL", ""))
+        self.csv_server = shared_server()
+        ctx.add_extension_point('oced.ocel_importers')
+        ctx.add_extension_point('oced.memgraph_steps')
+        if 'memgraph' in ctx.database.backends:
+            from .memgraph import OcedPropertiesStep
+            ctx.contribute('oced.memgraph_steps', OcedPropertiesStep(ctx.tools.get('storage')), key='oced_properties')
         ctx.add_importer(OcedImporter(ctx.database, self.csv_server))
         ctx.add_visualizer(OcedSummary())
 
