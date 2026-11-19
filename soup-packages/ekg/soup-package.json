@@ -10,6 +10,6 @@
   "requires_tools": ["memgraph", "storage", "catalog"],
   "provides_tools": [],
   "extension_points": ["ekg.build_steps", "ekg.state_providers"],
-  "python_dependencies": ["pandas>=2.2", "numpy>=2"],
+  "python_dependencies": [],
   "server": {"module": "server", "plugin": "plugin:Plugin"}
 }

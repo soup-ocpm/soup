@@ -72,3 +72,6 @@ Implementation details belong to the package that owns them:
 | [`oced_importer`](oced_importer/README.md)     | Neo4j OCED imports and per-dataset databases                                            |
 | [`ocean_aggregation`](ocean_aggregation/README.md) | Neo4j-only OCEAN aggregation and Class graph visualization for imported OCED datasets |
 | [`graph_explorer`](graph_explorer/README.md)   | Optional read-only graph exploration and stored scenes                                  |
+
+Package Python libraries belong in each package’s `requirements.txt`; see
+[dependency approval and deployment](docs/lifecycle.md#python-dependencies).

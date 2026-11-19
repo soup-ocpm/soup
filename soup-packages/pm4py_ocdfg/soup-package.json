@@ -18,11 +18,7 @@
   ],
   "provides_tools": [],
   "extension_points": [],
-  "python_dependencies": [
-    "pm4py>=2.7.17,<3",
-    "pandas>=2.2,<3",
-    "graphviz>=0.20,<1"
-  ],
+  "python_dependencies": [],
   "server": {
     "module": "server",
     "plugin": "plugin:Plugin"

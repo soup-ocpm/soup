@@ -1,36 +1,8 @@
-# Libraries imported by the host (soup/api: Flask and its extensions,
-# Werkzeug; soup/core/packages: packaging; wsgi.py: waitress, the
-# production server of the Docker image) and by the bundled packages,
-# as their soup-package.json python_dependencies declare (pandas: ekg,
-# csv_ekg; neo4j: tool_memgraph; docker: tool_storage). Their own
-# dependencies (Jinja2, click, blinker, ...) come with them,
-# except numpy (below). A package installed at runtime cannot add to this
-# list: the loader refuses it if one of its python_dependencies is
-# missing. numpy, pandas, neo4j and docker stay pinned (== or ~=):
-# tests/test_requirements.py checks it, and that they satisfy the
-# packages' python_dependencies.
+# Core host dependencies only. Optional packages own their requirements.txt.
 Flask==3.1.3
 Flask-Cors==6.0.5
 Werkzeug==3.1.9
 waitress==3.0.2
 packaging==23.1
-pandas==2.2.3
-# numpy 2 (pandas 2.2.3 is built against it). Pinned together with pandas:
-# a pandas compiled against numpy 1.x fails to import under numpy 2 with
-# "numpy.dtype size changed, may indicate binary incompatibility" (ekg,
-# csv_ekg and every package requiring them would not load). The 2.2 series
-# is the last one for Python 3.10 (numpy 2.3 requires 3.11), which the
-# tests still run on.
-numpy==2.2.6
+# The shared graph database adapter imports the Neo4j driver for both backends.
 neo4j==6.4.1
-docker~=7.1.0
-
-# Imported by ocean_aggregation's unchanged OCEAN configuration module.
-PyYAML==6.0.3
-
-# Imported PromG library
-promg==2.2.3
-
-# Optional pm4py_ocdfg package: checked by the package dependency loader.
-pm4py==2.7.17
-graphviz==0.21

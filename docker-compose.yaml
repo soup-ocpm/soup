@@ -38,6 +38,7 @@ services:
       # Development: allow installing packages at runtime. A package runs
       # code with the privileges of the server and of the browser.
       - SOUP_ALLOW_PACKAGE_INSTALL=true
+      - SOUP_APPROVE_PYTHON_DEPENDENCIES=${SOUP_APPROVE_PYTHON_DEPENDENCIES:-}
       - SOUP_INSTALLED_PACKAGES_DIR=/data/soup-packages
       - SOUP_MAX_UPLOAD_MB=2048 # increased for BPIC datasets requirements
       # The datasets are files in soup-volume, mounted here and in memgraph

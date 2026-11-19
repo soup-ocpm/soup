@@ -8,7 +8,7 @@ The original semantic header and dataset description are bundled with the packag
 ## Prerequisites
 
 1. SOUP configured for **Neo4j Enterprise** with multi-database support. Credentials are inherited from SOUP's `NEO4J_URI`, `NEO4J_USERNAME`, `NEO4J_PASSWORD` environment variables via SOUP `DatabaseConfig`, never entered separately.
-2. Install `promg==2.2.3` in the SOUP **server's Python environment** and restart SOUP. The package ZIP installer does not pip-install dependencies. On Docker, add `promg==2.2.3` to `soup-server/requirements.txt`, rebuild and restart the server.
+2. Review this package’s `requirements.txt` and explicitly approve dependency installation when installing/enabling it. For Docker build/startup approval, see [Python dependencies](../docs/lifecycle.md#python-dependencies). Do not add package libraries to core server requirements.
 3. The upstream BPIC17 importer specifies **Neo4j <=5.9.0**, APOC; compatibility with later versions is NOT validated. The CSV adapter uses native Neo4j `LOAD CSV WITH HEADERS` and adds no APOC dependency. Other upstream graph-construction queries still require their original APOC procedures.
 4. Input is the *normalized* `BPI_Challenge_2017.csv` from Esser and Fahland's dataset, not an arbitrary BPIC17 XES export. The bundled descriptors map columns such as `case`, `event`, `time`, `EventOrigin`, `EventID`.
 

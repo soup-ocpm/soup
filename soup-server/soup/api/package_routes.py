@@ -50,12 +50,13 @@ def build_package_blueprint(engine: Engine) -> Blueprint:
     def install_package() -> ResponseReturnValue:
         archive = request_args.uploaded_file()
         stream = cast(BinaryIO, archive.stream)  # werkzeug types it as IO[bytes]
-        info = packages.install(stream, allow_override=request_args.flag("allow_override"))
+        info = packages.install(stream, allow_override=request_args.flag("allow_override"),
+                                approve_dependencies=request_args.flag("approve_dependencies"))
         return serializers.ok(f"Package '{info.name}' installed", serializers.package(info), 201)
 
     @blueprint.route("/api/v3/packages/<name>/enable", methods=["POST"])
     def enable_package(name: str) -> ResponseReturnValue:
-        info = packages.enable(name)
+        info = packages.enable(name, approve_dependencies=request_args.flag("approve_dependencies"))
         return serializers.ok(f"Package '{name}' enabled", serializers.package(info))
 
     @blueprint.route("/api/v3/packages/<name>/disable", methods=["POST"])

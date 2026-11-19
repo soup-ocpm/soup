@@ -16,3 +16,6 @@ AGENTS.md
 
 TODO.md
 
+
+# Dependency lifecycle regressions are maintained with the server scripts.
+!soup-server/scripts/test_package_dependencies.py

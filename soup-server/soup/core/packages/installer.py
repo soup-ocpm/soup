@@ -71,6 +71,7 @@ class PackageInstaller:
         load_one: LoadOne,
         reload_quietly: Reload,
         describe: Describe,
+        dependencies: Callable[..., None],
     ):
         self._installed_dir = installed_dir
         self._config = config
@@ -81,13 +82,14 @@ class PackageInstaller:
         self._load_one = load_one
         self._reload_quietly = reload_quietly
         self._describe = describe
+        self._dependencies = dependencies
 
-    def install(self, stream: BinaryIO, allow_override: bool) -> PackageInfo:
+    def install(self, stream: BinaryIO, allow_override: bool, approve_dependencies: bool = False) -> PackageInfo:
         staging = self._installed_dir / STAGING_DIR / uuid.uuid4().hex
         try:
             root = extract_package_zip(stream, staging / "package", self._config.limits)
             manifest = load_manifest(root)
-            return self._install_from(root, manifest, staging, allow_override)
+            return self._install_from(root, manifest, staging, allow_override, approve_dependencies)
         finally:
             shutil.rmtree(staging, ignore_errors=True)
 
@@ -109,11 +111,19 @@ class PackageInstaller:
         self._restore_bundled(name)
 
     # ------------------------------------------------------------------ #
-    def _install_from(self, root: Path, manifest: PackageManifest, staging: Path, allow_override: bool) -> PackageInfo:
+    def _install_from(
+        self, root: Path, manifest: PackageManifest, staging: Path, allow_override: bool,
+        approve_dependencies: bool = False,
+    ) -> PackageInfo:
         name = manifest.name
         existing = self._index.sources.get(name)
         self._check_replaceable(manifest, existing, allow_override)
         was_active = self._plugins.get(name) is not None
+        self._checks.require_active(manifest)
+        self._checks.conflict_with_active(manifest)
+        if was_active and self._checks.dependents(manifest.name):
+            raise _needed_by(name, self._checks.dependents(name), "disable them before upgrading it")
+        self._dependencies(manifest, approved=approve_dependencies)
         self._check_installable(manifest, was_active)
 
         target = self._installed_dir / name

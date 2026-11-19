@@ -20,11 +20,12 @@ from __future__ import annotations
 import json
 import re
 from collections.abc import Mapping
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from pathlib import Path, PurePosixPath
 from typing import Any, cast
 
 from packaging.requirements import InvalidRequirement, Requirement
+from packaging.utils import canonicalize_name
 from packaging.version import InvalidVersion, Version
 
 from soup.core.contracts import ValidationError, parse_api_version, validate_name
@@ -112,7 +113,29 @@ def load_manifest(package_dir: Path) -> PackageManifest:
         data = json.loads(path.read_text(encoding="utf-8"))
     except (UnicodeDecodeError, json.JSONDecodeError) as exc:
         raise ValidationError(f"{MANIFEST_FILE} is not valid JSON: {exc}") from None
-    return parse_manifest(data, package_dir)
+    manifest = parse_manifest(data, package_dir)
+    requirements = Path(package_dir) / "requirements.txt"
+    if requirements.is_file():
+        from soup.core.packages.dependencies import read_requirements
+
+        specs = read_requirements(requirements)
+        by_name = {canonicalize_name(Requirement(spec).name): spec for spec in manifest.python_dependencies}
+        for spec in specs:
+            key = canonicalize_name(Requirement(spec).name)
+            if key in by_name and Requirement(by_name[key]) != Requirement(spec):
+                raise ValidationError(
+                    f"Package '{manifest.name}' declares {key} differently in requirements.txt and "
+                    "python_dependencies; "
+                    "keep a single declaration"
+                )
+        manifest = replace(
+            manifest, python_dependencies=tuple(
+                str(requirement) for requirement in dict.fromkeys(
+                    Requirement(spec) for spec in (*manifest.python_dependencies, *specs)
+                )
+            )
+        )
+    return manifest
 
 
 class _ManifestReader:

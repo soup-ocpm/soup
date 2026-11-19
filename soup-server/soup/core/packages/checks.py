@@ -66,13 +66,13 @@ class PackageChecks:
         self._api_version = contracts_api_version
         self._version_lookup = version_lookup
 
-    def manifest_problem(self, manifest: PackageManifest) -> Exception | None:
+    def manifest_problem(self, manifest: PackageManifest, check_python: bool = True) -> Exception | None:
         backend = self._ctx.database.backend
         if not set(self._ctx.database.backends).intersection(manifest.databases):
             return ValidationError(f"Package '{manifest.name}' does not support database '{backend}'")
         if not is_api_compatible(manifest.api_version, self._api_version):
             return PluginApiVersionError(manifest.name, manifest.api_version, self._api_version)
-        problems = python_dependency_problems(manifest, self._version_lookup)
+        problems = python_dependency_problems(manifest, self._version_lookup) if check_python else []
         if problems:
             return PluginPythonDependencyError(manifest.name, problems)
         return None

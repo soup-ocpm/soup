@@ -31,6 +31,7 @@ from __future__ import annotations
 
 import builtins
 import logging
+import os
 import threading
 from collections.abc import Iterable
 from dataclasses import dataclass, field
@@ -48,7 +49,12 @@ from soup.core.contracts import (
 from soup.core.ordering import topological_order
 from soup.core.packages.archive import ArchiveLimits
 from soup.core.packages.checks import PackageChecks
-from soup.core.packages.dependencies import VersionLookup, installed_version
+from soup.core.packages.dependencies import (
+    VersionLookup,
+    activate_dependencies,
+    ensure_dependencies,
+    installed_version,
+)
 from soup.core.packages.discovery import PackageSource, discover_packages
 from soup.core.packages.info import (
     STATUS_ACTIVE,
@@ -60,7 +66,7 @@ from soup.core.packages.info import (
 )
 from soup.core.packages.installer import STAGING_DIR, PackageInstaller
 from soup.core.packages.loader import PluginFactory, plugin_factory
-from soup.core.packages.manifest import validate_package_name
+from soup.core.packages.manifest import PackageManifest, validate_package_name
 from soup.core.packages.preparation import PackagePreparer
 from soup.core.packages.state import PackageState
 from soup.core.plugin_context import DefaultPluginContext
@@ -105,14 +111,18 @@ class PackageManager:
         self.config = config
         self.installed_dir = Path(config.installed_dir)
         self.state = PackageState(self.installed_dir)
+        self._dependency_root = self.installed_dir / "_python"
+        activate_dependencies(Path("/opt/soup-python"))
+        activate_dependencies(self._dependency_root)
         self.report = PackageReport()
         self._index = PackageIndex()
         self._lock = threading.RLock()
+        self._version_lookup = version_lookup
         self._checks = PackageChecks(plugin_manager, ctx, config.contracts_api_version, version_lookup)
         self._preparer = PackagePreparer(plugin_manager, self._checks, self._fail)
         self._installer = PackageInstaller(
             self.installed_dir, config, self._index, self.state, plugin_manager,
-            self._checks, self._load_one, self._reload_quietly, self.info,
+            self._checks, self._load_one, self._reload_quietly, self.info, self._dependencies,
         )
 
     # ------------------------------------------------------------------ #
@@ -133,7 +143,24 @@ class PackageManager:
                 self._fail(report, folder, error)
             self._index.sources = dict(discovery.sources)
 
-            plugins = self._prepare(self._enabled_sources(report), report)
+            sources = []
+            approvals = {name.strip() for name in os.environ.get("SOUP_APPROVE_PYTHON_DEPENDENCIES", "").split(",")}
+            enabled = self._enabled_sources(report)
+            for source in enabled:
+                try:
+                    problem = self._checks.manifest_problem(source.manifest, check_python=False)
+                    if problem is not None:
+                        raise problem
+                    ensure_dependencies(
+                        source.manifest, self._dependency_root,
+                        [item.manifest for item in enabled],
+                        approved=source.name in approvals and self.config.allow_install,
+                        lookup=self._version_lookup,
+                    )
+                    sources.append(source)
+                except Exception as exc:  # noqa: BLE001 - isolate a package dependency failure
+                    self._fail(report, source.name, exc)
+            plugins = self._prepare(sources, report)
             for plugin in extra_plugins:
                 self._index.factories[plugin.name] = _same_instance(plugin)
                 plugins.append(plugin)
@@ -265,7 +292,7 @@ class PackageManager:
                 self.state.set_disabled(package, True)
             return disabled
 
-    def enable(self, name: str) -> PackageInfo:
+    def enable(self, name: str, approve_dependencies: bool = False) -> PackageInfo:
         """
         Load `name` again (a fresh plugin instance) and remember it as
         enabled.
@@ -278,6 +305,7 @@ class PackageManager:
             if self.plugin_manager.get(name) is None:
                 source = self._index.sources.get(name)
                 if source is not None:
+                    self._dependencies(source.manifest, approved=approve_dependencies)
                     self._check_enable(source)
                 self._load_one(name, self._factory(name))
             self.state.set_disabled(name, False)
@@ -294,7 +322,9 @@ class PackageManager:
     # ------------------------------------------------------------------ #
     # Install / uninstall
     # ------------------------------------------------------------------ #
-    def install(self, stream: BinaryIO, allow_override: bool = False) -> PackageInfo:
+    def install(
+        self, stream: BinaryIO, allow_override: bool = False, approve_dependencies: bool = False
+    ) -> PackageInfo:
         """
         Install a package from a zip and load it at once. A package with
         the name of a bundled one is accepted only in a higher version
@@ -309,7 +339,7 @@ class PackageManager:
 
         with self._lock:
             self._require_install_allowed("install")
-            return self._installer.install(stream, allow_override)
+            return self._installer.install(stream, allow_override, approve_dependencies)
 
     def uninstall(self, name: str) -> None:
         """
@@ -327,6 +357,20 @@ class PackageManager:
     # ------------------------------------------------------------------ #
     # Internals
     # ------------------------------------------------------------------ #
+    def _dependencies(self, manifest: PackageManifest, approved: bool = False) -> None:
+        problem = self._checks.manifest_problem(manifest, check_python=False)
+        if problem is not None:
+            raise ValidationError(str(problem))
+        if approved:
+            self._require_install_allowed("dependency installation")
+        active = [
+            source.manifest for name, source in self._index.sources.items()
+            if self.plugin_manager.get(name) is not None
+        ]
+        ensure_dependencies(
+            manifest, self._dependency_root, active, approved=approved, lookup=self._version_lookup
+        )
+
     def _prepare(self, sources: builtins.list[PackageSource], report: PackageReport) -> builtins.list[SoupPlugin]:
         plugins, factories = self._preparer.prepare(sources, report)
         self._index.factories.update(factories)

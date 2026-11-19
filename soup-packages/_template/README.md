@@ -36,3 +36,7 @@ npm run pack -- _template
 Install dependencies with `npm ci` first. When copying, rename the manifest and
 npm workspace, object kind and custom-element tag together. Contribution IDs are
 scoped to the package, so the importer and visualizer may each retain `text`.
+
+Declare optional Python libraries in the root `requirements.txt` and leave
+`python_dependencies` empty. The template file initially contains comments only.
+See [dependency approval](../docs/lifecycle.md#python-dependencies).

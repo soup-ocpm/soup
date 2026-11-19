@@ -90,6 +90,7 @@ async function main() {
     const { backend, register, tag } = sources(name, type, frontend);
     const files = {
       'soup-package.json': json(manifest),
+      'requirements.txt': read('requirements.txt'),
       'server/__init__.py': read('server/__init__.py'),
       'server/contribution.py': backend,
       'server/plugin.py': `from soup.core.contracts import PluginContext, SoupPlugin\n\nfrom . import contribution\n\n\nclass Plugin(SoupPlugin):\n    def register(self, ctx: PluginContext) -> None:\n        ${register.replaceAll(/\((\w+)\(\)\)/g, '(contribution.$1())')}\n`,

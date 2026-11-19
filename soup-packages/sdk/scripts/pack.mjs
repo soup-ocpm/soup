@@ -6,7 +6,7 @@
 // server/ (without __pycache__ and compiled files) and app/dist/. Run
 // build:packages first: a package declaring app.entry is refused if the
 // bundle is missing.
-import { existsSync, mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
+import { existsSync, lstatSync, mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
 import { join, relative, sep } from 'node:path';
 
 import { zipSync } from 'fflate';
@@ -46,6 +46,13 @@ function main() {
   }
 
   const sources = [join(base, MANIFEST_FILE), ...filesUnder(serverDir)];
+  const requirements = join(base, 'requirements.txt');
+  if (existsSync(requirements)) {
+    if (lstatSync(requirements).isSymbolicLink() || !statSync(requirements).isFile()) {
+      throw new Error(`${folder}: requirements.txt must be a regular file, not a symbolic link`);
+    }
+    sources.push(requirements);
+  }
   const entry = manifest.app?.entry;
   if (entry) {
     if (!existsSync(join(base, 'app', entry))) {

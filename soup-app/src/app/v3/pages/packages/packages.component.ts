@@ -39,6 +39,7 @@ export class PackagesComponent implements OnInit {
   );
   public readonly archive = signal<File | null>(null);
   public readonly allowOverride = signal(false);
+  public readonly approveDependencies = signal(false);
   public readonly installError = signal('');
 
   public readonly pending = signal<PendingChange | null>(null);
@@ -89,9 +90,12 @@ export class PackagesComponent implements OnInit {
       return;
     }
     this.installError.set('');
-    const installed = await this.change(`Installing ${archive.name}...`, this.api.installPackage(archive, this.allowOverride()), (error) =>
-      this.installError.set(errorMessage(error))
+    const installed = await this.change(
+      `Installing ${archive.name}...`,
+      this.api.installPackage(archive, this.allowOverride(), this.approveDependencies()),
+      (error) => this.installError.set(errorMessage(error))
     );
+    this.approveDependencies.set(false);
     if (installed) {
       this.archive.set(null);
       notify(this.notifications, `Package '${installed.name}' ${installed.version} installed`, 'success');
@@ -100,9 +104,10 @@ export class PackagesComponent implements OnInit {
 
   // --- enable / disable / uninstall ---------------------------------------- //
   public async enable(pkg: PackageInfo): Promise<void> {
-    if (await this.change(`Enabling ${pkg.name}...`, this.api.enablePackage(pkg.name))) {
+    if (await this.change(`Enabling ${pkg.name}...`, this.api.enablePackage(pkg.name, this.approveDependencies()))) {
       notify(this.notifications, `Package '${pkg.name}' enabled`, 'success');
     }
+    this.approveDependencies.set(false);
   }
 
   public async disable(pkg: PackageInfo, cascade = false): Promise<void> {

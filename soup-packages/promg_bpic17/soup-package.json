@@ -17,9 +17,7 @@
   ],
   "provides_tools": [],
   "extension_points": [],
-  "python_dependencies": [
-    "promg==2.2.3"
-  ],
+  "python_dependencies": [],
   "server": {
     "module": "server",
     "plugin": "plugin:Plugin"

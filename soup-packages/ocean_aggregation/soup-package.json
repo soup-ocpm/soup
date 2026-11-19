@@ -16,10 +16,7 @@
   "requires_tools": [],
   "provides_tools": [],
   "extension_points": [],
-  "python_dependencies": [
-    "neo4j",
-    "PyYAML>=6,<7"
-  ],
+  "python_dependencies": [],
   "server": {
     "module": "server",
     "plugin": "plugin:Plugin"

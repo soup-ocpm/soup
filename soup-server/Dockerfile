@@ -33,9 +33,8 @@ COPY soup-server/requirements.txt .
 
 RUN pip install --no-cache-dir -r requirements.txt
 
-# A binary incompatibility (e.g. numpy 2.x under pandas 2.1.1) fails the
-# build here instead of the start of the packages.
-RUN python -c "import numpy, pandas, neo4j, docker, waitress; print(numpy.__version__, pandas.__version__)"
+# Check the core environment independently of optional package libraries.
+RUN python -c "import neo4j, waitress"
 
 COPY soup-server/ .
 COPY --from=packages /srv/soup-packages/ /srv/soup-packages/
@@ -43,6 +42,12 @@ COPY --from=packages /srv/soup-packages/ /srv/soup-packages/
 # Uploaded package directories may have owner-only permissions on the host.
 # Bundled code must remain readable and traversable by the runtime user.
 RUN chmod -R a+rX /srv/soup-packages
+
+# Building the image installs requirements declared by every bundled package.
+# Runtime ZIP packages still require explicit dependency-installation approval.
+RUN python -c \
+    'from pathlib import Path; from soup.core.packages.dependencies import install_bundled; install_bundled(Path("/srv/soup-packages"), Path("/opt/soup-python"))' \
+    && if [ -d /opt/soup-python ]; then chmod -R a+rX /opt/soup-python; fi
 
 # The server runs as an unprivileged user with the UID/GID of the
 # "memgraph" user of the Memgraph image of docker-compose.yaml, so the

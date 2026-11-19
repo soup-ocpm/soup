@@ -3,6 +3,21 @@
     <h2>Packages</h2>
   </div>
 
+  <div class="form-check mb-3">
+    <input
+      id="soup-approve-dependencies"
+      type="checkbox"
+      class="form-check-input"
+      [checked]="this.approveDependencies()"
+      (change)="this.approveDependencies.set($any($event.target).checked)" />
+    <label
+      class="form-check-label"
+      for="soup-approve-dependencies">
+      Approve pip installation of missing Python dependencies for the next install or enable action (trusted packages only). Existing shared
+      dependency versions will not be changed.
+    </label>
+  </div>
+
   <!-- Install -->
   <section class="soup-panel">
     <h3 class="soup-panel-title">Install from zip</h3>

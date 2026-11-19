@@ -140,3 +140,12 @@ For optional focused checks, see
 contain the old `tests.fakes` or `tests.packages` helpers; do not depend on them
 when adding tests. The tutorial introduces no test framework or runtime
 dependency.
+
+## Optional Python libraries
+
+The copied `_template/requirements.txt` is initially comments only. Add named
+PEP 508 requirements there only when the package imports an external library;
+leave `python_dependencies` empty rather than duplicating declarations.
+The scaffolder also creates this file, and ZIP packaging includes it.
+See [approval and deployment](lifecycle.md#python-dependencies). No changes to
+core server requirements are needed.

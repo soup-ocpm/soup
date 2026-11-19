@@ -35,6 +35,92 @@ dataset selection then determines request/package compatibility without a
 mutable global selection. See
 [database access](package-api.md#dataset-bound-database-access).
 
+## Python dependencies
+
+Each package owns an optional root `requirements.txt`, included by `npm run pack`.
+Use one named PEP 508 requirement per line, with optional version constraints,
+extras and environment markers. Blank lines and comments are accepted. Pip
+options, nested requirements files, editable installs and direct URLs are not
+supported. The legacy manifest `python_dependencies` list still works. Identical
+declarations are deduplicated; different declarations of the same distribution
+across the two sources are rejected. Prefer declaring each dependency once.
+
+```text
+# my_package/requirements.txt
+some-library>=1.2,<2
+```
+
+Core libraries stay in `soup-server/requirements.txt`. Package libraries do not
+belong there. SOUP checks installed versions before importing package code.
+Missing libraries block activation and report the requirements needing approval.
+An incompatible installed version requires an administrator to rebuild a
+compatible shared environment: SOUP never upgrades or downgrades an existing
+distribution, including core and transitive dependencies.
+
+For runtime ZIP installation or enabling a bundled package, review its
+requirements, select **Approve pip installation** on the Packages page, then
+perform the action. The checkbox resets afterward. API clients explicitly pass
+`approve_dependencies=true` as a multipart/form field or query parameter to
+`POST /api/v3/packages` or `POST /api/v3/packages/<name>/enable`. This is separate
+from `allow_override`. Dependency installation also requires
+`SOUP_ALLOW_PACKAGE_INSTALL=true`; neither permission implies the other.
+
+Docker builds automatically install the Python dependencies declared by **all
+bundled packages**, including packages for both supported graph backends. No
+package-name list or dependency approval flag is needed:
+
+```sh
+docker compose up -d --build
+```
+
+For the standalone Neo4j deployment:
+
+```sh
+docker compose -f docker-compose.neo4j.yaml up -d --build
+```
+
+Build-time additions live in `/opt/soup-python` and are restored to the plugin
+process's import path before packages load. Adding or changing a bundled
+package's requirements requires rebuilding the backend image. Conflicts with
+core or other bundled packages fail the build with a dependency error rather
+than producing an image with missing package libraries. Core versions remain
+protected. Build-time pip prefers wheels but also accepts source distributions,
+including dependencies such as `pydotplus`. Building native source distributions
+may require system build tools in the image. Templates and hidden directories
+are excluded from bundle discovery.
+
+**Runtime ZIP installations still require explicit approval**, as described
+above. For approved startup provisioning of runtime packages, optionally set
+`SOUP_APPROVE_PYTHON_DEPENDENCIES` to a comma-separated package-name allowlist in
+the backend environment, with `SOUP_ALLOW_PACKAGE_INSTALL=true`. Both Compose
+files forward this optional runtime setting; it does not control bundled build
+installation. Only enabled packages are provisioned at startup. Remove startup
+approval after provisioning if subsequent changes should require renewed consent.
+
+Runtime additions are staged under
+`SOUP_INSTALLED_PACKAGES_DIR/_python/<interpreter-platform>/`. Pip first resolves
+with all installed distributions pinned and active-package requirements included,
+then installs missing binary wheels into a temporary directory. Only a completed
+installation is published to the Python process's import path and inherited
+`PYTHONPATH` for package workers. In Docker this
+location is on the existing package volume; startup restores it before loading
+plugins. Interrupted pip work is never imported. Failed package upgrades retain
+the previous package; successfully added shared libraries are retained even if
+plugin activation later fails. Uninstall never removes shared Python libraries.
+
+SOUP plugins share one Python interpreter, not isolated environments. New
+ordinary wheel imports work immediately; conflicting versions cannot coexist.
+Wheels requiring executable `.pth` setup, external executables or installation
+scripts are not supported by this runtime installer. Native system dependencies
+(such as Graphviz `dot`) must still be provisioned in the image. Interpreter or
+platform changes use a different dependency directory; approved dependencies may
+need reinstalling. To change existing library versions, rebuild the server and
+use compatible persistent dependencies (administrator-controlled cleanup or a
+fresh package volume, preserving installed packages/state as needed), then
+restart. No running operation or loaded dependency is hot-replaced. Do not run
+multiple SOUP server processes sharing this dependency directory; the supported
+server uses a single Python process with threads.
+
 ## Runtime management
 
 The Angular **Packages** page uses the existing management API. Results use the
@@ -112,7 +198,8 @@ unlocked install in Docker to hide a missing/malformed lockfile.
 
 `npm run pack -- <directory>` uses the directory's manifest name/version for the
 ZIP filename and its one top-level directory. It includes the manifest, server
-module files (excluding Python bytecode/cache), and `app/dist` when declared. It
+module files (excluding Python bytecode/cache), optional root `requirements.txt`,
+and `app/dist` when declared. It
 rejects symbolic links and refuses an app entry whose built bundle is missing.
 It does **not** include source tests or install Python/npm dependencies on the
 server. Run the build first. A server-only package needs no frontend workspace
@@ -225,3 +312,11 @@ Render untrusted text through `textContent` or the SDK/shared components,
 sanitize markup where needed, avoid logging uploaded rows/secrets, and expose
 actionable safe errors. Follow [error handling](package-api.md#error-handling)
 and release resources on disconnect/shutdown.
+
+Run the focused dependency lifecycle regressions from `soup-server/`:
+
+```sh
+PYTHONPATH=. python scripts/test_package_dependencies.py
+```
+
+They replace every pip invocation; no real installations or graph operations occur.

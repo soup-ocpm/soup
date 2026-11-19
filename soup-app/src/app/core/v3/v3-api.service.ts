@@ -65,15 +65,18 @@ export class V3ApiService {
     return this.unwrap(this.api.get<PackageInfo[]>(`${this.base}/packages`));
   }
 
-  public installPackage(archive: File, allowOverride = false): Observable<PackageInfo> {
+  public installPackage(archive: File, allowOverride = false, approveDependencies = false): Observable<PackageInfo> {
     const form = new FormData();
     form.append('file', archive, archive.name);
     form.append('allow_override', String(allowOverride));
+    form.append('approve_dependencies', String(approveDependencies));
     return this.unwrap(this.api.post<PackageInfo>(`${this.base}/packages`, form));
   }
 
-  public enablePackage(name: string): Observable<PackageInfo> {
-    return this.unwrap(this.api.post<PackageInfo>(`${this.base}/packages/${this.segment(name)}/enable`, {}));
+  public enablePackage(name: string, approveDependencies = false): Observable<PackageInfo> {
+    return this.unwrap(
+      this.api.post<PackageInfo>(`${this.base}/packages/${this.segment(name)}/enable?approve_dependencies=${approveDependencies}`, {})
+    );
   }
 
   public disablePackage(name: string, cascade = false): Observable<string[]> {

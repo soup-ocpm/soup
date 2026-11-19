@@ -11,6 +11,6 @@
   "requires_tools": [],
   "provides_tools": ["storage", "catalog", "preferences"],
   "extension_points": [],
-  "python_dependencies": ["docker>=7"],
+  "python_dependencies": [],
   "server": {"module": "server", "plugin": "plugin:Plugin"}
 }
