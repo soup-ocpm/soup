@@ -1,0 +1,9 @@
+{
+  "name": "soup-pkg-pm4py-ocdfg-app",
+  "version": "1.1.3",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@soup/sdk": "*"
+  }
+}

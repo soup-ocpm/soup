@@ -30,3 +30,7 @@ PyYAML==6.0.3
 
 # Imported PromG library
 promg==2.2.3
+
+# Optional pm4py_ocdfg package: checked by the package dependency loader.
+pm4py==2.7.17
+graphviz==0.21
