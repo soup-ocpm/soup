@@ -21,7 +21,7 @@ from soup.core.contracts import (
 from soup.core.contracts.database import Database
 
 from .compat import soup_metadata
-from .normalize import normalize_graph
+from .normalize import normalize_graph, timed_phase
 
 
 class NormalizeLegacyPromg(Operation):
@@ -54,12 +54,15 @@ class NormalizeLegacyPromg(Operation):
         if source.meta.get("backend") != "neo4j":
             raise ValidationError("The existing PromG dataset must use Neo4j")
         db = self.database.for_dataset(source.id)
-        with import_phase("PromG BPIC17 SOUP schema normalization"):
-            summary = normalize_graph(db, source.id)
+        info = {**source.meta.get("process_info", {})}
+        info["duration_seconds"] = dict(info.get("duration_seconds", {}))
+        with import_phase("PromG BPIC17 SOUP schema normalization"), timed_phase(info, "normalization"):
+            summary = normalize_graph(db, source.id, process_info=info)
         # The graph and catalog entry keep the original ID, owning importer,
         # provenance and managed Neo4j database; no duplicate dataset is made.
         metadata = {
             **source.meta,
+            "process_info": info,
             **soup_metadata(summary, filename=source.meta.get("source_filename", "BPI_Challenge_2017.csv")),
         }
         catalog = tools.typed("catalog", Catalog)

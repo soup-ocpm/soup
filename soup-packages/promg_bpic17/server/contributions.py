@@ -33,9 +33,9 @@ from soup.core.contracts import (
 from soup.core.contracts.database import Database
 from soup.core.contracts.errors import log_error
 
-from .csv_http import validate_url
 from .compat import soup_metadata
-from .normalize import normalize_graph
+from .csv_http import validate_url
+from .normalize import normalize_graph, timed_phase
 
 KIND = "oced_importer.log"  # normalized SOUP Neo4j EKG representation
 ASSETS = Path(__file__).parent / "assets"
@@ -114,7 +114,11 @@ class Bpic17Importer(Importer):
         options: Mapping[str, Any],
         tools: ToolAccess,
     ) -> dict[str, Any]:
-        check_csv(upload)
+        started = perf_counter()
+        object_id = str(UUID(obj.id))
+        info = {"init_time": datetime.now(UTC).isoformat(), "dataset_id": object_id}
+        with timed_phase(info, "csv_preparation"):
+            check_csv(upload)
         public_url = validate_url(
             os.environ.get("SOUP_PROMG_CSV_BASE_URL")
             or os.environ.get("SOUP_NEO4J_CSV_BASE_URL", "")
@@ -123,11 +127,11 @@ class Bpic17Importer(Importer):
         if not 1 <= port <= 65535:
             raise ValueError("SOUP_PROMG_CSV_PORT must be between 1 and 65535")
         token = secrets.token_urlsafe(32)
-        object_id = str(UUID(obj.id))
-        started = perf_counter()
-        info = {"init_time": datetime.now(UTC).isoformat(), "dataset_id": object_id}
         catalog = tools.typed("catalog", Catalog)
-        with import_phase("Neo4j dataset creation"):
+        with (
+            import_phase("Neo4j dataset creation"),
+            timed_phase(info, "database_creation"),
+        ):
             name = self.database.create_dataset(object_id, obj.name)
         metadata = {
             "backend": "neo4j",
@@ -147,21 +151,26 @@ class Bpic17Importer(Importer):
             config = self.database.config
             with tempfile.TemporaryDirectory(prefix="soup-promg-bpic17-") as directory:
                 base = Path(directory)
-                (base / "data").mkdir()
-                (base / "csv").mkdir()
-                (base / "json_files").mkdir()
-                # Stream the upload once; generated partitions are written directly to the mount.
-                with (base / "data" / "BPI_Challenge_2017.csv").open("wb") as target:
-                    shutil.copyfileobj(upload.stream, target)
-                (base / "json_files" / "BPIC17.json").write_bytes(
-                    (ASSETS / "BPIC17.json").read_bytes()
-                )
-                ds = json.loads((ASSETS / "BPIC17_DS.json").read_text(encoding="utf-8"))
-                for item in ds:
-                    item["file_directory"] = str(base / "data") + os.sep
-                (base / "json_files" / "BPIC17_DS.json").write_text(
-                    json.dumps(ds), encoding="utf-8"
-                )
+                with timed_phase(info, "csv_preparation"):
+                    (base / "data").mkdir()
+                    (base / "csv").mkdir()
+                    (base / "json_files").mkdir()
+                    # Stream the upload once; generated partitions are served directly from temporary storage.
+                    with (base / "data" / "BPI_Challenge_2017.csv").open(
+                        "wb"
+                    ) as target:
+                        shutil.copyfileobj(upload.stream, target)
+                    (base / "json_files" / "BPIC17.json").write_bytes(
+                        (ASSETS / "BPIC17.json").read_bytes()
+                    )
+                    ds = json.loads(
+                        (ASSETS / "BPIC17_DS.json").read_text(encoding="utf-8")
+                    )
+                    for item in ds:
+                        item["file_directory"] = str(base / "data") + os.sep
+                    (base / "json_files" / "BPIC17_DS.json").write_text(
+                        json.dumps(ds), encoding="utf-8"
+                    )
                 run_config = {
                     "db_name": name,
                     "uri": config.uri,
@@ -200,6 +209,21 @@ class Bpic17Importer(Importer):
                             text = text.replace(secret, "[redacted]")
                     return text
 
+                def collect_metrics():
+                    path = base / "worker-metrics.json"
+                    if path.is_file():
+                        metrics = json.loads(path.read_text(encoding="utf-8"))
+                        durations = info.setdefault("duration_seconds", {})
+                        for phase_name, seconds in metrics["duration_seconds"].items():
+                            durations[phase_name] = (
+                                durations.get(phase_name, 0.0) + seconds
+                            )
+                        info["promg_queries"] = metrics["queries"]
+                        info["http"] = metrics.get("http", {})
+                        info["duration_seconds"]["http_transfer"] = info["http"].get(
+                            "send_seconds", 0.0
+                        )
+
                 # Keep verbose PromG output on disk rather than accumulating it in RAM.
                 stdout_path, stderr_path = base / "stdout.log", base / "stderr.log"
                 with import_phase("PromG BPIC17 EKG construction"):
@@ -221,6 +245,7 @@ class Bpic17Importer(Importer):
                                 check=False,
                             )
                     except subprocess.TimeoutExpired as exc:
+                        collect_metrics()
                         logger.error(
                             "PromG timeout dataset=%s database=%s\n%s\n%s",
                             object_id,
@@ -232,6 +257,7 @@ class Bpic17Importer(Importer):
                             "PromG BPIC17 exceeded the six-hour timeout; see backend logs. "
                             "The dataset is incomplete; no database was cleared."
                         ) from exc
+                    collect_metrics()
                     if process.returncode != 0:
                         error = diagnostic_tail(stderr_path)
                         logger.error(
@@ -254,9 +280,16 @@ class Bpic17Importer(Importer):
                         )
             # Project the native PromG graph into SOUP's common Neo4j EKG
             # vocabulary. No PromG labels or native edges are deleted.
-            with import_phase("PromG BPIC17 SOUP schema normalization"):
-                summary = normalize_graph(self.database.for_dataset(obj.id), obj.id)
-            info["duration_seconds"] = {"total": round(perf_counter() - started, 3)}
+            with (
+                import_phase("PromG BPIC17 SOUP schema normalization"),
+                timed_phase(info, "normalization"),
+            ):
+                summary = normalize_graph(
+                    self.database.for_dataset(obj.id), obj.id, process_info=info
+                )
+            info.setdefault("duration_seconds", {})["total"] = round(
+                perf_counter() - started, 3
+            )
             return {
                 **metadata,
                 "import_status": "complete",
@@ -266,7 +299,9 @@ class Bpic17Importer(Importer):
                 **soup_metadata(summary, filename=upload.filename),
             }
         except Exception:
-            info["duration_seconds"] = {"total": round(perf_counter() - started, 3)}
+            info.setdefault("duration_seconds", {})["total"] = round(
+                perf_counter() - started, 3
+            )
             try:
                 catalog.update(
                     replace(

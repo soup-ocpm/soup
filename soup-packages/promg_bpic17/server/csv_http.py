@@ -2,11 +2,13 @@
 
 from __future__ import annotations
 
+import os
 import shutil
 import threading
 from contextlib import contextmanager, suppress
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
+from time import perf_counter
 from urllib.parse import quote, urlsplit
 
 
@@ -31,11 +33,14 @@ def validate_url(value: str) -> str:
 
 
 @contextmanager
-def serve_csv(directory: Path, public_url: str, token: str, port: int):
+def serve_csv(directory: Path, public_url: str, token: str, port: int, *, metrics=None):
     """Publish only explicitly requested CSVs; never expose the working directory."""
     public_url = validate_url(public_url)
     paths: dict[str, Path] = {}
     lock = threading.Lock()
+    metrics = metrics if metrics is not None else {}
+    metrics.setdefault("requests", 0)
+    metrics.setdefault("send_seconds", 0.0)
 
     def url_for(filename: str) -> str:
         if Path(filename).name != filename or not filename.endswith(".csv"):
@@ -63,12 +68,22 @@ def serve_csv(directory: Path, public_url: str, token: str, port: int):
             with handle:
                 self.send_response(200)
                 self.send_header("Content-Type", "text/csv; charset=utf-8")
-                self.send_header("Content-Length", str(path.stat().st_size))
+                self.send_header(
+                    "Content-Length", str(os.fstat(handle.fileno()).st_size)
+                )
                 self.send_header("Cache-Control", "no-store")
                 self.send_header("X-Content-Type-Options", "nosniff")
                 self.end_headers()
-                with suppress(BrokenPipeError, ConnectionResetError):
-                    shutil.copyfileobj(handle, self.wfile)
+                started = perf_counter()
+                try:
+                    with suppress(BrokenPipeError, ConnectionResetError):
+                        shutil.copyfileobj(handle, self.wfile)
+                finally:
+                    with lock:
+                        metrics["requests"] = metrics.get("requests", 0) + 1
+                        metrics["send_seconds"] = (
+                            metrics.get("send_seconds", 0.0) + perf_counter() - started
+                        )
 
         def log_message(self, format, *args):
             pass  # Never log capability URLs or CSV contents.

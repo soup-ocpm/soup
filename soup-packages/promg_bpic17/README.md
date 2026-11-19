@@ -133,6 +133,68 @@ Validation covers the HTTP adapter, file access restrictions, cleanup, installed
 CSV output and CSV-reader-only query adaptation. A full BPIC17 import still requires a compatible
 Neo4j/APOC deployment and the normalized dataset.
 
+## Profiling and normalization performance
+
+`process_info.duration_seconds` now retains `database_creation`, `csv_preparation`,
+`promg_constraints`, `promg_loading_transform`, `promg_df`, `normalization`,
+`normalization_nodes`, `normalization_corr`, `normalization_df`, `csv_query_adapter`,
+`http_transfer`, and `total` where those phases completed or raised an error.
+CSV preparation includes upload staging, PromG preprocessing and intermediate CSV
+serialization. It overlaps the loading/transformation phase; HTTP send time and
+query times also overlap enclosing phases and must not be summed into a total.
+`process_info.promg_queries` records calls and wall time by upstream generator;
+`process_info.http` records requests and server-side send time. Worker metrics are
+saved at phase boundaries and collected on success, failure or timeout. An abruptly
+killed worker cannot record the duration of its currently running phase.
+
+Normalization uses sequential native `CALL { ... } IN TRANSACTIONS` with at most
+10,000 source rows per commit (configurable through the existing Python argument).
+It must run through `Database.execute`, not an explicit transaction. Each phase scans
+its input once rather than restarting a marker-filtered scan after every batch.
+Completion checks run inside the bounded transaction: EXPLAIN on Neo4j 2026.06.0
+confirmed this avoids a graph-sized outer Eager buffer for DF projection. Any Eager
+operators inside the subtransaction are limited to that batch. No marker indexes
+are added: ordinary property indexes do not index missing marker values.
+
+Existing marker properties and atomic projection/provenance writes are retained.
+Completed DF batches are skipped on retry, including parallel native relationships;
+no MERGE collapses their multiplicity. Validation compares native and projected DF
+counts, using one grouped projected-edge scan rather than one full scan per type.
+Native PromG properties, labels, timestamps, event order, typed DF construction and
+SOUP compatibility properties/relationships remain unchanged. This does not add a
+UI or automatic retry for the whole upstream mining pipeline; it keeps normalization
+safe to invoke again after interruption.
+
+SOUP disables PromG's unused preprocessed pickle cache (`store_files=False`): these
+private files were never read with `use_preprocessed_files=False` and were discarded
+after every run. A 100,000-row synthetic frame demonstrated a 13,001,300-byte redundant
+write (0.0079 seconds on the test machine); this is an I/O measurement, not a full
+BPIC17 import speedup. The HTTP adapter still streams each generated file without
+an extra full-file copy or repeated download. The original `apoc.load.csv` procedure
+is absent on the checked Neo4j instance, so a live original-reader comparison was
+not possible; the required native reader and datatype/null conversions are retained.
+Connection pooling, original batch size and mining queries are not changed.
+
+Run the offline structural check with:
+
+```bash
+PYTHONPATH=soup-server python soup-packages/promg_bpic17/validate_normalization.py
+```
+
+Fresh/idempotent and interrupted/retried graph checks are opt-in integration tests.
+They create and drop only a uniquely named `soup-promg-test-*` database and require
+multi-database privileges. Run them only on an explicitly authorized test instance:
+
+```bash
+SOUP_PROMG_TEST_CREATE_DATABASE=1 PYTHONPATH=soup-server python soup-packages/promg_bpic17/validate_normalization.py
+```
+
+The integration checks use SOUP's Neo4j credential environment variables. They were
+not run against the external database: automatic approval rejected test database
+creation/deletion. Offline structural tests, Ruff and 34 read-only EXPLAIN checks
+passed. Full graph equivalence, interrupted-write tests and end-to-end speed relative
+to standalone PromG remain unmeasured until an authorized test instance is available.
+
 ## Upstream
 
 - https://github.com/PromG-dev/ekg_bpic17

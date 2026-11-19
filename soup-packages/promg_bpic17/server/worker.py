@@ -3,10 +3,14 @@
 from __future__ import annotations
 
 import csv
+import json
 import logging
 import re
 import sys
+from contextlib import contextmanager
+from functools import wraps
 from pathlib import Path
+from time import perf_counter
 
 
 def native_csv_query(function, directory: Path, url_for, **kwargs):
@@ -77,6 +81,7 @@ def compatible_constraint(query: str) -> str:
 
 def main(config_path: str) -> None:
     from csv_http import serve_csv
+    from normalize import timed_phase
     from promg import (
         Configuration,
         DatabaseConnection,
@@ -93,12 +98,34 @@ def main(config_path: str) -> None:
     directory = Path(conf.import_directory)
     settings = safe_load(Path(config_path).read_text(encoding="utf-8"))
 
+    metrics = {"duration_seconds": {}, "queries": {}}
+    metrics_path = Path(config_path).parent / "worker-metrics.json"
+
+    @contextmanager
+    def measure(name):
+        try:
+            with timed_phase(metrics, name):
+                yield
+        finally:
+            temporary = metrics_path.with_suffix(".tmp")
+            temporary.write_text(json.dumps(metrics), encoding="utf-8")
+            temporary.replace(metrics_path)
+
+    def measured_csv(function):
+        @wraps(function)
+        def run(*args, **kwargs):
+            with measure("csv_preparation"):
+                return function(*args, **kwargs)
+
+        return run
+
     class Connection(DatabaseConnection):
         def exec_query(self, function, **kwargs):
             self.query_name = function.__qualname__
             # Only the transport path changes; upstream query generators stay intact.
             if function is di_ql.get_create_nodes_by_loading_csv_query:
-                query = native_csv_query(function, directory, url_for, **kwargs)
+                with measure("csv_query_adapter"):
+                    query = native_csv_query(function, directory, url_for, **kwargs)
                 return super().exec_query(lambda: query)
             return super().exec_query(function, **kwargs)
 
@@ -109,6 +136,7 @@ def main(config_path: str) -> None:
                 )
             # Upstream catches and suppresses Neo4j exceptions. Let the worker fail
             # instead, while retaining its managed write-transaction behavior.
+            query_started = perf_counter()
             original = query
             query = compatible_constraint(query)
 
@@ -153,6 +181,13 @@ def main(config_path: str) -> None:
                 if original != query:
                     logger.error("Original PromG schema query:\n%s", redact(original))
                 raise
+            finally:
+                name = getattr(self, "query_name", "HTTP validation")
+                metric = metrics["queries"].setdefault(
+                    name, {"calls": 0, "seconds": 0.0}
+                )
+                metric["calls"] += 1
+                metric["seconds"] += perf_counter() - query_started
 
     # PromG 2.2.3's factory incorrectly passes config.user as db_name.
     connection = Connection(
@@ -170,6 +205,7 @@ def main(config_path: str) -> None:
             settings["csv_public_url"],
             settings["csv_token"],
             settings["csv_port"],
+            metrics=metrics.setdefault("http", {}),
         ) as url_for:
             print(f"PromG phase: {phase}", flush=True)
             probe = directory / "soup-access-check.csv"
@@ -190,26 +226,40 @@ def main(config_path: str) -> None:
             descriptions = DatasetDescriptions(config=conf)
             phase = "constraints"
             print(f"PromG phase: {phase}", flush=True)
-            DBManagement(db_connection=connection).set_constraints()
+            with measure("promg_constraints"):
+                DBManagement(db_connection=connection).set_constraints()
             graph = OcedPg(
                 database_connection=connection,
                 dataset_descriptions=descriptions,
                 semantic_header=semantic,
                 use_sample=conf.use_sample,
                 use_preprocessed_files=conf.use_preprocessed_files,
+                store_files=False,  # This private run never reuses PromG’s pickle cache.
                 import_directory=str(directory),
+            )
+            for structure in descriptions.structures:
+                structure.read_data_set = measured_csv(structure.read_data_set)
+            graph.data_importer._save_log_grouped_by_labels = measured_csv(
+                graph.data_importer._save_log_grouped_by_labels
             )
             phase = "load and transform"
             print(f"PromG phase: {phase}", flush=True)
-            graph.load_and_transform()
+            with measure("promg_loading_transform"):
+                graph.load_and_transform()
             phase = "DF creation"
             print(f"PromG phase: {phase}", flush=True)
-            graph.create_df_edges()
+            with measure("promg_df"):
+                graph.create_df_edges()
     except Exception:
         print(f"PromG failed during: {phase}", file=sys.stderr, flush=True)
         raise
     finally:
-        connection.driver._driver.close()
+        try:
+            temporary = metrics_path.with_suffix(".tmp")
+            temporary.write_text(json.dumps(metrics), encoding="utf-8")
+            temporary.replace(metrics_path)
+        finally:
+            connection.driver._driver.close()
 
 
 if __name__ == "__main__":
