@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="soup-app/public/icons/logo.png" alt="The SOUP logo: a bowl of rainbow noodles" width="120">
+  <img src="soup-app/public/icons/soup-studio.png" alt="The SOUP logo: a bowl of rainbow noodles" width="120">
 </p>
 
 # SOUP
