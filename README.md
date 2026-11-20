@@ -1,32 +1,48 @@
 <p align="center">
-  <img src="soup-app/public/icons/soup-studio.png" alt="The SOUP logo: a bowl of rainbow noodles" width="120">
+  <img src="soup-app/public/icons/soup-studio.png" alt="SOUP Studio logo" width="120">
 </p>
 
-# SOUP
+# SOUP Studio
 
 ![Angular](https://img.shields.io/badge/Angular-21.2-DD0031?style=for-the-badge&logo=Angular&color=%23e61919)
 ![Python](https://img.shields.io/badge/Python-3.12-3776AB?style=for-the-badge&logo=Python&color=blue)
 ![Flask](https://img.shields.io/badge/Flask-3.1.3-000000?style=for-the-badge&logo=Flask&color=black)
 ![Memgraph](https://img.shields.io/badge/Memgraph-3.13.2-000000?style=for-the-badge&color=orange)
+![Neo4j](https://img.shields.io/badge/Neo4j-supported-4581C3?style=for-the-badge)
 ![Docker](https://img.shields.io/badge/Docker-Compose-2496ED?style=for-the-badge&logo=Docker&logoColor=white)
 [![License](https://img.shields.io/badge/License-MIT-green?style=for-the-badge)](LICENSE)
 
-## What is SOUP
+**An extensible workspace for object-centric process mining.**
 
-SOUP is a web application for **object-centric process mining**. It reads event logs, builds an
-**Event Knowledge Graph (EKG)** on Memgraph 3.13.2 and lets you explore, filter, aggregate and export
-it. Its plugin architecture is inspired by [ProM](https://promtools.org/): a small core that only
-mediates, and packages that contribute everything else.
+SOUP Studio lets you import event data, build and explore **Event Knowledge Graphs (EKGs)**,
+create derived analyses, aggregate graphs, and discover process models. A shared workspace
+organizes datasets, analyses, and models together with their provenance.
+
+Its package architecture is inspired by [ProM](https://promtools.org/): the core coordinates
+objects and contributions, while packages provide importers, operations, visualizers, and
+exporters. Graph datasets can use **Memgraph or Neo4j**, according to the selected importer
+and the packages available for that backend.
+
+[Documentation](https://soup-ocpm.github.io/) ·
+[Getting started](https://soup-ocpm.github.io/#/getting-started) ·
+[Package development](https://soup-ocpm.github.io/#/development/packages) ·
+[Package repository](https://github.com/soup-ocpm/soup-packages)
 
 ## Features
 
-- **Import** CSV event logs and OCEL 2.0 logs, choosing the importer and how to read the file.
-- **Graph and statistics** of every EKG, with several views of the graph.
-- **Queries** ready to run on the events, the entities and their relationships.
-- **Non-destructive analyses**: filters create a new, derived object and the original stays.
-- **Aggregated graph** of the classes of events per entity type.
-- **Export** of the graph as JSON, analysis configurations, CSV tables, OCEL 2.0 JSON and reports.
-- **Packages installable at runtime**: every feature comes from a package, also while the app runs.
+- **Event-data import:** CSV tables and event logs, OCEL 2.0, and OCED event/object tables through the corresponding packages.
+- **Workspace and provenance:** keep source datasets, derived analyses, and discovered models connected through parent/child relationships.
+- **Interactive graph exploration:** navigate EKGs, inspect properties, search nodes and relationships, and explore graphs incrementally with Graph Explorer.
+- **Queries and statistics:** inspect activities, objects, relationships, and process indicators.
+- **Derived analyses:** apply filters to create new analysis objects while preserving the source dataset.
+- **Graph aggregation:** build class graphs and configure OCEAN aggregations through the available packages.
+- **OC-DFG discovery:** use the PM4Py package on Memgraph-compatible inputs, with interactive frequency/performance views and SVG export.
+- **Data and model export:** download the formats offered by each package, including graph JSON, CSV, OCEL 2.0 JSON, analysis configurations, reports, and SVG.
+- **Runtime packages:** install and manage ZIP packages from the application; compatibility and dependencies determine their availability.
+- **Graph backends:** work with Memgraph and configured external Neo4j instances through dataset-scoped database access.
+
+See the [package catalog](https://soup-ocpm.github.io/#/packages/catalog) for individual package capabilities and requirements.
+The [SOUP package repository](https://github.com/soup-ocpm/soup-packages) is available for package development and distribution.
 
 ## Quick start
 
@@ -41,41 +57,49 @@ docker compose -p soup-tool up --build
 
 Then open:
 
-- the app: <http://localhost:4200>
-- Memgraph Lab: <http://localhost:3300>
+- the application: <http://localhost:4200>;
+- Memgraph Lab: <http://localhost:3300>.
 
-To stop it, run `docker compose -p soup-tool down`. Your datasets stay in their volumes.
+To stop the application, run `docker compose -p soup-tool down`. Dataset and package volumes
+are preserved. Local workspace contents are stored in Docker volumes; downloading the
+repository does not copy another installation's datasets or saved analyses.
 
-Local use only: the ports are published on 127.0.0.1 only.
+The default deployment publishes application and Memgraph ports on `127.0.0.1`.
+See [External Neo4j](#external-neo4j) for the additional configuration needed by a remote database.
 
 ## First steps
 
-The interface is in Italian, so the labels below are the ones you will see. The example file is
-[soup-app/public/help/order_process.csv](soup-app/public/help/order_process.csv).
+The interface is in English. Start with the bundled
+[order-management example](soup-app/public/help/order_process.csv).
 
-1. Open <http://localhost:4200/import> and choose the example file.
-2. Choose the importer **CSV come event log** (CSV as an event log), tick the entity columns
-   (**Colonne entità**), for example `Order` and `Item`, and press **Importa** (Import).
-3. In the page of the new object, choose **Grafo** (Graph) under **Visualizzatore** (Visualizer).
-4. Under **Azioni** (Actions), try **Nuova analisi** (New analysis): filter the graph into a new object.
+1. Open **Import** at <http://localhost:4200/import> and select the example CSV.
+2. Choose **CSV as event log (EKG on Memgraph)**. Map the event ID, timestamp, and activity
+   columns, select entity columns such as `Order` and `Item`, and complete the import.
+3. Open the resulting object from **Workspace** and select the **Graph** visualizer to explore its EKG.
+4. Under **Actions**, choose **New analysis** to filter the dataset into a derived object.
+5. On a compatible source, use **Discover OC-DFG (PM4Py)** to create a process model, or choose
+   an aggregation operation. The available actions depend on the object's kind, backend, and active packages.
 
-The [User guide](https://github.com/AlessioPiana54/soup/wiki/User-guide) goes through every page.
+The [Getting started guide](https://soup-ocpm.github.io/#/getting-started) explains the workflow.
 
-## Architecture in one picture
+## Architecture
 
 ```mermaid
 flowchart LR
   browser["Browser"] -->|"REST /api/v3"| api["API"]
   api --> core["Core"]
   core --> packages["Packages"]
-  packages --> tools["Tools"]
-  tools --> memgraph[("Memgraph")]
-  tools --> volume[("Volume")]
+  packages --> database["Dataset-scoped database access"]
+  database --> memgraph[("Memgraph")]
+  database --> neo4j[("Neo4j")]
+  packages --> tools["Storage, catalog and preferences"]
+  tools --> volume[("Persistent volume")]
 ```
 
-The core only mediates: it loads the packages and routes the requests to them. Packages contribute
-importers, operations, visualizers and exporters, and reach Memgraph and the dataset files through
-tools. More in [Architecture](https://github.com/AlessioPiana54/soup/wiki/Architecture).
+Packages declare the object kinds, tools, dependencies, and graph backends they support.
+The core routes requests to their contributions and resolves graph access for the selected dataset.
+See [Architecture](https://soup-ocpm.github.io/#/concepts/architecture) and
+[Graph backends](https://soup-ocpm.github.io/#/concepts/graph-backends).
 
 ## Development
 
@@ -86,48 +110,26 @@ cd soup-app
 npm run setup:server
 ```
 
-The rest of the setup is in [Installation](https://github.com/AlessioPiana54/soup/wiki/Installation),
-and the test and lint commands are in
-[Testing and CI](https://github.com/AlessioPiana54/soup/wiki/Testing-and-CI).
+See [Installation](https://soup-ocpm.github.io/#/getting-started/installation) for the environment
+setup. Package-specific instructions are in each package's `README.md` under `soup-packages/`.
+The [package development guide](https://soup-ocpm.github.io/#/development/packages) covers
+contribution contracts, building, testing, and packaging extensions.
 
 ## Documentation
 
+The documentation is available at **<https://soup-ocpm.github.io/>**.
+
 | Page | What it covers |
 |---|---|
-| [Home](https://github.com/AlessioPiana54/soup/wiki) | The starting page and the example files. |
-| [Installation](https://github.com/AlessioPiana54/soup/wiki/Installation) | Docker Compose, the volumes and their backup, local development. |
-| [User guide](https://github.com/AlessioPiana54/soup/wiki/User-guide) | Importing, the workspace, the visualizers, analyses, exports and packages. |
-| [Architecture](https://github.com/AlessioPiana54/soup/wiki/Architecture) | The core, typed objects, contributions, tools, extension points and events. |
-| [Writing a package](https://github.com/AlessioPiana54/soup/wiki/Writing-a-package) | A complete package, step by step. |
-| [API v3](https://github.com/AlessioPiana54/soup/wiki/API-v3) | Every route of `/api/v3`, with examples. |
-| [Package reference](https://github.com/AlessioPiana54/soup/wiki/Package-reference) | Each shipped package and all the environment variables. |
-| [Security](https://github.com/AlessioPiana54/soup/wiki/Security) | Local use, requests from other sites and trusted packages. |
-| [Testing and CI](https://github.com/AlessioPiana54/soup/wiki/Testing-and-CI) | The test suites, the lint, the smoke tests and GitHub Actions. |
-| [Troubleshooting](https://github.com/AlessioPiana54/soup/wiki/Troubleshooting) | Common problems and known limitations. |
-| [Changelog](https://github.com/AlessioPiana54/soup/wiki/Changelog) | What changed in the 2026 rework, by area. |
-
-## Credits
-
-- **Original author:** Alessio Giacché.
-- **Contributors:** Sara Pettinari; research activities with Lorenzo Rossi.
-- **Plugin architecture, package system and v3 API by Alessio Pianaroli (2026):**
-  - the core as a mediator of typed objects, contributions, tools, extension points and events;
-  - the package system: manifests, loading, runtime installation from zips, frontends as Web
-    Components with `@soup/sdk`;
-  - the `/api/v3` HTTP API and the new host pages (import, workspace, object page, packages);
-  - the EKG, OCEL, analysis, views and aggregated-graph packages, with the relationships of OCEL
-    2.0 in the graph;
-  - the backend without access to Docker, the test suites and the continuous integration.
-
-The original project is [soup-ocpm/soup](https://github.com/soup-ocpm/soup).
-
-> 💭 Our tool is called _Soup_, with a logo showcasing a mix of rainbow noodles, symbolizing the
-> dynamic and interconnected flow of object-centric process mining, much like the iconic image of
-> rainbow spaghetti.
-
-## License
-
-SOUP is released under the [MIT License](LICENSE).
+| [Introduction](https://soup-ocpm.github.io/) | SOUP Studio and its main concepts. |
+| [Getting started](https://soup-ocpm.github.io/#/getting-started) | Importing data and working with the application. |
+| [Installation](https://soup-ocpm.github.io/#/getting-started/installation) | Deployment and environment setup. |
+| [Architecture](https://soup-ocpm.github.io/#/concepts/architecture) | The core and package contributions. |
+| [Datasets and workspaces](https://soup-ocpm.github.io/#/concepts/datasets) | Workspace objects and their relationships. |
+| [Graph backends](https://soup-ocpm.github.io/#/concepts/graph-backends) | Memgraph and Neo4j configuration. |
+| [Package overview](https://soup-ocpm.github.io/#/packages) | Package capabilities and organization. |
+| [Package catalog](https://soup-ocpm.github.io/#/packages/catalog) | Individual packages and their requirements. |
+| [Package development](https://soup-ocpm.github.io/#/development/packages) | Creating and distributing extensions. |
 
 ## Runtime graph backends
 
@@ -169,15 +171,7 @@ export SOUP_NEO4J_CSV_BIND_ADDRESS=0.0.0.0
 docker compose -p soup-neo4j -f docker-compose.neo4j.yaml up --build
 ```
 
-```sh
-export NEO4J_URI=bolt://host.docker.internal:7687
-export NEO4J_USERNAME=neo4j
-export NEO4J_PASSWORD='12341234'
-export NEO4J_DATABASE=neo4j
-export SOUP_NEO4J_CSV_BASE_URL=http://localhost:8081
-export SOUP_NEO4J_CSV_BIND_ADDRESS=0.0.0.0
-docker compose -p soup-neo4j -f docker-compose.neo4j.yaml up --build
-```
+
 
 Do not combine this file with `docker-compose.yaml`. It has no Memgraph services or
 volumes and does not delete existing deployments. The two modes use the same browser
@@ -187,7 +181,7 @@ filesystem is needed. See [OCED importer setup](soup-packages/oced_importer/READ
 Packages declare `"databases": ["memgraph"]`, `["neo4j"]`, or both; omission means
 Memgraph only. Incompatible packages stay disabled during automatic discovery and
 cannot be enabled, installed or loaded into the frontend for the selected backend.
-The file-backed storage, SOUP base, text and CSV-table packages support both modes.
+The file-backed storage, SOUP Studio base, text and CSV-table packages support both modes.
 Neo4j OCED imports require multi-database Enterprise support and CREATE/DROP DATABASE,
 access, LOAD CSV, graph-write and index privileges. Each import creates its own database;
 workspace deletion requires explicit confirmation and drops only its registered database.
@@ -197,4 +191,26 @@ Packages select `db = ctx.database.for_dataset(object.id)` before calling
 `db.execute(cypher, parameters)` or `with db.transaction() as tx:`. Derived objects
 resolve their database through catalog parents; ambiguous or missing mappings fail.
 Administrative commands explicitly use `ctx.database.for_backend("neo4j").for_database("system")`.
-SOUP does not translate Cypher. Existing Memgraph graph queries remain unchanged.
+SOUP Studio does not translate Cypher. Existing Memgraph graph queries remain unchanged.
+
+## Credits
+
+- **Original author:** Alessio Giacché.
+- **Contributors:** Sara Pettinari; research activities with Lorenzo Rossi.
+- **Plugin architecture, package system and v3 API by Alessio Pianaroli (2026):**
+  - the core as a mediator of typed objects, contributions, tools, extension points and events;
+  - the package system: manifests, loading, runtime installation from zips, frontends as Web
+    Components with `@soup/sdk`;
+  - the `/api/v3` HTTP API and the new host pages (import, workspace, object page, packages);
+  - the EKG, OCEL, analysis, views and aggregated-graph packages, with the relationships of OCEL
+    2.0 in the graph;
+  - the backend without access to Docker, the test suites and the continuous integration.
+
+The original project is [soup-ocpm/soup](https://github.com/soup-ocpm/soup).
+
+> SOUP Studio builds on the original SOUP project. Its rainbow-noodle logo represents the
+> interconnected objects and events studied in object-centric process mining.
+
+## License
+
+SOUP Studio is released under the [MIT License](LICENSE).
