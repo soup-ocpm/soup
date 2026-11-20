@@ -173,6 +173,20 @@ export class ImportComponent {
     );
   }
 
+  public async loadExample(): Promise<void> {
+    if (this.busy()) return;
+    this.busy.set('Loading example log...');
+    this.error.set('');
+    try {
+      const response = await fetch(new URL('examples/order_process.csv', document.baseURI));
+      if (!response.ok) throw new Error('The example log could not be loaded. Please try again.');
+      const contents = await response.blob();
+      this.onSelectFile({ addedFiles: [new File([contents], 'order_process.csv', { type: 'text/csv' })] });
+    } catch (error) {
+      this.fail(error);
+    }
+  }
+
   public removeFile(): void {
     this.reset();
   }

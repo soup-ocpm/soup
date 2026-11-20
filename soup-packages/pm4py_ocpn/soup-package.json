@@ -1,0 +1,36 @@
+{
+  "name": "pm4py_ocpn",
+  "version": "1.0.1",
+  "api_version": "4.0",
+  "label": "OC-PN (PM4Py)",
+  "description": "Object-centric Petri net discovery, interactive pan and zoom, SVG, DOT and JSON exports.",
+  "author": "SOUP community",
+  "requires": [
+    "soup_base",
+    "ocel",
+    "ekg",
+    "tool_storage",
+    "tool_memgraph"
+  ],
+  "requires_tools": [
+    "storage",
+    "memgraph"
+  ],
+  "provides_tools": [],
+  "extension_points": [],
+  "python_dependencies": [
+    "pm4py==2.7.17",
+    "graphviz==0.21",
+    "pandas==2.2.3"
+  ],
+  "server": {
+    "module": "server",
+    "plugin": "plugin:Plugin"
+  },
+  "app": {
+    "entry": "dist/index.js"
+  },
+  "databases": [
+    "memgraph"
+  ]
+}

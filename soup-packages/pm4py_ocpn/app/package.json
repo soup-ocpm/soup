@@ -1,0 +1,9 @@
+{
+  "name": "soup-pkg-pm4py-ocpn-app",
+  "version": "1.0.1",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@soup/sdk": "*"
+  }
+}

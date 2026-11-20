@@ -36,6 +36,27 @@
           (change)="this.onInputChange(fileInput)" />
         <div class="ngx-dropzone-label">Drag a file here or click to choose one</div>
       </div>
+      <div class="soup-example-log">
+        <div>
+          <h4>Try an example log</h4>
+          <p class="text-muted mb-0">Explore an order process with activities, timestamps and related business objects.</p>
+        </div>
+        <div class="d-flex flex-wrap gap-2">
+          <button
+            type="button"
+            class="btn btn-outline-primary"
+            [disabled]="!!this.busy()"
+            (click)="this.loadExample()">
+            Use example log
+          </button>
+          <a
+            class="btn btn-link"
+            href="examples/order_process.csv"
+            download="order_process.csv">
+            Download CSV
+          </a>
+        </div>
+      </div>
     }
   </section>
 
