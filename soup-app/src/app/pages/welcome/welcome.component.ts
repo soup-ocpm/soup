@@ -1,12 +1,11 @@
 import { Component, OnInit, signal } from '@angular/core';
-import { environment } from 'src/environments/environment';
 
 import { Health } from '../../core/v3/v3.models';
 import { V3ApiService } from '../../core/v3/v3-api.service';
 import { SpBtnComponent } from '../../shared/components/sp-btn/sp-btn.component';
 
 /**
- * Home page component: what SOUP is, the link to its documentation and
+ * Home page component: what SOUP Studio is, the link to its documentation and
  * the state of the tools (GET /api/v3/health): every tool of the
  * packages, whether it answers, and the problems when the state is
  * degraded. Without an answer, the Engine is off.
@@ -41,9 +40,9 @@ export class WelcomeComponent implements OnInit {
   }
 
   /**
-   * Go to the documentation SOUP page
+   * Open the SOUP Studio documentation
    */
   public onGoDocumentation(): void {
-    window.open(environment.prosLabUrl, '_blank');
+    window.open('https://soup-ocpm.github.io/', '_blank', 'noopener,noreferrer');
   }
 }
