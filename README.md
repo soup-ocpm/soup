@@ -28,6 +28,10 @@ and the packages available for that backend.
 [Package development](https://soup-ocpm.github.io/#/development/packages) ·
 [Package repository](https://github.com/soup-ocpm/soup-packages)
 
+## Screencast
+
+[![Watch the SOUP Studio demo](https://img.youtube.com/vi/TUWW9EIL6UU/hqdefault.jpg)](https://www.youtube.com/watch?v=TUWW9EIL6UU)
+
 ## Features
 
 - **Event-data import:** CSV tables and event logs, OCEL 2.0, and OCED event/object tables through the corresponding packages.
