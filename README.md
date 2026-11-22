@@ -105,6 +105,9 @@ The core routes requests to their contributions and resolves graph access for th
 See [Architecture](https://soup-ocpm.github.io/#/concepts/architecture) and
 [Graph backends](https://soup-ocpm.github.io/#/concepts/graph-backends).
 
+![architecture](soup-app/public/images/architecture.png)
+*SOUP Studio Architecture*
+
 ## Development
 
 To prepare the backend environment (`soup-server/.venv`), run this from the repository root:
@@ -176,6 +179,14 @@ docker compose -p soup-neo4j -f docker-compose.neo4j.yaml up --build
 ```
 
 
+> [!TIP]
+> If Neo4j is running on your host machine rather than inside Docker,
+> you can configure the connection URI as follows:
+>
+> ```bash
+> export NEO4J_URI=bolt://host.docker.internal:7687
+> ```
+
 
 Do not combine this file with `docker-compose.yaml`. It has no Memgraph services or
 volumes and does not delete existing deployments. The two modes use the same browser
@@ -199,9 +210,13 @@ SOUP Studio does not translate Cypher. Existing Memgraph graph queries remain un
 
 ## Credits
 
-- **Original author:** Alessio Giacché.
-- **Contributors:** Sara Pettinari; research activities with Lorenzo Rossi.
-- **Plugin architecture, package system and v3 API by Alessio Pianaroli (2026):**
+- **Developer for v1.0:** Alessio Giacché.
+   - The v1.0 SOUP project is [soup/master](https://github.com/soup-ocpm/soup/tree/master).
+- **Developer for v2.0:** Alessio Pianaroli.
+  - Plugin architecture, package system and v3 API.
+- **Contributors and maintainers:** Sara Pettinari; Lorenzo Rossi.
+
+### 💡 New with v2.0
   - the core as a mediator of typed objects, contributions, tools, extension points and events;
   - the package system: manifests, loading, runtime installation from zips, frontends as Web
     Components with `@soup/sdk`;
@@ -210,10 +225,13 @@ SOUP Studio does not translate Cypher. Existing Memgraph graph queries remain un
     2.0 in the graph;
   - the backend without access to Docker, the test suites and the continuous integration.
 
-The original project is [soup-ocpm/soup](https://github.com/soup-ocpm/soup).
 
-> SOUP Studio builds on the original SOUP project. Its rainbow-noodle logo represents the
-> interconnected objects and events studied in object-centric process mining.
+> [!NOTE]
+> **🍜 A little sip of SOUP**
+>
+> SOUP Studio builds on the original SOUP project. 
+> Its rainbow-noodle logo represents the interconnected 
+> objects and events considered in object-centric process mining.
 
 ## License
 
